@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/MBCscore_pr/sw.js', { scope: '/MBCscore_pr/' })})}
