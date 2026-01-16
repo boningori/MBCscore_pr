@@ -1,0 +1,101 @@
+.stats-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    padding: var(--spacing-md);
+    overflow-x: auto;
+}
+
+.stats-panel-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+}
+
+.stats-table {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 750px;
+}
+
+.stats-header,
+.stats-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.stats-header {
+    background: var(--bg-tertiary);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.stats-row {
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    transition: background var(--transition-fast);
+}
+
+.stats-row:hover {
+    background: var(--bg-tertiary);
+}
+
+.stats-row.on-court {
+    background: rgba(5, 150, 105, 0.1);
+    border-left: 3px solid var(--secondary);
+}
+
+.stats-row.stats-total {
+    background: var(--bg-tertiary);
+    font-weight: 700;
+    margin-top: var(--spacing-sm);
+}
+
+.stats-col-num {
+    width: 30px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.stats-col-name {
+    width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stats-col {
+    width: 45px;
+    text-align: center;
+}
+
+.stats-points {
+    font-weight: 700;
+    color: var(--primary-light);
+}
+
+/* TO列の後の縦線セパレーター */
+.stats-col-separator {
+    border-right: 2px solid var(--text-muted);
+    padding-right: 8px;
+    margin-right: 4px;
+}
+
+/* TO内訳列 */
+.stats-col-to {
+    width: 32px;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.stats-header .stats-col-to {
+    color: var(--text-muted);
+    opacity: 0.8;
+}

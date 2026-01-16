@@ -1,0 +1,367 @@
+/* JBA Official Scoresheet Styles */
+.jba-scoresheet {
+    background: white;
+    color: black;
+    font-family: "MS Gothic", "Hiragino Kaku Gothic Pro", sans-serif;
+    font-size: 11px;
+    width: 1000px;
+    margin: 0 auto;
+    padding: 10px;
+    border: 1px solid #000;
+}
+
+/* Header */
+.jba-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid black;
+    padding-bottom: 5px;
+}
+
+.jba-logo {
+    font-size: 24px;
+    font-weight: bold;
+    background: #000;
+    color: #fff;
+    padding: 5px 10px;
+}
+
+.jba-title {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+/* Info Rows */
+.jba-info-row {
+    display: flex;
+    border: 1px solid black;
+    border-bottom: none;
+}
+
+.jba-info-row:last-of-type {
+    border-bottom: 1px solid black;
+}
+
+.info-cell {
+    flex: 1;
+    padding: 3px 5px;
+    border-right: 1px solid black;
+    min-height: 20px;
+}
+
+.info-cell:last-child {
+    border-right: none;
+}
+
+.small-text {
+    font-size: 9px;
+    margin-left: 5px;
+}
+
+/* Score Summary */
+.jba-score-summary {
+    display: flex;
+    border: 1px solid black;
+    margin: 5px 0;
+}
+
+.score-label {
+    padding: 5px;
+    border-right: 1px solid black;
+    font-weight: bold;
+}
+
+.score-team-col {
+    flex: 1;
+    border-right: 1px solid black;
+}
+
+.score-team-header {
+    text-align: center;
+    border-bottom: 1px solid black;
+    padding: 2px;
+    font-weight: bold;
+}
+
+.score-box {
+    text-align: center;
+    padding: 5px;
+    font-size: 14px;
+}
+
+.score-officials {
+    flex: 2;
+    padding: 5px;
+    font-size: 10px;
+}
+
+.en {
+    font-size: 9px;
+    color: #666;
+}
+
+/* Main Body */
+.jba-main-body {
+    display: flex;
+    gap: 5px;
+}
+
+/* Teams Section (Left) */
+.jba-teams-section {
+    flex: 0 0 65%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Team Block */
+.team-block {
+    border: 2px solid black;
+    padding: 3px;
+}
+
+.team-header-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid black;
+    padding-bottom: 3px;
+    margin-bottom: 3px;
+}
+
+.team-label {
+    font-weight: bold;
+    width: 60px;
+}
+
+.team-name-box {
+    flex: 1;
+    padding: 0 10px;
+    font-weight: bold;
+}
+
+.timeout-section {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid black;
+    padding: 3px;
+}
+
+.timeout-label {
+    font-size: 10px;
+}
+
+.timeout-boxes {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.timeout-box {
+    width: 16px;
+    height: 16px;
+    border: 1px solid black;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+.timeout-circles {
+    display: flex;
+    gap: 2px;
+}
+
+.circle {
+    font-size: 12px;
+}
+
+.ot-label {
+    font-size: 10px;
+    margin-left: 3px;
+}
+
+/* Team Table Container */
+.team-table-container {
+    display: flex;
+}
+
+/* Players Table */
+.players-table {
+    flex: 1;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+.players-table th,
+.players-table td {
+    border: 1px solid black;
+    padding: 1px 2px;
+    text-align: center;
+    height: 18px;
+}
+
+.players-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+.player-name {
+    text-align: left;
+    min-width: 80px;
+}
+
+/* Team Fouls Section */
+.team-fouls-section {
+    width: 80px;
+    border: 1px solid black;
+    margin-left: 3px;
+    display: flex;
+    flex-direction: column;
+}
+
+.team-fouls-label {
+    text-align: center;
+    font-size: 9px;
+    border-bottom: 1px solid black;
+    padding: 2px;
+    font-weight: bold;
+}
+
+.team-fouls-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 2px;
+}
+
+.foul-quarter-row {
+    display: flex;
+    justify-content: space-around;
+    font-size: 9px;
+    font-weight: bold;
+    margin: 2px 0;
+}
+
+.foul-boxes-row {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 3px;
+}
+
+.foul-box {
+    width: 14px;
+    height: 14px;
+    border: 1px solid black;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+}
+
+.foul-box.filled {
+    background: #333;
+    color: white;
+}
+
+/* Coach Rows */
+.coach-row {
+    border-top: 1px solid black;
+    padding: 2px 5px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.coach-label {
+    min-width: 50px;
+    font-weight: bold;
+}
+
+.coach-name {
+    flex: 1;
+    font-weight: bold;
+}
+
+.coach-fouls {
+    display: flex;
+    gap: 2px;
+}
+
+/* Running Score (Right) */
+.jba-running-score {
+    flex: 1;
+    border: 2px solid black;
+    display: flex;
+    flex-direction: column;
+}
+
+.running-header {
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 2px solid black;
+    padding: 3px;
+    background: #f0f0f0;
+}
+
+.running-columns {
+    display: flex;
+    flex: 1;
+}
+
+.running-table {
+    flex: 1;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+.running-table th {
+    border: 1px solid black;
+    background: #e0e0e0;
+    padding: 2px;
+    width: 25px;
+}
+
+.running-table td {
+    border: 1px solid black;
+    text-align: center;
+    padding: 1px;
+    height: 14px;
+    width: 25px;
+}
+
+.running-table td.scored {
+    position: relative;
+}
+
+.running-table td.scored::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to top right, transparent 45%, black 48%, black 52%, transparent 55%);
+}
+
+.running-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+    border-top: 1px solid black;
+    font-size: 10px;
+}
+
+/* Footer */
+.jba-footer {
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    border: 1px solid black;
+    padding: 5px;
+}

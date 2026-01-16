@@ -1,0 +1,1028 @@
+import { useState, useCallback, useEffect } from 'react';
+import { GameProvider, useGame } from './context/GameContext';
+import type { Team, FoulType } from './types/game';
+import type { SavedTeam } from './utils/teamStorage';
+import type { PendingAction } from './types/pendingAction';
+import { createPendingAction } from './types/pendingAction';
+import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
+import { saveGameResult } from './utils/gameHistoryStorage';
+import { saveGameSession, loadGameSession, clearGameSession } from './utils/gameSessionStorage';
+import { Home } from './components/Home';
+import { MyTeamManager } from './components/MyTeamManager';
+import { GameSetup } from './components/GameSetup';
+import { History } from './components/History';
+import { OpponentManager } from './components/OpponentManager';
+import { Scoreboard } from './components/Scoreboard';
+import { ActionButtons } from './components/ActionButtons';
+import { ActionHistory } from './components/ActionHistory';
+import { VoiceInput } from './components/VoiceInput';
+import { SubstitutionModal } from './components/SubstitutionModal';
+import { StatsPanel } from './components/StatsPanel';
+import { QuarterLineup } from './components/QuarterLineup';
+import { PendingActionPanel } from './components/PendingActionPanel';
+import { PendingActionResolver } from './components/PendingActionResolver';
+import { FoulTypeSelector } from './components/FoulTypeSelector';
+import { RunningScoresheet } from './components/RunningScoresheet';
+import type { VoiceCommand } from './utils/voiceCommands';
+import './App.css';
+
+// アプリの画面状態
+type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet';
+
+function AppContent() {
+  const { state, dispatch } = useGame();
+  const [screen, setScreen] = useState<AppScreen>('home');
+  const [gameName, setGameName] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().substring(0, 10));
+  const [showSubstitutionModal, setShowSubstitutionModal] = useState(false);
+  const [substitutionTeamId, setSubstitutionTeamId] = useState<'teamA' | 'teamB'>('teamA');
+  const [showStats, setShowStats] = useState(false);
+  const [activeTab, setActiveTab] = useState<'teamA' | 'teamB'>('teamA');
+  const [lineupTeamId, setLineupTeamId] = useState<'teamA' | 'teamB'>('teamA');
+  const [showFoulSelector, setShowFoulSelector] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: string; value?: string } | null>(null);
+  const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示
+  const [resolvingPendingAction, setResolvingPendingAction] = useState<PendingAction | null>(null); // 解決中の保留アクション
+  const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
+
+  const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
+
+  // 試合状態が変更されたらセッション保存
+  useEffect(() => {
+    if (screen === 'game' && phase !== 'setup') {
+      saveGameSession(state, gameName, date);
+    }
+  }, [state, screen, gameName, date, phase]);
+
+  // 試合設定完了
+  const handleGameSetupComplete = (setupData: {
+    gameName: string;
+    date: string;
+    myTeam: SavedTeam;
+    opponentTeam: SavedTeam;
+    myTeamColor: 'white' | 'blue';
+    opponentTeamColor: 'white' | 'blue';
+  }) => {
+    // 新しいゲームを開始するため状態をリセット
+    dispatch({ type: 'RESET_GAME' });
+
+    setGameName(setupData.gameName);
+    setDate(setupData.date);
+
+    // Teamインスタンス作成
+    const teamA = savedTeamToTeam(setupData.myTeam, 'teamA');
+    teamA.isMyTeam = true;
+    teamA.color = setupData.myTeamColor;
+
+    const teamB = savedTeamToTeam(setupData.opponentTeam, 'teamB');
+    teamB.isMyTeam = false;
+    teamB.color = setupData.opponentTeamColor;
+
+    // コート上選手はクリア（QuarterLineupで選択）
+    teamA.players = teamA.players.map(p => ({ ...p, isOnCourt: false }));
+    teamB.players = teamB.players.map(p => ({ ...p, isOnCourt: false }));
+
+    dispatch({ type: 'SET_TEAMS', payload: { teamA, teamB } });
+
+    // 相手チームを履歴に保存（念のため更新）
+    saveRecentOpponent(setupData.opponentTeam);
+
+    // Q1スタメン選択画面へ
+    setLineupTeamId('teamA');
+    setScreen('quarterLineup');
+  };
+
+  // 選手選択
+  const handlePlayerSelect = (playerId: string, teamId: string) => {
+    // 保留中のアクションがあれば実行
+    if (pendingAction) {
+      if (pendingAction.type === 'SCORE') {
+        dispatch({
+          type: 'ADD_SCORE',
+          payload: { teamId, playerId, scoreType: pendingAction.value as any },
+        });
+      } else if (pendingAction.type === 'STAT') {
+        dispatch({
+          type: 'ADD_STAT',
+          payload: { teamId, playerId, statType: pendingAction.value as any },
+        });
+      } else if (pendingAction.type === 'MISS') {
+        dispatch({
+          type: 'ADD_STAT',
+          payload: { teamId, playerId, statType: pendingAction.value as any },
+        });
+      } else if (pendingAction.type === 'FOUL') {
+        // ファウルタイプセレクター表示のために選択状態にする
+        dispatch({ type: 'SELECT_PLAYER', payload: { playerId, teamId } });
+        setActiveTab(teamId as 'teamA' | 'teamB');
+        setShowFoulSelector(true);
+        setPendingAction(null);
+        return;
+      }
+
+      setPendingAction(null);
+      dispatch({ type: 'CLEAR_SELECTION' });
+      return;
+    }
+
+    // 通常の選手選択
+    if (selectedPlayerId === playerId) {
+      dispatch({ type: 'CLEAR_SELECTION' });
+    } else {
+      dispatch({ type: 'SELECT_PLAYER', payload: { playerId, teamId } });
+      setActiveTab(teamId as 'teamA' | 'teamB');
+    }
+  };
+
+  // 得点追加
+  const handleScore = (scoreType: '2P' | '3P' | 'FT') => {
+    if (selectedPlayerId && selectedTeamId) {
+      dispatch({
+        type: 'ADD_SCORE',
+        payload: { teamId: selectedTeamId, playerId: selectedPlayerId, scoreType },
+      });
+      dispatch({ type: 'CLEAR_SELECTION' });
+    } else {
+      setPendingAction({ type: 'SCORE', value: scoreType });
+    }
+  };
+
+  // 統計追加
+  const handleStat = (statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM') => {
+    if (selectedPlayerId && selectedTeamId) {
+      dispatch({
+        type: 'ADD_STAT',
+        payload: { teamId: selectedTeamId, playerId: selectedPlayerId, statType },
+      });
+      dispatch({ type: 'CLEAR_SELECTION' });
+    } else {
+      setPendingAction({ type: 'STAT', value: statType });
+    }
+  };
+
+  // シュートミス追加
+  const handleMiss = (missType: '2PA' | '3PA' | 'FTA') => {
+    if (selectedPlayerId && selectedTeamId) {
+      dispatch({
+        type: 'ADD_STAT',
+        payload: { teamId: selectedTeamId, playerId: selectedPlayerId, statType: missType },
+      });
+      dispatch({ type: 'CLEAR_SELECTION' });
+    } else {
+      setPendingAction({ type: 'MISS', value: missType });
+    }
+  };
+
+  // ファウルセレクター表示
+  const handleShowFoulSelector = () => {
+    if (selectedPlayerId && selectedTeamId) {
+      setShowFoulSelector(true);
+    } else {
+      setPendingAction({ type: 'FOUL' });
+    }
+  };
+
+  // ファウル追加
+  const handleFoul = (foulType: FoulType, isTeamFoul?: boolean) => {
+    setShowFoulSelector(false);
+
+    // 保留ファウルアクションを解決する場合
+    if (resolvingFoulPending) {
+      dispatch({
+        type: 'RESOLVE_PENDING_ACTION_WITH_FOUL_TYPE',
+        payload: {
+          pendingActionId: resolvingFoulPending.pendingActionId,
+          playerId: resolvingFoulPending.playerId,
+          foulType,
+        },
+      });
+      setResolvingFoulPending(null);
+      return;
+    }
+
+    // ベンチテクニカルはチームに記録（選手不要）
+    if (isTeamFoul || foulType === 'BT') {
+      dispatch({
+        type: 'ADD_FOUL',
+        payload: { teamId: activeTab, playerId: null, foulType },
+      });
+      return;
+    }
+    // その他のファウルは選手に記録
+    if (!selectedPlayerId || !selectedTeamId) return;
+    dispatch({
+      type: 'ADD_FOUL',
+      payload: { teamId: selectedTeamId, playerId: selectedPlayerId, foulType },
+    });
+    dispatch({ type: 'CLEAR_SELECTION' });
+  };
+
+  const [showCoachFoulSelector, setShowCoachFoulSelector] = useState<{ teamId: 'teamA' | 'teamB' } | null>(null);
+
+  // コーチ・ベンチファウル（選択モーダル表示）
+  const handleCoachFoul = (teamId: 'teamA' | 'teamB') => {
+    setShowCoachFoulSelector({ teamId });
+  };
+
+  // コーチファウル確定
+  const handleConfirmCoachFoul = (type: 'HC' | 'Bench') => {
+    if (!showCoachFoulSelector) return;
+    const { teamId } = showCoachFoulSelector;
+    const foulType: FoulType = type === 'HC' ? 'T' : 'BT'; // HCはT(C), BenchはBT(B)
+    const playerId = type === 'HC' ? 'COACH' : 'BENCH';
+
+    dispatch({
+      type: 'ADD_FOUL',
+      payload: { teamId, playerId, foulType },
+    });
+    setPendingAction(null);
+    setShowCoachFoulSelector(null);
+  };
+
+  // チーム選択して保留アクション作成
+  const handleTeamSelectForPending = (teamId: 'teamA' | 'teamB') => {
+    if (!pendingAction) return;
+
+    const team = teamId === 'teamA' ? state.teamA : state.teamB;
+    const playersOnCourt = team.players
+      .filter(p => p.isOnCourt)
+      .map(p => ({
+        id: p.id,
+        number: p.number,
+        name: p.name,
+        courtName: p.courtName,
+      }));
+
+    const actionType = pendingAction.type === 'SCORE' ? 'SCORE'
+      : pendingAction.type === 'STAT' || pendingAction.type === 'MISS' ? 'STAT'
+        : 'FOUL';
+
+    const newPendingAction = createPendingAction(
+      actionType,
+      pendingAction.value || '',
+      teamId,
+      currentQuarter,
+      playersOnCourt,
+      []
+    );
+
+    dispatch({
+      type: 'ADD_PENDING_ACTION',
+      payload: newPendingAction,
+    });
+
+    setPendingAction(null);
+    setShowTeamSelector(false);
+  };
+
+  // 保留アクション解決
+  const handleResolvePendingAction = (pending: PendingAction) => {
+    setResolvingPendingAction(pending);
+  };
+
+  // 保留アクション解決確定
+  const handleConfirmResolvePending = (playerId: string) => {
+    if (!resolvingPendingAction) return;
+
+    // ファウルタイプの場合はファウル種類選択モーダルを表示
+    if (resolvingPendingAction.actionType === 'FOUL') {
+      setResolvingFoulPending({
+        pendingActionId: resolvingPendingAction.id,
+        playerId,
+        teamId: resolvingPendingAction.teamId,
+      });
+      setActiveTab(resolvingPendingAction.teamId as 'teamA' | 'teamB');
+      setShowFoulSelector(true);
+      setResolvingPendingAction(null);
+      return;
+    }
+
+    dispatch({
+      type: 'RESOLVE_PENDING_ACTION',
+      payload: { pendingActionId: resolvingPendingAction.id, playerId },
+    });
+    setResolvingPendingAction(null);
+  };
+
+  // 保留アクション削除
+  const handleRemovePendingAction = (pendingActionId: string) => {
+    dispatch({
+      type: 'REMOVE_PENDING_ACTION',
+      payload: { pendingActionId },
+    });
+  };
+
+  // 保留アクションの候補選手更新
+  const handleUpdatePendingCandidates = (pendingActionId: string, candidatePlayerIds: string[]) => {
+    dispatch({
+      type: 'UPDATE_PENDING_ACTION_CANDIDATES',
+      payload: { pendingActionId, candidatePlayerIds },
+    });
+  };
+
+  // 保留アクションを不明選手として解決
+  const handleResolveUnknown = (pendingActionId: string) => {
+    dispatch({
+      type: 'RESOLVE_PENDING_ACTION_UNKNOWN',
+      payload: { pendingActionId },
+    });
+  };
+
+  // pendingActionが設定されたらチーム選択モーダルを表示
+  useEffect(() => {
+    if (pendingAction && !selectedPlayerId && !selectedTeamId) {
+      setShowTeamSelector(true);
+    }
+  }, [pendingAction, selectedPlayerId, selectedTeamId]);
+
+
+  // タイムアウト
+  const handleTimeout = (teamId: 'teamA' | 'teamB' = activeTab) => {
+    const elapsedMinutes = 0; // タイマー削除のため時間は記録しない
+    dispatch({
+      type: 'ADD_TIMEOUT',
+      payload: { teamId, elapsedMinutes },
+    });
+  };
+
+  // 交代モーダル表示
+
+
+  // 交代実行
+  const handleSubstitute = (playerInId: string, playerOutId: string) => {
+    dispatch({
+      type: 'SUBSTITUTE_PLAYER',
+      payload: { teamId: substitutionTeamId, playerInId, playerOutId },
+    });
+  };
+
+  // 音声コマンド処理
+  const handleVoiceCommand = useCallback((command: VoiceCommand) => {
+    if (command.type === 'timeout') {
+      handleTimeout();
+      return;
+    }
+
+    if (command.type === 'quarter') {
+      dispatch({ type: 'END_QUARTER' });
+      return;
+    }
+
+    // 背番号から選手を検索
+    if (command.playerNumber) {
+      let targetTeamId: string | null = null;
+      let candidatePlayers = [...state.teamA.players, ...state.teamB.players].filter(p => p.isOnCourt);
+
+      // チームカラーが指定されている場合、対象チームを絞り込む
+      if (command.teamColor) {
+        if (state.teamA.color === command.teamColor) {
+          candidatePlayers = state.teamA.players.filter(p => p.isOnCourt);
+          targetTeamId = 'teamA';
+        } else if (state.teamB.color === command.teamColor) {
+          candidatePlayers = state.teamB.players.filter(p => p.isOnCourt);
+          targetTeamId = 'teamB';
+        }
+      }
+
+      const player = candidatePlayers.find(p => p.number === command.playerNumber);
+
+      if (!player) return;
+
+      // チームIDが確定していない場合は選手から判定
+      const teamId = targetTeamId || (state.teamA.players.includes(player) ? 'teamA' : 'teamB');
+
+      switch (command.type) {
+        case 'score':
+          dispatch({
+            type: 'ADD_SCORE',
+            payload: { teamId, playerId: player.id, scoreType: command.action },
+          });
+          break;
+        case 'stat':
+          dispatch({
+            type: 'ADD_STAT',
+            payload: { teamId, playerId: player.id, statType: command.action },
+          });
+          break;
+        case 'foul':
+          dispatch({
+            type: 'ADD_FOUL',
+            payload: { teamId, playerId: player.id, foulType: command.action as FoulType },
+          });
+          break;
+      }
+    }
+  }, [state.teamA, state.teamB, dispatch]);
+
+  // クォーター開始時のスタメン確定
+  const handleLineupConfirm = (startingPlayerIds: string[]) => {
+    // 選択された選手をコート上に、それ以外をベンチに設定
+    const updatePlayers = (team: Team) => ({
+      ...team,
+      players: team.players.map(p => ({
+        ...p,
+        isOnCourt: startingPlayerIds.includes(p.id),
+        // 出場クォーターを記録
+        quartersPlayed: p.quartersPlayed.map((played, i) =>
+          i === currentQuarter - 1 ? (startingPlayerIds.includes(p.id) ? true : played) : played
+        ),
+      })),
+    });
+
+    if (lineupTeamId === 'teamA') {
+      dispatch({
+        type: 'SET_TEAMS',
+        payload: {
+          teamA: updatePlayers(state.teamA),
+          teamB: state.teamB,
+        },
+      });
+      // Team Bのスタメン選択へ
+      setLineupTeamId('teamB');
+    } else {
+      dispatch({
+        type: 'SET_TEAMS',
+        payload: {
+          teamA: state.teamA,
+          teamB: updatePlayers(state.teamB),
+        },
+      });
+      // 両チーム完了、ゲーム開始/再開
+      setScreen('game');
+      // phase が 'setup' または 'quarterEnd' の場合、START_GAME を呼び出して playing に遷移
+      if (phase === 'setup' || phase === 'quarterEnd') {
+        dispatch({ type: 'START_GAME' });
+      }
+    }
+  };
+
+  // クォーター終了時にスタメン選択へ
+  const handleQuarterEnd = useCallback(() => {
+    dispatch({ type: 'END_QUARTER' });
+    if (currentQuarter < 4) {
+      setLineupTeamId('teamA');
+      setScreen('quarterLineup');
+    }
+  }, [currentQuarter, dispatch]);
+
+
+
+  // 試合終了・保存してホームへ
+  const handleGameFinished = () => {
+    // 試合結果を保存
+    saveGameResult(
+      gameName,
+      state.teamA,
+      state.teamB,
+      state.scoreHistory,
+      new Date(date)
+    );
+
+    // セッションデータをクリア
+    clearGameSession();
+
+    // ホームへ戻る
+    setScreen('home');
+  };
+
+  // ホーム画面に戻る
+  const handleBackToHome = () => {
+    setScreen('home');
+  };
+
+  // 試合を再開
+  const handleResumeGame = () => {
+    const session = loadGameSession();
+    if (session) {
+      dispatch({ type: 'RESTORE_GAME', payload: { game: session.game } });
+      setGameName(session.gameName);
+      setDate(session.date);
+      setScreen('game');
+    }
+  };
+
+  // スコア履歴から削除
+  const handleRemoveScore = (entryId: string) => {
+    dispatch({ type: 'REMOVE_SCORE', payload: { entryId } });
+  };
+
+  // 統計履歴から削除
+  const handleRemoveStat = (entryId: string) => {
+    dispatch({ type: 'REMOVE_STAT', payload: { entryId } });
+  };
+
+  // ファウル履歴から削除
+  const handleRemoveFoul = (entryId: string) => {
+    dispatch({ type: 'REMOVE_FOUL', payload: { entryId } });
+  };
+
+  // スコア編集
+  const handleEditScore = (entryId: string, newPlayerId: string, newScoreType: string) => {
+    dispatch({ type: 'EDIT_SCORE', payload: { entryId, newPlayerId, newScoreType } });
+  };
+
+  // スタッツ編集
+  const handleEditStat = (entryId: string, newPlayerId: string, newStatType: string) => {
+    dispatch({ type: 'EDIT_STAT', payload: { entryId, newPlayerId, newStatType } });
+  };
+
+  // 成功 → ミス変換
+  const handleConvertScoreToMiss = (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => {
+    dispatch({ type: 'CONVERT_SCORE_TO_MISS', payload: { entryId, newMissType } });
+  };
+
+  // ミス → 成功変換
+  const handleConvertMissToScore = (entryId: string, newScoreType: '2P' | '3P' | 'FT') => {
+    dispatch({ type: 'CONVERT_MISS_TO_SCORE', payload: { entryId, newScoreType } });
+  };
+
+  // フルスクリーン制御
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const toggleFullScreen = async () => {
+    try {
+      const doc = document as any;
+      const elem = document.documentElement as any;
+
+      const isFs = doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement;
+
+      if (!isFs) {
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+          await elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) {
+          await elem.msRequestFullscreen();
+        } else if (elem.mozRequestFullScreen) {
+          await elem.mozRequestFullScreen();
+        }
+      } else {
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        } else if (doc.msExitFullscreen) {
+          await doc.msExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+          await doc.mozCancelFullScreen();
+        }
+      }
+    } catch (err) {
+      console.error('フルスクリーン切り替えエラー:', err);
+      alert('全画面表示に切り替えられませんでした。ブラウザの設定を確認してください。');
+    }
+  };
+
+  // フルスクリーン状態の監視（ESCキーなどで解除された場合に対応）
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      const doc = document as any;
+      const isFs = !!(doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement);
+      setIsFullScreen(isFs);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullScreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullScreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullScreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullScreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullScreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullScreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullScreenChange);
+    };
+  }, []);
+
+  if (screen === 'home') {
+    return (
+      <Home
+        onStartGame={() => setScreen('gameSetup')}
+        onManageTeams={() => setScreen('myTeamManager')}
+        onViewHistory={() => setScreen('history')}
+        onManageOpponents={() => setScreen('opponentManager')}
+        onResumeGame={handleResumeGame}
+        isFullScreen={isFullScreen}
+        onToggleFullScreen={toggleFullScreen}
+      />
+    );
+  }
+
+  // マイチーム管理画面
+  if (screen === 'myTeamManager') {
+    return (
+      <MyTeamManager
+        onBack={handleBackToHome}
+      />
+    );
+  }
+
+  // 対戦チーム管理画面
+  if (screen === 'opponentManager') {
+    return <OpponentManager onBack={handleBackToHome} />;
+  }
+
+  // 試合設定画面
+  if (screen === 'gameSetup') {
+    return (
+      <GameSetup
+        onComplete={handleGameSetupComplete}
+        onBack={handleBackToHome}
+      />
+    );
+  }
+
+  // 履歴画面
+  if (screen === 'history') {
+    return <History onBack={handleBackToHome} />;
+  }
+
+  // スコアシート画面
+  if (screen === 'scoresheet') {
+    return (
+      <RunningScoresheet
+        game={state}
+        gameName={gameName}
+        date={date}
+        onClose={() => setScreen('game')}
+      />
+    );
+  }
+
+  // クォーターごとのスタメン選択画面
+  if (screen === 'quarterLineup') {
+    const lineupTeam = lineupTeamId === 'teamA' ? state.teamA : state.teamB;
+    return (
+      <QuarterLineup
+        quarter={currentQuarter}
+        teamName={lineupTeam.name}
+        players={lineupTeam.players}
+        onConfirm={handleLineupConfirm}
+        onBack={lineupTeamId === 'teamA' ? () => setScreen('game') : undefined}
+      />
+    );
+  }
+
+  // 旧セットアップ画面（フォールバック）
+
+
+
+
+  // ゲーム画面
+  return (
+    <div className="app-container">
+      {/* ヘッダー */}
+      <header className="app-header">
+        <div className="header-left">
+          <button className="btn btn-secondary btn-small" onClick={handleBackToHome}>
+            🏠
+          </button>
+          <button className="btn btn-secondary btn-small" onClick={toggleFullScreen} style={{ marginLeft: '8px' }}>
+            {isFullScreen ? '縮小' : '全画面'}
+          </button>
+
+        </div>
+        <div className="header-center">
+          <VoiceInput onCommand={handleVoiceCommand} />
+        </div>
+        <div className="header-right">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setScreen('scoresheet')}
+            style={{ marginRight: '12px' }}
+          >
+            📄 スコアシート
+          </button>
+          <button
+            className={`btn ${showStats ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setShowStats(!showStats)}
+          >
+            📊 統計
+          </button>
+        </div>
+      </header>
+
+      {/* メインコンテンツ */}
+      <main className="app-main">
+        {showStats ? (
+          <div className="stats-view">
+
+            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} />
+            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} />
+          </div>
+        ) : (
+          <>
+            {/* スコアボード */}
+            <div className="scoreboard-section">
+              <Scoreboard
+                onQuarterEnd={handleQuarterEnd}
+                onTimeout={handleTimeout}
+              />
+            </div>
+
+            {/* 3列メインエリア: Team A | Actions | Team B */}
+            <div className="game-main-area">
+              {/* Left: Team A */}
+              <div className={`team-panel team-a color-${state.teamA.color} ${selectedTeamId === 'teamA' ? 'active' : ''}`}>
+                <div className="team-panel-header">
+                  <span className="team-name">{state.teamA.name}</span>
+                  <span className="team-score">
+                    {state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0)}
+                  </span>
+                </div>
+                <div className="team-players">
+                  {state.teamA.players.filter(p => p.isOnCourt).map(player => (
+                    <div
+                      key={player.id}
+                      className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
+                      onClick={() => handlePlayerSelect(player.id, 'teamA')}
+                    >
+                      <span className="player-num">
+                        #{player.number}
+                        {state.teamA.isMyTeam
+                          ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
+                          : ''}
+                      </span>
+                      <span className="player-pts">{player.stats.points}</span>
+                      {player.fouls.length > 0 && (
+                        <span className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
+                          F{player.fouls.length}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="team-bench">
+                  {state.teamA.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (
+                    <span key={p.id} className="bench-num" onClick={() => handlePlayerSelect(p.id, 'teamA')}>
+                      #{p.number}
+                    </span>
+                  ))}
+                  <div className="bench-actions">
+                    <button className="btn btn-small" onClick={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}>
+                      交代
+                    </button>
+                    <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamA')}>
+                      コーチファウル
+                    </button>
+                  </div>
+                </div>
+                {/* アクション履歴 */}
+                <ActionHistory
+                  teamId="teamA"
+                  teamName={state.teamA.name}
+                  scoreHistory={state.scoreHistory}
+                  statHistory={state.statHistory}
+                  foulHistory={state.foulHistory}
+                  players={state.teamA.players}
+                  onRemoveScore={handleRemoveScore}
+                  onRemoveStat={handleRemoveStat}
+                  onRemoveFoul={handleRemoveFoul}
+                  onEditScore={handleEditScore}
+                  onEditStat={handleEditStat}
+                  onConvertScoreToMiss={handleConvertScoreToMiss}
+                  onConvertMissToScore={handleConvertMissToScore}
+                />
+
+              </div>
+
+              {/* Center: Action Buttons */}
+              <div className={`center-actions-area ${pendingAction ? 'active' : ''}`}>
+                <ActionButtons
+                  onScore={handleScore}
+                  onStat={handleStat}
+                  onMiss={handleMiss}
+                  onFoul={handleShowFoulSelector}
+                  disabled={phase === 'finished'}
+                  hasSelection={!!selectedPlayerId}
+                  activeAction={pendingAction}
+                />
+              </div>
+
+              {/* Right: Team B */}
+              <div className={`team-panel team-b color-${state.teamB.color} ${selectedTeamId === 'teamB' ? 'active' : ''}`}>
+                <div className="team-panel-header">
+                  <span className="team-name">{state.teamB.name}</span>
+                  <span className="team-score">
+                    {state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0)}
+                  </span>
+                </div>
+                <div className="team-players">
+                  {state.teamB.players.filter(p => p.isOnCourt).map(player => (
+                    <div
+                      key={player.id}
+                      className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
+                      onClick={() => handlePlayerSelect(player.id, 'teamB')}
+                    >
+                      <span className="player-num">
+                        #{player.number}
+                        {state.teamB.isMyTeam
+                          ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
+                          : ''}
+                      </span>
+                      <span className="player-pts">{player.stats.points}</span>
+                      {player.fouls.length > 0 && (
+                        <span className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
+                          F{player.fouls.length}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="team-bench">
+                  {state.teamB.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (
+                    <span key={p.id} className="bench-num" onClick={() => handlePlayerSelect(p.id, 'teamB')}>
+                      #{p.number}
+                    </span>
+                  ))}
+                  <div className="bench-actions">
+                    <button className="btn btn-small" onClick={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}>
+                      交代
+                    </button>
+                    <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamB')}>
+                      コーチファウル
+                    </button>
+                  </div>
+                </div>
+                {/* アクション履歴 */}
+                <ActionHistory
+                  teamId="teamB"
+                  teamName={state.teamB.name}
+                  scoreHistory={state.scoreHistory}
+                  statHistory={state.statHistory}
+                  foulHistory={state.foulHistory}
+                  players={state.teamB.players}
+                  onRemoveScore={handleRemoveScore}
+                  onRemoveStat={handleRemoveStat}
+                  onRemoveFoul={handleRemoveFoul}
+                  onEditScore={handleEditScore}
+                  onEditStat={handleEditStat}
+                  onConvertScoreToMiss={handleConvertScoreToMiss}
+                  onConvertMissToScore={handleConvertMissToScore}
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </main>
+
+      {/* ファウル種類選択モーダル */}
+      {showFoulSelector && (
+        <FoulTypeSelector
+          onSelect={handleFoul}
+          onCancel={() => {
+            setShowFoulSelector(false);
+            setResolvingFoulPending(null);
+          }}
+          hasSelectedPlayer={!!selectedPlayerId || !!resolvingFoulPending}
+        />
+      )}
+
+      {/* 交代モーダル */}
+      {showSubstitutionModal && (
+        <SubstitutionModal
+          teamName={substitutionTeamId === 'teamA' ? state.teamA.name : state.teamB.name}
+          teamId={substitutionTeamId}
+          players={substitutionTeamId === 'teamA' ? state.teamA.players : state.teamB.players}
+          onSubstitute={handleSubstitute}
+          onClose={() => setShowSubstitutionModal(false)}
+        />
+      )}
+
+      {/* チーム選択モーダル（保留アクション作成用） */}
+      {showTeamSelector && pendingAction && (
+        <div className="team-selector-overlay" onClick={() => { setShowTeamSelector(false); setPendingAction(null); }}>
+          <div className="team-selector-modal" onClick={e => e.stopPropagation()}>
+            <h3>チームを選択</h3>
+            <p className="team-selector-action">
+              {pendingAction.type === 'SCORE' ? `${pendingAction.value}成功` :
+                pendingAction.type === 'STAT' ? pendingAction.value :
+                  pendingAction.type === 'MISS' ? `${pendingAction.value}` :
+                    'ファウル'}
+            </p>
+            <div className="team-selector-buttons">
+              <button
+                className={`team-select-btn team-a color-${state.teamA.color}`}
+                onClick={() => handleTeamSelectForPending('teamA')}
+              >
+                <span className="team-name">{state.teamA.name}</span>
+                <span className="team-color">{state.teamA.color === 'white' ? '白' : '青'}</span>
+              </button>
+              <button
+                className={`team-select-btn team-b color-${state.teamB.color}`}
+                onClick={() => handleTeamSelectForPending('teamB')}
+              >
+                <span className="team-name">{state.teamB.name}</span>
+                <span className="team-color">{state.teamB.color === 'white' ? '白' : '青'}</span>
+              </button>
+            </div>
+            <button
+              className="btn btn-secondary"
+              onClick={() => { setShowTeamSelector(false); setPendingAction(null); }}
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Team A 保留アクション (左下) */}
+      {pendingActions.filter(p => p.teamId === 'teamA').length > 0 && (
+        <div className="pending-actions-floating-left">
+          <PendingActionPanel
+            pendingActions={pendingActions.filter(p => p.teamId === 'teamA')}
+            onResolve={handleResolvePendingAction}
+            onResolveUnknown={handleResolveUnknown}
+            onRemove={handleRemovePendingAction}
+            onUpdateCandidates={handleUpdatePendingCandidates}
+          />
+        </div>
+      )}
+
+      {/* Team B 保留アクション (右下) */}
+      {pendingActions.filter(p => p.teamId === 'teamB').length > 0 && (
+        <div className="pending-actions-floating-right">
+          <PendingActionPanel
+            pendingActions={pendingActions.filter(p => p.teamId === 'teamB')}
+            onResolve={handleResolvePendingAction}
+            onResolveUnknown={handleResolveUnknown}
+            onRemove={handleRemovePendingAction}
+            onUpdateCandidates={handleUpdatePendingCandidates}
+          />
+        </div>
+      )}
+
+      {/* 保留アクション解決モーダル */}
+      {resolvingPendingAction && (
+        <PendingActionResolver
+          pendingAction={resolvingPendingAction}
+          onResolve={handleConfirmResolvePending}
+          onCancel={() => setResolvingPendingAction(null)}
+        />
+      )}
+
+
+      {/* 試合終了表示 */}
+      {phase === 'finished' && (
+        <div className="game-finished-overlay">
+          <div className="game-finished-content">
+            <h2>試合終了</h2>
+            <div className="final-score">
+              <span>{state.teamA.name}</span>
+              <span className="final-score-value">
+                {state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0)}
+              </span>
+              <span>-</span>
+              <span className="final-score-value">
+                {state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0)}
+              </span>
+              <span>{state.teamB.name}</span>
+            </div>
+            <div className="game-finished-actions">
+              <button className="btn btn-primary btn-large" onClick={() => setShowStats(true)}>
+                統計を見る
+              </button>
+              <button className="btn btn-primary btn-large" onClick={handleGameFinished}>
+                保存して終了
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={handleBackToHome}>
+                保存せずにホームへ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* コーチファウル選択モーダル */}
+      {showCoachFoulSelector && (
+        <div className="modal-overlay" onClick={() => setShowCoachFoulSelector(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>コーチファウル種類</h3>
+            <div className="modal-actions-column">
+              <button className="btn btn-danger btn-large" onClick={() => handleConfirmCoachFoul('HC')}>
+                ヘッドコーチ (C)
+                <span className="btn-desc">テクニカルファウル</span>
+              </button>
+              <button className="btn btn-warning btn-large" onClick={() => handleConfirmCoachFoul('Bench')}>
+                ベンチ (B)
+                <span className="btn-desc">テクニカルファウル</span>
+              </button>
+            </div>
+            <button className="btn btn-secondary" onClick={() => setShowCoachFoulSelector(null)}>
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <GameProvider>
+      <AppContent />
+    </GameProvider>
+  );
+}
+
+export default App;

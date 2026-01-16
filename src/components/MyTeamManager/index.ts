@@ -1,0 +1,1 @@
+export { MyTeamManager } from './MyTeamManager';

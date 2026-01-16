@@ -1,0 +1,299 @@
+.my-team-manager {
+    padding: var(--spacing-lg);
+    background: var(--bg-primary);
+    min-height: 100vh;
+}
+
+.manager-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.manager-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.manager-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.team-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.list-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: var(--spacing-xl);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--border);
+}
+
+.team-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.team-card-info {
+    margin-bottom: var(--spacing-md);
+}
+
+.team-card-name {
+    margin: 0 0 var(--spacing-xs);
+    color: var(--primary);
+}
+
+.team-card-detail {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin: 0 0 var(--spacing-sm);
+}
+
+.team-card-players {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.team-card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+    margin-top: auto;
+}
+
+/* Editor Styles */
+.my-team-editor {
+    padding: var(--spacing-lg);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.editor-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.editor-form {
+    background: var(--bg-secondary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+.form-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.form-label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.input {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+}
+
+.add-player-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.player-number-input {
+    width: 80px;
+}
+
+.player-name-input {
+    flex: 1;
+}
+
+.player-courtname-input {
+    flex: 0.8;
+}
+
+.players-list {
+    display: grid;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.player-edit-card {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    gap: var(--spacing-md);
+}
+
+.player-number {
+    font-weight: 800;
+    width: 40px;
+    color: var(--primary);
+}
+
+.player-name {
+    flex: 1;
+}
+
+.player-courtname {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    flex: 0.8;
+}
+
+.clickable {
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.clickable:hover {
+    color: var(--primary);
+    background: var(--bg-hover);
+    border-radius: var(--radius-sm);
+    padding: 2px 4px;
+    margin: -2px -4px;
+}
+
+.player-edit-card.editing {
+    background: var(--primary-light);
+    border: 2px solid var(--primary);
+}
+
+.player-edit-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border);
+}
+
+.ocr-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-muted);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 400px;
+    border: 1px solid var(--border);
+    animation: slideUp 0.2s ease;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.my-2 {
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+@media (max-width: 600px) {
+    .team-list {
+        grid-template-columns: 1fr;
+    }
+
+    .team-card-actions {
+        flex-wrap: wrap;
+    }
+
+    .editor-actions {
+        flex-direction: column-reverse;
+    }
+
+    .editor-actions button {
+        width: 100%;
+    }
+
+    .modal-actions button {
+        flex: 1;
+    }
+}

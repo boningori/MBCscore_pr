@@ -1,0 +1,266 @@
+.opponent-manager-container {
+    padding: var(--spacing-lg);
+    background: var(--bg-primary);
+    min-height: 100vh;
+}
+
+.opponent-manager-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.opponent-manager-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.opponent-manager-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.add-team-btn {
+    width: 100%;
+    margin-bottom: var(--spacing-lg);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-muted);
+}
+
+.teams-list {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.team-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border);
+}
+
+.team-info h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+    color: var(--text-primary);
+}
+
+.team-info p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.team-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Edit Form */
+.team-edit-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.players-section {
+    margin-top: var(--spacing-xl);
+}
+
+.players-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.players-header h3 {
+    margin: 0;
+}
+
+.players-list {
+    display: grid;
+    gap: var(--spacing-sm);
+}
+
+/* Player Input Styles */
+.add-player-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.player-edit-row {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    gap: var(--spacing-md);
+}
+
+.player-number {
+    font-weight: 800;
+    width: 40px;
+    color: var(--primary);
+}
+
+.player-name {
+    flex: 1;
+}
+
+.player-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* クリック可能な要素 */
+.player-number.clickable,
+.player-name.clickable {
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.player-number.clickable:hover,
+.player-name.clickable:hover {
+    color: var(--primary-light);
+}
+
+/* 編集中の行 */
+.player-edit-row.editing {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid var(--primary);
+}
+
+.player-number-input {
+    width: 80px;
+    padding: var(--spacing-sm);
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.player-name-input {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.form-actions {
+    margin-top: var(--spacing-xl);
+    text-align: center;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 400px;
+    border: 1px solid var(--border);
+    animation: slideUp 0.2s ease;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.my-2 {
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+@media (max-width: 600px) {
+    .modal-actions button {
+        flex: 1;
+    }
+}
+
+/* OCR Styles */
+.players-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.ocr-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-muted);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

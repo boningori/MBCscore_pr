@@ -1,0 +1,119 @@
+.voice-input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.voice-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-full);
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    min-height: var(--touch-target);
+}
+
+.voice-toggle-btn:hover {
+    background: var(--border);
+}
+
+.voice-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.voice-toggle-btn.listening {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: var(--danger);
+    animation: pulse-listening 1.5s infinite;
+}
+
+@keyframes pulse-listening {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+    }
+}
+
+.voice-icon {
+    font-size: 20px;
+}
+
+.voice-status {
+    font-size: var(--font-size-sm);
+}
+
+.voice-feedback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    min-width: 200px;
+}
+
+.voice-transcript {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.voice-command-feedback {
+    font-size: var(--font-size-sm);
+    color: var(--secondary-light);
+    font-weight: 600;
+}
+
+.voice-error {
+    font-size: var(--font-size-sm);
+    color: var(--danger);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: var(--radius-sm);
+}
+
+.voice-input-unsupported {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* オフライン状態 */
+.voice-input-offline {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-full);
+    color: var(--danger);
+    font-size: var(--font-size-sm);
+}
+
+.voice-icon.disabled {
+    opacity: 0.5;
+}
+
+.offline-label {
+    font-weight: 500;
+}

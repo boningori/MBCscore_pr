@@ -1,0 +1,135 @@
+.opponent-select {
+    padding: var(--spacing-lg);
+}
+
+.saved-opponents-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.saved-opponents-section h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.select-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.select-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.select-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.history-section h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.history-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.opponent-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.opponent-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.opponent-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.opponent-name {
+    margin: 0 0 4px;
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+}
+
+.opponent-detail {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.opponent-select-btn {
+    background: var(--primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+/* Editor Styles */
+.opponent-editor {
+    padding: var(--spacing-lg);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.players-list-simple {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    min-height: 100px;
+}
+
+.player-chip {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.remove-btn:hover {
+    color: var(--danger);
+}

@@ -1,0 +1,283 @@
+.swipeable-rebound-wrapper {
+    position: relative;
+    flex: 1;
+    width: 100%;
+}
+
+.swipeable-rebound-btn {
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y;
+    min-height: 70px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+}
+
+.rebound-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: transform 0.15s ease;
+}
+
+.rebound-content .action-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: inherit;
+}
+
+.rebound-content .action-hint {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    font-weight: 500;
+}
+
+/* スワイプ中のビジュアルフィードバック */
+.swipeable-rebound-btn.swiping-up {
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.3) 0%, transparent 50%);
+}
+
+.swipeable-rebound-btn.swiping-up .rebound-content {
+    transform: translateY(-4px);
+}
+
+.swipeable-rebound-btn.swiping-down {
+    background: linear-gradient(0deg, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
+}
+
+.swipeable-rebound-btn.swiping-down .rebound-content {
+    transform: translateY(4px);
+}
+
+/* アクティブ状態（リバウンド選択済み） */
+.swipeable-rebound-btn.active-oreb {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border-color: #34d399;
+}
+
+.swipeable-rebound-btn.active-dreb {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    border-color: #60a5fa;
+}
+
+/* スワイプ中のポップアップ（指を離すと確定） */
+.swipe-popup {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+    animation: popIn 0.15s ease;
+    pointer-events: none;
+}
+
+.swipe-popup.oreb {
+    bottom: calc(100% + 12px);
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.swipe-popup.dreb {
+    bottom: calc(100% + 12px);
+    top: auto;
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+.swipe-popup-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+}
+
+.swipe-popup-content .popup-label {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.swipe-popup-content .popup-sublabel {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.swipe-popup-content .popup-hint {
+    font-size: 0.65rem;
+    opacity: 0.7;
+    margin-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    padding-top: 4px;
+}
+
+.swipe-popup-cancel {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.swipe-popup-cancel:hover,
+.swipe-popup-cancel:active {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* タップ時のセレクター */
+.rebound-selector-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+}
+
+.rebound-selector {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: var(--bg-secondary, #1e293b);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 101;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.rebound-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    min-width: 70px;
+}
+
+.rebound-option .option-label {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.rebound-option .option-sublabel {
+    font-size: 0.65rem;
+    opacity: 0.85;
+}
+
+.rebound-option.oreb {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: white;
+}
+
+.rebound-option.oreb:hover,
+.rebound-option.oreb:active {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    transform: scale(1.05);
+}
+
+.rebound-option.dreb {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: white;
+}
+
+.rebound-option.dreb:hover,
+.rebound-option.dreb:active {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    transform: scale(1.05);
+}
+
+/* モバイル最適化 */
+@media (max-width: 600px) {
+    .swipeable-rebound-btn {
+        min-height: 60px;
+    }
+
+    .swipe-popup-btn {
+        padding: 12px 20px;
+    }
+
+    .swipe-popup-btn .popup-label {
+        font-size: 1.4rem;
+    }
+}
+
+.rebound-option.oreb {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: white;
+}
+
+.rebound-option.oreb:hover,
+.rebound-option.oreb:active {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    transform: scale(1.05);
+}
+
+.rebound-option.dreb {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: white;
+}
+
+.rebound-option.dreb:hover,
+.rebound-option.dreb:active {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    transform: scale(1.05);
+}
+
+/* モバイル最適化 */
+@media (max-width: 600px) {
+    .swipeable-rebound-btn {
+        min-height: 60px;
+    }
+
+    .rebound-option {
+        padding: 10px 16px;
+        min-width: 60px;
+    }
+
+    .rebound-option .option-label {
+        font-size: 1.2rem;
+    }
+}

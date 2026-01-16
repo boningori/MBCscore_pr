@@ -1,0 +1,780 @@
+/* ミニバスケットボール スコアシートアプリ - グローバルスタイル */
+
+:root {
+  /* カラーパレット */
+  --primary: #1e40af;
+  --primary-light: #3b82f6;
+  --primary-dark: #1e3a8a;
+
+  --secondary: #059669;
+  --secondary-light: #10b981;
+
+  --danger: #dc2626;
+  --danger-light: #f87171;
+
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+
+  /* クォーター色分け (ミニバスルール) */
+  --quarter-1-3: #dc2626;
+  /* 1Q, 3Q = 赤 */
+  --quarter-2-4: #1f2937;
+  /* 2Q, 4Q = 黒 */
+
+  /* チームカラー（白/青） */
+  --team-white: #e2e8f0;
+  /* 白チーム */
+  --team-white-light: #f8fafc;
+  --team-white-bg: rgba(226, 232, 240, 0.15);
+
+  --team-blue: #3b82f6;
+  /* 青チーム */
+  --team-blue-light: #60a5fa;
+  --team-blue-bg: rgba(59, 130, 246, 0.15);
+
+  /* アクティブ強調色（ピンク） */
+  --active-highlight: #ec4899;
+  --active-highlight-light: #f472b6;
+  --active-highlight-bg: rgba(236, 72, 153, 0.2);
+
+  /* 後方互換用（非推奨） */
+  --team-a: #3b82f6;
+  --team-a-light: #60a5fa;
+  --team-a-bg: #dbeafe;
+
+  --team-b: #dc2626;
+  --team-b-light: #f87171;
+  --team-b-bg: #fee2e2;
+
+  /* ニュートラル */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-card: #1e293b;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --border: #334155;
+  --border-light: #475569;
+
+  /* タッチ最適化 */
+  --touch-target: 48px;
+  --touch-target-large: 64px;
+
+  /* スペーシング */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* フォント */
+  --font-score: 'Inter', system-ui, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 48px;
+  --font-size-score: 72px;
+
+  /* ボーダー */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* シャドウ */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+  /* トランジション */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+/* リセット */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+body {
+  font-family: var(--font-score);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 共通コンポーネント */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-light);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--border-light);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: var(--danger-light);
+}
+
+.btn-success {
+  background: var(--secondary);
+  color: white;
+}
+
+.btn-success:hover {
+  background: var(--secondary-light);
+}
+
+.btn-large {
+  min-width: var(--touch-target-large);
+  min-height: var(--touch-target-large);
+  font-size: var(--font-size-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.btn-score {
+  min-width: 80px;
+  min-height: 60px;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+/* アクションボタン */
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+  min-height: 60px;
+  padding: var(--spacing-sm);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+  background: var(--border);
+}
+
+.action-btn.selected {
+  border-color: var(--active-highlight);
+  background: var(--active-highlight-bg);
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.3);
+}
+
+/* アクティブ状態（アクション先行入力モード） */
+.action-btn.active {
+  border-color: var(--active-highlight);
+  background: var(--active-highlight-bg);
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.4);
+  animation: pulse-pink 1.5s infinite;
+}
+
+@keyframes pulse-pink {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.2);
+  }
+}
+
+.action-btn .icon {
+  font-size: 24px;
+  margin-bottom: 2px;
+}
+
+/* 入力フィールド */
+.input {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-md);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-light);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* カード */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+
+.card-header {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+/* 選手カード */
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 60px;
+}
+
+.player-card:active {
+  transform: scale(0.98);
+}
+
+.player-card.selected {
+  border-color: var(--primary-light);
+  background: rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.player-card.on-court {
+  border-left: 4px solid var(--secondary);
+}
+
+.player-card.fouled-out {
+  opacity: 0.5;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.player-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.player-name {
+  flex: 1;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+}
+
+.player-name.captain::after {
+  content: ' (C)';
+  color: var(--warning);
+  font-size: var(--font-size-sm);
+}
+
+.player-stats {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.player-fouls {
+  display: flex;
+  gap: 2px;
+}
+
+.foul-indicator {
+  width: 16px;
+  height: 16px;
+  background: var(--warning);
+  border-radius: 2px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  font-weight: 700;
+}
+
+.foul-indicator:nth-child(5) {
+  background: var(--danger);
+  color: white;
+}
+
+/* スコアボード */
+.scoreboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border-radius: var(--radius-lg);
+}
+
+.scoreboard-teams {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xl);
+  width: 100%;
+  justify-content: center;
+}
+
+.team-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.team-name {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.team-name.team-a {
+  color: var(--team-a-light);
+}
+
+.team-name.team-b {
+  color: var(--team-b-light);
+}
+
+.score-value {
+  font-size: var(--font-size-score);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-separator {
+  font-size: var(--font-size-3xl);
+  font-weight: 300;
+  color: var(--text-muted);
+}
+
+/* タイマー */
+.timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.timer-value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.timer-value.running {
+  color: var(--secondary-light);
+}
+
+.timer-value.paused {
+  color: var(--warning);
+}
+
+.timer-value.ended {
+  color: var(--danger);
+}
+
+.quarter-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.quarter-badge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
+
+.quarter-badge.q1,
+.quarter-badge.q3 {
+  background: var(--quarter-1-3);
+  color: white;
+}
+
+.quarter-badge.q2,
+.quarter-badge.q4 {
+  background: var(--quarter-2-4);
+  color: white;
+}
+
+/* 音声入力 */
+.voice-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+}
+
+.voice-indicator.listening {
+  background: rgba(220, 38, 38, 0.2);
+  animation: pulse 1.5s infinite;
+}
+
+.voice-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-icon.active {
+  color: var(--danger);
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* アラート・警告 */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.alert-warning {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+}
+
+.alert-danger {
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.alert-success {
+  background: rgba(5, 150, 105, 0.2);
+  border: 1px solid var(--secondary);
+  color: var(--secondary-light);
+}
+
+/* グリッドレイアウト */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+}
+
+.grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-md);
+}
+
+/* フレックスレイアウト */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.gap-md {
+  gap: var(--spacing-md);
+}
+
+.gap-lg {
+  gap: var(--spacing-lg);
+}
+
+/* スペーシング */
+.p-sm {
+  padding: var(--spacing-sm);
+}
+
+.p-md {
+  padding: var(--spacing-md);
+}
+
+.p-lg {
+  padding: var(--spacing-lg);
+}
+
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* テキスト */
+.text-center {
+  text-align: center;
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+}
+
+.text-xl {
+  font-size: var(--font-size-xl);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease;
+}
+
+/* モーダル */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: var(--spacing-md);
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.modal-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.modal-close {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .score-value {
+    font-size: var(--font-size-3xl);
+  }
+
+  .timer-value {
+    font-size: var(--font-size-2xl);
+  }
+
+  .grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 横向きタブレット最適化 */
+@media (min-width: 768px) and (orientation: landscape) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: var(--spacing-md);
+    height: 100vh;
+    padding: var(--spacing-md);
+  }
+
+  .app-layout>* {
+    overflow-y: auto;
+  }
+}

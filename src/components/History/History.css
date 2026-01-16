@@ -1,0 +1,240 @@
+.history-container {
+    padding: var(--spacing-lg);
+    background: var(--bg-primary);
+    min-height: 100vh;
+}
+
+/* History page header - use specific selector to override ActionHistory.css */
+.history-container .history-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    padding: 0;
+    height: auto;
+    background: transparent;
+    border-bottom: none;
+}
+
+.history-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.history-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-top: var(--spacing-lg);
+}
+
+.history-empty {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-muted);
+}
+
+/* History page list - use specific selector to override ActionHistory.css */
+.history-container .history-list {
+    display: grid;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-md);
+    margin: 0;
+    overflow: visible;
+}
+
+/* History page cards */
+.history-container .history-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    border: 1px solid var(--border);
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.history-container .history-card:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.history-container .history-card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+    padding-right: 60px;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.history-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.history-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    padding: var(--spacing-sm) 0;
+}
+
+.history-team {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+}
+
+.team-name {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+}
+
+.team-score-val {
+    font-size: var(--font-size-2xl);
+}
+
+.vs-divider {
+    color: var(--text-muted);
+}
+
+.history-container .delete-btn {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    padding: 4px 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.history-container .history-card:hover .delete-btn {
+    opacity: 1;
+}
+
+/* Detail View */
+.history-detail-view {
+    padding: var(--spacing-lg);
+    background: var(--bg-primary);
+    min-height: 100vh;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 400px;
+    border: 1px solid var(--border);
+    animation: slideUp 0.2s ease;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.my-2 {
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Tabs */
+.history-tabs {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.history-tabs button {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.history-tabs button:hover {
+    color: var(--text-primary);
+}
+
+.history-tabs button.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* Download Actions */
+.download-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.scoresheet-view {
+    background: var(--bg-tertiary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+
+#scoresheet-container {
+    background: white;
+    padding: var(--spacing-lg);
+    min-width: 800px;
+    /* Ensure layout doesn't break */
+}

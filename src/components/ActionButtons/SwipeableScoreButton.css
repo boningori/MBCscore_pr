@@ -1,0 +1,200 @@
+.swipeable-score-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 90px;
+}
+
+.swipeable-score-btn {
+    width: 100%;
+    min-height: 90px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 8px 4px;
+    transition: all 0.15s ease;
+    touch-action: none;
+    user-select: none;
+}
+
+.swipeable-score-btn .score-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 1;
+    width: 100%;
+}
+
+.swipeable-score-btn .action-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.swipeable-score-btn .action-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.swipeable-score-btn .action-hint {
+    font-size: 0.6rem;
+    opacity: 0.6;
+    margin-top: 2px;
+    line-height: 1;
+}
+
+/* スワイプ中のスタイル */
+.swipeable-score-btn.swiping-up {
+    background: linear-gradient(to top, transparent, rgba(34, 197, 94, 0.4)) !important;
+    border-color: #22c55e !important;
+    transform: translateY(-2px);
+}
+
+.swipeable-score-btn.swiping-down {
+    background: linear-gradient(to bottom, transparent, rgba(239, 68, 68, 0.4)) !important;
+    border-color: #ef4444 !important;
+    transform: translateY(2px);
+}
+
+/* アクティブ状態 */
+.swipeable-score-btn.active-score {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: #22c55e;
+}
+
+.swipeable-score-btn.active-miss {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+}
+
+/* スワイプ中のポップアップ */
+.swipeable-score-wrapper .swipe-popup {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    border-radius: 12px;
+    z-index: 100;
+    pointer-events: none;
+    animation: fadeIn 0.1s ease;
+    min-width: 100px;
+    text-align: center;
+}
+
+.swipeable-score-wrapper .swipe-popup.score {
+    bottom: calc(100% + 8px);
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.swipeable-score-wrapper .swipe-popup.miss {
+    bottom: calc(100% + 8px);
+    top: auto;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.swipeable-score-wrapper .swipe-popup-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.swipeable-score-wrapper .popup-label {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.swipeable-score-wrapper .popup-hint {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+/* セレクターパネル */
+.score-selector-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 90;
+}
+
+.score-selector {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+    min-width: 120px;
+}
+
+.score-option {
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    color: white;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.score-option:active {
+    transform: scale(0.95);
+}
+
+.score-option.success {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.score-option.success:hover {
+    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+}
+
+.score-option.miss {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.score-option.miss:hover {
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.score-option .option-label {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+/* モバイル調整 */
+@media (max-width: 768px) {
+    .swipeable-score-btn {
+        min-height: 80px;
+    }
+
+    .swipeable-score-btn .action-hint {
+        font-size: 0.6rem;
+    }
+}

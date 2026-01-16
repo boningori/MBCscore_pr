@@ -1,0 +1,114 @@
+.substitution-modal {
+    max-width: 600px;
+}
+
+.substitution-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--spacing-md);
+    align-items: start;
+}
+
+.substitution-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.sub-column-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border);
+}
+
+.sub-player-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.sub-player-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.sub-player-card:hover {
+    background: var(--border);
+}
+
+.sub-player-card:active {
+    transform: scale(0.98);
+}
+
+.sub-player-card.selected {
+    border-width: 3px;
+}
+
+.sub-player-card.selected.out {
+    border-color: var(--danger);
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.sub-player-card.selected.in {
+    border-color: var(--secondary);
+    background: rgba(5, 150, 105, 0.1);
+}
+
+.sub-player-number {
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    min-width: 40px;
+}
+
+.sub-player-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.sub-player-stats {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.sub-player-quarters {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.substitution-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: var(--text-muted);
+    padding-top: 60px;
+}
+
+.sub-empty {
+    padding: var(--spacing-lg);
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.substitution-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border);
+}

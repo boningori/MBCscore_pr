@@ -1,0 +1,205 @@
+.action-history {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    flex: 1;
+    /* 親要素の残りの高さを埋める */
+    min-height: 0;
+    /* フレックスアイテムの縮小を許可 */
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 var(--spacing-sm);
+    /* 上下のパディングを削除 */
+    height: 24px;
+    /* ヘッダー高さを最小限に固定 */
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border);
+}
+
+.history-header .team-name {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+}
+
+.history-header .item-count {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.history-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    /* マージンを明示的に0に */
+    gap: 0;
+    /* ギャップを明示的に0に */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Firefox */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.history-list::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
+}
+
+.history-empty {
+    text-align: center;
+    padding: var(--spacing-md);
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    height: 40px;
+    padding: 0 var(--spacing-sm);
+    margin: 0;
+    /* マージンを明示的に0に */
+    border-radius: 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 縞々スタイル（センス良く） */
+.history-item.even {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.history-item.odd {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.history-item:hover {
+    background: var(--bg-hover);
+}
+
+.history-item.score {
+    border-left: 3px solid var(--color-success);
+}
+
+.history-item.stat {
+    border-left: 3px solid var(--color-info);
+}
+
+.history-item.selected {
+    background: var(--bg-hover);
+}
+
+.history-item .player-number {
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    min-width: 32px;
+    /* 32pxに戻す */
+    text-align: center;
+    /* 数字を中央揃えに */
+}
+
+.history-item .action-desc {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.action-menu {
+    position: absolute;
+    right: var(--spacing-xs);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: var(--spacing-xs);
+    background: var(--bg-secondary);
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ジョグダイヤル */
+.jog-dial {
+    width: 44px;
+    min-width: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+    border-left: 1px solid var(--border);
+    cursor: grab;
+    touch-action: none;
+    position: relative;
+    padding: 4px 0;
+}
+
+.jog-dial:active {
+    cursor: grabbing;
+}
+
+.dial-inner {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #475569, #1e293b);
+    border: 2px solid #64748b;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: transform 0.05s ease-out;
+}
+
+.dial-grip {
+    width: 6px;
+    height: 6px;
+    background: #94a3b8;
+    border-radius: 50%;
+    margin: 3px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.dial-arrow {
+    font-size: 10px;
+    color: #64748b;
+    user-select: none;
+    pointer-events: none;
+}
+
+.dial-arrow.up {
+    position: absolute;
+    top: 2px;
+}
+
+.dial-arrow.down {
+    position: absolute;
+    bottom: 2px;
+}
+
+/* タッチ時のフィードバック */
+.jog-dial:active .dial-inner {
+    background: linear-gradient(145deg, #64748b, #334155);
+    border-color: #94a3b8;
+}

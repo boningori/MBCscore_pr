@@ -1,0 +1,251 @@
+.swipeable-turnover-wrapper {
+    flex: 1;
+    width: 100%;
+}
+
+.action-btn.swipeable-turnover-btn {
+    width: 100%;
+    position: relative;
+    touch-action: none;
+    user-select: none;
+    min-height: 70px !important;
+    overflow: visible;
+}
+
+@media (max-width: 600px) {
+    .action-btn.swipeable-turnover-btn {
+        min-height: 60px !important;
+    }
+}
+
+.turnover-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 1;
+    position: relative;
+}
+
+/* スワイプヒント */
+.swipe-hints {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    font-size: 0.6rem;
+    font-weight: 600;
+}
+
+.hint {
+    position: absolute;
+    color: var(--text-muted);
+}
+
+.hint-up {
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.hint-down {
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.hint-left {
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.hint-right {
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* スワイプ中の状態 */
+.swipeable-turnover-btn.swiping-up {
+    border-color: #f59e0b;
+    background: linear-gradient(to top, transparent 50%, rgba(245, 158, 11, 0.3) 100%);
+}
+
+.swipeable-turnover-btn.swiping-down {
+    border-color: #ef4444;
+    background: linear-gradient(to bottom, transparent 50%, rgba(239, 68, 68, 0.3) 100%);
+}
+
+.swipeable-turnover-btn.swiping-left {
+    border-color: #8b5cf6;
+    background: linear-gradient(to left, transparent 50%, rgba(139, 92, 246, 0.3) 100%);
+}
+
+.swipeable-turnover-btn.swiping-right {
+    border-color: #06b6d4;
+    background: linear-gradient(to right, transparent 50%, rgba(6, 182, 212, 0.3) 100%);
+}
+
+/* スワイプポップアップ */
+.swipe-popup {
+    position: absolute;
+    z-index: 100;
+    padding: 12px 20px;
+    border-radius: 12px;
+    animation: popIn 0.15s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.swipe-popup-up {
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.swipe-popup-down {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    background: linear-gradient(135deg, #ef4444, #f87171);
+}
+
+.swipe-popup-left {
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 8px;
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+}
+
+.swipe-popup-right {
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 8px;
+    background: linear-gradient(135deg, #06b6d4, #22d3ee);
+}
+
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.popup-label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.popup-hint {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+/* セレクターオーバーレイ */
+.turnover-selector-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.turnover-selector {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 20px;
+    min-width: 280px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.2s ease;
+}
+
+.selector-title {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.selector-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.selector-btn {
+    padding: 14px 20px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.selector-btn:hover {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.selector-btn:active {
+    transform: scale(0.98);
+}
+
+.selector-cancel {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--text-muted);
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
