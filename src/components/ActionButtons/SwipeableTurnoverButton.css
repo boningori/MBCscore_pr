@@ -6,7 +6,7 @@
 .action-btn.swipeable-turnover-btn {
     width: 100%;
     position: relative;
-    touch-action: none;
+    touch-action: manipulation;
     user-select: none;
     min-height: 70px !important;
     overflow: visible;
@@ -93,7 +93,7 @@
     z-index: 100;
     padding: 12px 20px;
     border-radius: 12px;
-    animation: popIn 0.15s ease-out;
+    animation: turnoverPopIn 0.15s ease-out;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -148,7 +148,7 @@
     color: rgba(255, 255, 255, 0.8);
 }
 
-@keyframes popIn {
+@keyframes turnoverPopIn {
     from {
         opacity: 0;
         transform: translateX(-50%) scale(0.8);
@@ -169,7 +169,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: fadeIn 0.2s ease;
+    animation: turnoverFadeIn 0.2s ease;
 }
 
 .turnover-selector {
@@ -178,7 +178,7 @@
     padding: 20px;
     min-width: 280px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    animation: slideUp 0.2s ease;
+    animation: turnoverSlideUp 0.2s ease;
 }
 
 .selector-title {
@@ -228,7 +228,7 @@
     cursor: pointer;
 }
 
-@keyframes fadeIn {
+@keyframes turnoverFadeIn {
     from {
         opacity: 0;
     }
@@ -238,7 +238,7 @@
     }
 }
 
-@keyframes slideUp {
+@keyframes turnoverSlideUp {
     from {
         opacity: 0;
         transform: translateY(20px);

@@ -4,6 +4,18 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/MBCscore_pr/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-utils': ['html2canvas', 'jspdf', 'dompurify']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 600
+  },
   plugins: [
     react(),
     VitePWA({
@@ -17,7 +29,7 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: '/MBCscore_pr/',
         icons: [
           {
             src: 'icon-192.png',

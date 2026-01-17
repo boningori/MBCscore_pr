@@ -17,7 +17,7 @@
     gap: 0;
     padding: 8px 4px;
     transition: all 0.15s ease;
-    touch-action: none;
+    touch-action: manipulation;
     user-select: none;
 }
 
@@ -82,7 +82,7 @@
     border-radius: 12px;
     z-index: 100;
     pointer-events: none;
-    animation: fadeIn 0.1s ease;
+    animation: scoreSwipeFadeIn 0.1s ease;
     min-width: 100px;
     text-align: center;
 }
@@ -176,7 +176,7 @@
     display: block;
 }
 
-@keyframes fadeIn {
+@keyframes scoreSwipeFadeIn {
     from {
         opacity: 0;
         transform: translateX(-50%) scale(0.9);

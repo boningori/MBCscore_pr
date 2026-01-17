@@ -109,8 +109,45 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const [editNumber, setEditNumber] = useState('');
     const [editName, setEditName] = useState('');
 
+    // 番号グリッド選択モード
+    const [showNumberGrid, setShowNumberGrid] = useState(false);
+
+    // 番号をトグル（追加/削除）
+    const handleToggleNumber = (num: number) => {
+        if (!editingTeam) return;
+
+        const existingIndex = editingTeam.players.findIndex(p => p.number === num);
+
+        if (existingIndex >= 0) {
+            // 既存なら削除
+            const players = editingTeam.players.filter((_, i) => i !== existingIndex);
+            setEditingTeam({ ...editingTeam, players });
+        } else {
+            // 新規なら追加
+            const newPlayer: SavedPlayer = {
+                number: num,
+                name: `選手${num}`,
+                isCaptain: false,
+            };
+            setEditingTeam({
+                ...editingTeam,
+                players: [...editingTeam.players, newPlayer].sort((a, b) => a.number - b.number),
+            });
+        }
+    };
+
+    // 全選手クリア
+    const handleClearAllPlayers = () => {
+        if (!editingTeam) return;
+        if (editingTeam.players.length === 0) return;
+
+        if (confirm('登録済みの選手を全てクリアしますか？')) {
+            setEditingTeam({ ...editingTeam, players: [] });
+        }
+    };
+
     const handleAddPlayer = () => {
-        if (!editingTeam || !newNumber || !newName) return;
+        if (!editingTeam || !newNumber) return;  // 名前は任意
 
         const number = parseInt(newNumber, 10);
         if (isNaN(number) || number < 0 || number > 99) return;
@@ -123,7 +160,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
         const newPlayer: SavedPlayer = {
             number: number,
-            name: newName,
+            name: newName.trim() || `選手${number}`,  // 名前が空の場合は「選手N」とする
             isCaptain: false,
         };
 
@@ -175,14 +212,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
             alert(`背番号 ${number} は既に登録されています`);
             return;
         }
-        if (!editName.trim()) {
-            alert('氏名を入力してください');
-            return;
-        }
+        // 対戦チームは名前任意なので空の場合は「選手N」とする
+        const playerName = editName.trim() || `選手${number}`;
 
         const players = editingTeam.players.map((p, i) =>
             i === editingPlayerIndex
-                ? { ...p, number, name: editName.trim() }
+                ? { ...p, number, name: playerName }
                 : p
         ).sort((a, b) => a.number - b.number);
         setEditingTeam({ ...editingTeam, players });
@@ -292,13 +327,26 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     <div className="players-section">
                         <div className="players-header-row">
                             <label className="form-label">選手登録 ({editingTeam.players.length}人)</label>
-                            <div className="ocr-actions">
+                            <div className="player-actions-row">
+                                <button
+                                    className={`btn btn-small ${showNumberGrid ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setShowNumberGrid(!showNumberGrid)}
+                                >
+                                    # 番号一括選択
+                                </button>
                                 <button
                                     className="btn btn-secondary btn-small"
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isLoading}
                                 >
-                                    📷 写真から選手を読み込む
+                                    📷 写真読込
+                                </button>
+                                <button
+                                    className="btn btn-danger btn-small"
+                                    onClick={handleClearAllPlayers}
+                                    disabled={editingTeam.players.length === 0}
+                                >
+                                    全クリア
                                 </button>
                                 <input
                                     ref={fileInputRef}
@@ -324,6 +372,27 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             </div>
                         )}
 
+                        {/* 番号グリッド選択UI */}
+                        {showNumberGrid && (
+                            <div className="number-grid-container">
+                                <p className="number-grid-hint">タップで追加/削除</p>
+                                <div className="number-grid">
+                                    {Array.from({ length: 100 }, (_, i) => {
+                                        const isSelected = editingTeam.players.some(p => p.number === i);
+                                        return (
+                                            <button
+                                                key={i}
+                                                className={`number-grid-item ${isSelected ? 'selected' : ''}`}
+                                                onClick={() => handleToggleNumber(i)}
+                                            >
+                                                {i}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="add-player-row">
                             <input
                                 type="number"
@@ -345,7 +414,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             <button
                                 className="btn btn-primary"
                                 onClick={handleAddPlayer}
-                                disabled={!newNumber || !newName}
+                                disabled={!newNumber}
                             >
                                 追加
                             </button>

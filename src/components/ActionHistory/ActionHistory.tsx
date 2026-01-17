@@ -218,10 +218,33 @@ export function ActionHistory({
         };
     }, [handleDialMove, handleDialEnd]);
 
-    const handleTouchStart = useCallback((itemId: string) => {
-        longPressTimer.current = setTimeout(() => {
+    const handleTouchStart = useCallback((itemId: string, e: React.MouseEvent | React.TouchEvent) => {
+        // 右クリックは無視
+        if ('button' in e && e.button === 2) return;
+
+        // 長押し中のコンテキストメニューを防止
+        const preventContextMenu = (ev: Event) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+        };
+        document.addEventListener('contextmenu', preventContextMenu, { capture: true });
+
+        longPressTimer.current = window.setTimeout(() => {
             setSelectedItemId(itemId);
-        }, 500);
+            // メニュー表示後もしばらく防止を続ける
+            setTimeout(() => {
+                document.removeEventListener('contextmenu', preventContextMenu, { capture: true });
+            }, 100);
+        }, 500) as unknown as number;
+
+        // タイマーがキャンセルされた場合に備えてクリーンアップ
+        const cleanup = () => {
+            document.removeEventListener('contextmenu', preventContextMenu, { capture: true });
+            document.removeEventListener('mouseup', cleanup);
+            document.removeEventListener('touchend', cleanup);
+        };
+        document.addEventListener('mouseup', cleanup, { once: true });
+        document.addEventListener('touchend', cleanup, { once: true });
     }, []);
 
     const handleTouchEnd = useCallback(() => {
@@ -290,11 +313,12 @@ export function ActionHistory({
                             <div
                                 key={item.id}
                                 className={`history-item ${item.type} ${selectedItemId === item.id ? 'selected' : ''} ${index % 2 === 0 ? 'even' : 'odd'}`}
-                                onTouchStart={() => handleTouchStart(item.id)}
+                                onTouchStart={(e) => handleTouchStart(item.id, e)}
                                 onTouchEnd={handleTouchEnd}
-                                onMouseDown={() => handleTouchStart(item.id)}
+                                onMouseDown={(e) => handleTouchStart(item.id, e)}
                                 onMouseUp={handleTouchEnd}
                                 onMouseLeave={handleTouchEnd}
+                                onContextMenu={(e) => e.preventDefault()}
                             >
                                 <span className="player-number">#{item.playerNumber === -1 ? '?' : item.playerNumber}</span>
                                 <span className="action-desc">{item.description}</span>

@@ -42,9 +42,11 @@ export function SwipeableReboundButton({
         }
     }, []);
 
-    const handleTouchEnd = useCallback(() => {
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
         // スワイプ中なら指を離した時点で確定
         if (swipeType) {
+            e.preventDefault();
+            e.stopPropagation();
             onRebound(swipeType);
         }
 

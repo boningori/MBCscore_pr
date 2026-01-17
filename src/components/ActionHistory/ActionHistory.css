@@ -78,6 +78,9 @@
     border-radius: 0;
     cursor: pointer;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
     transition: background 0.15s;
     position: relative;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);

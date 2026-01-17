@@ -1,73 +1,83 @@
-# React + TypeScript + Vite
+# MBCscore - ミニバス スコアシート
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+MBCscoreは、ミニバスケットボールの試合記録をデジタル化し、簡単かつ直感的に管理できるプログレッシブウェブアプリ（PWA）です。
+スマートフォンやタブレットにインストールして、ネイティブアプリのような操作感で使用できます。
 
-Currently, two official plugins are available:
+## 📱 PWAとしての特徴（アプリとしてインストール）
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+このアプリはPWA（Progressive Web App）に対応しており、ブラウザから直接デバイスにインストールできます。
 
-## React Compiler
+- **インストール可能**: ホーム画面に追加して、アプリとして起動できます。アドレスバーやブラウザのメニューが非表示になり、広い画面で操作できます。
+- **オフライン対応**: 一度読み込めば、インターネット接続がない体育館でも問題なく動作します。
+- **高速な動作**: キャッシュ機能を活用し、ページの読み込みが高速です。
+- **全画面表示**: 没入感のある全画面モードでスコア記録に集中できます。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### インストール方法
+1. **iPhone/iPad (Safari)**: 「共有」ボタンアイコンをタップし、「ホーム画面に追加」を選択します。
+2. **Android (Chrome)**: メニューアイコンをタップし、「アプリをインストール」または「ホーム画面に追加」を選択します。
+3. **PC (Chrome/Edge)**: アドレスバーの右端にあるインストールアイコンをクリックします。
 
-## Expanding the ESLint configuration
+## ✨ 主な機能
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. 試合管理
+- **チーム設定**: 自チームと対戦チームの名前、チームカラー（白/青など）を設定可能。
+- **選手登録**: 背番号、名前、コートネームを登録・管理。
+- **履歴保存**: 過去の対戦チーム情報を記憶し、再対戦時に素早く呼び出し可能。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 2. スコア & スタッツ記録
+- **得点**: 2点、3点、フリースロー(FT)をワンタップで記録。
+- **スタッツ**: リバウンド(オフェンス/ディフェンス)、アシスト、スティール、ブロック、ターンオーバーを詳細に記録。
+- **シュートミス**: シュート成功だけでなく、失敗（2PA/3PA/FTA）も記録可能。
+- **選手交代**: 直感的なUIで選手交代とコート上のメンバー管理が可能。
+- **クォーター管理**: Q1〜Q4のクォーター切り替えに対応。
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 3. ファウル管理
+- **個人ファウル**: 5ファウル退場の警告表示。
+- **チームファウル**: チームごとのファウル数を自動集計。
+- **テクニカル/アンスポ**: テクニカルファウルやアンスポーツマンライクファウルにも対応。
+- **コーチ・ベンチ**: コーチテクニカル(C)、ベンチテクニカル(B)も記録可能。
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 4. 履歴・編集機能
+- **アクション履歴**: 記録した全てのアクション（得点、ファウル、スタッツ）を時系列で確認。
+- **修正・削除**: 間違って記録したデータの削除や、選手・アクション種別の修正が可能。
+- **成功/失敗の変換**: 「シュート成功」を「シュートミス」に、またはその逆に後から変更可能。
+
+### 5. その他の便利機能
+- **スコアシート表示**: 記録に基づいたランニングスコアシートを表示。
+- **音声入力**: 音声コマンドによる記録操作（一部ブラウザで対応）。
+- **統計表示**: チームごとの詳細な統計データの閲覧。
+
+## 🚀 開発と実行
+
+### 必要要件
+- Node.js (v18以上推奨)
+- npm
+
+### ローカルでの実行
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### ビルドとプレビュー
+PWAの動作確認を行うにはビルドが必要です。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# ビルド
+npm run build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# プレビュー（ビルド後のアプリを確認）
+npm run preview
 ```
+
+## 🛠 プロジェクト構成
+- **Frontend**: React 19, TypeScript
+- **Build Tool**: Vite
+- **PWA**: vite-plugin-pwa
+- **PDF/Image**: jspdf, html2canvas
+
+---
+© 2024-2026 MBCscore Project

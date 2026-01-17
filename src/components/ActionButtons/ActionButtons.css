@@ -15,7 +15,6 @@
     gap: var(--spacing-sm);
     position: relative;
     overflow: visible;
-    isolation: isolate;
 }
 
 .action-group-title {

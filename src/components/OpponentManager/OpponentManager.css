@@ -264,3 +264,91 @@
         transform: rotate(360deg);
     }
 }
+
+/* Player Actions Row */
+.player-actions-row {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+/* Number Grid Styles */
+.number-grid-container {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border);
+}
+
+.number-grid-hint {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-sm) 0;
+    text-align: center;
+}
+
+.number-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+}
+
+.number-grid-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+}
+
+.number-grid-item:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+.number-grid-item.selected {
+    background: var(--secondary);
+    border-color: var(--secondary-light);
+    color: white;
+}
+
+.number-grid-item.selected:hover {
+    background: var(--danger);
+    border-color: var(--danger-light);
+}
+
+/* Mobile adjustments for number grid */
+@media (max-width: 480px) {
+    .number-grid {
+        grid-template-columns: repeat(10, 1fr);
+        gap: 2px;
+    }
+
+    .number-grid-item {
+        min-width: 28px;
+        min-height: 28px;
+        font-size: 0.7rem;
+    }
+
+    .player-actions-row {
+        flex-wrap: wrap;
+    }
+
+    .player-actions-row .btn-small {
+        font-size: 0.75rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+}

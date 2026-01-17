@@ -80,15 +80,21 @@ export function SwipeableTurnoverButton({
         }
     };
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e: React.TouchEvent) => {
         if (disabled) return;
 
         if (hasSwiped.current && swipeDirection) {
+            e.preventDefault();
+            e.stopPropagation();
             // スワイプで確定
             const toType = SWIPE_TO_TYPE[swipeDirection];
             onTurnover(toType);
+            // スワイプ後はクリックイベントを無視するため、少し遅延してリセット
+            setTimeout(() => { hasSwiped.current = false; }, 300);
+        } else {
+            hasSwiped.current = false;
         }
-        // タップの場合はセレクターを表示しない（単純にTOとして記録）
+        // タップの場合はセレクターを表示（handleClickで処理）
 
         touchStartRef.current = null;
         setSwipeDirection(null);

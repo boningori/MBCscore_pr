@@ -57,11 +57,15 @@ export function SwipeableScoreButton({
         }
     }, []);
 
-    const handleTouchEnd = useCallback(() => {
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
         // スワイプ中なら指を離した時点で確定
         if (swipeDirection === 'up') {
+            e.preventDefault();
+            e.stopPropagation();
             onScore(scoreType);
         } else if (swipeDirection === 'down') {
+            e.preventDefault();
+            e.stopPropagation();
             onMiss(info.missType);
         }
 

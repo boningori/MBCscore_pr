@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import type { Team, FoulType } from './types/game';
 import type { SavedTeam } from './utils/teamStorage';
@@ -47,11 +47,24 @@ function AppContent() {
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
-  // 試合状態が変更されたらセッション保存
+  // 試合状態が変更されたらセッション保存（デバウンス付き）
+  const saveTimeoutRef = useRef<number | null>(null);
   useEffect(() => {
     if (screen === 'game' && phase !== 'setup') {
-      saveGameSession(state, gameName, date);
+      // 既存のタイマーをクリア
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      // 500ms後に保存（UIブロックを防止）
+      saveTimeoutRef.current = window.setTimeout(() => {
+        saveGameSession(state, gameName, date);
+      }, 500);
     }
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [state, screen, gameName, date, phase]);
 
   // 試合設定完了
@@ -224,7 +237,7 @@ function AppContent() {
     setShowCoachFoulSelector({ teamId });
   };
 
-  // コーチファウル確定
+  // ベンチファウル確定
   const handleConfirmCoachFoul = (type: 'HC' | 'Bench') => {
     if (!showCoachFoulSelector) return;
     const { teamId } = showCoachFoulSelector;
@@ -670,7 +683,7 @@ function AppContent() {
 
   // ゲーム画面
   return (
-    <div className="app-container">
+    <div className="app-container" onContextMenu={(e) => e.preventDefault()}>
       {/* ヘッダー */}
       <header className="app-header">
         <div className="header-left">
@@ -763,7 +776,7 @@ function AppContent() {
                       交代
                     </button>
                     <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamA')}>
-                      コーチファウル
+                      ベンチファウル
                     </button>
                   </div>
                 </div>
@@ -840,7 +853,7 @@ function AppContent() {
                       交代
                     </button>
                     <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamB')}>
-                      コーチファウル
+                      ベンチファウル
                     </button>
                   </div>
                 </div>
@@ -992,11 +1005,11 @@ function AppContent() {
           </div>
         </div>
       )}
-      {/* コーチファウル選択モーダル */}
+      {/* ベンチファウル選択モーダル */}
       {showCoachFoulSelector && (
         <div className="modal-overlay" onClick={() => setShowCoachFoulSelector(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>コーチファウル種類</h3>
+            <h3>ベンチファウル種類</h3>
             <div className="modal-actions-column">
               <button className="btn btn-danger btn-large" onClick={() => handleConfirmCoachFoul('HC')}>
                 ヘッドコーチ (C)

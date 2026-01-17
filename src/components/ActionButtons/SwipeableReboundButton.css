@@ -74,7 +74,7 @@
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     z-index: 101;
-    animation: popIn 0.15s ease;
+    animation: reboundPopIn 0.15s ease;
     pointer-events: none;
 }
 
@@ -89,7 +89,7 @@
     background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
 }
 
-@keyframes popIn {
+@keyframes reboundPopIn {
     from {
         opacity: 0;
         transform: translateX(-50%) scale(0.8);
@@ -166,10 +166,10 @@
     padding: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 101;
-    animation: slideUp 0.2s ease;
+    animation: reboundSlideUp 0.2s ease;
 }
 
-@keyframes slideUp {
+@keyframes reboundSlideUp {
     from {
         opacity: 0;
         transform: translateX(-50%) translateY(8px);

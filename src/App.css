@@ -386,6 +386,11 @@
   border: 2px solid transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
+  /* タッチ最適化 */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .mini-player-card:hover {
@@ -439,6 +444,8 @@
   background: var(--bg-tertiary);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bench-num:hover {
