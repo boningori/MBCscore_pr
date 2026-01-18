@@ -148,9 +148,12 @@
     border: none;
 }
 
-/* 履歴詳細ビュー内のヘッダーから下線を削除 */
+/* 履歴詳細ビュー内のヘッダーから下線と背景色を削除 */
 .history-detail-view .history-header {
     border-bottom: none;
+    background: transparent;
+    height: auto;
+    padding: 0;
 }
 
 /* Modal Styles */

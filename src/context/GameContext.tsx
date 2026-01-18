@@ -405,6 +405,10 @@ function gameReducer(state: Game, action: GameAction): Game {
                             case 'STL': stats.steals--; break;
                             case 'BLK': stats.blocks--; break;
                             case 'TO': stats.turnovers--; break;
+                            case 'TO:DD': stats.turnovers--; stats.turnoverDD--; break;
+                            case 'TO:TR': stats.turnovers--; stats.turnoverTR--; break;
+                            case 'TO:PM': stats.turnovers--; stats.turnoverPM--; break;
+                            case 'TO:CM': stats.turnovers--; stats.turnoverCM--; break;
                             case '2PA': stats.twoPointAttempt--; break;
                             case '3PA': stats.threePointAttempt--; break;
                             case 'FTA': stats.freeThrowAttempt--; break;

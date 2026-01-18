@@ -46,8 +46,8 @@ export function History({ onBack }: HistoryProps) {
         teamA: record.teamA,
         teamB: record.teamB,
         scoreHistory: record.scoreHistory,
-        statHistory: [],
-        foulHistory: [],
+        statHistory: record.statHistory || [],
+        foulHistory: record.foulHistory || [],
         currentQuarter: 4, // 終了した試合
         phase: 'finished',
         selectedPlayerId: null,

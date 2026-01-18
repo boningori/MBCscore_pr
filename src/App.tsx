@@ -513,6 +513,8 @@ function AppContent() {
       state.teamA,
       state.teamB,
       state.scoreHistory,
+      state.statHistory,
+      state.foulHistory,
       new Date(date)
     );
 

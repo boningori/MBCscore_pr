@@ -58,6 +58,7 @@
 
   --border: #334155;
   --border-light: #475569;
+  --bg-hover: #475569;
 
   /* タッチ最適化 */
   --touch-target: 48px;
@@ -717,6 +718,26 @@ body {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.modal-content h3 {
+  text-align: center;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-actions-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.btn-desc {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+  font-weight: 400;
 }
 
 .modal-header {

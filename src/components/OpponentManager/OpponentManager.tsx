@@ -495,7 +495,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     </div>
 
                     <div className="form-actions">
-                        <button className="btn btn-primary btn-large" onClick={handleSave}>
+                        <button className="btn btn-success btn-large" onClick={handleSave}>
                             保存
                         </button>
                     </div>
