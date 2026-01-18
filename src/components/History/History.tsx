@@ -84,9 +84,9 @@ export function History({ onBack }: HistoryProps) {
 
                 {viewMode === 'stats' && (
                     <div className="history-stats-view">
-                        <StatsPanel players={selectedRecord.teamA.players} teamName={selectedRecord.teamA.name} />
+                        <StatsPanel players={selectedRecord.teamA.players} teamName={selectedRecord.teamA.name} isHistoryView={true} />
                         <div style={{ height: '32px' }}></div>
-                        <StatsPanel players={selectedRecord.teamB.players} teamName={selectedRecord.teamB.name} />
+                        <StatsPanel players={selectedRecord.teamB.players} teamName={selectedRecord.teamB.name} isHistoryView={true} />
                     </div>
                 )}
 
@@ -131,14 +131,20 @@ export function History({ onBack }: HistoryProps) {
                                     <span className="history-title">{record.gameName}</span>
                                 </div>
                                 <div className="history-score">
-                                    <div className="history-team">
-                                        <span className="team-name">{record.teamA.name}</span>
+                                    <div className="history-team team-left">
+                                        <span className="team-name">
+                                            {record.finalScore.teamA > record.finalScore.teamB && <span className="winner-star">★</span>}
+                                            {record.teamA.name}
+                                        </span>
                                         <span className="team-score-val">{record.finalScore.teamA}</span>
                                     </div>
-                                    <span className="vs-divider">-</span>
-                                    <div className="history-team">
+                                    <span className="vs-divider">|</span>
+                                    <div className="history-team team-right">
+                                        <span className="team-name">
+                                            {record.finalScore.teamB > record.finalScore.teamA && <span className="winner-star">★</span>}
+                                            {record.teamB.name}
+                                        </span>
                                         <span className="team-score-val">{record.finalScore.teamB}</span>
-                                        <span className="team-name">{record.teamB.name}</span>
                                     </div>
                                 </div>
                                 <button

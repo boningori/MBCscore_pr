@@ -101,7 +101,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
                 <button className="btn btn-secondary" onClick={onBack}>
                     ← 戻る
                 </button>
-                <h2>{mode === 'myTeam' ? 'マイチーム管理' : '相手チーム選択'}</h2>
+                <h2>{mode === 'myTeam' ? 'マイチーム管理' : '対戦チーム選択'}</h2>
             </div>
 
             <div className="team-manager-actions">

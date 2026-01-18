@@ -79,7 +79,7 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                         <button className="home-menu-item" onClick={onManageOpponents}>
                             <span className="menu-icon">🆚</span>
                             <span className="menu-label">対戦チーム管理</span>
-                            <span className="menu-description">相手チームを登録・編集</span>
+                            <span className="menu-description">対戦チームを登録・編集</span>
                         </button>
                     </div>
                 )}

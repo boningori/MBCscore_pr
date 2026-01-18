@@ -184,6 +184,17 @@
   font-weight: 800;
 }
 
+/* 試合終了パネルのボタンエリア */
+.game-finished-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.game-finished-btn {
+  width: 100%;
+}
+
 /* タブレット横向き最適化 */
 @media (min-width: 1024px) and (orientation: landscape) {
   .app-main {
@@ -320,24 +331,36 @@
   box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.4);
 }
 
-/* 後方互換用（デフォルト） */
+/* チームパネルのカラーライン（内側に配置：左チームは右側、右チームは左側） */
 .team-panel.team-a {
-  border-left: 4px solid var(--team-a);
+  border-right: 4px solid var(--team-a);
+  border-left: none;
 }
 
 .team-panel.team-b {
   border-left: 4px solid var(--team-b);
+  border-right: none;
 }
 
 /* チームカラーに基づくボーダー（白/青）- 高い詳細度で上書き */
-.team-panel.team-a.color-white,
-.team-panel.team-b.color-white {
-  border-left: 4px solid var(--team-white);
+.team-panel.team-a.color-white {
+  border-right: 4px solid var(--team-white);
+  border-left: none;
 }
 
-.team-panel.team-a.color-blue,
+.team-panel.team-a.color-blue {
+  border-right: 4px solid var(--team-blue);
+  border-left: none;
+}
+
+.team-panel.team-b.color-white {
+  border-left: 4px solid var(--team-white);
+  border-right: none;
+}
+
 .team-panel.team-b.color-blue {
   border-left: 4px solid var(--team-blue);
+  border-right: none;
 }
 
 
@@ -487,13 +510,59 @@
     grid-template-columns: 1fr;
   }
 
+  /* 3列レイアウトを1列縦積みに */
+  .game-main-area {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: var(--spacing-sm);
+  }
+
+  /* チームパネルをコンパクトに */
+  .team-panel {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  /* 選手カードを2列グリッドに変更（タップしやすく） */
+  .team-players {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+    min-height: auto;
+    gap: var(--spacing-xs);
+  }
+
+  /* 選手カードのサイズ最適化（タッチターゲット48px以上確保） */
   .mini-player-card {
+    height: 52px;
+    min-height: 48px;
     padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
   }
 
   .mini-player-card .player-num {
-    min-width: 30px;
+    min-width: 28px;
     font-size: var(--font-size-md);
+  }
+
+  .mini-player-card .player-pts {
+    font-size: var(--font-size-sm);
+  }
+
+  .mini-player-card .player-fouls {
+    font-size: var(--font-size-xs);
+  }
+
+  /* ベンチエリアをコンパクトに */
+  .team-bench {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  .bench-num {
+    padding: 6px 10px;
+    font-size: var(--font-size-sm);
+    min-height: 36px;
   }
 
   /* ターゲットハイライト（コーチボタン等） */

@@ -111,23 +111,30 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
             </div>
 
             <div className="select-actions">
-                <button className="btn btn-primary" onClick={handleCreateNew}>
-                    + 未登録チームと対戦
-                </button>
-                {isOCRAvailable() && (
-                    <>
-                        <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-                            📷 写真から登録
-                        </button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            onChange={handleFileSelect}
-                            style={{ display: 'none' }}
-                        />
-                    </>
+                <div className="select-actions-left">
+                    <button className="btn btn-primary" onClick={handleCreateNew}>
+                        + 未登録チームと対戦
+                    </button>
+                    {isOCRAvailable() && (
+                        <>
+                            <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
+                                📷 写真から登録
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={handleFileSelect}
+                                style={{ display: 'none' }}
+                            />
+                        </>
+                    )}
+                </div>
+                {history.length > 0 && (
+                    <button className="btn btn-small btn-danger" onClick={handleClearHistory}>
+                        履歴クリア
+                    </button>
                 )}
             </div>
 
@@ -144,56 +151,56 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                 </div>
             )}
 
-            {/* 登録済み対戦チーム */}
-            {savedOpponents.length > 0 && (
-                <div className="saved-opponents-section">
-                    <h3>登録済み対戦チーム</h3>
-                    <div className="history-list">
-                        {savedOpponents.map(team => (
-                            <div key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
-                                <div className="opponent-info">
-                                    <h4 className="opponent-name">{team.name || '(未設定)'}</h4>
-                                    <span className="opponent-detail">
-                                        {team.players.length} Players
-                                    </span>
+            {/* チームセクションコンテナ（2列レイアウト） */}
+            <div className="teams-container">
+                {/* 登録済み対戦チーム */}
+                {savedOpponents.length > 0 && (
+                    <div className="saved-opponents-section">
+                        <div className="section-header">
+                            <h3>登録済み対戦チーム</h3>
+                        </div>
+                        <div className="team-list">
+                            {savedOpponents.map(team => (
+                                <div key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
+                                    <div className="opponent-info">
+                                        <h4 className="opponent-name">{team.name || '(未設定)'}</h4>
+                                        <span className="opponent-detail">
+                                            {team.players.length} Players
+                                        </span>
+                                    </div>
+                                    <div className="opponent-select-btn">
+                                        選択
+                                    </div>
                                 </div>
-                                <div className="opponent-select-btn">
-                                    選択
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <div className="history-section">
-                <div className="history-header">
-                    <h3>最近の対戦チーム</h3>
-                    {history.length > 0 && (
-                        <button className="btn btn-small btn-danger" onClick={handleClearHistory}>
-                            履歴クリア
-                        </button>
-                    )}
-                </div>
+                <div className={`history-section ${savedOpponents.length === 0 ? 'full' : ''}`}>
+                    <div className="section-header">
+                        <h3>最近の対戦チーム</h3>
+                    </div>
 
-                <div className="history-list">
-                    {history.length === 0 ? (
-                        <p className="text-muted">対戦履歴はありません</p>
-                    ) : (
-                        history.map(team => (
-                            <div key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
-                                <div className="opponent-info">
-                                    <h4 className="opponent-name">{team.name || '(未設定)'}</h4>
-                                    <span className="opponent-detail">
-                                        {team.players.length} Players
-                                    </span>
+                    <div className="team-list">
+                        {history.length === 0 ? (
+                            <p className="text-muted">対戦履歴はありません</p>
+                        ) : (
+                            history.map(team => (
+                                <div key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
+                                    <div className="opponent-info">
+                                        <h4 className="opponent-name">{team.name || '(未設定)'}</h4>
+                                        <span className="opponent-detail">
+                                            {team.players.length} Players
+                                        </span>
+                                    </div>
+                                    <div className="opponent-select-btn">
+                                        選択
+                                    </div>
                                 </div>
-                                <div className="opponent-select-btn">
-                                    選択
-                                </div>
-                            </div>
-                        ))
-                    )}
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -222,7 +229,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
         if (isNaN(number)) return;
         if (players.some(p => p.number === number)) return;
 
-        // 名前がなくても相手チームならOKとする（番号だけで管理する場合もあるため）
+        // 名前がなくても対戦チームならOKとする（番号だけで管理する場合もあるため）
         const playerName = newName || `Player ${number}`;
 
         setPlayers([
@@ -243,7 +250,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
             ...team,
             id: team.id || generateTeamId(),
             name,
-            coachName: '', // 相手チームのコーチ名は必須ではない
+            coachName: '', // 対戦チームのコーチ名は必須ではない
             players,
             updatedAt: new Date().toISOString(),
         });
@@ -274,7 +281,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                         className="input"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="相手チーム名"
+                        placeholder="対戦チーム名"
                     />
                 </div>
 

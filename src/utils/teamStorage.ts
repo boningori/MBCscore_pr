@@ -102,7 +102,7 @@ export function deleteMyTeam(teamId: string): void {
     }
 }
 
-// 最近使用した相手チーム保存（最大10件）
+// 最近使用した対戦チーム保存（最大10件）
 export function saveRecentOpponent(team: SavedTeam): void {
     try {
         let teams = loadRecentOpponents();
@@ -117,7 +117,7 @@ export function saveRecentOpponent(team: SavedTeam): void {
     }
 }
 
-// 最近使用した相手チーム取得
+// 最近使用した対戦チーム取得
 export function loadRecentOpponents(): SavedTeam[] {
     try {
         const data = localStorage.getItem(OPPONENT_TEAMS_KEY);
@@ -129,7 +129,7 @@ export function loadRecentOpponents(): SavedTeam[] {
     }
 }
 
-// 相手チーム履歴クリア
+// 対戦チーム履歴クリア
 export function clearRecentOpponents(): void {
     try {
         localStorage.removeItem(OPPONENT_TEAMS_KEY);

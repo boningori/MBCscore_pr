@@ -4,10 +4,11 @@ import './StatsPanel.css';
 interface StatsPanelProps {
     players: Player[];
     teamName: string;
+    isHistoryView?: boolean; // 履歴表示モード（trueの場合、コート上の選手ハイライトを無効化）
 }
 
-export function StatsPanel({ players, teamName }: StatsPanelProps) {
-    const sortedPlayers = [...players].sort((a, b) => b.stats.points - a.stats.points);
+export function StatsPanel({ players, teamName, isHistoryView = false }: StatsPanelProps) {
+    const sortedPlayers = [...players].sort((a, b) => a.number - b.number);
 
     return (
         <div className="stats-panel">
@@ -33,7 +34,7 @@ export function StatsPanel({ players, teamName }: StatsPanelProps) {
                 </div>
 
                 {sortedPlayers.map(player => (
-                    <div key={player.id} className={`stats-row ${player.isOnCourt ? 'on-court' : ''}`}>
+                    <div key={player.id} className={`stats-row ${!isHistoryView && player.isOnCourt ? 'on-court' : ''}`}>
                         <span className="stats-col-num">{player.number}</span>
                         <span className="stats-col-name">{player.name}</span>
                         <span className="stats-col stats-points">{player.stats.points}</span>

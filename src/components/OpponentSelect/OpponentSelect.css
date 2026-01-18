@@ -3,12 +3,19 @@
 }
 
 .saved-opponents-section {
-    margin-bottom: var(--spacing-xl);
+    flex: 1;
+    min-width: 0;
 }
 
-.saved-opponents-section h3 {
-    margin-bottom: var(--spacing-md);
+.saved-opponents-section h3,
+.history-section h3 {
+    margin: 0;
     color: var(--text-primary);
+    font-size: var(--font-size-lg);
+}
+
+.history-section h3 {
+    color: var(--text-secondary);
 }
 
 .select-header {
@@ -25,27 +32,63 @@
 
 .select-actions {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-xl);
 }
 
-.history-section h3 {
-    margin-bottom: var(--spacing-md);
-    color: var(--text-secondary);
-    font-size: var(--font-size-lg);
+.select-actions-left {
+    display: flex;
+    gap: var(--spacing-md);
 }
 
+/* 2列レイアウト用コンテナ */
+.teams-container {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.history-section {
+    flex: 1;
+    min-width: 0;
+}
+
+.history-section.full {
+    flex: 1;
+}
+
+/* セクションヘッダー（両方のセクションで統一） */
+.section-header,
 .history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-md);
+    min-height: 36px;
+    /* ボタンの高さに合わせて統一 */
 }
 
-.history-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+/* チームリスト（各セクション内のカード一覧） */
+.team-list {
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-md);
+}
+
+/* レスポンシブ: タブレット・スマホでは縦並び */
+@media (max-width: 768px) {
+    .teams-container {
+        flex-direction: column;
+        gap: var(--spacing-xl);
+    }
+
+    .saved-opponents-section {
+        padding-bottom: var(--spacing-lg);
+        border-bottom: 1px solid var(--border);
+    }
 }
 
 .opponent-card {

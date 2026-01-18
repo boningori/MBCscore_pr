@@ -97,7 +97,7 @@ function AppContent() {
 
     dispatch({ type: 'SET_TEAMS', payload: { teamA, teamB } });
 
-    // 相手チームを履歴に保存（念のため更新）
+    // 対戦チームを履歴に保存（念のため更新）
     saveRecentOpponent(setupData.opponentTeam);
 
     // Q1スタメン選択画面へ
@@ -330,6 +330,31 @@ function AppContent() {
     dispatch({
       type: 'UPDATE_PENDING_ACTION_CANDIDATES',
       payload: { pendingActionId, candidatePlayerIds },
+    });
+  };
+
+  // 保留アクションをダイレクトに解決（選手を直接選択）
+  const handleDirectResolvePending = (pendingActionId: string, playerId: string) => {
+    // 対象の保留アクションを取得
+    const pending = pendingActions.find(p => p.id === pendingActionId);
+    if (!pending) return;
+
+    // ファウルタイプの場合はファウル種類選択モーダルを表示
+    if (pending.actionType === 'FOUL') {
+      setResolvingFoulPending({
+        pendingActionId: pending.id,
+        playerId,
+        teamId: pending.teamId,
+      });
+      setActiveTab(pending.teamId as 'teamA' | 'teamB');
+      setShowFoulSelector(true);
+      return;
+    }
+
+    // その他のアクションは直接解決
+    dispatch({
+      type: 'RESOLVE_PENDING_ACTION',
+      payload: { pendingActionId, playerId },
     });
   };
 
@@ -948,6 +973,7 @@ function AppContent() {
             onResolveUnknown={handleResolveUnknown}
             onRemove={handleRemovePendingAction}
             onUpdateCandidates={handleUpdatePendingCandidates}
+            onDirectResolve={handleDirectResolvePending}
           />
         </div>
       )}
@@ -961,6 +987,7 @@ function AppContent() {
             onResolveUnknown={handleResolveUnknown}
             onRemove={handleRemovePendingAction}
             onUpdateCandidates={handleUpdatePendingCandidates}
+            onDirectResolve={handleDirectResolvePending}
           />
         </div>
       )}
@@ -992,13 +1019,17 @@ function AppContent() {
               <span>{state.teamB.name}</span>
             </div>
             <div className="game-finished-actions">
-              <button className="btn btn-primary btn-large" onClick={() => setShowStats(true)}>
-                統計を見る
-              </button>
-              <button className="btn btn-primary btn-large" onClick={handleGameFinished}>
+              <button className="btn btn-primary btn-large game-finished-btn" onClick={handleGameFinished}>
                 保存して終了
               </button>
-              <button className="btn btn-secondary btn-large" onClick={handleBackToHome}>
+              <button
+                className="btn btn-danger btn-large game-finished-btn"
+                onClick={() => {
+                  if (confirm('試合データを保存せずにホームへ戻りますか？\n※この操作は取り消せません')) {
+                    handleBackToHome();
+                  }
+                }}
+              >
                 保存せずにホームへ
               </button>
             </div>
