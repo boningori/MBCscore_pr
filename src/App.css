@@ -736,3 +736,152 @@
     right: var(--spacing-sm);
   }
 }
+
+/* ===========================================
+   Simple Mode Layout (スマホ向け縦型レイアウト)
+   =========================================== */
+
+/* シンプルモード時：縦型2列レイアウト（チームパネルを横に、アクションを下に） */
+.game-main-area.simple-mode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.game-main-area.simple-mode .team-panel {
+  flex: none;
+  width: 100%;
+  padding: var(--spacing-sm);
+}
+
+.game-main-area.simple-mode .team-panel-header {
+  margin-bottom: var(--spacing-xs);
+}
+
+.game-main-area.simple-mode .team-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  height: auto;
+  min-height: auto;
+  max-height: none;
+}
+
+/* シンプルモード：選手カードを大きく */
+.game-main-area.simple-mode .mini-player-card {
+  flex: 0 0 calc(50% - var(--spacing-xs));
+  min-height: 60px;
+  font-size: var(--font-size-lg);
+  padding: var(--spacing-sm);
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.game-main-area.simple-mode .mini-player-card .player-num {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+}
+
+.game-main-area.simple-mode .mini-player-card .player-pts {
+  font-size: var(--font-size-2xl);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* シンプルモード：ベンチを非表示 */
+.game-main-area.simple-mode .team-bench {
+  display: none;
+}
+
+/* シンプルモード：アクションパネルを下部に配置 */
+.game-main-area.simple-mode .center-actions-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: var(--spacing-sm);
+  z-index: 100;
+}
+
+/* シンプルモード：ActionButtonsコンテナを横並びに */
+.game-main-area.simple-mode .action-buttons-container {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  min-width: auto;
+  gap: var(--spacing-sm);
+  padding: 0;
+}
+
+.game-main-area.simple-mode .action-buttons-container .action-group {
+  flex: 1;
+}
+
+.game-main-area.simple-mode .action-buttons-container .action-group-title {
+  display: none;
+}
+
+/* シンプルモード時にメインコンテンツの下余白を確保 */
+.simple-mode~.app-main,
+.game-main-area.simple-mode {
+  padding-bottom: 100px;
+}
+
+/* ===========================================
+   History Popup (履歴ポップアップ)
+   =========================================== */
+
+.history-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.history-popup-content {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.history-popup-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.history-popup-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.history-popup-team h4 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+}

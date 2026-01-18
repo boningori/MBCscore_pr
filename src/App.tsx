@@ -579,6 +579,12 @@ function AppContent() {
   // フルスクリーン制御
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  // ゲームモード（フル/シンプル）
+  const [gameMode, setGameMode] = useState<'full' | 'simple'>('full');
+
+  // 履歴ポップアップ（シンプルモード用）
+  const [showHistoryPopup, setShowHistoryPopup] = useState(false);
+
   const toggleFullScreen = async () => {
     try {
       const doc = document as any;
@@ -720,25 +726,62 @@ function AppContent() {
           <button className="btn btn-secondary btn-small" onClick={toggleFullScreen} style={{ marginLeft: '8px' }}>
             {isFullScreen ? '縮小' : '全画面'}
           </button>
-
+          <button
+            className={`btn btn-small ${gameMode === 'simple' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setGameMode(gameMode === 'full' ? 'simple' : 'full')}
+            style={{ marginLeft: '8px' }}
+          >
+            {gameMode === 'full' ? '📱 シンプル' : '💻 フル'}
+          </button>
         </div>
         <div className="header-center">
-          <VoiceInput onCommand={handleVoiceCommand} />
+          {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />}
         </div>
         <div className="header-right">
-          <button
-            className="btn btn-secondary"
-            onClick={() => setScreen('scoresheet')}
-            style={{ marginRight: '12px' }}
-          >
-            📄 スコアシート
-          </button>
-          <button
-            className={`btn ${showStats ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setShowStats(!showStats)}
-          >
-            📊 統計
-          </button>
+          {/* シンプルモード用: 交代・履歴ボタン */}
+          {gameMode === 'simple' && (
+            <>
+              <button
+                className="btn btn-secondary btn-small"
+                onClick={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
+                style={{ marginRight: '8px' }}
+              >
+                交代A
+              </button>
+              <button
+                className="btn btn-secondary btn-small"
+                onClick={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
+                style={{ marginRight: '8px' }}
+              >
+                交代B
+              </button>
+              <button
+                className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                onClick={() => setShowHistoryPopup(!showHistoryPopup)}
+                style={{ marginRight: '8px' }}
+              >
+                📜 履歴
+              </button>
+            </>
+          )}
+          {/* フルモード用: スコアシート・統計 */}
+          {gameMode === 'full' && (
+            <>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setScreen('scoresheet')}
+                style={{ marginRight: '12px' }}
+              >
+                📄 スコアシート
+              </button>
+              <button
+                className={`btn ${showStats ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setShowStats(!showStats)}
+              >
+                📊 統計
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -761,7 +804,7 @@ function AppContent() {
             </div>
 
             {/* 3列メインエリア: Team A | Actions | Team B */}
-            <div className="game-main-area">
+            <div className={`game-main-area ${gameMode === 'simple' ? 'simple-mode' : 'full-mode'}`}>
               {/* Left: Team A */}
               <div className={`team-panel team-a color-${state.teamA.color} ${selectedTeamId === 'teamA' ? 'active' : ''}`}>
                 <div className="team-panel-header">
@@ -807,22 +850,24 @@ function AppContent() {
                     </button>
                   </div>
                 </div>
-                {/* アクション履歴 */}
-                <ActionHistory
-                  teamId="teamA"
-                  teamName={state.teamA.name}
-                  scoreHistory={state.scoreHistory}
-                  statHistory={state.statHistory}
-                  foulHistory={state.foulHistory}
-                  players={state.teamA.players}
-                  onRemoveScore={handleRemoveScore}
-                  onRemoveStat={handleRemoveStat}
-                  onRemoveFoul={handleRemoveFoul}
-                  onEditScore={handleEditScore}
-                  onEditStat={handleEditStat}
-                  onConvertScoreToMiss={handleConvertScoreToMiss}
-                  onConvertMissToScore={handleConvertMissToScore}
-                />
+                {/* アクション履歴（フルモードのみ） */}
+                {gameMode === 'full' && (
+                  <ActionHistory
+                    teamId="teamA"
+                    teamName={state.teamA.name}
+                    scoreHistory={state.scoreHistory}
+                    statHistory={state.statHistory}
+                    foulHistory={state.foulHistory}
+                    players={state.teamA.players}
+                    onRemoveScore={handleRemoveScore}
+                    onRemoveStat={handleRemoveStat}
+                    onRemoveFoul={handleRemoveFoul}
+                    onEditScore={handleEditScore}
+                    onEditStat={handleEditStat}
+                    onConvertScoreToMiss={handleConvertScoreToMiss}
+                    onConvertMissToScore={handleConvertMissToScore}
+                  />
+                )}
 
               </div>
 
@@ -836,6 +881,7 @@ function AppContent() {
                   disabled={phase === 'finished'}
                   hasSelection={!!selectedPlayerId}
                   activeAction={pendingAction}
+                  gameMode={gameMode}
                 />
               </div>
 
@@ -884,22 +930,24 @@ function AppContent() {
                     </button>
                   </div>
                 </div>
-                {/* アクション履歴 */}
-                <ActionHistory
-                  teamId="teamB"
-                  teamName={state.teamB.name}
-                  scoreHistory={state.scoreHistory}
-                  statHistory={state.statHistory}
-                  foulHistory={state.foulHistory}
-                  players={state.teamB.players}
-                  onRemoveScore={handleRemoveScore}
-                  onRemoveStat={handleRemoveStat}
-                  onRemoveFoul={handleRemoveFoul}
-                  onEditScore={handleEditScore}
-                  onEditStat={handleEditStat}
-                  onConvertScoreToMiss={handleConvertScoreToMiss}
-                  onConvertMissToScore={handleConvertMissToScore}
-                />
+                {/* アクション履歴（フルモードのみ） */}
+                {gameMode === 'full' && (
+                  <ActionHistory
+                    teamId="teamB"
+                    teamName={state.teamB.name}
+                    scoreHistory={state.scoreHistory}
+                    statHistory={state.statHistory}
+                    foulHistory={state.foulHistory}
+                    players={state.teamB.players}
+                    onRemoveScore={handleRemoveScore}
+                    onRemoveStat={handleRemoveStat}
+                    onRemoveFoul={handleRemoveFoul}
+                    onEditScore={handleEditScore}
+                    onEditStat={handleEditStat}
+                    onConvertScoreToMiss={handleConvertScoreToMiss}
+                    onConvertMissToScore={handleConvertMissToScore}
+                  />
+                )}
               </div>
             </div>
           </>
@@ -1056,6 +1104,58 @@ function AppContent() {
             <button className="btn btn-secondary" onClick={() => setShowCoachFoulSelector(null)}>
               キャンセル
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 履歴ポップアップ（シンプルモード用） */}
+      {showHistoryPopup && gameMode === 'simple' && (
+        <div className="history-popup-overlay" onClick={() => setShowHistoryPopup(false)}>
+          <div className="history-popup-content" onClick={e => e.stopPropagation()}>
+            <div className="history-popup-header">
+              <h3>アクション履歴</h3>
+              <button className="btn btn-secondary btn-small" onClick={() => setShowHistoryPopup(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="history-popup-body">
+              <div className="history-popup-team">
+                <h4>{state.teamA.name}</h4>
+                <ActionHistory
+                  teamId="teamA"
+                  teamName={state.teamA.name}
+                  scoreHistory={state.scoreHistory}
+                  statHistory={state.statHistory}
+                  foulHistory={state.foulHistory}
+                  players={state.teamA.players}
+                  onRemoveScore={handleRemoveScore}
+                  onRemoveStat={handleRemoveStat}
+                  onRemoveFoul={handleRemoveFoul}
+                  onEditScore={handleEditScore}
+                  onEditStat={handleEditStat}
+                  onConvertScoreToMiss={handleConvertScoreToMiss}
+                  onConvertMissToScore={handleConvertMissToScore}
+                />
+              </div>
+              <div className="history-popup-team">
+                <h4>{state.teamB.name}</h4>
+                <ActionHistory
+                  teamId="teamB"
+                  teamName={state.teamB.name}
+                  scoreHistory={state.scoreHistory}
+                  statHistory={state.statHistory}
+                  foulHistory={state.foulHistory}
+                  players={state.teamB.players}
+                  onRemoveScore={handleRemoveScore}
+                  onRemoveStat={handleRemoveStat}
+                  onRemoveFoul={handleRemoveFoul}
+                  onEditScore={handleEditScore}
+                  onEditStat={handleEditStat}
+                  onConvertScoreToMiss={handleConvertScoreToMiss}
+                  onConvertMissToScore={handleConvertMissToScore}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
