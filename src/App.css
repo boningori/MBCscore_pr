@@ -741,11 +741,13 @@
    Simple Mode Layout (スマホ向け縦型レイアウト)
    =========================================== */
 
-/* シンプルモード時：縦型2列レイアウト（チームパネルを横に、アクションを下に） */
+/* シンプルモード時：縦型レイアウト */
 .game-main-area.simple-mode {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  padding-bottom: 120px;
+  /* 下部固定UI用の余白 */
 }
 
 .game-main-area.simple-mode .team-panel {
@@ -794,12 +796,16 @@
   display: none;
 }
 
-/* シンプルモード：アクションパネルを下部に配置 */
+/* シンプルモード：アクションパネルを下部に固定配置 */
 .game-main-area.simple-mode .center-actions-area {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  height: auto !important;
+  border-radius: 0;
+  border: none;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border);
   padding: var(--spacing-sm);
@@ -808,6 +814,7 @@
 
 /* シンプルモード：ActionButtonsコンテナを横並びに */
 .game-main-area.simple-mode .action-buttons-container {
+  display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   min-width: auto;
@@ -817,10 +824,23 @@
 
 .game-main-area.simple-mode .action-buttons-container .action-group {
   flex: 1;
+  margin: 0;
 }
 
 .game-main-area.simple-mode .action-buttons-container .action-group-title {
   display: none;
+}
+
+/* シンプルモード：スコアボタンを横並びに */
+.game-main-area.simple-mode .action-row.score-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-xs);
+}
+
+.game-main-area.simple-mode .score-row .swipeable-score-btn {
+  flex: 1;
+  min-height: 70px;
 }
 
 /* シンプルモード時にメインコンテンツの下余白を確保 */
