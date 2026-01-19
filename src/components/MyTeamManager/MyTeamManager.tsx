@@ -277,7 +277,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         className="input"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="例: 湘北ミニバス"
+                        placeholder="チーム名を入力"
                     />
                 </div>
 
@@ -288,7 +288,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         className="input"
                         value={coachName}
                         onChange={e => setCoachName(e.target.value)}
-                        placeholder="例: 安西"
+                        placeholder="コーチ名を入力"
                     />
                 </div>
 
@@ -299,7 +299,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         className="input"
                         value={assistantCoachName}
                         onChange={e => setAssistantCoachName(e.target.value)}
-                        placeholder="例: 木暄"
+                        placeholder="Aコーチ名を入力"
                     />
                 </div>
 

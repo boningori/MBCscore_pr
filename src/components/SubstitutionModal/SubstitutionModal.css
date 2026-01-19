@@ -112,3 +112,53 @@
     padding-top: var(--spacing-lg);
     border-top: 1px solid var(--border);
 }
+
+/* スマホ向けレスポンシブ対応 */
+@media (max-width: 600px) {
+    .substitution-modal {
+        max-width: 100%;
+        margin: var(--spacing-sm);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .substitution-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+
+    .substitution-arrow {
+        display: none;
+    }
+
+    .sub-column-title {
+        font-size: var(--font-size-lg);
+        padding: var(--spacing-sm);
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-sm);
+    }
+
+    .sub-player-list {
+        max-height: 200px;
+    }
+
+    .sub-player-card {
+        padding: var(--spacing-md);
+        min-height: 50px;
+    }
+
+    .sub-player-number {
+        font-size: var(--font-size-xl);
+        min-width: 50px;
+    }
+
+    .substitution-actions {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .substitution-actions .btn {
+        width: 100%;
+        padding: var(--spacing-md);
+    }
+}

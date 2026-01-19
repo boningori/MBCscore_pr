@@ -76,3 +76,32 @@
     display: flex;
     justify-content: center;
 }
+
+/* スマホ向けレスポンシブ対応 */
+@media (max-width: 600px) {
+    .foul-type-selector {
+        min-width: auto;
+        width: 95%;
+        max-width: none;
+        padding: var(--spacing-md);
+    }
+
+    .foul-type-btn {
+        padding: var(--spacing-lg);
+        min-height: 60px;
+    }
+
+    .foul-type-label {
+        font-size: var(--font-size-xl);
+        min-width: 50px;
+    }
+
+    .foul-type-desc {
+        font-size: var(--font-size-md);
+    }
+
+    .foul-type-actions .btn {
+        width: 100%;
+        padding: var(--spacing-md);
+    }
+}
