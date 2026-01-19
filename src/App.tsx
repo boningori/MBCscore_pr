@@ -738,31 +738,15 @@ function AppContent() {
           {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />}
         </div>
         <div className="header-right">
-          {/* シンプルモード用: 交代・履歴ボタン */}
+          {/* シンプルモード用: 履歴ボタン */}
           {gameMode === 'simple' && (
-            <>
-              <button
-                className="btn btn-secondary btn-small"
-                onClick={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
-                style={{ marginRight: '8px' }}
-              >
-                交代A
-              </button>
-              <button
-                className="btn btn-secondary btn-small"
-                onClick={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
-                style={{ marginRight: '8px' }}
-              >
-                交代B
-              </button>
-              <button
-                className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small`}
-                onClick={() => setShowHistoryPopup(!showHistoryPopup)}
-                style={{ marginRight: '8px' }}
-              >
-                📜 履歴
-              </button>
-            </>
+            <button
+              className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small`}
+              onClick={() => setShowHistoryPopup(!showHistoryPopup)}
+              style={{ marginRight: '8px' }}
+            >
+              📜 履歴
+            </button>
           )}
           {/* フルモード用: スコアシート・統計 */}
           {gameMode === 'full' && (
@@ -834,6 +818,15 @@ function AppContent() {
                       )}
                     </div>
                   ))}
+                  {/* シンプルモード用の交代ボタン（選手カードと同じグリッド内） */}
+                  {gameMode === 'simple' && (
+                    <button
+                      className="simple-sub-btn"
+                      onClick={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
+                    >
+                      🔄 交代
+                    </button>
+                  )}
                 </div>
                 <div className="team-bench">
                   {state.teamA.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (
@@ -914,6 +907,15 @@ function AppContent() {
                       )}
                     </div>
                   ))}
+                  {/* シンプルモード用の交代ボタン（選手カードと同じグリッド内） */}
+                  {gameMode === 'simple' && (
+                    <button
+                      className="simple-sub-btn"
+                      onClick={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
+                    >
+                      🔄 交代
+                    </button>
+                  )}
                 </div>
                 <div className="team-bench">
                   {state.teamB.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (

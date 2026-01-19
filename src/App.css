@@ -760,6 +760,28 @@
   margin-bottom: var(--spacing-xs);
 }
 
+/* シンプルモード：スコアボードを横幅フィット */
+.game-main-area.simple-mode+.scoreboard-section,
+.simple-mode~.scoreboard-section {
+  width: 100%;
+}
+
+/* シンプルモード時のスコアボードセクション */
+.app-main:has(.simple-mode) .scoreboard-section {
+  width: 100%;
+}
+
+.app-main:has(.simple-mode) .scoreboard-section .scoreboard-new {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* シンプルモード：タイムアウト関連ボタンを非表示 */
+.app-main:has(.simple-mode) .to-count,
+.app-main:has(.simple-mode) .btn-game-action {
+  display: none !important;
+}
+
 .game-main-area.simple-mode .team-players {
   display: flex;
   flex-wrap: wrap;
@@ -769,31 +791,72 @@
   max-height: none;
 }
 
-/* シンプルモード：選手カードを大きく */
+/* シンプルモード：選手カードを3列配置でコンパクトに */
 .game-main-area.simple-mode .mini-player-card {
-  flex: 0 0 calc(50% - var(--spacing-xs));
-  min-height: 60px;
-  font-size: var(--font-size-lg);
-  padding: var(--spacing-sm);
+  flex: 0 0 calc(33.33% - 4px) !important;
+  width: calc(33.33% - 4px) !important;
+  min-width: 0 !important;
+  max-width: calc(33.33% - 4px) !important;
+  height: auto !important;
+  min-height: 40px;
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) !important;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .game-main-area.simple-mode .mini-player-card .player-num {
-  font-size: var(--font-size-xl);
-  font-weight: 800;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
 }
 
 .game-main-area.simple-mode .mini-player-card .player-pts {
-  font-size: var(--font-size-2xl);
-  min-width: 40px;
+  font-size: var(--font-size-xl);
+  min-width: 30px;
   text-align: right;
 }
 
-/* シンプルモード：ベンチを非表示 */
+/* シンプルモード：ベンチ選手リストは非表示、交代ボタンは表示 */
 .game-main-area.simple-mode .team-bench {
   display: none;
+}
+
+/* シンプルモード：チームパネル内の選手リストに交代ボタンを追加するためのスタイル */
+.game-main-area.simple-mode .team-players {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: var(--spacing-xs);
+  height: auto !important;
+  min-height: auto !important;
+}
+
+/* シンプルモード：チームパネル内の交代ボタン（選手カードと同じグリッド内） */
+.game-main-area.simple-mode .simple-sub-btn {
+  flex: 0 0 calc(33.33% - 4px);
+  width: calc(33.33% - 4px);
+  min-width: 0;
+  max-width: calc(33.33% - 4px);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.game-main-area.simple-mode .simple-sub-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
 }
 
 /* シンプルモード：アクションパネルを下部に固定配置 */
