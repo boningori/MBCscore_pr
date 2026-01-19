@@ -144,7 +144,6 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 onChange={e => setGameName(e.target.value)}
                                 placeholder="例: 冬季大会 第1回戦"
                                 autoFocus
-                                autoComplete="off"
                             />
                         </div>
                         <div className="form-group">
@@ -154,7 +153,6 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 className="input"
                                 value={date}
                                 onChange={e => setDate(e.target.value)}
-                                autoComplete="off"
                             />
                         </div>
                         <button

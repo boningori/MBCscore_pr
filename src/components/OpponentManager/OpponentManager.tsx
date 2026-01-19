@@ -301,7 +301,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             value={editingTeam.name}
                             onChange={(e) => handleTeamNameChange(e.target.value)}
                             placeholder="チーム名を入力"
-                            autoComplete="off"
                         />
                     </div>
 
@@ -312,7 +311,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             value={editingTeam.coachName}
                             onChange={(e) => handleCoachNameChange(e.target.value)}
                             placeholder="コーチ名を入力（任意）"
-                            autoComplete="off"
                         />
                     </div>
 
@@ -323,7 +321,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             value={editingTeam.assistantCoachName || ''}
                             onChange={(e) => handleAssistantCoachNameChange(e.target.value)}
                             placeholder="Aコーチ名を入力（任意）"
-                            autoComplete="off"
                         />
                     </div>
 
@@ -405,7 +402,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                 placeholder="No."
                                 min="0"
                                 max="99"
-                                autoComplete="off"
                             />
                             <input
                                 type="text"
@@ -414,7 +410,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                 onChange={e => setNewName(e.target.value)}
                                 placeholder="氏名"
                                 onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
-                                autoComplete="off"
                             />
                             <button
                                 className="btn btn-primary"
@@ -439,7 +434,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 min="0"
                                                 max="99"
                                                 autoFocus
-                                                autoComplete="off"
                                             />
                                             <input
                                                 type="text"
@@ -448,7 +442,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 onChange={e => setEditName(e.target.value)}
                                                 placeholder="氏名"
                                                 onKeyDown={e => e.key === 'Enter' && handleSaveEdit()}
-                                                autoComplete="off"
                                             />
                                             <div className="player-actions">
                                                 <button

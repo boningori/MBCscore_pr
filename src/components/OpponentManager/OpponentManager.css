@@ -348,7 +348,7 @@
     .number-grid-item {
         min-width: 44px;
         min-height: 44px;
-        font-size: var(--font-size-md);
+        font-size: 1rem;
     }
 
     .player-actions-row {
@@ -358,19 +358,5 @@
     .player-actions-row .btn-small {
         font-size: 0.75rem;
         padding: var(--spacing-xs) var(--spacing-sm);
-    }
-}
-
-/* Tablet (481px - 768px): 10列のまま */
-@media (min-width: 481px) and (max-width: 768px) {
-    .number-grid {
-        grid-template-columns: repeat(10, 1fr);
-        gap: 4px;
-    }
-
-    .number-grid-item {
-        min-width: 36px;
-        min-height: 36px;
-        font-size: var(--font-size-sm);
     }
 }
