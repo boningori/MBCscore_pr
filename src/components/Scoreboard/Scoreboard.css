@@ -237,6 +237,12 @@
     margin-bottom: var(--spacing-sm);
 }
 
+.simple-quarter-row .btn-small {
+    padding: 6px 12px;
+    min-height: 36px;
+    font-size: var(--font-size-sm);
+}
+
 .scoreboard-simple-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
