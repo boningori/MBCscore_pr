@@ -339,7 +339,8 @@
 }
 
 /* Mobile adjustments for number grid */
-@media (max-width: 480px) {
+/* Mobile adjustments for number grid */
+@media (max-width: 600px) {
     .number-grid {
         grid-template-columns: repeat(5, 1fr);
         gap: 6px;
