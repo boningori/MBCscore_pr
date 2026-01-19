@@ -34,6 +34,27 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
     if (mode === 'simple') {
         return (
             <div className="scoreboard-new scoreboard-simple">
+                {/* クォーター表示（上部に1セット） */}
+                <div className="simple-quarter-row">
+                    <span className={`quarter-badge q${currentQuarter}`}>Q{currentQuarter}</span>
+                    {phase === 'playing' && (
+                        <button className="btn btn-secondary btn-small" onClick={handleQuarterManagement}>
+                            Q終了
+                        </button>
+                    )}
+                    {phase === 'quarterEnd' && (
+                        <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
+                            {currentQuarter < 4 ? `Q${currentQuarter + 1}へ` : '終了'}
+                        </button>
+                    )}
+                    {phase === 'setup' && (
+                        <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
+                            開始
+                        </button>
+                    )}
+                </div>
+
+                {/* チーム得点カード */}
                 <div className="scoreboard-simple-grid">
                     {/* チームA */}
                     <div className={`simple-team-card color-${state.teamA.color}`}>
@@ -42,25 +63,9 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             <span className="simple-team-score">{scoreA}</span>
                         </div>
                         <div className="simple-team-footer">
-                            <span className={`quarter-badge q${currentQuarter}`}>Q{currentQuarter}</span>
                             <span className={`tf-badge ${state.teamA.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
                                 TF {state.teamA.teamFouls[currentQuarter - 1]}
                             </span>
-                            {phase === 'playing' && (
-                                <button className="btn btn-secondary btn-small" onClick={handleQuarterManagement}>
-                                    Q終了
-                                </button>
-                            )}
-                            {phase === 'quarterEnd' && (
-                                <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
-                                    {currentQuarter < 4 ? `Q${currentQuarter + 1}へ` : '終了'}
-                                </button>
-                            )}
-                            {phase === 'setup' && (
-                                <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
-                                    開始
-                                </button>
-                            )}
                         </div>
                     </div>
 
@@ -71,7 +76,6 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             <span className="simple-team-score">{scoreB}</span>
                         </div>
                         <div className="simple-team-footer">
-                            <span className={`quarter-badge q${currentQuarter}`}>Q{currentQuarter}</span>
                             <span className={`tf-badge ${state.teamB.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
                                 TF {state.teamB.teamFouls[currentQuarter - 1]}
                             </span>

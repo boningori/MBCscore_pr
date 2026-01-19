@@ -225,9 +225,16 @@
     }
 }
 
-/* ===== シンプルモード用スコアボード ===== */
 .scoreboard-simple {
     padding: var(--spacing-sm);
+}
+
+.simple-quarter-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
 }
 
 .scoreboard-simple-grid {
