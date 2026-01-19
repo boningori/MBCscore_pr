@@ -224,3 +224,100 @@
         font-size: var(--font-size-xs);
     }
 }
+
+/* ===== シンプルモード用スコアボード ===== */
+.scoreboard-simple {
+    padding: var(--spacing-sm);
+}
+
+.scoreboard-simple-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+}
+
+.simple-team-card {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    border-left: 4px solid var(--border);
+}
+
+.simple-team-card.color-white {
+    border-left-color: var(--team-white);
+}
+
+.simple-team-card.color-blue {
+    border-left-color: var(--team-blue);
+}
+
+.simple-team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.simple-team-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 80px;
+}
+
+.simple-team-score {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.simple-team-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+.quarter-badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+}
+
+.quarter-badge.q1 {
+    background: #86efac;
+    color: #166534;
+}
+
+.quarter-badge.q2 {
+    background: #4ade80;
+    color: white;
+}
+
+.quarter-badge.q3 {
+    background: #16a34a;
+    color: white;
+}
+
+.quarter-badge.q4 {
+    background: #14532d;
+    color: white;
+}
+
+.tf-badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+}
+
+.tf-badge.bonus {
+    background: var(--danger);
+    color: white;
+}

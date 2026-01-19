@@ -4,9 +4,10 @@ import './Scoreboard.css';
 interface ScoreboardProps {
     onQuarterEnd?: () => void;
     onTimeout?: (teamId: 'teamA' | 'teamB') => void;
+    mode?: 'full' | 'simple';
 }
 
-export function Scoreboard({ onQuarterEnd, onTimeout }: ScoreboardProps) {
+export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: ScoreboardProps) {
     const { state, dispatch, getTeamScore } = useGame();
     const { currentQuarter, phase } = state;
 
@@ -29,7 +30,57 @@ export function Scoreboard({ onQuarterEnd, onTimeout }: ScoreboardProps) {
     const scoreA = getTeamScore('teamA');
     const scoreB = getTeamScore('teamB');
 
+    // シンプルモード用のコンパクトレイアウト
+    if (mode === 'simple') {
+        return (
+            <div className="scoreboard-new scoreboard-simple">
+                <div className="scoreboard-simple-grid">
+                    {/* チームA */}
+                    <div className={`simple-team-card color-${state.teamA.color}`}>
+                        <div className="simple-team-header">
+                            <span className="simple-team-name">{state.teamA.name}</span>
+                            <span className="simple-team-score">{scoreA}</span>
+                        </div>
+                        <div className="simple-team-footer">
+                            <span className={`quarter-badge q${currentQuarter}`}>Q{currentQuarter}</span>
+                            <span className={`tf-badge ${state.teamA.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
+                                TF {state.teamA.teamFouls[currentQuarter - 1]}
+                            </span>
+                            {phase === 'playing' && (
+                                <button className="btn btn-secondary btn-small" onClick={handleQuarterManagement}>
+                                    Q終了
+                                </button>
+                            )}
+                            {phase === 'quarterEnd' && (
+                                <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
+                                    {currentQuarter < 4 ? `Q${currentQuarter + 1}へ` : '終了'}
+                                </button>
+                            )}
+                            {phase === 'setup' && (
+                                <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
+                                    開始
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
+                    {/* チームB */}
+                    <div className={`simple-team-card color-${state.teamB.color}`}>
+                        <div className="simple-team-header">
+                            <span className="simple-team-name">{state.teamB.name}</span>
+                            <span className="simple-team-score">{scoreB}</span>
+                        </div>
+                        <div className="simple-team-footer">
+                            <span className={`quarter-badge q${currentQuarter}`}>Q{currentQuarter}</span>
+                            <span className={`tf-badge ${state.teamB.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
+                                TF {state.teamB.teamFouls[currentQuarter - 1]}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="scoreboard-new">
@@ -88,19 +139,14 @@ export function Scoreboard({ onQuarterEnd, onTimeout }: ScoreboardProps) {
                         <span className="stat-label">TO</span>
                         <span className="stat-value">{state.teamA.timeouts.length}/3</span>
                     </div>
-                    {phase === 'playing' && (
-                        <>
-                            {onTimeout && (
-                                <button
-                                    className="btn btn-small btn-game-action"
-                                    onClick={() => onTimeout('teamA')}
-                                    disabled={state.teamA.timeouts.length >= 3}
-                                >
-                                    タイムアウト
-                                </button>
-                            )}
-
-                        </>
+                    {phase === 'playing' && onTimeout && (
+                        <button
+                            className="btn btn-small btn-game-action"
+                            onClick={() => onTimeout('teamA')}
+                            disabled={state.teamA.timeouts.length >= 3}
+                        >
+                            タイムアウト
+                        </button>
                     )}
                 </div>
 
@@ -114,19 +160,14 @@ export function Scoreboard({ onQuarterEnd, onTimeout }: ScoreboardProps) {
                         <span className="stat-label">TO</span>
                         <span className="stat-value">{state.teamB.timeouts.length}/3</span>
                     </div>
-                    {phase === 'playing' && (
-                        <>
-                            {onTimeout && (
-                                <button
-                                    className="btn btn-small btn-game-action"
-                                    onClick={() => onTimeout('teamB')}
-                                    disabled={state.teamB.timeouts.length >= 3}
-                                >
-                                    タイムアウト
-                                </button>
-                            )}
-
-                        </>
+                    {phase === 'playing' && onTimeout && (
+                        <button
+                            className="btn btn-small btn-game-action"
+                            onClick={() => onTimeout('teamB')}
+                            disabled={state.teamB.timeouts.length >= 3}
+                        >
+                            タイムアウト
+                        </button>
                     )}
                 </div>
             </div>

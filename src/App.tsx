@@ -784,6 +784,7 @@ function AppContent() {
               <Scoreboard
                 onQuarterEnd={handleQuarterEnd}
                 onTimeout={handleTimeout}
+                mode={gameMode}
               />
             </div>
 

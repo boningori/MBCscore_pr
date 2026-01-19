@@ -806,15 +806,19 @@
 .game-main-area.simple-mode .team-panel {
   padding: var(--spacing-xs) var(--spacing-sm);
   margin-bottom: var(--spacing-xs);
+  flex: none !important;
+  height: auto !important;
 }
 
 .game-main-area.simple-mode .team-players {
-  display: flex;
-  flex-wrap: wrap;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
   gap: var(--spacing-xs);
-  height: auto;
-  min-height: auto;
-  max-height: none;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  flex: none !important;
 }
 
 /* シンプルモード：選手カードを3列配置でコンパクトに */
