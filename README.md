@@ -78,7 +78,10 @@ MBCscoreは**フルモード**と**シンプルモード**の2つの表示モー
 - **スコアシート表示**: 記録に基づいたランニングスコアシートを表示。
 ### 📸 OCR選手登録
 - **カメラ読込**: メンバー表やスコアブックをカメラで撮影して選手リストを自動作成。
-- **オフラインOCR**: Tesseract.jsを使用し、APIキー不要かつオフライン環境（初回ロード後）でも安全に文字認識が可能。
+- **ハイブリッドOCRシステム**:
+  - **基本モード (オフライン)**: Tesseract.jsを使用。APIキー不要で、オフライン環境でも動作します。
+  - **高精度モード (AI)**: Google Gemini APIキーを設定（対戦チーム管理画面の⚙️設定ボタン）することで、手書き文字や複雑な表も高精度に認識できるAI-OCR機能が有効になります。
+  - ※APIキーは端末内（ブラウザ）にのみ保存され、外部サーバーには送信されないプライバシー設計です。
 
 ### 5. その他の便利機能
 - **スコアシート表示**: 記録に基づいたランニングスコアシートを表示し、PDF/画像として保存可能。
@@ -115,7 +118,7 @@ npm run preview
 - **Frontend**: React 19, TypeScript
 - **Build Tool**: Vite
 - **PWA**: vite-plugin-pwa
-- **OCR**: Tesseract.js (On-device OCR)
+- **OCR**: Tesseract.js (On-device), Google Gemini API (Optional)
 - **PDF/Image**: jspdf, html2canvas
 
 ---
