@@ -289,10 +289,14 @@
 }
 
 .quarter-badge {
-    padding: 2px 8px;
+    padding: 6px 12px;
     border-radius: var(--radius-sm);
     font-weight: 700;
     font-size: var(--font-size-sm);
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .quarter-badge.q1 {
