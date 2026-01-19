@@ -1,10 +1,12 @@
-// 画像認識（OCR）ユーティリティ - Gemini Vision API
+// 画像認識（OCR）ユーティリティ - Tesseract.js (Local)
+// Gemini API実装はコメントアウトして温存
 
 import type { SavedPlayer } from './teamStorage';
+import Tesseract from 'tesseract.js';
 
-// API設定
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+// API設定 (Gemini - コメントアウト)
+// const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+// const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -14,7 +16,8 @@ export interface ImageOCRResult {
     error?: string;
 }
 
-// 画像をBase64に変換
+// 画像をBase64に変換 (Gemini用 - コメントアウト)
+/*
 export async function imageToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -28,9 +31,100 @@ export async function imageToBase64(file: File): Promise<string> {
         reader.readAsDataURL(file);
     });
 }
+*/
 
-// 画像から選手リストを認識
+/**
+ * テキストから選手情報を抽出する簡易的なパーサー
+ * 番号と名前のペアを探す
+ */
+function parseOcrText(text: string): SavedPlayer[] {
+    const players: SavedPlayer[] = [];
+    // 行ごとに分割して処理
+    const lines = text.split(/\r?\n/);
+
+    // 一般的なパターン: "4 田中 太郎", "No.4 TANAKA", "4. 佐藤" など
+    // 数字の後に何らかの文字列が続くパターンを探す
+    const lineRegex = /^\s*([0-9]{1,3})[\s\.:,]+(.+)/;
+
+    // 複数列レイアウトの場合もあるので、単純な行処理だけでなく、
+    // 全文から「数字＋名前」っぽいパターンを拾うアプローチも考えられるが、
+    // まずは行単位で処理する
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        const match = trimmed.match(lineRegex);
+        if (match) {
+            const numStr = match[1];
+            let nameStr = match[2].trim();
+
+            const number = parseInt(numStr, 10);
+
+            // 明らかに誤検知っぽいものを除外（番号が大きすぎる、名前が短すぎるなど）
+            if (number > 99) continue;
+            if (nameStr.length < 1) continue;
+
+            // ゴミ文字除去（末尾の記号など）
+            nameStr = nameStr.replace(/[|\[\]{};:]/g, '');
+
+            players.push({
+                number,
+                name: nameStr,
+                isCaptain: false,
+            });
+        }
+    }
+
+    return players;
+}
+
+// 画像から選手リストを認識 (Tesseract.js版)
 export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResult> {
+    try {
+        // Tesseract.jsで認識
+        // 日本語と英語を対象にする
+        const result = await Tesseract.recognize(
+            imageFile,
+            'jpn+eng', // 日本語と英語
+            {
+                logger: m => console.log(m), // 進捗ログ
+            }
+        );
+
+        const text = result.data.text;
+        console.log('OCR Raw Text:', text);
+
+        const players = parseOcrText(text);
+
+        if (players.length === 0) {
+            return {
+                success: false,
+                players: [],
+                rawText: text,
+                error: '文字を認識できましたが、選手情報（番号と名前）を抽出できませんでした。',
+            };
+        }
+
+        return {
+            success: true,
+            players,
+            rawText: text,
+        };
+
+    } catch (error) {
+        console.error('OCR Error:', error);
+        return {
+            success: false,
+            players: [],
+            error: error instanceof Error ? error.message : '画像認識処理中にエラーが発生しました',
+        };
+    }
+}
+
+// Gemini API版 (コメントアウト)
+/*
+export async function recognizePlayerListGemini(imageFile: File): Promise<ImageOCRResult> {
     if (!GEMINI_API_KEY) {
         return {
             success: false,
@@ -126,8 +220,11 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
         };
     }
 }
+*/
 
 // APIキーが設定されているかチェック
+// Tesseract版では常に利用可能とする
 export function isOCRAvailable(): boolean {
-    return Boolean(GEMINI_API_KEY);
+    return true;
+    // return Boolean(GEMINI_API_KEY);
 }
