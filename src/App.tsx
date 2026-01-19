@@ -958,16 +958,23 @@ function AppContent() {
       </main>
 
       {/* ファウル種類選択モーダル */}
-      {showFoulSelector && (
-        <FoulTypeSelector
-          onSelect={handleFoul}
-          onCancel={() => {
-            setShowFoulSelector(false);
-            setResolvingFoulPending(null);
-          }}
-          hasSelectedPlayer={!!selectedPlayerId || !!resolvingFoulPending}
-        />
-      )}
+      {showFoulSelector && (() => {
+        const selectedPlayer = selectedPlayerId
+          ? [...state.teamA.players, ...state.teamB.players].find(p => p.id === selectedPlayerId)
+          : null;
+        return (
+          <FoulTypeSelector
+            onSelect={handleFoul}
+            onCancel={() => {
+              setShowFoulSelector(false);
+              setResolvingFoulPending(null);
+            }}
+            hasSelectedPlayer={!!selectedPlayerId || !!resolvingFoulPending}
+            currentFoulCount={selectedPlayer?.fouls.length || 0}
+            playerName={selectedPlayer?.name}
+          />
+        );
+      })()}
 
       {/* 交代モーダル */}
       {showSubstitutionModal && (

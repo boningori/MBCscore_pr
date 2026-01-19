@@ -1,4 +1,5 @@
 import type { Player } from '../../types/game';
+import { MAX_PERSONAL_FOULS } from '../../types/game';
 import './PlayerCard.css';
 
 interface PlayerCardProps {
@@ -38,9 +39,9 @@ export function PlayerCard({ player, isSelected, onClick, showStats = true }: Pl
 
             <div className="player-fouls">
                 {player.fouls.map((foul, index) => (
-                    <span key={index} className="foul-indicator">{foul}</span>
+                    <span key={index} className={`foul-indicator ${index >= MAX_PERSONAL_FOULS ? 'extra-foul' : ''}`}>{foul}</span>
                 ))}
-                {Array.from({ length: 5 - player.fouls.length }).map((_, index) => (
+                {player.fouls.length < MAX_PERSONAL_FOULS && Array.from({ length: MAX_PERSONAL_FOULS - player.fouls.length }).map((_, index) => (
                     <span key={`empty-${index}`} className="foul-indicator empty" />
                 ))}
             </div>

@@ -341,14 +341,14 @@
 /* Mobile adjustments for number grid */
 @media (max-width: 480px) {
     .number-grid {
-        grid-template-columns: repeat(10, 1fr);
-        gap: 2px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
     }
 
     .number-grid-item {
-        min-width: 28px;
-        min-height: 28px;
-        font-size: 0.7rem;
+        min-width: 44px;
+        min-height: 44px;
+        font-size: var(--font-size-md);
     }
 
     .player-actions-row {
@@ -358,5 +358,19 @@
     .player-actions-row .btn-small {
         font-size: 0.75rem;
         padding: var(--spacing-xs) var(--spacing-sm);
+    }
+}
+
+/* Tablet (481px - 768px): 10列のまま */
+@media (min-width: 481px) and (max-width: 768px) {
+    .number-grid {
+        grid-template-columns: repeat(10, 1fr);
+        gap: 4px;
+    }
+
+    .number-grid-item {
+        min-width: 36px;
+        min-height: 36px;
+        font-size: var(--font-size-sm);
     }
 }

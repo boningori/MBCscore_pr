@@ -115,6 +115,25 @@
     color: white;
 }
 
+/* 6個目以降のファウル（追加ファウル） */
+.foul-indicator.extra-foul {
+    background: #9333ea;
+    color: white;
+    animation: pulse-extra 1s infinite;
+}
+
+@keyframes pulse-extra {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
 .on-court-badge {
     position: absolute;
     top: -6px;
