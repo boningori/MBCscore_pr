@@ -86,7 +86,7 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
         // 日本語と英語を対象にする
         const result = await Tesseract.recognize(
             imageFile,
-            'jpn+eng', // 日本語と英語
+            'jpn', // 日本語のみに絞ることで精度向上を狙う
             {
                 logger: m => console.log(m), // 進捗ログ
             }
