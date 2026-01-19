@@ -897,8 +897,9 @@
   border-radius: var(--radius-md);
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  padding: var(--spacing-sm);
+  padding: var(--spacing-md);
   margin-bottom: var(--spacing-sm);
+  z-index: 10;
 }
 
 /* シンプルモード：ActionButtonsコンテナを横並びに */
@@ -909,11 +910,14 @@
   min-width: auto;
   gap: var(--spacing-sm);
   padding: 0;
+  width: 100%;
 }
 
 .game-main-area.simple-mode .action-buttons-container .action-group {
   flex: 1;
   margin: 0;
+  min-width: 0;
+  /* Flexbox内での縮小確保 */
 }
 
 .game-main-area.simple-mode .action-buttons-container .action-group-title {
@@ -925,14 +929,29 @@
   display: flex;
   flex-direction: row;
   gap: var(--spacing-xs);
+  width: 100%;
 }
 
 .game-main-area.simple-mode .score-row .swipeable-score-btn {
   flex: 1;
   min-height: 50px;
+  padding: 0 !important;
+  /* パディングリセット */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-main-area.simple-mode .swipeable-score-btn .score-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 /* シンプルモード：スワイプヒントを非表示 */
+.game-main-area.simple-mode .action-hint,
 .game-main-area.simple-mode .swipe-hint,
 .game-main-area.simple-mode .swipe-up-hint,
 .game-main-area.simple-mode .swipe-down-hint,
