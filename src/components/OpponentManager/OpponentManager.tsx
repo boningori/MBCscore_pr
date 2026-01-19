@@ -24,11 +24,23 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
     const [showOcrSettings, setShowOcrSettings] = useState(false);
+    const [hasApiKey, setHasApiKey] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const checkApiKey = () => {
+        const key = localStorage.getItem('mbc_gemini_api_key');
+        setHasApiKey(!!key);
+    };
 
     useEffect(() => {
         setTeams(loadOpponents());
+        checkApiKey();
     }, []);
+
+    const handleSettingsClose = () => {
+        setShowOcrSettings(false);
+        checkApiKey();
+    };
 
     const handleCreateNew = () => {
         setEditingTeam(createEmptySavedTeam());
@@ -340,18 +352,19 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                     # 番号一括選択
                                 </button>
                                 <button
-                                    className="btn btn-secondary btn-small"
+                                    className={`btn btn-small ${hasApiKey ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isLoading}
+                                    title={hasApiKey ? "Gemini AIで高精度に読み取ります" : "Tesseractで読み取ります（APIキー設定で精度向上）"}
                                 >
-                                    📷 写真読込
+                                    {hasApiKey ? '✨ AI読込' : '📷 写真読込'}
                                 </button>
                                 <button
-                                    className="btn btn-secondary btn-small"
+                                    className={`btn btn-small ${hasApiKey ? 'btn-info' : 'btn-secondary'}`}
                                     title="OCR設定"
                                     onClick={() => setShowOcrSettings(true)}
                                 >
-                                    ⚙️ 設定
+                                    {hasApiKey ? '⚙️ AI ON' : '⚙️ 設定'}
                                 </button>
                                 <button
                                     className="btn btn-danger btn-small"
@@ -374,7 +387,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                         {isLoading && (
                             <div className="ocr-loading">
                                 <span className="spinner"></span>
-                                画像を解析中...
+                                {hasApiKey ? 'AIが画像を解析中...' : 'OCRで画像を解析中...'}
                             </div>
                         )}
 
@@ -516,7 +529,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                         </button>
                     </div>
 
-                    <OCRSettingsModal isOpen={showOcrSettings} onClose={() => setShowOcrSettings(false)} />
+                    <OCRSettingsModal isOpen={showOcrSettings} onClose={handleSettingsClose} />
                 </div>
             </div>
         );
