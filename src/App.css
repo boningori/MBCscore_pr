@@ -782,6 +782,32 @@
   display: none !important;
 }
 
+/* シンプルモード：スコアボードの左右配置を維持 */
+.app-main:has(.simple-mode) .scoreboard-main {
+  grid-template-columns: 1fr auto 1fr !important;
+  gap: var(--spacing-sm);
+}
+
+.app-main:has(.simple-mode) .team-score-block {
+  flex-direction: row !important;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.app-main:has(.simple-mode) .score-display {
+  font-size: var(--font-size-2xl);
+}
+
+.app-main:has(.simple-mode) .quarter-section {
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* シンプルモード：チームパネルの余白を減らしてフィット */
+.game-main-area.simple-mode .team-panel {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
 .game-main-area.simple-mode .team-players {
   display: flex;
   flex-wrap: wrap;

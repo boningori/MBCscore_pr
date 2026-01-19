@@ -806,7 +806,7 @@ function AppContent() {
                     >
                       <span className="player-num">
                         #{player.number}
-                        {state.teamA.isMyTeam
+                        {gameMode === 'full' && state.teamA.isMyTeam
                           ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
                           : ''}
                       </span>
@@ -895,7 +895,7 @@ function AppContent() {
                     >
                       <span className="player-num">
                         #{player.number}
-                        {state.teamB.isMyTeam
+                        {gameMode === 'full' && state.teamB.isMyTeam
                           ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
                           : ''}
                       </span>
