@@ -36,23 +36,12 @@
     border-left-color: var(--team-blue);
 }
 
-.team-a-block {
-    border-left: none;
-    border-right: 4px solid var(--border);
-}
-
 .team-a-block.color-white {
-    border-right-color: var(--team-white);
-    border-left: none;
+    border-left-color: var(--team-white);
 }
 
 .team-a-block.color-blue {
-    border-right-color: var(--team-blue);
-    border-left: none;
-}
-
-.team-b-block {
-    border-right: none;
+    border-left-color: var(--team-blue);
 }
 
 .team-info {
