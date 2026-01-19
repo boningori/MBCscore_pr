@@ -152,7 +152,7 @@ export function ActionButtons({
                 </div>
             </div>
 
-            {!hasSelection && !activeAction && (
+            {!hasSelection && !activeAction && gameMode !== 'simple' && (
                 <div className="action-hint">
                     👆 アクションを選択してください
                 </div>
