@@ -1122,7 +1122,7 @@ function AppContent() {
               </button>
             </div>
             <div className="history-popup-body">
-              <div className="history-popup-team">
+              <div className={`history-popup-team color-${state.teamA.color}`}>
                 <h4>{state.teamA.name}</h4>
                 <ActionHistory
                   teamId="teamA"
@@ -1140,7 +1140,7 @@ function AppContent() {
                   onConvertMissToScore={handleConvertMissToScore}
                 />
               </div>
-              <div className="history-popup-team">
+              <div className={`history-popup-team color-${state.teamB.color}`}>
                 <h4>{state.teamB.name}</h4>
                 <ActionHistory
                   teamId="teamB"
