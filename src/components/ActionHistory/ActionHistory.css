@@ -107,6 +107,10 @@
     border-left: 3px solid var(--color-info);
 }
 
+.history-item.foul {
+    border-left: 3px solid var(--danger);
+}
+
 .history-item.selected {
     background: var(--bg-hover);
 }

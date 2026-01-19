@@ -917,10 +917,23 @@ function gameReducer(state: Game, action: GameAction): Game {
                     };
                 };
 
+                // ファウル履歴エントリを作成
+                const foulEntry: FoulEntry = {
+                    id: crypto.randomUUID(),
+                    teamId: pending.teamId,
+                    playerId,
+                    playerNumber: player.number,
+                    foulType,
+                    quarter: pending.quarter,
+                    timestamp: pending.timestamp,
+                    isCoachOrBench: false,
+                };
+
                 newState = {
                     ...newState,
                     teamA: updateTeamFoul(newState.teamA, pending.teamId === 'teamA'),
                     teamB: updateTeamFoul(newState.teamB, pending.teamId === 'teamB'),
+                    foulHistory: [...newState.foulHistory, foulEntry],
                 };
             }
 
@@ -977,10 +990,23 @@ function gameReducer(state: Game, action: GameAction): Game {
                 };
             };
 
+            // ファウル履歴エントリを作成
+            const foulEntry: FoulEntry = {
+                id: crypto.randomUUID(),
+                teamId: pending.teamId,
+                playerId,
+                playerNumber: player.number,
+                foulType,
+                quarter: pending.quarter,
+                timestamp: pending.timestamp,
+                isCoachOrBench: false,
+            };
+
             return {
                 ...state,
                 teamA: updateTeamFoul(state.teamA, pending.teamId === 'teamA'),
                 teamB: updateTeamFoul(state.teamB, pending.teamId === 'teamB'),
+                foulHistory: [...state.foulHistory, foulEntry],
                 pendingActions: state.pendingActions.filter(p => p.id !== pendingActionId),
             };
         }

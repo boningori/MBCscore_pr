@@ -36,12 +36,20 @@
     border-left-color: var(--team-blue);
 }
 
-.team-a-block.color-white {
-    border-left-color: var(--team-white);
+/* Team A (左パネル) はボーダーを右側に */
+.team-score-block.team-a-block {
+    border-left: none !important;
+    border-right: 4px solid var(--border) !important;
 }
 
-.team-a-block.color-blue {
-    border-left-color: var(--team-blue);
+.team-score-block.team-a-block.color-white {
+    border-left: none !important;
+    border-right: 4px solid var(--team-white) !important;
+}
+
+.team-score-block.team-a-block.color-blue {
+    border-left: none !important;
+    border-right: 4px solid var(--team-blue) !important;
 }
 
 .team-info {

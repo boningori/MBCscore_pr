@@ -142,7 +142,7 @@
 
 .btn-foul {
     background: rgba(245, 158, 11, 0.15);
-    border-color: var(--warning);
+    border: 4px solid #D8B4FE !important;
     min-height: 70px !important;
 }
 

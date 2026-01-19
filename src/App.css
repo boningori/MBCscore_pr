@@ -363,6 +363,22 @@
   border-right: none;
 }
 
+/* フルモード時のボーダー位置を明示的に指定 */
+.game-main-area.full-mode .team-panel.team-a {
+  border-right: 4px solid var(--team-a) !important;
+  border-left: none !important;
+}
+
+.game-main-area.full-mode .team-panel.team-a.color-white {
+  border-right: 4px solid var(--team-white) !important;
+  border-left: none !important;
+}
+
+.game-main-area.full-mode .team-panel.team-a.color-blue {
+  border-right: 4px solid var(--team-blue) !important;
+  border-left: none !important;
+}
+
 
 .team-panel-header {
   display: flex;
@@ -826,7 +842,7 @@
   min-width: 0 !important;
   max-width: calc(33.33% - 4px) !important;
   height: auto !important;
-  min-height: 40px;
+  min-height: 70px;
   font-size: var(--font-size-sm);
   padding: var(--spacing-xs) !important;
   flex-direction: row;
@@ -867,7 +883,7 @@
   width: calc(33.33% - 4px);
   min-width: 0;
   max-width: calc(33.33% - 4px);
-  min-height: 40px;
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -914,10 +930,16 @@
 }
 
 .game-main-area.simple-mode .action-buttons-container .action-group {
-  flex: 1;
+  flex: 3;
+  /* デフォルトはスコアグループとして広く取る */
   margin: 0;
   min-width: 0;
   /* Flexbox内での縮小確保 */
+}
+
+/* ファウルグループ（最後のグループ）は幅を狭くする (3:1の比率) */
+.game-main-area.simple-mode .action-buttons-container .action-group:last-child {
+  flex: 1;
 }
 
 .game-main-area.simple-mode .action-buttons-container .action-group-title {
@@ -960,29 +982,52 @@
   display: none !important;
 }
 
-/* シンプルモード：ボタン高さをコンパクトに */
+/* シンプルモード：ボタン高さをコンパクトに統一 (50px) */
 .game-main-area.simple-mode .stat-btn-group {
-  min-height: 40px !important;
-}
-
-.game-main-area.simple-mode .stat-btn {
-  min-height: 40px !important;
-  padding: var(--spacing-xs) !important;
-}
-
-.game-main-area.simple-mode .shoot-btn {
   min-height: 50px !important;
 }
 
-/* シンプルモード：ファウルボタンをコンパクトに */
-.game-main-area.simple-mode .foul-btn {
-  min-height: 44px !important;
-  padding: var(--spacing-xs) var(--spacing-sm) !important;
+.game-main-area.simple-mode .stat-btn {
+  min-height: 50px !important;
+  padding: var(--spacing-xs) !important;
+}
+
+.game-main-area.simple-mode .swipeable-score-wrapper,
+.game-main-area.simple-mode .swipeable-score-btn,
+.game-main-area.simple-mode .action-row.score-row {
+  min-height: 70px !important;
+}
+
+/* シンプルモード：ファウルボタンも同じ高さに統一 */
+.game-main-area.simple-mode .btn-foul {
+  min-height: 70px !important;
+  height: 70px !important;
+  padding: 0 var(--spacing-sm) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 4px solid #D8B4FE !important;
+  /* 薄紫色 */
 }
 
 /* シンプルモード：不要なアクション行（ターンオーバー、REB）を非表示 */
 .game-main-area.simple-mode .action-group.stat-group {
   display: none;
+}
+
+/* シンプルモード：チームAのボーダー位置修正（右→左） */
+.game-main-area.simple-mode .team-panel.team-a {
+  border-right: none !important;
+  border-left: 4px solid var(--team-a) !important;
+}
+
+/* チームカラーオーバーライド対応 */
+.game-main-area.simple-mode .team-panel.team-a.color-white {
+  border-left: 4px solid var(--team-white) !important;
+}
+
+.game-main-area.simple-mode .team-panel.team-a.color-blue {
+  border-left: 4px solid var(--team-blue) !important;
 }
 
 /* ===========================================

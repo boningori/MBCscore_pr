@@ -4,6 +4,22 @@
     padding: 12px;
     margin: 8px 0;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 3px dashed #fbbf24;
+    animation: pending-pulse 2s ease-in-out infinite;
+}
+
+@keyframes pending-pulse {
+
+    0%,
+    100% {
+        border-color: #fbbf24;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 0 8px rgba(251, 191, 36, 0.3);
+    }
+
+    50% {
+        border-color: #f59e0b;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 0 16px rgba(251, 191, 36, 0.6);
+    }
 }
 
 .pending-action-header {
