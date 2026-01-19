@@ -19,7 +19,7 @@ export function SubstitutionModal({
     const [playerOut, setPlayerOut] = useState<string | null>(null);
     const [playerIn, setPlayerIn] = useState<string | null>(null);
 
-    const onCourtPlayers = players.filter(p => p.isOnCourt && p.fouls.length < 5);
+    const onCourtPlayers = players.filter(p => p.isOnCourt);
     const benchPlayers = players.filter(p => !p.isOnCourt && p.fouls.length < 5);
 
     const handleConfirm = () => {
