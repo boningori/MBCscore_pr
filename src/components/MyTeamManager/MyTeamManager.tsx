@@ -278,6 +278,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="チーム名を入力"
+                        autoComplete="off"
                     />
                 </div>
 
@@ -289,6 +290,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         value={coachName}
                         onChange={e => setCoachName(e.target.value)}
                         placeholder="コーチ名を入力"
+                        autoComplete="off"
                     />
                 </div>
 
@@ -300,6 +302,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         value={assistantCoachName}
                         onChange={e => setAssistantCoachName(e.target.value)}
                         placeholder="Aコーチ名を入力"
+                        autoComplete="off"
                     />
                 </div>
 
@@ -317,6 +320,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                             placeholder="No."
                             min="0"
                             max="99"
+                            autoComplete="off"
                         />
                         <input
                             type="text"
@@ -324,6 +328,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
                             placeholder="氏名"
+                            autoComplete="off"
                         />
                         <input
                             type="text"
@@ -331,6 +336,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                             value={newCourtName}
                             onChange={e => setNewCourtName(e.target.value)}
                             placeholder="コートネーム"
+                            autoComplete="off"
                             onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
                         />
                         <button
@@ -356,6 +362,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                             min="0"
                                             max="99"
                                             autoFocus
+                                            autoComplete="off"
                                         />
                                         <input
                                             type="text"
@@ -363,6 +370,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                             value={editName}
                                             onChange={e => setEditName(e.target.value)}
                                             placeholder="氏名"
+                                            autoComplete="off"
                                         />
                                         <input
                                             type="text"
@@ -370,6 +378,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                             value={editCourtName}
                                             onChange={e => setEditCourtName(e.target.value)}
                                             placeholder="コートネーム"
+                                            autoComplete="off"
                                             onKeyDown={e => e.key === 'Enter' && handleSaveEdit()}
                                         />
                                         <div className="player-edit-actions">
