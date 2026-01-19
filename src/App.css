@@ -746,8 +746,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  padding-bottom: 120px;
-  /* 下部固定UI用の余白 */
 }
 
 .game-main-area.simple-mode .team-panel {
@@ -890,20 +888,17 @@
   background: rgba(59, 130, 246, 0.1);
 }
 
-/* シンプルモード：アクションパネルを下部に固定配置 */
+/* シンプルモード：アクションパネルをスコアボード直下に配置 */
 .game-main-area.simple-mode .center-actions-area {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  top: auto !important;
+  order: -1;
+  position: relative !important;
+  width: 100%;
   height: auto !important;
-  border-radius: 0;
-  border: none;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
+  border: 1px solid var(--border);
   padding: var(--spacing-sm);
-  z-index: 100;
+  margin-bottom: var(--spacing-sm);
 }
 
 /* シンプルモード：ActionButtonsコンテナを横並びに */
