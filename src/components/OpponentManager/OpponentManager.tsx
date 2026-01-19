@@ -7,6 +7,7 @@ import {
     createEmptySavedTeam,
 } from '../../utils/teamStorage';
 import { recognizePlayerList } from '../../utils/imageOCR';
+import { OCRSettingsModal } from '../Settings/OCRSettingsModal';
 import './OpponentManager.css';
 
 interface OpponentManagerProps {
@@ -22,6 +23,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     // OCR related state
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
+    const [showOcrSettings, setShowOcrSettings] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -256,11 +258,11 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                         ...editingTeam,
                         players: [...editingTeam.players, ...newPlayers].sort((a, b) => a.number - b.number)
                     });
-                    if (duplicateCount > 0) {
-                        alert(`${newPlayers.length}人の選手を追加しました。（${duplicateCount}人は重複のためスキップされました）`);
-                    } else {
-                        alert(`${newPlayers.length}人の選手を追加しました。`);
-                    }
+
+                    const engineName = result.usedEngine === 'Gemini' ? 'AI (Gemini)' : 'OCR';
+                    const duplicateMsg = duplicateCount > 0 ? `（${duplicateCount}人はスキップ）` : '';
+                    alert(`${engineName}で${newPlayers.length}人の選手を読み込みました。${duplicateMsg}`);
+
                 } else {
                     setOcrError('読み取った選手は全て登録済みか、有効なデータがありませんでした。');
                 }
@@ -343,6 +345,13 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                     disabled={isLoading}
                                 >
                                     📷 写真読込
+                                </button>
+                                <button
+                                    className="btn btn-secondary btn-small"
+                                    title="OCR設定"
+                                    onClick={() => setShowOcrSettings(true)}
+                                >
+                                    ⚙️ 設定
                                 </button>
                                 <button
                                     className="btn btn-danger btn-small"
@@ -506,6 +515,8 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             保存
                         </button>
                     </div>
+
+                    <OCRSettingsModal isOpen={showOcrSettings} onClose={() => setShowOcrSettings(false)} />
                 </div>
             </div>
         );

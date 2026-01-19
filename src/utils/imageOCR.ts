@@ -4,9 +4,22 @@
 import type { SavedPlayer } from './teamStorage';
 import Tesseract from 'tesseract.js';
 
-// API設定 (Gemini - コメントアウト)
-// const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-// const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+// API設定
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const STORAGE_KEY_GEMINI_API = 'mbc_gemini_api_key';
+
+// APIキーの管理関数
+export function getStoredApiKey(): string {
+    return localStorage.getItem(STORAGE_KEY_GEMINI_API) || import.meta.env.VITE_GEMINI_API_KEY || '';
+}
+
+export function saveApiKey(key: string): void {
+    if (key) {
+        localStorage.setItem(STORAGE_KEY_GEMINI_API, key);
+    } else {
+        localStorage.removeItem(STORAGE_KEY_GEMINI_API);
+    }
+}
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -14,10 +27,10 @@ export interface ImageOCRResult {
     players: SavedPlayer[];
     rawText?: string;
     error?: string;
+    usedEngine?: 'Gemini' | 'Tesseract'; // どちらを使ったか返す
 }
 
-// 画像をBase64に変換 (Gemini用 - コメントアウト)
-/*
+// 画像をBase64に変換
 export async function imageToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -31,7 +44,6 @@ export async function imageToBase64(file: File): Promise<string> {
         reader.readAsDataURL(file);
     });
 }
-*/
 
 /**
  * テキストから選手情報を抽出する簡易的なパーサー
@@ -79,21 +91,22 @@ function parseOcrText(text: string): SavedPlayer[] {
     return players;
 }
 
-// 画像から選手リストを認識 (Tesseract.js版)
-export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResult> {
+/**
+ * Tesseract.jsによるOCR処理
+ */
+async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> {
     try {
-        // Tesseract.jsで認識
-        // 日本語と英語を対象にする
+        console.log('Using OCR Engine: Tesseract.js');
         const result = await Tesseract.recognize(
             imageFile,
-            'jpn', // 日本語のみに絞ることで精度向上を狙う
+            'jpn', // 日本語優先
             {
-                logger: m => console.log(m), // 進捗ログ
+                logger: m => import.meta.env.DEV ? console.log(m) : null,
             }
         );
 
         const text = result.data.text;
-        console.log('OCR Raw Text:', text);
+        console.log('OCR Raw Text (Tesseract):', text);
 
         const players = parseOcrText(text);
 
@@ -102,7 +115,8 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
                 success: false,
                 players: [],
                 rawText: text,
-                error: '文字を認識できましたが、選手情報（番号と名前）を抽出できませんでした。',
+                error: '文字を認識しましたが、選手情報（番号と名前）を抽出できませんでした。',
+                usedEngine: 'Tesseract',
             };
         }
 
@@ -110,30 +124,20 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
             success: true,
             players,
             rawText: text,
+            usedEngine: 'Tesseract',
         };
-
     } catch (error) {
-        console.error('OCR Error:', error);
-        return {
-            success: false,
-            players: [],
-            error: error instanceof Error ? error.message : '画像認識処理中にエラーが発生しました',
-        };
+        console.error('Tesseract Error:', error);
+        throw error;
     }
 }
 
-// Gemini API版 (コメントアウト)
-/*
-export async function recognizePlayerListGemini(imageFile: File): Promise<ImageOCRResult> {
-    if (!GEMINI_API_KEY) {
-        return {
-            success: false,
-            players: [],
-            error: 'Gemini APIキーが設定されていません。環境変数 VITE_GEMINI_API_KEY を設定してください。',
-        };
-    }
-
+/**
+ * Gemini APIによるOCR処理
+ */
+async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
     try {
+        console.log('Using OCR Engine: Gemini API');
         const base64Image = await imageToBase64(imageFile);
         const mimeType = imageFile.type || 'image/jpeg';
 
@@ -152,7 +156,7 @@ export async function recognizePlayerListGemini(imageFile: File): Promise<ImageO
 - 名前が読み取れない場合は「選手」+連番
 - JSONのみを出力、説明文は不要`;
 
-        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -180,11 +184,12 @@ export async function recognizePlayerListGemini(imageFile: File): Promise<ImageO
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error?.message || 'API request failed');
+            throw new Error(errorData.error?.message || 'Gemini API request failed');
         }
 
         const data = await response.json();
         const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        console.log('OCR Raw Text (Gemini):', textResponse);
 
         // JSONを抽出
         const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
@@ -193,13 +198,14 @@ export async function recognizePlayerListGemini(imageFile: File): Promise<ImageO
                 success: false,
                 players: [],
                 rawText: textResponse,
-                error: '選手情報を認識できませんでした。画像を確認してください。',
+                error: 'Geminiからの応答形式が正しくありませんでした。',
+                usedEngine: 'Gemini',
             };
         }
 
         const players = JSON.parse(jsonMatch[0]) as SavedPlayer[];
 
-        // データ検証と正規化（isCaptainは常にfalse）
+        // データ検証と正規化
         const validatedPlayers: SavedPlayer[] = players.map((p, index) => ({
             number: typeof p.number === 'number' ? p.number : parseInt(String(p.number), 10) || index + 1,
             name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
@@ -210,21 +216,46 @@ export async function recognizePlayerListGemini(imageFile: File): Promise<ImageO
             success: true,
             players: validatedPlayers,
             rawText: textResponse,
+            usedEngine: 'Gemini',
         };
     } catch (error) {
-        console.error('Image OCR failed:', error);
+        console.error('Gemini API Error:', error);
+        throw error; // エラーを投げてフォールバックさせるか、呼び出し元で処理
+    }
+}
+
+/**
+ * 画像から選手リストを認識（ハイブリッド版）
+ */
+export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResult> {
+    const apiKey = getStoredApiKey();
+
+    // APIキーがあればGeminiを優先試行
+    if (apiKey) {
+        try {
+            return await recognizeWithGemini(imageFile, apiKey);
+        } catch (error) {
+            console.warn('Gemini API failed, falling back to Tesseract...', error);
+            // Gemini失敗時はTesseractへフォールバック
+            // （ただし認証エラーなどの場合はユーザーに通知したほうが親切かもだが、
+            //  今回は「とにかく読み取る」ことを優先してフォールバックする）
+        }
+    }
+
+    // キーが無い、またはGemini失敗時はTesseract
+    try {
+        return await recognizeWithTesseract(imageFile);
+    } catch (error) {
         return {
             success: false,
             players: [],
             error: error instanceof Error ? error.message : '画像認識に失敗しました',
+            usedEngine: 'Tesseract',
         };
     }
 }
-*/
 
-// APIキーが設定されているかチェック
-// Tesseract版では常に利用可能とする
+// OCR機能自体は常に利用可能
 export function isOCRAvailable(): boolean {
     return true;
-    // return Boolean(GEMINI_API_KEY);
 }
