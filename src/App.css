@@ -1009,9 +1009,15 @@
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-sm);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.history-popup-team {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
 }
 
 .history-popup-team h4 {
