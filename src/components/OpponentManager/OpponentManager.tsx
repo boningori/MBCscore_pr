@@ -273,7 +273,13 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
                     const engineName = result.usedEngine === 'Gemini' ? 'AI (Gemini)' : 'OCR';
                     const duplicateMsg = duplicateCount > 0 ? `（${duplicateCount}人はスキップ）` : '';
-                    alert(`${engineName}で${newPlayers.length}人の選手を読み込みました。${duplicateMsg}`);
+
+                    let message = `${engineName}で${newPlayers.length}人の選手を読み込みました。${duplicateMsg}`;
+                    if (result.usedEngine === 'Tesseract' && result.fallbackReason) {
+                        message += `\n\n※Gemini APIでの読み取りに失敗したため、標準OCRを使用しました。\n理由: ${result.fallbackReason}`;
+                    }
+
+                    alert(message);
 
                 } else {
                     setOcrError('読み取った選手は全て登録済みか、有効なデータがありませんでした。');

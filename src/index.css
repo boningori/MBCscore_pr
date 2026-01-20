@@ -192,6 +192,20 @@ body {
   padding: var(--spacing-md) var(--spacing-lg);
 }
 
+.btn-small {
+  min-width: auto;
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
 .btn-score {
   min-width: 80px;
   min-height: 60px;

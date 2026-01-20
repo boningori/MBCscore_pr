@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getStoredApiKey, saveApiKey } from '../../utils/imageOCR';
+import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/imageOCR';
 import './OCRSettingsModal.css';
 
 interface OCRSettingsModalProps {
@@ -10,10 +10,12 @@ interface OCRSettingsModalProps {
 export const OCRSettingsModal: React.FC<OCRSettingsModalProps> = ({ isOpen, onClose }) => {
     const [apiKey, setApiKey] = useState('');
     const [showKey, setShowKey] = useState(false);
+    const [testStatus, setTestStatus] = useState<{ loading: boolean; message: string; success?: boolean } | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             setApiKey(getStoredApiKey());
+            setTestStatus(null);
         }
     }, [isOpen]);
 
@@ -28,6 +30,21 @@ export const OCRSettingsModal: React.FC<OCRSettingsModalProps> = ({ isOpen, onCl
         saveApiKey('');
         onClose();
         alert('APIキーを削除しました。Tesseract (標準OCR) に戻ります。');
+    };
+
+    const handleTestConnection = async () => {
+        if (!apiKey.trim()) {
+            alert('APIキーを入力してください');
+            return;
+        }
+
+        setTestStatus({ loading: true, message: '接続テスト中...' });
+        const result = await testGeminiConnection(apiKey.trim());
+        setTestStatus({
+            loading: false,
+            message: result.message,
+            success: result.success
+        });
     };
 
     if (!isOpen) return null;
@@ -58,6 +75,22 @@ export const OCRSettingsModal: React.FC<OCRSettingsModalProps> = ({ isOpen, onCl
                             {showKey ? '隠す' : '表示'}
                         </button>
                     </div>
+
+                    <div className="test-connection-section">
+                        <button
+                            className="btn btn-secondary btn-small"
+                            onClick={handleTestConnection}
+                            disabled={testStatus?.loading || !apiKey}
+                        >
+                            {testStatus?.loading ? 'テスト中...' : 'API 接続テスト'}
+                        </button>
+                        {testStatus && (
+                            <div className={`test-status ${testStatus.success ? 'success' : 'error'}`}>
+                                {testStatus.message}
+                            </div>
+                        )}
+                    </div>
+
                     <a
                         href="https://aistudio.google.com/app/apikey"
                         target="_blank"

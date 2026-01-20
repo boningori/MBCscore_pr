@@ -100,3 +100,25 @@
     background: #007bff;
     color: white;
 }
+.test-connection-section {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.test-status {
+    font-size: 0.85rem;
+    padding: 5px 8px;
+    border-radius: 4px;
+}
+
+.test-status.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.test-status.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}

@@ -5,8 +5,19 @@ import type { SavedPlayer } from './teamStorage';
 import Tesseract from 'tesseract.js';
 
 // API設定
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
 const STORAGE_KEY_GEMINI_API = 'mbc_gemini_api_key';
+
+const FALLBACK_MODELS = [
+    // --- 現行主力モデル (安定版) ---
+    'gemini-2.5-flash-lite',    // 最速・最軽量モデル
+    'gemini-2.5-flash',         // 高速・低コスト・多機能
+    'gemini-2.5-pro',           // 高度な思考・論理推論 (Adaptive Thinking)
+    // --- 次世代モデル (最新プレビュー) ---
+    'gemini-3-flash-preview',   // 最もバランスの取れた次世代モデル    
+    'gemini-3-pro-preview'     // 最強のエージェント型・推論モデル
+];
+
 
 // APIキーの管理関数
 export function getStoredApiKey(): string {
@@ -28,6 +39,68 @@ export interface ImageOCRResult {
     rawText?: string;
     error?: string;
     usedEngine?: 'Gemini' | 'Tesseract'; // どちらを使ったか返す
+    fallbackReason?: string; // GeminiからTesseractへのフォールバック理由
+}
+
+/**
+ * Gemini APIの接続テスト
+ */
+export async function testGeminiConnection(apiKey: string): Promise<{ success: boolean; message: string }> {
+    let lastError = '';
+
+    for (const model of FALLBACK_MODELS) {
+        try {
+            const url = `${GEMINI_API_BASE}${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                { text: "Hello" },
+                            ],
+                        },
+                    ],
+                    generationConfig: {
+                        maxOutputTokens: 10,
+                    },
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMessage = errorData.error?.message || response.statusText;
+
+                // 404なら次のモデルへ
+                if (response.status === 404 || errorMessage.includes('not found')) {
+                    console.warn(`Model ${model} not found, trying next...`);
+                    lastError = errorMessage;
+                    continue;
+                }
+
+                // その他のエラーは即座に返す
+                return {
+                    success: false,
+                    message: errorMessage,
+                };
+            }
+
+            const data = await response.json();
+            if (data.candidates && data.candidates.length > 0) {
+                return { success: true, message: `接続成功 (${model})` };
+            }
+        } catch (error) {
+            lastError = error instanceof Error ? error.message : 'Unknown error';
+        }
+    }
+
+    return {
+        success: false,
+        message: `接続失敗: 全てのモデルでエラーが発生しました (${lastError})`,
+    };
 }
 
 // 画像をBase64に変換
@@ -136,12 +209,11 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
  * Gemini APIによるOCR処理
  */
 async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
-    try {
-        console.log('Using OCR Engine: Gemini API');
-        const base64Image = await imageToBase64(imageFile);
-        const mimeType = imageFile.type || 'image/jpeg';
+    console.log('Using OCR Engine: Gemini API');
+    const base64Image = await imageToBase64(imageFile);
+    const mimeType = imageFile.type || 'image/jpeg';
 
-        const prompt = `この画像は日本のミニバスケットボールチームの選手名簿（メンバー表）です。
+    const prompt = `この画像は日本のミニバスケットボールチームの選手名簿（メンバー表）です。
 画像から選手情報を読み取り、以下のJSON形式で出力してください。
 
 必ず以下の形式のJSONのみを出力し、他の説明文は含めないでください：
@@ -156,72 +228,92 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 - 名前が読み取れない場合は「選手」+連番
 - JSONのみを出力、説明文は不要`;
 
-        const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
-                            { text: prompt },
-                            {
-                                inline_data: {
-                                    mime_type: mimeType,
-                                    data: base64Image,
-                                },
-                            },
-                        ],
-                    },
-                ],
-                generationConfig: {
-                    temperature: 0.1,
-                    maxOutputTokens: 2048,
+    let lastError: Error | null = null;
+
+
+    for (const model of FALLBACK_MODELS) {
+        try {
+            const url = `${GEMINI_API_BASE}${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-            }),
-        });
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inline_data: {
+                                        mime_type: mimeType,
+                                        data: base64Image,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                    generationConfig: {
+                        temperature: 0.1,
+                        maxOutputTokens: 2048,
+                    },
+                }),
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || 'Gemini API request failed');
-        }
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMessage = errorData.error?.message || response.statusText;
 
-        const data = await response.json();
-        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log('OCR Raw Text (Gemini):', textResponse);
+                // 404なら次のモデルへ
+                if (response.status === 404 || errorMessage.includes('not found')) {
+                    console.warn(`Model ${model} not found (OCR), trying next...`);
+                    lastError = new Error(errorMessage);
+                    continue;
+                }
 
-        // JSONを抽出
-        const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) {
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            console.log(`OCR Raw Text (Gemini - ${model}):`, textResponse);
+
+
+            // JSONを抽出
+            const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
+            if (!jsonMatch) {
+                return {
+                    success: false,
+                    players: [],
+                    rawText: textResponse,
+                    error: 'Geminiからの応答形式が正しくありませんでした。',
+                    usedEngine: 'Gemini',
+                };
+            }
+
+            const players = JSON.parse(jsonMatch[0]) as SavedPlayer[];
+
+            // データ検証と正規化
+            const validatedPlayers: SavedPlayer[] = players.map((p, index) => ({
+                number: typeof p.number === 'number' ? p.number : parseInt(String(p.number), 10) || index + 1,
+                name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
+                isCaptain: false,
+            }));
+
             return {
-                success: false,
-                players: [],
+                success: true,
+                players: validatedPlayers,
                 rawText: textResponse,
-                error: 'Geminiからの応答形式が正しくありませんでした。',
                 usedEngine: 'Gemini',
             };
+
+        } catch (error) {
+            console.error(`Gemini API Error (${model}):`, error);
+            lastError = error instanceof Error ? error : new Error('Unknown error');
         }
-
-        const players = JSON.parse(jsonMatch[0]) as SavedPlayer[];
-
-        // データ検証と正規化
-        const validatedPlayers: SavedPlayer[] = players.map((p, index) => ({
-            number: typeof p.number === 'number' ? p.number : parseInt(String(p.number), 10) || index + 1,
-            name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
-            isCaptain: false,
-        }));
-
-        return {
-            success: true,
-            players: validatedPlayers,
-            rawText: textResponse,
-            usedEngine: 'Gemini',
-        };
-    } catch (error) {
-        console.error('Gemini API Error:', error);
-        throw error; // エラーを投げてフォールバックさせるか、呼び出し元で処理
     }
+
+    throw lastError || new Error('All Gemini models failed');
 }
 
 /**
@@ -230,27 +322,33 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResult> {
     const apiKey = getStoredApiKey();
 
+    let fallbackReason = '';
+
     // APIキーがあればGeminiを優先試行
     if (apiKey) {
         try {
             return await recognizeWithGemini(imageFile, apiKey);
         } catch (error) {
+            fallbackReason = error instanceof Error ? error.message : 'Unknown error';
             console.warn('Gemini API failed, falling back to Tesseract...', error);
             // Gemini失敗時はTesseractへフォールバック
-            // （ただし認証エラーなどの場合はユーザーに通知したほうが親切かもだが、
-            //  今回は「とにかく読み取る」ことを優先してフォールバックする）
         }
     }
 
     // キーが無い、またはGemini失敗時はTesseract
     try {
-        return await recognizeWithTesseract(imageFile);
+        const tesseractResult = await recognizeWithTesseract(imageFile);
+        if (fallbackReason) {
+            tesseractResult.fallbackReason = fallbackReason;
+        }
+        return tesseractResult;
     } catch (error) {
         return {
             success: false,
             players: [],
             error: error instanceof Error ? error.message : '画像認識に失敗しました',
             usedEngine: 'Tesseract',
+            fallbackReason: fallbackReason // Geminiエラーも保持
         };
     }
 }
