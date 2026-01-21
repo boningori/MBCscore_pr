@@ -15,10 +15,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
 
     const { teamA, teamB, scoreHistory } = game;
 
-
-
-
-
     // PDF出力
     const handleExportPDF = async () => {
         if (!scoresheetRef.current) return;
@@ -37,7 +33,14 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
     const finalScoreA = teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
     const finalScoreB = teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
 
-
+    // Placeholder for Period Scores logic - defaulting to empty for display
+    const scoresByPeriod: { [key: string]: { A: string | number, B: string | number } } = {
+        '1Q': { A: '', B: '' },
+        '2Q': { A: '', B: '' },
+        '3Q': { A: '', B: '' },
+        '4Q': { A: '', B: '' },
+        'OT': { A: '', B: '' }
+    };
 
     const renderPlayerRow = (player: typeof teamA.players[0], index: number) => (
         <tr key={player.id}>
@@ -71,8 +74,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
         );
     };
 
-
-
     return (
         <div className="running-scoresheet-container">
             {/* ツールバー */}
@@ -92,57 +93,120 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
 
             {/* スコアシート本体 */}
             <div className="running-scoresheet" ref={scoresheetRef}>
-                {/* ヘッダー */}
-                <div className="rs-header">
-                    <div className="rs-logo">JBA</div>
-                    <h1>MINI-BASKETBALL OFFICIAL SCORESHEET</h1>
+                {/* Logo & Title Header */}
+                <div className="rs-top-header">
+                    <div className="rs-logo-container">
+                        <span className="jba-text">JBA</span>
+                        <span className="jba-sub">JAPAN BASKETBALL ASSOCIATION</span>
+                    </div>
+                    <h1 className="rs-main-title">MINI-BASKETBALL OFFICIAL SCORESHEET</h1>
                 </div>
 
-                {/* 基本情報 */}
-                <div className="rs-info-section">
-                    <div className="rs-info-row">
-                        <div className="rs-info-item">
+                {/* Header Section (Official Layout) - Full Width (2400px) */}
+                <div className="rs-header-grid">
+                    {/* Top Row: Competition & Game Info */}
+                    <div className="rs-header-top-row">
+                        <div className="rs-competition-box">
                             <label>大会名</label>
-                            <span className="rs-info-value">{gameName}</span>
+                            <span className="rs-competition-value">{gameName}</span>
                         </div>
-                        <div className="rs-info-item small">
-                            <label>日付</label>
-                            <span className="rs-info-value">{date}</span>
-                        </div>
-                        <div className="rs-info-item small">
-                            <label>試合No</label>
-                            <span className="rs-info-value"></span>
+                        <div className="rs-game-info-box">
+                            <div className="rs-date-time-row">
+                                <div className="rs-date-box">
+                                    <label>日付</label>
+                                    {(() => {
+                                        const [y, m, d] = date ? date.replace(/-/g, '/').split('/') : ['', '', ''];
+                                        return (
+                                            <>
+                                                <span className="rs-date-part year">{y}</span>
+                                                <span className="rs-date-label">年</span>
+                                                <span className="rs-date-part month">{m}</span>
+                                                <span className="rs-date-label">月</span>
+                                                <span className="rs-date-part day">{d}</span>
+                                                <span className="rs-date-label">日</span>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                                <div className="rs-time-box">
+                                    <label>時間</label>
+                                    <span>:</span>
+                                </div>
+                            </div>
+                            <div className="rs-place-game-row">
+                                <div className="rs-place-box">
+                                    <label>会場</label>
+                                    <span className="rs-place-val"></span>
+                                </div>
+                                <div className="rs-game-no-box">
+                                    <label>Game No.</label>
+                                    <span></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div className="rs-info-row">
-                        <div className="rs-info-item">
-                            <label>会場</label>
-                            <span className="rs-info-value"></span>
+
+                    {/* Second Row: Scores & Officials */}
+                    <div className="rs-header-second-row">
+                        {/* Score Section */}
+                        <div className="rs-score-display-section">
+                            <div className="rs-score-label-area">
+                                <span>スコア</span>
+                                <span className="score-en">Score</span>
+                            </div>
+                            <div className="rs-teams-score-container">
+                                <div className="rs-team-score-box">
+                                    <span className="rs-ts-team-name">チームA</span>
+                                    <div className="rs-ts-box">
+                                        <span className="rs-ts-score-val">{finalScoreA}</span>
+                                    </div>
+                                </div>
+                                <div className="rs-brace">{'\{'}</div>
+                                {/* Center Breakdown: Q1-Q4, OT */}
+                                <div className="rs-score-breakdown">
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['1Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['1Q']?.B || '-'}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['2Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['2Q']?.B || '-'}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['3Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['3Q']?.B || '-'}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['4Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['4Q']?.B || '-'}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['OT']?.A || '-'}</span><span className="sep">(延長)</span><span className="val">{scoresByPeriod['OT']?.B || '-'}</span></div>
+                                </div>
+                                <div className="rs-brace">{'\}'}</div>
+                                <div className="rs-team-score-box">
+                                    <span className="rs-ts-team-name">チームB</span>
+                                    <div className="rs-ts-box">
+                                        <span className="rs-ts-score-val">{finalScoreB}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Officials Section */}
+                        <div className="rs-officials-table">
+                            <div className="rs-official-row">
+                                <div className="rs-official-cell label-cell">クルーチーフ</div>
+                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell label-cell">アンパイア</div>
+                                <div className="rs-official-cell value-cell"></div>
+                            </div>
+                            <div className="rs-official-row">
+                                <div className="rs-official-cell label-cell">スコアラー</div>
+                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell label-cell">タイマー</div>
+                                <div className="rs-official-cell value-cell"></div>
+                            </div>
+                            <div className="rs-official-row">
+                                <div className="rs-official-cell label-cell">A・スコアラー</div>
+                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell label-cell">ショットクロックオペレーター</div>
+                                <div className="rs-official-cell value-cell"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* スコア欄 */}
-                <div className="rs-score-section">
-                    <div className="rs-score-box">
-                        <span className="rs-score-label">スコア</span>
-                        <div className="rs-score-teams">
-                            <div className="rs-score-team">
-                                <span className="rs-team-name">{teamA.name}</span>
-                                <span className="rs-team-score">{finalScoreA}</span>
-                            </div>
-                            <span className="rs-score-vs">-</span>
-                            <div className="rs-score-team">
-                                <span className="rs-team-name">{teamB.name}</span>
-                                <span className="rs-team-score">{finalScoreB}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* メインコンテンツ */}
+                {/* Main Content (Grid Layout: Left Column vs Right Column) */}
                 <div className="rs-main-content">
-                    {/* 左側: チーム情報 */}
+                    {/* Left Column: Teams */}
                     <div className="rs-teams-section">
                         {/* チームA */}
                         <div className="rs-team-block">
@@ -181,7 +245,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                 </thead>
                                 <tbody>
                                     {teamA.players.slice(0, 15).map((p, i) => renderPlayerRow(p, i))}
-                                    {/* 空行を追加して15行にする */}
                                     {Array.from({ length: Math.max(0, 15 - teamA.players.length) }).map((_, i) => (
                                         <tr key={`empty-a-${i}`}>
                                             <td className="cell-no">{teamA.players.length + i + 1}</td>
@@ -296,62 +359,70 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                         </div>
                     </div>
 
-                    {/* 右側: ランニングスコア */}
+                    {/* Right Column: Running Score */}
                     <div className="rs-running-score-section">
-                        <h3>ランニング スコア</h3>
-                        <div className="rs-running-score-grid">
-                            {Array.from({ length: 4 }).map((_, colIndex) => { // 4カラム (160点)
+                        <div className="rs-rs-header-title-row">
+                            <span className="jp">ランニング スコア</span>
+                            <span className="en">RUNNING SCORE</span>
+                        </div>
+                        <div className="rs-rs-columns-container">
+                            {[0, 1, 2].map(colIndex => {
                                 const rowsPerColumn = 40;
                                 const startScore = colIndex * rowsPerColumn + 1;
-                                const endScore = startScore + rowsPerColumn - 1;
-                                const rows = [];
 
-                                for (let score = startScore; score <= endScore; score++) {
-                                    // スコアのエントリを検索
-                                    const entryA = scoreHistory.find(s => s.teamId === 'teamA' && s.runningScoreA === score);
-                                    const entryB = scoreHistory.find(s => s.teamId === 'teamB' && s.runningScoreB === score);
-
-                                    const quarterA = entryA?.quarter;
-                                    const quarterB = entryB?.quarter;
-                                    const quarterClassA = quarterA ? (quarterA === 2 || quarterA === 4 ? 'q-red' : 'q-black') : '';
-                                    const quarterClassB = quarterB ? (quarterB === 2 || quarterB === 4 ? 'q-red' : 'q-black') : '';
-
-                                    // このクオーターの最後の得点かどうか判定
-                                    const isQuarterEndA = entryA && scoreHistory
-                                        .filter(s => s.teamId === 'teamA' && s.quarter === quarterA)
-                                        .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
-                                    const isQuarterEndB = entryB && scoreHistory
-                                        .filter(s => s.teamId === 'teamB' && s.quarter === quarterB)
-                                        .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
-
-                                    rows.push(
-                                        <div key={score} className="score-row">
-                                            {/* Team A */}
-                                            <div className="score-cell player-num-a">
-                                                {entryA ? (entryA.playerNumber === -1 ? '?' : entryA.playerNumber) : ''}
-                                            </div>
-                                            <div className={`score-cell score-val-a ${entryA ? `slashed ${quarterClassA}` : ''} ${isQuarterEndA ? `quarter-end ${quarterClassA}` : ''}`}>
-                                                {score}
-                                            </div>
-
-                                            {/* Team B */}
-                                            <div className={`score-cell score-val-b ${entryB ? `slashed ${quarterClassB}` : ''} ${isQuarterEndB ? `quarter-end ${quarterClassB}` : ''}`}>
-                                                {score}
-                                            </div>
-                                            <div className="score-cell player-num-b">
-                                                {entryB ? (entryB.playerNumber === -1 ? '?' : entryB.playerNumber) : ''}
-                                            </div>
-                                        </div>
-                                    );
-                                }
                                 return (
-                                    <div key={colIndex} className="running-score-column">
-                                        <div className="column-header">
-                                            <div className="col-header-a">A</div>
-                                            <div className="col-header-b">B</div>
+                                    <div key={colIndex} className="rs-rs-column">
+                                        <div className="rs-rs-col-header">
+                                            <div className="rs-rs-header-cell a-side">A</div>
+                                            <div className="rs-rs-header-cell b-side">B</div>
                                         </div>
-                                        <div className="column-body">
-                                            {rows}
+                                        <div className="rs-rs-rows-container">
+                                            {Array.from({ length: 40 }).map((_, rowIndex) => {
+                                                const scoreVal = startScore + rowIndex;
+
+                                                // Data Logic
+                                                const entryA = scoreHistory.find(s => s.teamId === 'teamA' && s.runningScoreA === scoreVal);
+                                                const entryB = scoreHistory.find(s => s.teamId === 'teamB' && s.runningScoreB === scoreVal);
+
+                                                const quarterA = entryA?.quarter;
+                                                const quarterB = entryB?.quarter;
+                                                const quarterClassA = quarterA ? (quarterA === 2 || quarterA === 4 ? 'q-red' : 'q-black') : '';
+                                                const quarterClassB = quarterB ? (quarterB === 2 || quarterB === 4 ? 'q-red' : 'q-black') : '';
+
+                                                const isQuarterEndA = entryA && scoreHistory
+                                                    .filter(s => s.teamId === 'teamA' && s.quarter === quarterA)
+                                                    .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
+                                                const isQuarterEndB = entryB && scoreHistory
+                                                    .filter(s => s.teamId === 'teamB' && s.quarter === quarterB)
+                                                    .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
+
+                                                const isGameEndA = entryA && scoreHistory
+                                                    .filter(s => s.teamId === 'teamA')
+                                                    .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
+                                                const isGameEndB = entryB && scoreHistory
+                                                    .filter(s => s.teamId === 'teamB')
+                                                    .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
+
+                                                const endClassA = isGameEndA ? 'game-end' : (isQuarterEndA ? 'quarter-end' : '');
+                                                const endClassB = isGameEndB ? 'game-end' : (isQuarterEndB ? 'quarter-end' : '');
+
+                                                return (
+                                                    <div key={scoreVal} className="rs-rs-row">
+                                                        <div className={`rs-rs-cell a-no ${endClassA} ${quarterClassA}`}>
+                                                            {entryA ? (entryA.playerNumber === -1 ? '?' : entryA.playerNumber) : ''}
+                                                        </div>
+                                                        <div className={`rs-rs-cell a-score ${entryA ? `slashed ${quarterClassA}` : ''} ${endClassA} ${quarterClassA}`}>
+                                                            {scoreVal}
+                                                        </div>
+                                                        <div className={`rs-rs-cell b-score ${entryB ? `slashed ${quarterClassB}` : ''} ${endClassB} ${quarterClassB}`}>
+                                                            {scoreVal}
+                                                        </div>
+                                                        <div className={`rs-rs-cell b-no ${endClassB} ${quarterClassB}`}>
+                                                            {entryB ? (entryB.playerNumber === -1 ? '?' : entryB.playerNumber) : ''}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 );
@@ -363,6 +434,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }

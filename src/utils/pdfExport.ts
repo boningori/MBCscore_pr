@@ -18,7 +18,7 @@ export async function exportElement(
 
     // html2canvasでキャンバスに変換
     const canvas = await html2canvas(element, {
-        scale: 2, // 高解像度（画質重視）
+        scale: 4, // 300DPI対応 (A4 @ 96DPI * 3.125 = 300DPI, 4x is safe margin)
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
