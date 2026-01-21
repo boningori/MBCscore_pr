@@ -423,14 +423,33 @@
 }
 
 /* 斜線（得点済み） */
+/* 斜線（得点済み）: 右上から左下 */
 .score-cell.slashed {
     color: #000;
     /* 数字を濃く */
-    background: linear-gradient(to bottom left,
-            transparent 45%,
-            #000 48%,
-            #000 52%,
-            transparent 55%);
+}
+
+/* 1Q/3Qは黒、2Q/4Qは赤の斜線 */
+.score-cell.slashed.q-black {
+    background: linear-gradient(to bottom left, transparent 45%, #000 48%, #000 52%, transparent 55%);
+}
+
+.score-cell.slashed.q-red {
+    background: linear-gradient(to bottom left, transparent 45%, #f00 48%, #f00 52%, transparent 55%);
+}
+
+/* クオーター区切り線 */
+.score-cell.quarter-end {
+    border-bottom: 2px solid;
+    /* 色はクラスによって変化 */
+}
+
+.score-cell.quarter-end.q-black {
+    border-bottom-color: #000;
+}
+
+.score-cell.quarter-end.q-red {
+    border-bottom-color: #f00;
 }
 
 .rs-winner {

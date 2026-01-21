@@ -311,18 +311,31 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                     const entryA = scoreHistory.find(s => s.teamId === 'teamA' && s.runningScoreA === score);
                                     const entryB = scoreHistory.find(s => s.teamId === 'teamB' && s.runningScoreB === score);
 
+                                    const quarterA = entryA?.quarter;
+                                    const quarterB = entryB?.quarter;
+                                    const quarterClassA = quarterA ? (quarterA === 2 || quarterA === 4 ? 'q-red' : 'q-black') : '';
+                                    const quarterClassB = quarterB ? (quarterB === 2 || quarterB === 4 ? 'q-red' : 'q-black') : '';
+
+                                    // このクオーターの最後の得点かどうか判定
+                                    const isQuarterEndA = entryA && scoreHistory
+                                        .filter(s => s.teamId === 'teamA' && s.quarter === quarterA)
+                                        .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
+                                    const isQuarterEndB = entryB && scoreHistory
+                                        .filter(s => s.teamId === 'teamB' && s.quarter === quarterB)
+                                        .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
+
                                     rows.push(
                                         <div key={score} className="score-row">
                                             {/* Team A */}
                                             <div className="score-cell player-num-a">
                                                 {entryA ? (entryA.playerNumber === -1 ? '?' : entryA.playerNumber) : ''}
                                             </div>
-                                            <div className={`score-cell score-val-a ${entryA ? 'slashed' : ''}`}>
+                                            <div className={`score-cell score-val-a ${entryA ? `slashed ${quarterClassA}` : ''} ${isQuarterEndA ? `quarter-end ${quarterClassA}` : ''}`}>
                                                 {score}
                                             </div>
 
                                             {/* Team B */}
-                                            <div className={`score-cell score-val-b ${entryB ? 'slashed' : ''}`}>
+                                            <div className={`score-cell score-val-b ${entryB ? `slashed ${quarterClassB}` : ''} ${isQuarterEndB ? `quarter-end ${quarterClassB}` : ''}`}>
                                                 {score}
                                             </div>
                                             <div className="score-cell player-num-b">
@@ -331,7 +344,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                         </div>
                                     );
                                 }
-
                                 return (
                                     <div key={colIndex} className="running-score-column">
                                         <div className="column-header">
@@ -351,6 +363,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
