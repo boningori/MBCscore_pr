@@ -204,159 +204,125 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                     </div>
                 </div>
 
-                {/* Main Content (Grid Layout: Left Column vs Right Column) */}
+                {/* Main Content (3 Column Layout: Teams | Center | Running Score) */}
                 <div className="rs-main-content">
                     {/* Left Column: Teams */}
                     <div className="rs-teams-section">
-                        {/* チームA */}
-                        <div className="rs-team-block">
-                            <div className="rs-team-header">
-                                <span className="rs-team-title">チームA: {teamA.name}</span>
-                                <div className="rs-timeout">
-                                    <span>タイムアウト</span>
-                                    <div className="timeout-marks">
-                                        {[1, 2, 3].map(t => (
-                                            <span key={t} className={`timeout-circle ${teamA.timeouts.length >= t ? 'used' : ''}`}>
-                                                {t}
-                                            </span>
-                                        ))}
-                                        <span className="timeout-ot">OT</span>
+                        {[teamA, teamB].map((team, tIndex) => (
+                            <div key={team.id} className="rs-team-block">
+                                {/* Header: Name & Timeouts */}
+                                <div className="rs-team-header-row">
+                                    <div className="rs-team-name-area">
+                                        <div className="team-name-label">{team.name}</div>
+                                        <div className="team-name-sub">{tIndex === 0 ? 'Team A' : 'Team B'}</div>
+                                        <div className="team-category-paren">( )</div>
+                                    </div>
+                                    <div className="rs-team-timeout-area">
+                                        <div className="timeout-header">タイムアウト</div>
+                                        <div className="timeout-grid">
+                                            <div className="to-cell-label">①</div>
+                                            <div className="to-cell-label">②</div>
+                                            <div className="to-cell-label">③</div>
+                                            <div className="to-cell-label">④</div>
+                                            <div className="to-cell-label">OT</div>
+                                            <div className="to-cell-val">{team.timeouts.length >= 1 ? 'X' : ''}</div>
+                                            <div className="to-cell-val">{team.timeouts.length >= 2 ? 'X' : ''}</div>
+                                            <div className="to-cell-val">{team.timeouts.length >= 3 ? 'X' : ''}</div>
+                                            <div className="to-cell-val">{team.timeouts.length >= 4 ? 'X' : ''}</div>
+                                            <div className="to-cell-val ot"></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <table className="rs-roster-table">
-                                <thead>
-                                    <tr>
-                                        <th>No.</th>
-                                        <th>ライセンスNo.</th>
-                                        <th>選手氏名</th>
-                                        <th>背番号</th>
-                                        <th colSpan={4}>出場時限</th>
-                                        <th colSpan={5}>ファウル</th>
-                                    </tr>
-                                    <tr className="sub-header">
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        {[1, 2, 3, 4].map(q => <th key={q}>{q}</th>)}
-                                        {[1, 2, 3, 4, 5].map(f => <th key={f}>{f}</th>)}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {teamA.players.slice(0, 15).map((p, i) => renderPlayerRow(p, i))}
-                                    {Array.from({ length: Math.max(0, 15 - teamA.players.length) }).map((_, i) => (
-                                        <tr key={`empty-a-${i}`}>
-                                            <td className="cell-no">{teamA.players.length + i + 1}</td>
-                                            <td className="cell-license"></td>
-                                            <td className="cell-name"></td>
-                                            <td className="cell-number"></td>
-                                            {[1, 2, 3, 4].map(q => <td key={q} className="cell-quarter"></td>)}
-                                            {[1, 2, 3, 4, 5].map(f => <td key={f} className="cell-foul"></td>)}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <div className="rs-coach-row">
-                                <span className="rs-coach-label">HC: {teamA.coachName}</span>
-                                <div className="rs-coach-fouls">
-                                    {teamA.coachFouls.map((foul, i) => (
-                                        <span key={i} className="rs-foul-mark">
-                                            {foul === 'T' ? 'C' : foul === 'BT' ? 'B' : foul}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="rs-coach-row">
-                                <span className="rs-coach-label">AC: {teamA.assistantCoachName}</span>
-                            </div>
-                            <div className="rs-team-fouls">
-                                <span>チームファウル:</span>
-                                <div className="quarter-fouls">
-                                    {[1, 2, 3, 4].map(q => (
-                                        <div key={q} className="quarter-foul-box">
-                                            <span className="q-label">{q}Q</span>
-                                            {renderTeamFoulRow(teamA, q)}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* チームB */}
-                        <div className="rs-team-block">
-                            <div className="rs-team-header">
-                                <span className="rs-team-title">チームB: {teamB.name}</span>
-                                <div className="rs-timeout">
-                                    <span>タイムアウト</span>
-                                    <div className="timeout-marks">
-                                        {[1, 2, 3].map(t => (
-                                            <span key={t} className={`timeout-circle ${teamB.timeouts.length >= t ? 'used' : ''}`}>
-                                                {t}
-                                            </span>
-                                        ))}
-                                        <span className="timeout-ot">OT</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <table className="rs-roster-table">
-                                <thead>
-                                    <tr>
-                                        <th>No.</th>
-                                        <th>ライセンスNo.</th>
-                                        <th>選手氏名</th>
-                                        <th>背番号</th>
-                                        <th colSpan={4}>出場時限</th>
-                                        <th colSpan={5}>ファウル</th>
-                                    </tr>
-                                    <tr className="sub-header">
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        {[1, 2, 3, 4].map(q => <th key={q}>{q}</th>)}
-                                        {[1, 2, 3, 4, 5].map(f => <th key={f}>{f}</th>)}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {teamB.players.slice(0, 15).map((p, i) => renderPlayerRow(p, i))}
-                                    {Array.from({ length: Math.max(0, 15 - teamB.players.length) }).map((_, i) => (
-                                        <tr key={`empty-b-${i}`}>
-                                            <td className="cell-no">{teamB.players.length + i + 1}</td>
-                                            <td className="cell-license"></td>
-                                            <td className="cell-name"></td>
-                                            <td className="cell-number"></td>
-                                            {[1, 2, 3, 4].map(q => <td key={q} className="cell-quarter"></td>)}
-                                            {[1, 2, 3, 4, 5].map(f => <td key={f} className="cell-foul"></td>)}
+                                <table className="rs-roster-table">
+                                    <thead>
+                                        <tr>
+                                            <th rowSpan={2} className="th-no">No.</th>
+                                            <th rowSpan={2} className="th-license">ライセンスNo.</th>
+                                            <th rowSpan={2} className="th-name">
+                                                選手氏名<br />
+                                                <span className="en">Players</span>
+                                            </th>
+                                            <th rowSpan={2} className="th-number">No.</th>
+                                            <th colSpan={4} className="th-time">出場時限</th>
+                                            <th colSpan={5} className="th-foul">ファウル</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <div className="rs-coach-row">
-                                <span className="rs-coach-label">HC: {teamB.coachName}</span>
-                                <div className="rs-coach-fouls">
-                                    {teamB.coachFouls.map((foul, i) => (
-                                        <span key={i} className="rs-foul-mark">
-                                            {foul === 'T' ? 'C' : foul === 'BT' ? 'B' : foul}
-                                        </span>
-                                    ))}
-                                </div>
+                                        <tr className="sub-header">
+                                            <th>①</th>
+                                            <th>②</th>
+                                            <th>③</th>
+                                            <th>④</th>
+                                            <th>1</th>
+                                            <th>2</th>
+                                            <th>3</th>
+                                            <th>4</th>
+                                            <th>5</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {team.players.slice(0, 15).map((p, i) => renderPlayerRow(p, i))}
+                                        {Array.from({ length: Math.max(0, 15 - team.players.length) }).map((_, i) => (
+                                            <tr key={`empty-${team.id}-${i}`}>
+                                                <td className="cell-no">{team.players.length + i + 1}</td>
+                                                <td className="cell-license"></td>
+                                                <td className="cell-name"></td>
+                                                <td className="cell-number"></td>
+                                                {[1, 2, 3, 4].map(q => <td key={q} className="cell-quarter"></td>)}
+                                                {[1, 2, 3, 4, 5].map(f => <td key={f} className="cell-foul"></td>)}
+                                            </tr>
+                                        ))}
+                                        {/* Coach Rows */}
+                                        <tr className="coach-row">
+                                            <td colSpan={2} className="coach-label">コーチ:</td>
+                                            <td className="coach-name">{team.coachName}</td>
+                                            <td className="coach-empty"></td>
+                                            <td colSpan={4} className="coach-empty-time"></td>
+                                            {[0, 1, 2].map(i => {
+                                                const f = team.coachFouls[i];
+                                                const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
+                                                return <td key={i} className="cell-foul">{display}</td>;
+                                            })}
+                                            <td className="cell-foul"></td>
+                                            <td className="cell-foul"></td>
+                                        </tr>
+                                        <tr className="coach-row">
+                                            <td colSpan={2} className="coach-label">A.コーチ:</td>
+                                            <td className="coach-name">{team.assistantCoachName}</td>
+                                            <td className="coach-empty"></td>
+                                            <td colSpan={4} className="coach-empty-time"></td>
+                                            <td className="cell-foul"></td>
+                                            <td className="cell-foul"></td>
+                                            <td className="cell-foul"></td>
+                                            <td className="cell-foul"></td>
+                                            <td className="cell-foul"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                {/* Team Fouls Section moved below or keep layout?
+                                    The image didn't show team fouls. 
+                                    Standard scoresheet usually has Team Fouls. 
+                                    I will keep it for functionality but style it minimally below.
+                                */}
+                                {/* Team Fouls Moved to Center Section */}
                             </div>
-                            <div className="rs-coach-row">
-                                <span className="rs-coach-label">AC: {teamB.assistantCoachName}</span>
-                            </div>
-                            <div className="rs-team-fouls">
-                                <span>チームファウル:</span>
-                                <div className="quarter-fouls">
+                        ))}
+                    </div>
+
+                    {/* Center Column: Team Fouls */}
+                    <div className="rs-center-section">
+                        {[teamA, teamB].map((team) => (
+                            <div key={`center-${team.id}`} className="rs-center-team-block">
+                                <div className="rs-center-team-fouls">
+                                    <div className="tf-label">TF</div>
                                     {[1, 2, 3, 4].map(q => (
-                                        <div key={q} className="quarter-foul-box">
-                                            <span className="q-label">{q}Q</span>
-                                            {renderTeamFoulRow(teamB, q)}
+                                        <div key={q} className="center-foul-row">
+                                            <span className="cf-q-label">{q}Q</span>
+                                            {renderTeamFoulRow(team, q)}
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
 
                     {/* Right Column: Running Score */}

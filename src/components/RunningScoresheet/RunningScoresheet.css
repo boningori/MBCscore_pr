@@ -19,8 +19,8 @@
 .running-scoresheet {
     background: #ffffff;
     color: #000000;
-    padding: 12.7mm 7.6mm 7.6mm 7.6mm;
-    /* Top: 150px@300dpi, Others: 90px@300dpi */
+    padding: 9mm 6mm;
+    /* 上下: 9mm, 左右: 6mm */
     font-family: 'Century', 'MS PMincho', 'MS P 明朝', serif;
     font-size: 10px;
     line-height: 1.2;
@@ -80,17 +80,87 @@
 /* Main Content Adjustments */
 .rs-main-content {
     display: flex;
-    gap: 5mm;
+    gap: 2mm;
+    /* Reduced gap to save space */
 }
 
 .rs-teams-section {
-    width: 94.23mm;
-    /* Request: 1113px @ 300dpi */
-    flex: none;
-    /* Fixed width */
+    flex: 1;
+    /* 残りの幅を使用 */
     display: flex;
     flex-direction: column;
     gap: 5mm;
+}
+
+/* Center Section */
+.rs-center-section {
+    width: 10mm;
+    border-left: 1px dashed #ccc;
+    /* Visual aid, can be removed */
+    border-right: 1px dashed #ccc;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5mm;
+    /* Sync with Teams Section gap */
+}
+
+.rs-center-team-block {
+    /* Match rs-team-block layout behavior */
+    /* rs-team-block has margin-bottom: 2mm. To align perfectly, we need to match or use flex distribution */
+    margin-bottom: 2mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid transparent;
+    /* invisible border to match box model approx */
+}
+
+.rs-center-team-fouls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.tf-label {
+    font-size: 8pt;
+    font-weight: bold;
+    border-bottom: 1px solid #000;
+    margin-bottom: 2px;
+}
+
+.center-foul-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    margin-bottom: 3px;
+}
+
+.cf-q-label {
+    font-size: 6pt;
+    font-weight: bold;
+}
+
+/* Re-use .team-foul-row but perhaps scaling it down? */
+.center-foul-row .team-foul-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+.center-foul-row .foul-box {
+    width: 10px;
+    /* Smaller boxes */
+    height: 10px;
+    font-size: 6px;
+}
+
+.rs-running-score-section {
+    width: 94.23mm;
+    /* 固定幅: 1113px @ 300dpi */
+    flex: none;
 }
 
 /* Header Grid System (Full Width 2400px -> 2340px) */
@@ -101,11 +171,6 @@
     width: 198.12mm;
     /* Request: 2340px @ 300dpi (Fits in 2520px - 180px margin) */
     margin-bottom: 5px;
-}
-
-.rs-running-score-section {
-    flex: 1;
-    /* Takes remaining space */
 }
 
 /* Row 1: Competition & Game Info */
@@ -615,13 +680,6 @@
     gap: 10px;
 }
 
-.rs-teams-section {
-    flex: 0 0 55%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 .rs-running-score-section {
     flex: 1;
 }
@@ -636,170 +694,217 @@
 
 /* チームブロック */
 .rs-team-block {
-    border: 1px solid #000;
-    padding: 8px;
+    width: 100%;
+    margin-bottom: 2mm;
 }
 
-.rs-team-header {
+.rs-team-header-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #ccc;
+    border: 2px solid #000;
+    border-bottom: none;
+    /* Table will handle this */
+    height: 14mm;
+    /* Adjust height based on image */
 }
 
-.rs-team-title {
+/* チーム名エリア */
+.rs-team-name-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px 10px;
+    position: relative;
+    border-right: 2px solid #000;
+}
+
+.team-name-label {
+    font-size: 11pt;
     font-weight: 700;
-    font-size: 11px;
 }
 
-.rs-timeout {
+.team-name-sub {
+    font-size: 8pt;
+    font-family: 'Century', serif;
+    margin-left: 5px;
+}
+
+.team-category-paren {
+    position: absolute;
+    right: 15mm;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14pt;
+}
+
+/* タイムアウトエリア */
+.rs-team-timeout-area {
+    width: 35mm;
+    /* Approx width */
     display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 9px;
+    flex-direction: column;
 }
 
-.timeout-marks {
-    display: flex;
-    gap: 3px;
+.timeout-header {
+    text-align: center;
+    font-size: 8pt;
+    font-weight: 700;
+    border-bottom: 1px solid #000;
+    padding: 2px;
 }
 
-.timeout-circle {
-    width: 16px;
-    height: 16px;
-    border: 1px solid #000;
-    border-radius: 50%;
+.timeout-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 1fr 1fr;
+}
+
+.to-cell-label,
+.to-cell-val {
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 8px;
+    font-size: 8pt;
 }
 
-.timeout-circle.used {
-    background: #000;
-    color: #fff;
+/* Remove right border for last column in timeout grid */
+.to-cell-label:nth-child(5n),
+.to-cell-val:nth-child(5n) {
+    border-right: none;
 }
 
-.timeout-ot {
-    font-size: 8px;
-    margin-left: 3px;
+/* Remove bottom border for last row (values) */
+.to-cell-val {
+    border-bottom: none;
+}
+
+.to-cell-label {
+    font-family: sans-serif;
+    /* Circled numbers often look better in sans */
+    font-size: 7pt;
+}
+
+.to-cell-val {
+    font-weight: bold;
 }
 
 /* ロスターテーブル */
 .rs-roster-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 8px;
+    font-size: 8pt;
+    border: 2px solid #000;
+    /* Outer heavy border */
 }
 
 .rs-roster-table th,
 .rs-roster-table td {
     border: 1px solid #000;
-    padding: 2px 3px;
+    padding: 1px 2px;
     text-align: center;
+    height: 4.5mm;
+    /* Fixed row height */
+    box-sizing: border-box;
 }
 
 .rs-roster-table th {
-    background: #f0f0f0;
     font-weight: 600;
+    /* background: #fff; Default white */
 }
 
-.rs-roster-table .sub-header th {
-    font-size: 7px;
-    padding: 1px;
+.rs-roster-table th.th-name {
+    font-family: "MS PMincho", serif;
+    line-height: 1.2;
+}
+
+.rs-roster-table th.th-name .en {
+    font-size: 7pt;
+    font-family: "Century", serif;
+}
+
+/* Column Widths */
+.th-no {
+    width: 6mm;
 }
 
 .cell-no {
-    width: 20px;
+    font-size: 9pt;
 }
 
-.cell-license {
-    width: 45px;
+.th-license {
+    width: 14mm;
 }
+
+.cell-license {}
+
+.th-name {}
 
 .cell-name {
     text-align: left;
-    min-width: 80px;
+    padding-left: 5px;
+    font-size: 10pt;
+}
+
+.th-number {
+    width: 8mm;
 }
 
 .cell-number {
-    width: 30px;
-    text-align: center;
-}
-
-.cell-quarter {
-    width: 14px;
-}
-
-.cell-foul {
-    width: 14px;
-}
-
-.rs-coach-row {
-    font-size: 9px;
-    padding: 5px 0;
-    border-top: 1px solid #ccc;
-    display: flex;
-    align-items: center;
-}
-
-.rs-coach-label {
-    margin-right: 5px;
-}
-
-.rs-coach-fouls {
-    display: flex;
-    gap: 2px;
-}
-
-.rs-foul-mark {
-    border: 1px solid #000;
-    padding: 0 3px;
-    background: #f0f0f0;
+    font-size: 10pt;
     font-weight: bold;
 }
 
-/* チームファウル */
+.th-time {
+    width: 18mm;
+}
+
+.cell-quarter {
+    width: 4.5mm;
+}
+
+.th-foul {
+    width: 22.5mm;
+}
+
+.cell-foul {
+    width: 4.5mm;
+    font-weight: bold;
+}
+
+/* Coach Row Styles */
+.coach-row td {
+    border-top: 1px solid #000;
+    /* Ensure separator */
+    height: 6mm;
+}
+
+.coach-label {
+    text-align: left;
+    font-weight: bold;
+    border-right: 1px solid #000;
+    font-size: 9pt;
+}
+
+.coach-name {
+    text-align: left;
+    padding-left: 5px;
+    font-size: 10pt;
+}
+
+.coach-empty {
+    /* Merged with name visually if no border? Standard has border. */
+}
+
+.coach-empty-time {
+    /* Empty cells under time */
+}
+
+/* Team Fouls Adjustment */
 .rs-team-fouls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 9px;
-    padding-top: 5px;
-    border-top: 1px solid #ccc;
-}
-
-.quarter-fouls {
-    display: flex;
-    gap: 8px;
-}
-
-.quarter-foul-box {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-}
-
-.q-label {
-    font-weight: 600;
-    font-size: 8px;
-}
-
-.team-foul-row {
-    display: flex;
-    gap: 2px;
-}
-
-.foul-box {
-    width: 14px;
-    height: 14px;
-    border: 1px solid #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 8px;
+    margin-top: 2px;
 }
 
 .foul-box.marked {
