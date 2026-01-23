@@ -21,7 +21,7 @@ import { StatsPanel } from './components/StatsPanel';
 import { QuarterLineup } from './components/QuarterLineup';
 import { PendingActionPanel } from './components/PendingActionPanel';
 import { PendingActionResolver } from './components/PendingActionResolver';
-import { FoulTypeSelector } from './components/FoulTypeSelector';
+
 import { FoulInputFlow } from './components/FoulInputFlow';
 import { RunningScoresheet } from './components/RunningScoresheet';
 import type { VoiceCommand } from './utils/voiceCommands';
@@ -196,40 +196,6 @@ function AppContent() {
     }
   };
 
-  // ファウル追加（シンプル版 - 保留アクション解決用）
-  const handleFoul = (foulType: FoulType, isTeamFoul?: boolean) => {
-    setShowFoulSelector(false);
-
-    // 保留ファウルアクションを解決する場合
-    if (resolvingFoulPending) {
-      dispatch({
-        type: 'RESOLVE_PENDING_ACTION_WITH_FOUL_TYPE',
-        payload: {
-          pendingActionId: resolvingFoulPending.pendingActionId,
-          playerId: resolvingFoulPending.playerId,
-          foulType,
-        },
-      });
-      setResolvingFoulPending(null);
-      return;
-    }
-
-    // ベンチテクニカルはチームに記録（選手不要）
-    if (isTeamFoul || foulType === 'BT') {
-      dispatch({
-        type: 'ADD_FOUL',
-        payload: { teamId: activeTab, playerId: null, foulType },
-      });
-      return;
-    }
-    // その他のファウルは選手に記録
-    if (!selectedPlayerId || !selectedTeamId) return;
-    dispatch({
-      type: 'ADD_FOUL',
-      payload: { teamId: selectedTeamId, playerId: selectedPlayerId, foulType },
-    });
-    dispatch({ type: 'CLEAR_SELECTION' });
-  };
 
   // ファウル追加（FT付き版）
   const handleFoulWithFreeThrows = (data: {
@@ -240,6 +206,26 @@ function AppContent() {
     shooterPlayerId: string | null;
   }) => {
     setShowFoulSelector(false);
+
+    // 保留ファウルアクションを解決する場合
+    if (resolvingFoulPending) {
+      const opponentTeamId = resolvingFoulPending.teamId === 'teamA' ? 'teamB' : 'teamA';
+      dispatch({
+        type: 'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS',
+        payload: {
+          pendingActionId: resolvingFoulPending.pendingActionId,
+          playerId: resolvingFoulPending.playerId,
+          foulType: data.foulType,
+          shotSituation: data.shotSituation,
+          freeThrows: data.freeThrows,
+          freeThrowResults: data.freeThrowResults,
+          shooterTeamId: opponentTeamId,
+          shooterPlayerId: data.shooterPlayerId || '',
+        },
+      });
+      setResolvingFoulPending(null);
+      return;
+    }
 
     if (!selectedPlayerId || !selectedTeamId) return;
 
@@ -995,18 +981,30 @@ function AppContent() {
           ? [...state.teamA.players, ...state.teamB.players].find(p => p.id === selectedPlayerId)
           : null;
 
-        // 保留アクション解決時はシンプルなFoulTypeSelectorを使用
+        // 保留アクション解決時もFoulInputFlowを使用（FT入力対応）
         if (resolvingFoulPending) {
+          const foulingTeamId = resolvingFoulPending.teamId as 'teamA' | 'teamB';
+          const foulingTeam = foulingTeamId === 'teamA' ? state.teamA : state.teamB;
+          const opponentTeam = foulingTeamId === 'teamA' ? state.teamB : state.teamA;
+          const opponentTeamIdForPending = foulingTeamId === 'teamA' ? 'teamB' : 'teamA';
+          const foulingPlayer = foulingTeam.players.find(p => p.id === resolvingFoulPending.playerId);
+          const pendingAction = pendingActions.find(p => p.id === resolvingFoulPending.pendingActionId);
+          const teamFoulsForPending = foulingTeam.teamFouls[(pendingAction?.quarter || currentQuarter) - 1] || 0;
+
           return (
-            <FoulTypeSelector
-              onSelect={handleFoul}
+            <FoulInputFlow
+              onComplete={handleFoulWithFreeThrows}
               onCancel={() => {
                 setShowFoulSelector(false);
                 setResolvingFoulPending(null);
               }}
               hasSelectedPlayer={true}
-              currentFoulCount={0}
-              playerName=""
+              currentFoulCount={foulingPlayer?.fouls.length || 0}
+              playerName={foulingPlayer?.name}
+              teamFouls={teamFoulsForPending}
+              opponentTeamId={opponentTeamIdForPending}
+              opponentPlayers={opponentTeam.players}
+              opponentTeamName={opponentTeam.name}
             />
           );
         }

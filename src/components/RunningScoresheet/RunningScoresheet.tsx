@@ -53,10 +53,10 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                 const playType = player.quartersPlayed[q - 1];
                 // 1Q/3Q=赤, 2Q/4Q=黒
                 const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
-                // starter=右上→左下（＼）, sub=左上→右下（／）
+                // starter=右上→左下（＼）, sub=左上→右下（／）, both=×（両方重ねる）
                 // 後方互換: true（旧boolean形式）はstarterとして扱う
                 const isStarter = playType === 'starter' || (playType as unknown) === true;
-                const slashClass = isStarter ? 'slash-starter' : playType === 'sub' ? 'slash-sub' : '';
+                const slashClass = playType === 'both' ? 'slash-both' : isStarter ? 'slash-starter' : playType === 'sub' ? 'slash-sub' : '';
                 return (
                     <td key={q} className={`cell-quarter ${playType ? `${slashClass} ${colorClass}` : ''}`}>
                     </td>

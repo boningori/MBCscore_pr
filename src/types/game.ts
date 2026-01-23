@@ -40,8 +40,8 @@ export interface FoulRecord {
     freeThrowResults?: FreeThrowResult[];
 }
 
-// 出場種別: スターター（Q開始時の5人）または途中交代
-export type QuarterPlayType = 'starter' | 'sub' | false;
+// 出場種別: スターター（Q開始時の5人）または途中交代、または両方（スタメンが一度退いて再出場）
+export type QuarterPlayType = 'starter' | 'sub' | 'both' | false;
 
 // 選手
 export interface Player {
@@ -169,6 +169,7 @@ export type GameActionType =
     | 'ADD_PENDING_ACTION'
     | 'RESOLVE_PENDING_ACTION'
     | 'RESOLVE_PENDING_ACTION_WITH_FOUL_TYPE'
+    | 'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS'
     | 'RESOLVE_PENDING_ACTION_UNKNOWN'
     | 'UPDATE_PENDING_ACTION_CANDIDATES'
     | 'REMOVE_PENDING_ACTION';

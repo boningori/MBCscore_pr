@@ -391,6 +391,14 @@ function gameReducer(state: Game, action: GameAction): Game {
             // FT成功分のスコア履歴を追加
             let newScoreHistory = [...state.scoreHistory];
             if (ftMade > 0 && shooterPlayerId) {
+                // FT後の最終スコア
+                const finalScoreA = newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0);
+                const finalScoreB = newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+
+                // FT前の基準スコア（シューターのチームのみftMadeを引く）
+                const baseScoreA = shooterTeamId === 'teamA' ? finalScoreA - ftMade : finalScoreA;
+                const baseScoreB = shooterTeamId === 'teamB' ? finalScoreB - ftMade : finalScoreB;
+
                 // 各FT成功を個別のScoreEntryとして記録
                 for (let i = 0; i < ftMade; i++) {
                     const scoreEntry: ScoreEntry = {
@@ -402,8 +410,9 @@ function gameReducer(state: Game, action: GameAction): Game {
                         points: 1,
                         quarter: state.currentQuarter,
                         timestamp: Date.now() + i, // 順序を保持するため
-                        runningScoreA: newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0),
-                        runningScoreB: newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0),
+                        // 各FTごとにランニングスコアをインクリメント
+                        runningScoreA: shooterTeamId === 'teamA' ? baseScoreA + (i + 1) : baseScoreA,
+                        runningScoreB: shooterTeamId === 'teamB' ? baseScoreB + (i + 1) : baseScoreB,
                     };
                     newScoreHistory.push(scoreEntry);
                 }
@@ -456,9 +465,13 @@ function gameReducer(state: Game, action: GameAction): Game {
                         if (p.id === playerInId) {
                             const quartersPlayed = [...p.quartersPlayed];
                             const currentQIndex = state.currentQuarter - 1;
-                            // 既にスターターとして記録されている場合は上書きしない
-                            // それ以外（false または 'sub'）の場合は 'sub' として記録
-                            if (quartersPlayed[currentQIndex] !== 'starter') {
+                            const current = quartersPlayed[currentQIndex];
+                            // スターターが一度退いて再度入る場合は'both'（×表示）
+                            // 途中交代で出て一度退いて再度入る場合も'both'
+                            if (current === 'starter' || current === 'sub') {
+                                quartersPlayed[currentQIndex] = 'both';
+                            } else if (current !== 'both') {
+                                // 初めての途中出場は'sub'
                                 quartersPlayed[currentQIndex] = 'sub';
                             }
                             return { ...p, isOnCourt: true, quartersPlayed };
@@ -1211,6 +1224,140 @@ function gameReducer(state: Game, action: GameAction): Game {
                 ...state,
                 teamA: updateTeamFoul(state.teamA, pending.teamId === 'teamA'),
                 teamB: updateTeamFoul(state.teamB, pending.teamId === 'teamB'),
+                foulHistory: [...state.foulHistory, foulEntry],
+                pendingActions: state.pendingActions.filter(p => p.id !== pendingActionId),
+            };
+        }
+
+        case 'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS': {
+            const {
+                pendingActionId,
+                playerId,
+                foulType,
+                shotSituation,
+                freeThrows,
+                freeThrowResults,
+                shooterTeamId,
+                shooterPlayerId,
+            } = action.payload as {
+                pendingActionId: string;
+                playerId: string;
+                foulType: FoulType;
+                shotSituation: ShotSituation;
+                freeThrows: number;
+                freeThrowResults: FreeThrowResult[];
+                shooterTeamId: string;
+                shooterPlayerId: string;
+            };
+
+            const pending = state.pendingActions.find(p => p.id === pendingActionId);
+            if (!pending || pending.actionType !== 'FOUL') return state;
+
+            const foulingPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
+            const shooterPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === shooterPlayerId);
+            if (!foulingPlayer) return state;
+
+            // FT成功数を計算
+            const ftMade = freeThrowResults.filter(r => r === 'made').length;
+
+            // ファウル記録（FoulRecord形式）
+            const foulRecord: FoulRecord = {
+                type: foulType,
+                freeThrows,
+                freeThrowResults: freeThrowResults.length > 0 ? freeThrowResults : undefined,
+            };
+
+            // ファウルをしたチームを更新
+            const updateFoulingTeam = (team: typeof state.teamA, isTarget: boolean) => {
+                if (!isTarget) return team;
+                const newTeamFouls = [...team.teamFouls];
+                newTeamFouls[pending.quarter - 1]++;
+                return {
+                    ...team,
+                    teamFouls: newTeamFouls,
+                    players: team.players.map(p => {
+                        if (p.id !== playerId) return p;
+                        return { ...p, fouls: [...p.fouls, foulRecord] };
+                    })
+                };
+            };
+
+            // シューターチームを更新（FT得点とスタッツ）
+            const updateShooterTeam = (team: typeof state.teamA, isTarget: boolean) => {
+                if (!isTarget || freeThrows === 0 || !shooterPlayerId) return team;
+                return {
+                    ...team,
+                    players: team.players.map(p => {
+                        if (p.id !== shooterPlayerId) return p;
+                        const stats = { ...p.stats };
+                        stats.freeThrowAttempt += freeThrows;
+                        stats.freeThrowMade += ftMade;
+                        stats.points += ftMade;
+                        return { ...p, stats };
+                    })
+                };
+            };
+
+            // ファウル履歴エントリを作成
+            const foulEntry: FoulEntry = {
+                id: crypto.randomUUID(),
+                teamId: pending.teamId,
+                playerId,
+                playerNumber: foulingPlayer.number,
+                foulType,
+                quarter: pending.quarter,
+                timestamp: pending.timestamp,
+                isCoachOrBench: false,
+                freeThrows,
+                freeThrowResults,
+                shotSituation,
+                shooterTeamId: freeThrows > 0 ? shooterTeamId : undefined,
+                shooterPlayerId: freeThrows > 0 ? shooterPlayerId : undefined,
+                shooterPlayerNumber: freeThrows > 0 ? (shooterPlayer?.number || 0) : undefined,
+            };
+
+            // チーム更新（ファウル側）
+            let newTeamA = updateFoulingTeam(state.teamA, pending.teamId === 'teamA');
+            let newTeamB = updateFoulingTeam(state.teamB, pending.teamId === 'teamB');
+
+            // チーム更新（シューター側）
+            newTeamA = updateShooterTeam(newTeamA, shooterTeamId === 'teamA');
+            newTeamB = updateShooterTeam(newTeamB, shooterTeamId === 'teamB');
+
+            // FT成功分のスコア履歴を追加
+            let newScoreHistory = [...state.scoreHistory];
+            if (ftMade > 0 && shooterPlayerId) {
+                // FT後の最終スコア
+                const finalScoreA = newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0);
+                const finalScoreB = newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+
+                // FT前の基準スコア（シューターのチームのみftMadeを引く）
+                const baseScoreA = shooterTeamId === 'teamA' ? finalScoreA - ftMade : finalScoreA;
+                const baseScoreB = shooterTeamId === 'teamB' ? finalScoreB - ftMade : finalScoreB;
+
+                for (let i = 0; i < ftMade; i++) {
+                    const scoreEntry: ScoreEntry = {
+                        id: crypto.randomUUID(),
+                        teamId: shooterTeamId,
+                        playerId: shooterPlayerId,
+                        playerNumber: shooterPlayer?.number || 0,
+                        scoreType: 'FT',
+                        points: 1,
+                        quarter: pending.quarter,
+                        timestamp: pending.timestamp + i,
+                        // 各FTごとにランニングスコアをインクリメント
+                        runningScoreA: shooterTeamId === 'teamA' ? baseScoreA + (i + 1) : baseScoreA,
+                        runningScoreB: shooterTeamId === 'teamB' ? baseScoreB + (i + 1) : baseScoreB,
+                    };
+                    newScoreHistory.push(scoreEntry);
+                }
+            }
+
+            return {
+                ...state,
+                teamA: newTeamA,
+                teamB: newTeamB,
+                scoreHistory: newScoreHistory,
                 foulHistory: [...state.foulHistory, foulEntry],
                 pendingActions: state.pendingActions.filter(p => p.id !== pendingActionId),
             };
