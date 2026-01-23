@@ -1,5 +1,6 @@
 import { useGame } from '../../context/GameContext';
 import type { Team, ScoreEntry } from '../../types/game';
+import { formatFoulDisplay } from '../../types/game';
 import './OfficialScoresheet.css';
 
 interface OfficialScoresheetProps {
@@ -188,10 +189,10 @@ function TeamSection({ team, label }: { team: Team, label: string }) {
                                 <td>{p.quartersPlayed?.[1] ? '✓' : ''}</td>
                                 <td>{p.quartersPlayed?.[2] ? '✓' : ''}</td>
                                 <td>{p.quartersPlayed?.[3] ? '✓' : ''}</td>
-                                <td>{p.fouls?.[0] || ''}</td>
-                                <td>{p.fouls?.[1] || ''}</td>
-                                <td>{p.fouls?.[2] || ''}</td>
-                                <td>{p.fouls?.[3] || ''}</td>
+                                <td>{p.fouls?.[0] ? formatFoulDisplay(p.fouls[0]) : ''}</td>
+                                <td>{p.fouls?.[1] ? formatFoulDisplay(p.fouls[1]) : ''}</td>
+                                <td>{p.fouls?.[2] ? formatFoulDisplay(p.fouls[2]) : ''}</td>
+                                <td>{p.fouls?.[3] ? formatFoulDisplay(p.fouls[3]) : ''}</td>
                             </tr>
                         ))}
                     </tbody>

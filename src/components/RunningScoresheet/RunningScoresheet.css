@@ -429,10 +429,9 @@
     background-color: #e0e0e0;
 }
 
-/* Slashed Styles for Running Score */
+/* Slashed Styles for Running Score (2P: 斜め線) */
 .rs-rs-cell.slashed {
     position: relative;
-    /* Ensure text is standard color, or darkened? Old code used color: #000 */
     color: #000;
 }
 
@@ -445,6 +444,76 @@
 .rs-rs-cell.slashed.q-red {
     background-image: linear-gradient(to bottom right, transparent 47%, #f00 48%, #f00 52%, transparent 53%);
     background-size: 100% 100%;
+}
+
+/* Filled Styles for Running Score (FT: 黒丸●を点数に重ねる) */
+.rs-rs-cell.filled {
+    position: relative;
+    color: #000;
+}
+
+.rs-rs-cell.filled::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #000;
+}
+
+.rs-rs-cell.filled.q-red::after {
+    background-color: #f00;
+}
+
+/* Circled Styles for Running Score (Q終了/試合終了: 丸囲み○) */
+.rs-rs-cell.circled {
+    position: relative;
+    color: #000;
+}
+
+.rs-rs-cell.circled::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid #000;
+    background-color: transparent;
+}
+
+.rs-rs-cell.circled.q-red::after {
+    border-color: #f00;
+}
+
+/* Circled Styles for Player Number (3P: 選手番号を丸囲み○) */
+.rs-rs-cell.a-no.circled,
+.rs-rs-cell.b-no.circled {
+    position: relative;
+}
+
+.rs-rs-cell.a-no.circled::after,
+.rs-rs-cell.b-no.circled::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid #000;
+    background-color: transparent;
+}
+
+.rs-rs-cell.a-no.circled.q-red::after,
+.rs-rs-cell.b-no.circled.q-red::after {
+    border-color: #f00;
 }
 
 /* Quarter End Underline */
@@ -863,6 +932,34 @@
 
 .cell-quarter {
     width: 4.5mm;
+    position: relative;
+}
+
+/* 出場記録の斜め線スタイル */
+/* スターター（Q開始時の5人）: 右上から左下（＼） */
+.cell-quarter.slash-starter {
+    background-size: 100% 100%;
+}
+
+.cell-quarter.slash-starter.q-red {
+    background-image: linear-gradient(to bottom right, transparent 45%, #f00 47%, #f00 53%, transparent 55%);
+}
+
+.cell-quarter.slash-starter.q-black {
+    background-image: linear-gradient(to bottom right, transparent 45%, #000 47%, #000 53%, transparent 55%);
+}
+
+/* 途中交代: 左上から右下（／） */
+.cell-quarter.slash-sub {
+    background-size: 100% 100%;
+}
+
+.cell-quarter.slash-sub.q-red {
+    background-image: linear-gradient(to bottom left, transparent 45%, #f00 47%, #f00 53%, transparent 55%);
+}
+
+.cell-quarter.slash-sub.q-black {
+    background-image: linear-gradient(to bottom left, transparent 45%, #000 47%, #000 53%, transparent 55%);
 }
 
 .th-foul {
@@ -1028,6 +1125,19 @@
 }
 
 .score-cell.quarter-end.q-red {
+    border-bottom-color: #f00;
+}
+
+/* Game End Double Underline */
+.rs-rs-cell.game-end {
+    border-bottom: 3px double;
+}
+
+.rs-rs-cell.game-end.q-black {
+    border-bottom-color: #000;
+}
+
+.rs-rs-cell.game-end.q-red {
     border-bottom-color: #f00;
 }
 

@@ -27,6 +27,22 @@ export interface PlayerStats {
 // P: パーソナル, T: テクニカル, BT: ベンチテクニカル, U: アンスポーツマンライク, D: ディスクォリファイイング, F: ファイティング
 export type FoulType = 'P' | 'T' | 'BT' | 'U' | 'D' | 'F';
 
+// フリースロー結果
+export type FreeThrowResult = 'made' | 'missed';
+
+// シュート状況（ファウル発生時）
+export type ShotSituation = 'none' | '2P' | '3P';
+
+// ファウル記録（選手のファウル履歴用）
+export interface FoulRecord {
+    type: FoulType;
+    freeThrows: number;  // 0, 1, 2, 3
+    freeThrowResults?: FreeThrowResult[];
+}
+
+// 出場種別: スターター（Q開始時の5人）または途中交代
+export type QuarterPlayType = 'starter' | 'sub' | false;
+
 // 選手
 export interface Player {
     id: string;
@@ -34,9 +50,9 @@ export interface Player {
     name: string;
     courtName?: string;    // コートネーム（ニックネーム）
     isCaptain: boolean;
-    fouls: FoulType[];     // ファウル履歴
+    fouls: (FoulType | FoulRecord)[];     // ファウル履歴（レガシー: FoulType[], 新: FoulRecord[]）
     stats: PlayerStats;
-    quartersPlayed: boolean[];  // [Q1, Q2, Q3, Q4] 出場クォーター
+    quartersPlayed: QuarterPlayType[];  // [Q1, Q2, Q3, Q4] 出場クォーター ('starter'=スタメン, 'sub'=途中交代, false=未出場)
     isOnCourt: boolean;    // コート上にいるか
 }
 
@@ -95,6 +111,13 @@ export interface FoulEntry {
     quarter: number;
     timestamp: number;
     isCoachOrBench: boolean;   // コーチ・ベンチファウルかどうか
+    // フリースロー関連（新規）
+    freeThrows?: number;                    // FT本数 (0, 1, 2, 3)
+    freeThrowResults?: FreeThrowResult[];   // FT結果
+    shotSituation?: ShotSituation;          // シュート状況
+    shooterTeamId?: string;                 // FTを打った選手のチーム
+    shooterPlayerId?: string;               // FTを打った選手ID
+    shooterPlayerNumber?: number;           // FTを打った選手の背番号
 }
 
 // ゲームの状態
@@ -128,6 +151,7 @@ export type GameActionType =
     | 'ADD_SCORE'
     | 'ADD_STAT'
     | 'ADD_FOUL'
+    | 'ADD_FOUL_WITH_FREE_THROWS'
     | 'ADD_TIMEOUT'
     | 'SUBSTITUTE_PLAYER'
     | 'SELECT_PLAYER'
@@ -226,3 +250,71 @@ export const QUARTER_DURATION_SECONDS = 6 * 60; // 6分
 export const TEAM_FOUL_LIMIT = 4;  // 5つ目からFT
 export const MAX_PLAYERS_PER_TEAM = 15;
 export const PLAYERS_ON_COURT = 5;
+
+// ファウル表示用ヘルパー関数
+export const formatFoulDisplay = (foul: FoulType | FoulRecord): string => {
+    if (typeof foul === 'string') {
+        return foul;  // レガシー形式
+    }
+    if (foul.freeThrows === 0 || foul.freeThrows === undefined) {
+        return foul.type;
+    }
+    return `${foul.type}${foul.freeThrows}`;  // "P2", "T1" など
+};
+
+// ファウルタイプを取得するヘルパー
+export const getFoulType = (foul: FoulType | FoulRecord): FoulType => {
+    if (typeof foul === 'string') {
+        return foul;
+    }
+    return foul.type;
+};
+
+// FT本数を取得するヘルパー
+export const getFoulFreeThrows = (foul: FoulType | FoulRecord): number => {
+    if (typeof foul === 'string') {
+        return 0;
+    }
+    return foul.freeThrows || 0;
+};
+
+// FT移行判定ロジック
+export const shouldShowFreeThrowInput = (
+    foulType: FoulType,
+    shotSituation: ShotSituation,
+    teamFouls: number
+): boolean => {
+    // T/U/D は常にFT
+    if (['T', 'U', 'D'].includes(foulType)) return true;
+
+    // シュート中ならFT
+    if (shotSituation !== 'none') return true;
+
+    // チームファウル5個目以降（ペナルティ）ならFT
+    if (teamFouls >= TEAM_FOUL_LIMIT) return true;
+
+    return false;
+};
+
+// FT本数の自動推奨ロジック
+export const suggestFreeThrowCount = (
+    foulType: FoulType,
+    teamFouls: number,
+    shotSituation: ShotSituation
+): number => {
+    // T（テクニカル）は1本
+    if (foulType === 'T' || foulType === 'BT') return 1;
+
+    // U/D は2本
+    if (['U', 'D'].includes(foulType)) return 2;
+
+    // シュート中のファウル
+    if (shotSituation === '3P') return 3;
+    if (shotSituation === '2P') return 2;
+
+    // チームファウル5個目以降（ペナルティ状態）は2本
+    if (teamFouls >= TEAM_FOUL_LIMIT) return 2;
+
+    // それ以外は0本
+    return 0;
+};

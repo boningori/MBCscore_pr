@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import type { Team, Game } from '../../types/game';
+import { formatFoulDisplay } from '../../types/game';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
 import './RunningScoresheet.css';
 
@@ -48,14 +49,22 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
             <td className="cell-license"></td>
             <td className="cell-name">{player.name}</td>
             <td className="cell-number">{player.number}</td>
-            {[1, 2, 3, 4].map(q => (
-                <td key={q} className="cell-quarter">
-                    {player.quartersPlayed[q - 1] ? '✓' : ''}
-                </td>
-            ))}
+            {[1, 2, 3, 4].map(q => {
+                const playType = player.quartersPlayed[q - 1];
+                // 1Q/3Q=赤, 2Q/4Q=黒
+                const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
+                // starter=右上→左下（＼）, sub=左上→右下（／）
+                // 後方互換: true（旧boolean形式）はstarterとして扱う
+                const isStarter = playType === 'starter' || (playType as unknown) === true;
+                const slashClass = isStarter ? 'slash-starter' : playType === 'sub' ? 'slash-sub' : '';
+                return (
+                    <td key={q} className={`cell-quarter ${playType ? `${slashClass} ${colorClass}` : ''}`}>
+                    </td>
+                );
+            })}
             {[0, 1, 2, 3, 4].map(f => (
                 <td key={f} className="cell-foul">
-                    {player.fouls[f] || ''}
+                    {player.fouls[f] ? formatFoulDisplay(player.fouls[f]) : ''}
                 </td>
             ))}
         </tr>
@@ -352,8 +361,15 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
 
                                                 const quarterA = entryA?.quarter;
                                                 const quarterB = entryB?.quarter;
-                                                const quarterClassA = quarterA ? (quarterA === 2 || quarterA === 4 ? 'q-red' : 'q-black') : '';
-                                                const quarterClassB = quarterB ? (quarterB === 2 || quarterB === 4 ? 'q-red' : 'q-black') : '';
+                                                // 1Q/3Q=赤, 2Q/4Q/OT=黒
+                                                const quarterClassA = quarterA ? (quarterA === 1 || quarterA === 3 ? 'q-red' : 'q-black') : '';
+                                                const quarterClassB = quarterB ? (quarterB === 1 || quarterB === 3 ? 'q-red' : 'q-black') : '';
+
+                                                // 得点種別: 2P=斜め線, FT=黒丸, 3P=選手番号に丸囲み
+                                                const isFreeThrowA = entryA?.scoreType === 'FT';
+                                                const isFreeThrowB = entryB?.scoreType === 'FT';
+                                                const isThreePointA = entryA?.scoreType === '3P';
+                                                const isThreePointB = entryB?.scoreType === '3P';
 
                                                 const isQuarterEndA = entryA && scoreHistory
                                                     .filter(s => s.teamId === 'teamA' && s.quarter === quarterA)
@@ -372,18 +388,22 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                                 const endClassA = isGameEndA ? 'game-end' : (isQuarterEndA ? 'quarter-end' : '');
                                                 const endClassB = isGameEndB ? 'game-end' : (isQuarterEndB ? 'quarter-end' : '');
 
+                                                // 点数のスタイル: FT=filled(●), Q終了/試合終了=circled(○), その他=slashed(斜線)
+                                                const scoreStyleA = isFreeThrowA ? 'filled' : (isQuarterEndA || isGameEndA) ? 'circled' : 'slashed';
+                                                const scoreStyleB = isFreeThrowB ? 'filled' : (isQuarterEndB || isGameEndB) ? 'circled' : 'slashed';
+
                                                 return (
                                                     <div key={scoreVal} className="rs-rs-row">
-                                                        <div className={`rs-rs-cell a-no ${endClassA} ${quarterClassA}`}>
+                                                        <div className={`rs-rs-cell a-no ${endClassA} ${quarterClassA} ${isThreePointA ? 'circled' : ''}`}>
                                                             {entryA ? (entryA.playerNumber === -1 ? '?' : entryA.playerNumber) : ''}
                                                         </div>
-                                                        <div className={`rs-rs-cell a-score ${entryA ? `slashed ${quarterClassA}` : ''} ${endClassA} ${quarterClassA}`}>
+                                                        <div className={`rs-rs-cell a-score ${entryA ? `${scoreStyleA} ${quarterClassA}` : ''} ${endClassA} ${quarterClassA}`}>
                                                             {scoreVal}
                                                         </div>
-                                                        <div className={`rs-rs-cell b-score ${entryB ? `slashed ${quarterClassB}` : ''} ${endClassB} ${quarterClassB}`}>
+                                                        <div className={`rs-rs-cell b-score ${entryB ? `${scoreStyleB} ${quarterClassB}` : ''} ${endClassB} ${quarterClassB}`}>
                                                             {scoreVal}
                                                         </div>
-                                                        <div className={`rs-rs-cell b-no ${endClassB} ${quarterClassB}`}>
+                                                        <div className={`rs-rs-cell b-no ${endClassB} ${quarterClassB} ${isThreePointB ? 'circled' : ''}`}>
                                                             {entryB ? (entryB.playerNumber === -1 ? '?' : entryB.playerNumber) : ''}
                                                         </div>
                                                     </div>

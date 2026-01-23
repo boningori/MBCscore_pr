@@ -3,6 +3,13 @@ import type { ScoreEntry, StatEntry, FoulEntry, Player } from '../../types/game'
 import { EditActionModal } from '../EditActionModal';
 import './ActionHistory.css';
 
+// FT結果をフォーマット（例: "(FT: 1/2)"）
+const formatFtResult = (freeThrows?: number, freeThrowResults?: ('made' | 'missed')[]): string => {
+    if (!freeThrows || freeThrows === 0) return '';
+    const made = freeThrowResults?.filter(r => r === 'made').length ?? 0;
+    return ` (FT: ${made}/${freeThrows})`;
+};
+
 interface ActionHistoryProps {
     teamId: 'teamA' | 'teamB';
     teamName: string;
@@ -97,22 +104,23 @@ export function ActionHistory({
     };
 
     // ファウルタイプを表示用に変換
-    const getFoulLabel = (foulType: string, isCoachOrBench: boolean): string => {
+    const getFoulLabel = (foulType: string, isCoachOrBench: boolean, freeThrows?: number): string => {
+        const ftSuffix = freeThrows && freeThrows > 0 ? freeThrows.toString() : '';
         if (isCoachOrBench) {
             switch (foulType) {
-                case 'T': return 'ベンチテクニカル';
-                case 'BT': return 'ベンチテクニカル';
-                default: return `ベンチ${foulType}`;
+                case 'T': return `ベンチテクニカル${ftSuffix}`;
+                case 'BT': return `ベンチテクニカル${ftSuffix}`;
+                default: return `ベンチ${foulType}${ftSuffix}`;
             }
         }
         switch (foulType) {
-            case 'P': return 'パーソナルファウル';
-            case 'T': return 'テクニカル';
-            case 'BT': return 'ベンチテクニカル';
-            case 'U': return 'アンスポ';
-            case 'D': return '失格';
-            case 'F': return 'ファイティング';
-            default: return foulType;
+            case 'P': return `パーソナルファウル${ftSuffix}`;
+            case 'T': return `テクニカル${ftSuffix}`;
+            case 'BT': return `ベンチテクニカル${ftSuffix}`;
+            case 'U': return `アンスポ${ftSuffix}`;
+            case 'D': return `失格${ftSuffix}`;
+            case 'F': return `ファイティング${ftSuffix}`;
+            default: return `${foulType}${ftSuffix}`;
         }
     };
 
@@ -150,7 +158,7 @@ export function ActionHistory({
                 playerId: f.playerId || 'bench',
                 playerNumber: f.playerNumber,
                 playerName: f.isCoachOrBench ? 'ベンチ' : getPlayerName(f.playerId || ''),
-                description: getFoulLabel(f.foulType, f.isCoachOrBench),
+                description: getFoulLabel(f.foulType, f.isCoachOrBench, f.freeThrows) + formatFtResult(f.freeThrows, f.freeThrowResults),
                 entryType: f.foulType,
             })),
     ].sort((a, b) => b.timestamp - a.timestamp);

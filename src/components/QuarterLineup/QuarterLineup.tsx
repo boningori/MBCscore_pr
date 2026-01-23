@@ -33,7 +33,7 @@ export function QuarterLineup({
 
     // 前クォーター出場者
     const previousQuarterPlayers = players.filter(
-        p => p.quartersPlayed[quarter - 2] === true && quarter > 1
+        p => !!p.quartersPlayed[quarter - 2] && quarter > 1
     );
 
     const handlePlayerToggle = (playerId: string) => {
