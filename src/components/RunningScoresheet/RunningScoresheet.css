@@ -80,13 +80,14 @@
 /* Main Content Adjustments */
 .rs-main-content {
     display: flex;
-    gap: 2mm;
+    gap: 1mm;
     /* Reduced gap to save space */
 }
 
 .rs-teams-section {
-    flex: 1;
-    /* 残りの幅を使用 */
+    /* 残りの幅を使用 -> Fixed 97mm */
+    flex: none;
+    width: 97mm;
     display: flex;
     flex-direction: column;
     gap: 5mm;
@@ -94,11 +95,12 @@
 
 /* Center Section */
 .rs-center-section {
-    width: 10mm;
+    flex: 1;
+    /* Fill remaining space (approx 29mm) */
+    width: auto;
     border-left: 1px dashed #ccc;
     /* Visual aid, can be removed */
     border-right: 1px dashed #ccc;
-    flex: none;
     display: flex;
     flex-direction: column;
     gap: 5mm;
@@ -158,8 +160,8 @@
 }
 
 .rs-running-score-section {
-    width: 94.23mm;
-    /* 固定幅: 1113px @ 300dpi */
+    width: 70mm;
+    /* Fixed 70mm */
     flex: none;
 }
 
@@ -168,9 +170,9 @@
     display: flex;
     flex-direction: column;
     border: 2px solid #000;
-    width: 198.12mm;
-    /* Request: 2340px @ 300dpi (Fits in 2520px - 180px margin) */
-    margin-bottom: 5px;
+    width: 198mm;
+    /* Request: 198mm (Strictly fits in 210mm - 12mm margin) */
+    margin-bottom: 5mm;
 }
 
 /* Row 1: Competition & Game Info */
@@ -352,16 +354,21 @@
     display: flex;
     width: 100%;
     /* Reverted to flex spacing */
-    gap: 7.14%;
-    /* ~ 1/14 */
+    gap: 5mm;
+    /* Calculated: Gap (5mm) equals Cell Width (5mm) */
+    justify-content: flex-end;
+    /* Right align as requested */
 }
 
 .rs-rs-column {
     display: flex;
     flex-direction: column;
     /* Reverted to flex basis */
-    flex: 4;
+    width: 20mm;
+    /* 20mm (= 4 cells * 5mm) */
+    /* Total: 20mm*3 + 5mm*2 = 70mm */
     border: 1px solid #000;
+    box-sizing: border-box;
 }
 
 .rs-rs-column:last-child {
@@ -743,15 +750,7 @@
     flex: 1;
 }
 
-/* Main Content Adjustments */
-.rs-main-content {
-    display: flex;
-    gap: 10px;
-}
-
-.rs-running-score-section {
-    flex: 1;
-}
+/* Duplicates removed to prevent conflicts */
 
 .rs-running-score-section h3 {
     margin: 0 0 5px;
