@@ -283,9 +283,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                         {/* Coach Rows */}
                                         <tr className="coach-row">
                                             <td colSpan={2} className="coach-label">コーチ:</td>
-                                            <td className="coach-name">{team.coachName}</td>
-                                            <td className="coach-empty"></td>
-                                            <td colSpan={4} className="coach-empty-time"></td>
+                                            <td colSpan={6} className="coach-name">{team.coachName}</td>
                                             {[0, 1, 2].map(i => {
                                                 const f = team.coachFouls[i];
                                                 const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
@@ -296,9 +294,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                         </tr>
                                         <tr className="coach-row">
                                             <td colSpan={2} className="coach-label">A.コーチ:</td>
-                                            <td className="coach-name">{team.assistantCoachName}</td>
-                                            <td className="coach-empty"></td>
-                                            <td colSpan={4} className="coach-empty-time"></td>
+                                            <td colSpan={6} className="coach-name">{team.assistantCoachName}</td>
                                             <td className="cell-foul"></td>
                                             <td className="cell-foul"></td>
                                             <td className="cell-foul"></td>
@@ -315,6 +311,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                 {/* Team Fouls Moved to Center Section */}
                             </div>
                         ))}
+                        <div className="rs-license-note">※ライセンスNo. とは、JBA登録番号(メンバーID)の下3桁を記入してください。</div>
                     </div>
 
                     {/* Center Column: Team Fouls */}
