@@ -141,13 +141,15 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                     </div>
                     <div className="stat-item to-count">
                         <span className="stat-label">TO</span>
-                        <span className="stat-value">{state.teamA.timeouts.length}/3</span>
+                        <span className="stat-value">
+                            {state.teamA.timeouts.some(t => t.quarter === currentQuarter) ? '済' : '残1'}
+                        </span>
                     </div>
                     {phase === 'playing' && onTimeout && (
                         <button
                             className="btn btn-small btn-game-action"
                             onClick={() => onTimeout('teamA')}
-                            disabled={state.teamA.timeouts.length >= 3}
+                            disabled={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
                         >
                             タイムアウト
                         </button>
@@ -162,13 +164,15 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                     </div>
                     <div className="stat-item to-count">
                         <span className="stat-label">TO</span>
-                        <span className="stat-value">{state.teamB.timeouts.length}/3</span>
+                        <span className="stat-value">
+                            {state.teamB.timeouts.some(t => t.quarter === currentQuarter) ? '済' : '残1'}
+                        </span>
                     </div>
                     {phase === 'playing' && onTimeout && (
                         <button
                             className="btn btn-small btn-game-action"
                             onClick={() => onTimeout('teamB')}
-                            disabled={state.teamB.timeouts.length >= 3}
+                            disabled={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
                         >
                             タイムアウト
                         </button>

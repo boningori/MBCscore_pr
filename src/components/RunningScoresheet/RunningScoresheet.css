@@ -158,8 +158,8 @@
 }
 
 .rs-running-score-section {
-    width: 70mm;
-    /* Fixed 70mm */
+    width: 74.2mm;
+    /* Fixed 74.2mm */
     flex: none;
 }
 
@@ -332,11 +332,9 @@
 .rs-rs-header-title-row {
     text-align: center;
     border: 1px solid #000;
-    margin-bottom: 2px;
     background: #fff;
     padding: 2px;
     font-size: 7.48pt;
-    /* Request */
 }
 
 .rs-rs-header-title-row .jp {
@@ -352,8 +350,8 @@
     display: flex;
     width: 100%;
     /* Reverted to flex spacing */
-    gap: 5mm;
-    /* Calculated: Gap (5mm) equals Cell Width (5mm) */
+    gap: 5.3mm;
+    /* Calculated: Gap (5.3mm) equals Cell Width (5.3mm) */
     justify-content: flex-end;
     /* Right align as requested */
 }
@@ -362,9 +360,9 @@
     display: flex;
     flex-direction: column;
     /* Reverted to flex basis */
-    width: 20mm;
-    /* 20mm (= 4 cells * 5mm) */
-    /* Total: 20mm*3 + 5mm*2 = 70mm */
+    width: 21.2mm;
+    /* 21.2mm (= 4 cells * 5.3mm) */
+    /* Total: 21.2mm*3 + 5.3mm*2 = 74.2mm */
     border: 1px solid #000;
     box-sizing: border-box;
 }
@@ -377,7 +375,7 @@
 .rs-rs-col-header {
     display: flex;
     border-bottom: 1px solid #000;
-    height: 20px;
+    height: 5.0mm;
     align-items: center;
 }
 
@@ -404,8 +402,7 @@
 .rs-rs-row {
     display: flex;
     border-bottom: 1px solid #000;
-    height: 16px;
-    /* Adjust for row height */
+    height: 5.0mm;
 }
 
 .rs-rs-row:last-child {
@@ -859,6 +856,26 @@
 
 .to-cell-val {
     font-weight: bold;
+    position: relative;
+}
+
+/* タイムアウト使用時のクロス表示（斜線×） */
+.to-cell-val.to-marked {
+    background-size: 100% 100%;
+}
+
+/* 1Q/3Q: 赤色のクロス */
+.to-cell-val.to-marked.q-red {
+    background-image:
+        linear-gradient(to bottom right, transparent 48%, #f00 49%, #f00 51%, transparent 52%),
+        linear-gradient(to bottom left, transparent 48%, #f00 49%, #f00 51%, transparent 52%);
+}
+
+/* 2Q/4Q/OT: 黒色のクロス */
+.to-cell-val.to-marked.q-black {
+    background-image:
+        linear-gradient(to bottom right, transparent 48%, #000 49%, #000 51%, transparent 52%),
+        linear-gradient(to bottom left, transparent 48%, #000 49%, #000 51%, transparent 52%);
 }
 
 /* ロスターテーブル */
@@ -911,6 +928,29 @@
 
 .cell-license {
     font-size: 7pt;
+    position: relative;
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1px,
+            #ccc 1px,
+            #ccc 2px,
+            transparent 2px,
+            transparent 3px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1px,
+            #ccc 1px,
+            #ccc 2px,
+            transparent 2px,
+            transparent 3px
+        );
+    background-size: 1px 100%, 1px 100%;
+    background-position: 33.33% 0, 66.67% 0;
+    background-repeat: no-repeat;
 }
 
 .th-name {
@@ -996,7 +1036,7 @@
 }
 
 /* ファウル列の左境界（出場時限との境界）*/
-td.cell-quarter + td.cell-foul {
+td.cell-quarter+td.cell-foul {
     border-left: 1.5px solid #000;
 }
 
@@ -1181,11 +1221,45 @@ td.cell-quarter + td.cell-foul {
 }
 
 .rs-winner {
-    margin-top: 10px;
-    padding: 8px;
+    margin-top: 5mm;
+    height: 5mm;
     border: 1px solid #000;
-    text-align: center;
-    font-weight: 700;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.rs-game-end-time {
+    height: 5mm;
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.rs-result-label {
+    width: 21.2mm;
+    padding: 0 1em;
+    font-size: 9px;
+    border-right: 1px solid #000;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.rs-result-value {
+    padding: 0 1em;
+    font-size: 9px;
+    flex: 1;
+}
+
+.rs-jba-credit {
+    margin-top: 4px;
+    font-size: 8pt;
+    text-align: right;
 }
 
 /* 印刷用スタイル */

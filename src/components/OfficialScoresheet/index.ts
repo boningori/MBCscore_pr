@@ -1,1 +1,0 @@
-export { OfficialScoresheet } from './OfficialScoresheet';

@@ -234,11 +234,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                             <div className="to-cell-label">③</div>
                                             <div className="to-cell-label">④</div>
                                             <div className="to-cell-label">OT</div>
-                                            <div className="to-cell-val">{team.timeouts.length >= 1 ? 'X' : ''}</div>
-                                            <div className="to-cell-val">{team.timeouts.length >= 2 ? 'X' : ''}</div>
-                                            <div className="to-cell-val">{team.timeouts.length >= 3 ? 'X' : ''}</div>
-                                            <div className="to-cell-val">{team.timeouts.length >= 4 ? 'X' : ''}</div>
-                                            <div className="to-cell-val ot"></div>
+                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 1) ? 'to-marked q-red' : ''}`}></div>
+                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 2) ? 'to-marked q-black' : ''}`}></div>
+                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 3) ? 'to-marked q-red' : ''}`}></div>
+                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 4) ? 'to-marked q-black' : ''}`}></div>
+                                            <div className={`to-cell-val ot ${team.timeouts.some(t => t.quarter > 4) ? 'to-marked q-black' : ''}`}></div>
                                         </div>
                                     </div>
                                 </div>
@@ -415,8 +415,14 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                             })}
                         </div>
                         <div className="rs-winner">
-                            <span>勝利チーム: {finalScoreA > finalScoreB ? teamA.name : finalScoreB > finalScoreA ? teamB.name : '引き分け'}</span>
+                            <span className="rs-result-label">勝利チーム</span>
+                            <span className="rs-result-value">{finalScoreA > finalScoreB ? teamA.name : finalScoreB > finalScoreA ? teamB.name : '引き分け'}</span>
                         </div>
+                        <div className="rs-game-end-time">
+                            <span className="rs-result-label">試合終了時間</span>
+                            <span className="rs-result-value"></span>
+                        </div>
+                        <div className="rs-jba-credit">公益財団法人日本バスケットボール協会</div>
                     </div>
                 </div>
             </div>
