@@ -211,8 +211,7 @@
 }
 
 .rs-game-info-box {
-    width: 50%;
-    /* Align with Officials table (50%) */
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
@@ -224,18 +223,22 @@
 }
 
 .rs-date-box {
-    flex: 2;
+    flex: 1.5;
     display: flex;
     align-items: center;
     border-right: 1px solid #000;
-    padding: 2px 5px;
+    padding: 0 5px;
     font-size: 9pt;
-    /* Increased from 7pt for better readability */
 }
 
 .rs-date-box label {
     font-weight: 700;
-    margin-right: 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-right: 5px;
+    margin-right: 5px;
+    border-right: 1px solid #000;
 }
 
 .rs-date-part {
@@ -265,13 +268,24 @@
     flex: 1;
     display: flex;
     align-items: center;
-    padding: 2px 5px;
+    padding: 0 5px;
     font-size: 9pt;
 }
 
 .rs-time-box label {
     font-weight: 700;
+    width: 13.5mm;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-right: 5px;
+    border-right: 1px solid #000;
+}
+
+.rs-time-box span {
+    flex: 1;
+    text-align: center;
 }
 
 .rs-place-game-row {
@@ -280,32 +294,42 @@
 }
 
 .rs-place-box {
-    flex: 2;
+    flex: 1.5;
     display: flex;
     align-items: center;
     border-right: 1px solid #000;
-    padding: 2px 5px;
-    font-size: 7pt;
-    /* Request: 7pt */
+    padding: 0 5px;
+    font-size: 9pt;
 }
 
 .rs-place-box label {
     font-weight: 700;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-right: 5px;
     margin-right: 5px;
+    border-right: 1px solid #000;
 }
 
 .rs-game-no-box {
     flex: 1;
     display: flex;
     align-items: center;
-    padding: 2px 5px;
+    padding: 0 5px;
     font-size: 9pt;
 }
 
 .rs-game-no-box label {
     font-size: 8px;
     font-weight: 700;
-    line-height: 1;
+    width: 13.5mm;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+    border-right: 1px solid #000;
 }
 
 /* Row 2: Scores & Officials */
@@ -364,12 +388,11 @@
 .rs-rs-column {
     display: flex;
     flex-direction: column;
-    /* Reverted to flex basis */
     width: 21.2mm;
-    /* 21.2mm (= 4 cells * 5.3mm) */
-    /* Total: 21.2mm*3 + 5.3mm*2 = 74.2mm */
     border: 1px solid #000;
     box-sizing: border-box;
+    padding: 0;
+    overflow: hidden;
 }
 
 .rs-rs-column:last-child {
@@ -381,17 +404,19 @@
     display: flex;
     border-bottom: 1px solid #000;
     height: 5.0mm;
-    align-items: center;
+    padding: 0;
+    margin: 0;
 }
 
 .rs-rs-header-cell {
     flex: 1;
-    /* Reverted */
-    text-align: center;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: bold;
     border-right: 1px solid #000;
     font-size: 7.48pt;
-    /* Matching Title Size */
 }
 
 .rs-rs-header-cell:last-child {
@@ -668,15 +693,14 @@
 }
 
 .rs-brace {
-    font-size: 50px;
-    /* Large brace */
-    font-weight: 300;
-    /* Thin */
+    font-size: 80px;
+    font-weight: 50;
+    font-family: Arial, sans-serif;
     display: flex;
     align-items: center;
     line-height: 1;
-    padding-bottom: 10px;
-    /* Adjust vertical center */
+    transform: scaleX(0.5);
+    margin: 0 -5px;
 }
 
 .rs-sb-row {
@@ -705,8 +729,7 @@
 /* Officials Table */
 /* Officials Table */
 .rs-officials-table {
-    width: 50%;
-    flex: none;
+    flex: 1;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -794,20 +817,32 @@
     box-sizing: border-box;
 }
 
+.team-name-row {
+    display: flex;
+    align-items: baseline;
+}
+
+.team-label {
+    font-size: 8pt;
+    font-weight: 700;
+    color: #000 !important;
+    margin-right: 5px;
+}
+
 .team-name-label {
     font-size: 11pt;
     font-weight: 700;
 }
 
 .team-name-sub {
-    font-size: 8pt;
+    font-size: 7pt;
     font-family: 'Century', serif;
     margin-left: 5px;
 }
 
 .team-category-paren {
     position: absolute;
-    right: 15mm;
+    right: 5mm;
     top: 50%;
     transform: translateY(-50%);
     font-size: 14pt;

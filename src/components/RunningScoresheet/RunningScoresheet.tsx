@@ -231,9 +231,12 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                 {/* Header: Name & Timeouts */}
                                 <div className="rs-team-header-row">
                                     <div className="rs-team-name-area">
-                                        <div className="team-name-label">{team.name}</div>
+                                        <div className="team-name-row">
+                                            <span className="team-label">{tIndex === 0 ? 'チームA：' : 'チームB：'}</span>
+                                            <span className="team-name-label">{team.name}</span>
+                                        </div>
                                         <div className="team-name-sub">{tIndex === 0 ? 'Team A' : 'Team B'}</div>
-                                        <div className="team-category-paren">( )</div>
+                                        <div className="team-category-paren">（{team.color === 'white' ? '白' : '青'}）</div>
                                     </div>
                                     <div className="rs-team-timeout-area">
                                         <div className="timeout-header">タイムアウト</div>
