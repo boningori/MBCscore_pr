@@ -34,14 +34,23 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
     const finalScoreA = teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
     const finalScoreB = teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
 
-    // Placeholder for Period Scores logic - defaulting to empty for display
-    const scoresByPeriod: { [key: string]: { A: string | number, B: string | number } } = {
-        '1Q': { A: '', B: '' },
-        '2Q': { A: '', B: '' },
-        '3Q': { A: '', B: '' },
-        '4Q': { A: '', B: '' },
-        'OT': { A: '', B: '' }
+    // Calculate scores by period from scoreHistory
+    const scoresByPeriod: { [key: string]: { A: number, B: number } } = {
+        '1Q': { A: 0, B: 0 },
+        '2Q': { A: 0, B: 0 },
+        '3Q': { A: 0, B: 0 },
+        '4Q': { A: 0, B: 0 },
+        'OT': { A: 0, B: 0 }
     };
+
+    scoreHistory.forEach(entry => {
+        const quarterKey = entry.quarter <= 4 ? `${entry.quarter}Q` : 'OT';
+        if (entry.teamId === 'teamA') {
+            scoresByPeriod[quarterKey].A += entry.points;
+        } else {
+            scoresByPeriod[quarterKey].B += entry.points;
+        }
+    });
 
     const renderPlayerRow = (player: typeof teamA.players[0], index: number) => (
         <tr key={player.id}>
@@ -173,11 +182,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                 <div className="rs-brace">{'\{'}</div>
                                 {/* Center Breakdown: Q1-Q4, OT */}
                                 <div className="rs-score-breakdown">
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['1Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['1Q']?.B || '-'}</span></div>
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['2Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['2Q']?.B || '-'}</span></div>
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['3Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['3Q']?.B || '-'}</span></div>
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['4Q']?.A || '-'}</span><span className="sep">-</span><span className="val">{scoresByPeriod['4Q']?.B || '-'}</span></div>
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['OT']?.A || '-'}</span><span className="sep">(延長)</span><span className="val">{scoresByPeriod['OT']?.B || '-'}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['1Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['1Q'].B}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['2Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['2Q'].B}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['3Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['3Q'].B}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['4Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['4Q'].B}</span></div>
+                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['OT'].A}</span><span className="sep ot-label">(延長)</span><span className="val">{scoresByPeriod['OT'].B}</span></div>
                                 </div>
                                 <div className="rs-brace">{'\}'}</div>
                                 <div className="rs-team-score-box">

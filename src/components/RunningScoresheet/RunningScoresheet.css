@@ -182,7 +182,8 @@
 }
 
 .rs-competition-box {
-    flex: 1;
+    flex: none;
+    width: 97mm;
     display: flex;
     align-items: center;
     padding: 0 5px;
@@ -194,14 +195,18 @@
 
 .rs-competition-box label {
     font-weight: 700;
-    margin-right: 10px;
-    font-size: 7.48pt;
-    /* Request: 7.48pt */
+    width: 13.5mm;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+    border-right: 1px solid #000;
+    font-size: 9pt;
 }
 
 .rs-competition-value {
-    font-size: 7.48pt;
-    /* Request: 7.48pt */
+    font-size: 12pt;
     font-weight: 600;
 }
 
@@ -311,7 +316,7 @@
 
 /* Score Display Section */
 .rs-score-display-section {
-    width: 50%;
+    width: 97mm;
     flex: none;
     border-right: 1px solid #000;
     display: flex;
@@ -585,16 +590,15 @@
 }
 
 .rs-score-label-area {
-    width: 40px;
+    width: 13.5mm;
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: flex-start;
-    /* Top align */
     padding-top: 5px;
-    /* Add some spacing from top */
+    margin-right: 5px;
     font-weight: 700;
-    font-size: 7.14pt;
-    /* Request: 7.14pt */
+    font-size: 9pt;
 }
 
 .score-en {
@@ -617,15 +621,18 @@
     gap: 2px;
 }
 
+.rs-team-score-box:last-of-type {
+    margin-right: 2mm;
+}
+
 .rs-ts-team-name {
-    font-size: 10.5pt;
-    font-weight: 600;
+    font-size: 9pt;
+    font-weight: normal;
 }
 
 .rs-ts-box {
-    width: 60px;
-    height: 60px;
-    /* This fits within 26mm (~98px) comfortably */
+    width: 13.5mm;
+    height: 13.5mm;
     border: 1.5px solid #000;
     display: flex;
     flex-direction: column;
@@ -655,7 +662,7 @@
     align-items: center;
     justify-content: center;
     /* borders removed */
-    font-size: 7pt;
+    font-size: 10pt;
     padding: 2px 0;
     margin: 0 5px;
 }
@@ -682,8 +689,12 @@
 }
 
 .rs-sb-row .sep {
-    font-size: 6pt;
-    margin: 0 2px;
+    font-size: 10pt;
+    margin: 0 8px;
+}
+
+.rs-sb-row .sep.ot-label {
+    font-size: 8pt;
 }
 
 .divider-label {
