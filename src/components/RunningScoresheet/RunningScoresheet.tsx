@@ -232,7 +232,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                 <div className="rs-team-header-row">
                                     <div className="rs-team-name-area">
                                         <div className="team-name-row">
-                                            <span className="team-label">{tIndex === 0 ? 'チームA：' : 'チームB：'}</span>
+                                            <span className="rs-team-label">{tIndex === 0 ? 'チームA：' : 'チームB：'}</span>
                                             <span className="team-name-label">{team.name}</span>
                                         </div>
                                         <div className="team-name-sub">{tIndex === 0 ? 'Team A' : 'Team B'}</div>
@@ -398,8 +398,9 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                                 const endClassB = isGameEndB ? 'game-end' : (isQuarterEndB ? 'quarter-end' : '');
 
                                                 // 点数のスタイル: FT=filled(●), Q終了/試合終了=circled(○), その他=slashed(斜線)
-                                                const scoreStyleA = isFreeThrowA ? 'filled' : (isQuarterEndA || isGameEndA) ? 'circled' : 'slashed';
-                                                const scoreStyleB = isFreeThrowB ? 'filled' : (isQuarterEndB || isGameEndB) ? 'circled' : 'slashed';
+                                                // FT + Q終了/試合終了の場合は両方を適用（filled + circled）
+                                                const scoreStyleA = `${isFreeThrowA ? 'filled' : 'slashed'} ${(isQuarterEndA || isGameEndA) ? 'circled' : ''}`.trim();
+                                                const scoreStyleB = `${isFreeThrowB ? 'filled' : 'slashed'} ${(isQuarterEndB || isGameEndB) ? 'circled' : ''}`.trim();
 
                                                 return (
                                                     <div key={scoreVal} className="rs-rs-row">

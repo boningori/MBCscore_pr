@@ -12,11 +12,12 @@ interface HomeProps {
     onViewHistory: () => void;
     onManageOpponents: () => void;
     onResumeGame?: () => void;
+    onOpenSettings: () => void;
     isFullScreen: boolean;
     onToggleFullScreen: () => void;
 }
 
-export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onResumeGame, isFullScreen, onToggleFullScreen }: HomeProps) {
+export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen }: HomeProps) {
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [recentOpponents] = useState<SavedTeam[]>(loadRecentOpponents);
     const [canResume, setCanResume] = useState(false);
@@ -34,9 +35,14 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                     <h1 className="home-title">MBC<span className="title-accent">score</span></h1>
                     <p className="home-tagline">ミニバス用スコアシートアプリ ベータ版</p>
                 </div>
-                <button className="btn btn-secondary btn-icon fullscreen-btn" onClick={onToggleFullScreen} title={isFullScreen ? '画面縮小' : '全画面'}>
-                    {isFullScreen ? '⊟' : '⊞'}
-                </button>
+                <div className="header-buttons">
+                    <button className="btn btn-secondary btn-icon" onClick={onOpenSettings} title="設定">
+                        ⚙️
+                    </button>
+                    <button className="btn btn-secondary btn-icon" onClick={onToggleFullScreen} title={isFullScreen ? '画面縮小' : '全画面'}>
+                        {isFullScreen ? '⊟' : '⊞'}
+                    </button>
+                </div>
             </div>
 
             <div className="home-content">

@@ -190,10 +190,6 @@
 
 /* モバイル調整 */
 @media (max-width: 768px) {
-    .swipeable-score-btn {
-        min-height: 80px;
-    }
-
     .swipeable-score-btn .action-hint {
         font-size: 0.6rem;
     }

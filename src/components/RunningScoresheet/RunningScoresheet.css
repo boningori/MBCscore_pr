@@ -493,33 +493,37 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background-color: #000;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .rs-rs-cell.filled.q-red::after {
-    background-color: #f00;
+    background-color: rgba(255, 0, 0, 0.5);
 }
 
 /* Circled Styles for Running Score (Q終了/試合終了: 丸囲み○) */
-.rs-rs-cell.circled {
+/* 得点セル用は::beforeを使用（filledの::afterと共存するため） */
+.rs-rs-cell.a-score.circled,
+.rs-rs-cell.b-score.circled {
     position: relative;
     color: #000;
 }
 
-.rs-rs-cell.circled::after {
+.rs-rs-cell.a-score.circled::before,
+.rs-rs-cell.b-score.circled::before {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     border: 1.5px solid #000;
     background-color: transparent;
 }
 
-.rs-rs-cell.circled.q-red::after {
+.rs-rs-cell.a-score.circled.q-red::before,
+.rs-rs-cell.b-score.circled.q-red::before {
     border-color: #f00;
 }
 
@@ -822,10 +826,10 @@
     align-items: baseline;
 }
 
-.team-label {
+.rs-team-label {
     font-size: 8pt;
     font-weight: 700;
-    color: #000 !important;
+    color: #000;
     margin-right: 5px;
 }
 

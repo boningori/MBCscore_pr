@@ -62,7 +62,7 @@
 .team-label {
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     max-width: 100px;
     overflow: hidden;
     text-overflow: ellipsis;

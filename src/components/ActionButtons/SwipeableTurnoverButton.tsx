@@ -152,7 +152,13 @@ export function SwipeableTurnoverButton({
 
             {/* タップ時のセレクター */}
             {showSelector && (
-                <div className="turnover-selector-overlay" onClick={handleCancelSelector}>
+                <div
+                    className="turnover-selector-overlay"
+                    onClick={handleCancelSelector}
+                    onTouchStart={e => e.stopPropagation()}
+                    onTouchEnd={e => e.stopPropagation()}
+                    onTouchMove={e => e.stopPropagation()}
+                >
                     <div className="turnover-selector" onClick={e => e.stopPropagation()}>
                         <div className="selector-title">TO種類を選択</div>
                         <div className="selector-options">

@@ -7,7 +7,7 @@ import {
     createEmptySavedTeam,
     generateTeamId
 } from '../../utils/teamStorage';
-import { recognizePlayerList, isOCRAvailable } from '../../utils/imageOCR';
+import { recognizePlayerList, isOCRAvailable, getStoredApiKey } from '../../utils/imageOCR';
 import './TeamManager.css';
 
 interface TeamManagerProps {
@@ -22,6 +22,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const hasApiKey = !!getStoredApiKey();
 
     const refreshTeams = () => {
         setTeams(loadMyTeams());
@@ -110,8 +111,12 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
                 </button>
                 {isOCRAvailable() && (
                     <>
-                        <button className="btn btn-secondary" onClick={triggerFileInput}>
-                            📷 写真から登録
+                        <button
+                            className={`btn ${hasApiKey ? 'btn-primary' : 'btn-secondary'}`}
+                            onClick={triggerFileInput}
+                            title={hasApiKey ? 'Gemini AIで高精度に読み取ります' : '標準OCRで読み取ります'}
+                        >
+                            {hasApiKey ? '✨ AI読込' : '📷 写真読込'}
                         </button>
                         <input
                             ref={fileInputRef}
@@ -128,7 +133,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
             {isLoading && (
                 <div className="ocr-loading">
                     <span className="spinner"></span>
-                    画像を解析中...
+                    {hasApiKey ? 'AIが画像を解析中...' : 'OCRで画像を解析中...'}
                 </div>
             )}
 

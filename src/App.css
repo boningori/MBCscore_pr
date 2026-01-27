@@ -956,7 +956,7 @@
 
 .game-main-area.simple-mode .score-row .swipeable-score-btn {
   flex: 1;
-  min-height: 50px;
+  min-height: 90px;
   padding: 0 !important;
   /* パディングリセット */
   display: flex;
@@ -982,26 +982,26 @@
   display: none !important;
 }
 
-/* シンプルモード：ボタン高さをコンパクトに統一 (50px) */
+/* シンプルモード：ボタン高さを統一 (90px) */
 .game-main-area.simple-mode .stat-btn-group {
-  min-height: 50px !important;
+  min-height: 90px !important;
 }
 
 .game-main-area.simple-mode .stat-btn {
-  min-height: 50px !important;
+  min-height: 90px !important;
   padding: var(--spacing-xs) !important;
 }
 
 .game-main-area.simple-mode .swipeable-score-wrapper,
 .game-main-area.simple-mode .swipeable-score-btn,
 .game-main-area.simple-mode .action-row.score-row {
-  min-height: 70px !important;
+  min-height: 90px !important;
 }
 
 /* シンプルモード：ファウルボタンも同じ高さに統一 */
 .game-main-area.simple-mode .btn-foul {
-  min-height: 70px !important;
-  height: 70px !important;
+  min-height: 90px !important;
+  height: 90px !important;
   padding: 0 var(--spacing-sm) !important;
   display: flex !important;
   align-items: center !important;

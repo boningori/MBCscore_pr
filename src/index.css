@@ -780,6 +780,110 @@ body {
   font-size: 20px;
 }
 
+/* ベンチファウルモーダル */
+.coach-foul-modal {
+  min-width: 320px;
+}
+
+.modal-header-with-back {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.modal-header-with-back .btn-back {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.modal-header-with-back .btn-back:hover {
+  color: var(--text-primary);
+}
+
+.modal-header-with-back h3 {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  padding-right: 60px; /* 戻るボタン分のオフセット */
+}
+
+.shooter-team-label {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.coach-foul-shooter-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.shooter-select-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shooter-select-btn:hover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.shooter-select-btn .shooter-num {
+  font-weight: 800;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
+.shooter-select-btn .shooter-name {
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.ft-shooter-info {
+  text-align: center;
+  color: var(--primary);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  padding: var(--spacing-sm);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.ft-result-label {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.coach-foul-ft-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.coach-foul-ft-buttons .btn {
+  flex: 1;
+}
+
 /* レスポンシブ */
 @media (max-width: 768px) {
   .score-value {

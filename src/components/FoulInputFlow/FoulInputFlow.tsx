@@ -23,6 +23,10 @@ interface FoulInputFlowProps {
     opponentTeamId: string;
     opponentPlayers: Player[];
     opponentTeamName: string;
+    // ベンチファウルモード用
+    benchFoulMode?: boolean;
+    benchFoulType?: FoulType;
+    benchFoulLabel?: string;
 }
 
 const FOUL_TYPES: { type: FoulType; label: string; description: string; requiresPlayer: boolean }[] = [
@@ -46,12 +50,16 @@ export function FoulInputFlow({
     teamFouls,
     opponentPlayers,
     opponentTeamName,
+    benchFoulMode = false,
+    benchFoulType,
+    benchFoulLabel,
 }: FoulInputFlowProps) {
-    const [step, setStep] = useState<Step>('foulType');
-    const [foulType, setFoulType] = useState<FoulType | null>(null);
+    // ベンチファウルモードの場合は初期ステップをshooterに、FT本数を1本に設定
+    const [step, setStep] = useState<Step>(benchFoulMode ? 'shooter' : 'foulType');
+    const [foulType, setFoulType] = useState<FoulType | null>(benchFoulMode && benchFoulType ? benchFoulType : null);
     const [shotSituation, setShotSituation] = useState<ShotSituation>('none');
-    const [freeThrows, setFreeThrows] = useState<number>(0);
-    const [freeThrowResults, setFreeThrowResults] = useState<FreeThrowResult[]>([]);
+    const [freeThrows, setFreeThrows] = useState<number>(benchFoulMode ? 1 : 0);
+    const [freeThrowResults, setFreeThrowResults] = useState<FreeThrowResult[]>(benchFoulMode ? [null as unknown as FreeThrowResult] : []);
     const [shooterPlayerId, setShooterPlayerId] = useState<string | null>(null);
 
     // 長押し検出用
@@ -68,8 +76,8 @@ export function FoulInputFlow({
         foulType: 'ファウル種類を選択',
         shotSituation: 'シュート状況を選択（シュートファウル）',
         ftCount: 'フリースロー本数を選択',
-        ftResult: 'フリースロー結果を入力',
-        shooter: 'シューターを選択',
+        ftResult: benchFoulMode && benchFoulLabel ? `${benchFoulLabel} - FT結果` : 'フリースロー結果を入力',
+        shooter: benchFoulMode && benchFoulLabel ? `${benchFoulLabel} - シューター選択` : 'シューターを選択',
     };
 
     // FT本数の推奨値を計算
@@ -218,6 +226,11 @@ export function FoulInputFlow({
                 }
                 break;
             case 'shooter':
+                // ベンチファウルモードの場合はキャンセル
+                if (benchFoulMode) {
+                    onCancel();
+                    return;
+                }
                 // シュートファウル（2P/3P）からの場合はshotSituationへ
                 // ペナルティからの場合はfoulTypeへ
                 // T/U/DからはftCountへ
@@ -236,7 +249,7 @@ export function FoulInputFlow({
                 setFreeThrowResults(new Array(freeThrows).fill(null));
                 break;
         }
-    }, [step, foulType, freeThrows, shotSituation]);
+    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel]);
 
     // FT成功数を計算
     const ftMadeCount = freeThrowResults.filter(r => r === 'made').length;
@@ -245,13 +258,24 @@ export function FoulInputFlow({
     // コート上の選手のみフィルタリング
     const availableShooters = opponentPlayers.filter(p => p.isOnCourt);
 
+    // すべてのイベントを止める
+    const stopAllEvents = (e: React.MouseEvent | React.TouchEvent) => {
+        e.stopPropagation();
+    };
+
     return (
-        <div className="foul-input-flow-overlay" onClick={onCancel}>
+        <div
+            className="foul-input-flow-overlay"
+            onClick={onCancel}
+            onTouchStart={stopAllEvents}
+            onTouchEnd={stopAllEvents}
+            onTouchMove={stopAllEvents}
+        >
             <div className="foul-input-flow" onClick={e => e.stopPropagation()}>
                 {/* ヘッダー */}
                 <div className="foul-input-header">
                     <h3>{stepTitles[step]}</h3>
-                    {step !== 'foulType' && (
+                    {(step !== 'foulType' || benchFoulMode) && (
                         <button className="btn-back" onClick={handleBack}>
                             ← 戻る
                         </button>

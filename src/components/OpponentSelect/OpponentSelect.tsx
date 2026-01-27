@@ -8,7 +8,7 @@ import {
     clearRecentOpponents,
     loadOpponents
 } from '../../utils/teamStorage';
-import { recognizePlayerList, isOCRAvailable } from '../../utils/imageOCR';
+import { recognizePlayerList, isOCRAvailable, getStoredApiKey } from '../../utils/imageOCR';
 import './OpponentSelect.css';
 
 interface OpponentSelectProps {
@@ -24,6 +24,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const hasApiKey = !!getStoredApiKey();
 
     const refreshHistory = () => {
         setHistory(loadRecentOpponents());
@@ -117,8 +118,12 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                     </button>
                     {isOCRAvailable() && (
                         <>
-                            <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-                                📷 写真から登録
+                            <button
+                                className={`btn ${hasApiKey ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => fileInputRef.current?.click()}
+                                title={hasApiKey ? 'Gemini AIで高精度に読み取ります' : '標準OCRで読み取ります'}
+                            >
+                                {hasApiKey ? '✨ AI読込' : '📷 写真読込'}
                             </button>
                             <input
                                 ref={fileInputRef}
@@ -141,7 +146,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
             {isLoading && (
                 <div className="ocr-loading">
                     <span className="spinner"></span>
-                    画像を解析中...
+                    {hasApiKey ? 'AIが画像を解析中...' : 'OCRで画像を解析中...'}
                 </div>
             )}
 
@@ -222,6 +227,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
     const [newNumber, setNewNumber] = useState('');
     const [newName, setNewName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const hasApiKey = !!getStoredApiKey();
 
     const handleAddPlayer = () => {
         if (!newNumber) return;
@@ -291,11 +297,12 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                         {isOCRAvailable() && (
                             <>
                                 <button
-                                    className="btn btn-secondary btn-small"
+                                    className={`btn btn-small ${hasApiKey ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isLoading}
+                                    title={hasApiKey ? 'Gemini AIで高精度に読み取ります' : '標準OCRで読み取ります'}
                                 >
-                                    📷 写真読込
+                                    {hasApiKey ? '✨ AI読込' : '📷 写真読込'}
                                 </button>
                                 <input
                                     ref={fileInputRef}
@@ -309,7 +316,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                         )}
                     </div>
 
-                    {isLoading && <div className="ocr-loading">解析中...</div>}
+                    {isLoading && <div className="ocr-loading">{hasApiKey ? 'AIが解析中...' : 'OCRで解析中...'}</div>}
 
                     <div className="add-player-row">
                         <input

@@ -24,6 +24,7 @@ import { PendingActionResolver } from './components/PendingActionResolver';
 
 import { FoulInputFlow } from './components/FoulInputFlow';
 import { RunningScoresheet } from './components/RunningScoresheet';
+import { AppSettingsModal } from './components/Settings/AppSettingsModal';
 import type { VoiceCommand } from './utils/voiceCommands';
 import './App.css';
 
@@ -45,6 +46,7 @@ function AppContent() {
   const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示
   const [resolvingPendingAction, setResolvingPendingAction] = useState<PendingAction | null>(null); // 解決中の保留アクション
   const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
+  const [showAppSettings, setShowAppSettings] = useState(false);
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
@@ -248,26 +250,73 @@ function AppContent() {
     dispatch({ type: 'CLEAR_SELECTION' });
   };
 
-  const [showCoachFoulSelector, setShowCoachFoulSelector] = useState<{ teamId: 'teamA' | 'teamB' } | null>(null);
+  // ベンチファウルのフロー管理
+  const [coachFoulState, setCoachFoulState] = useState<{
+    teamId: 'teamA' | 'teamB';
+    step: 'type' | 'foulInput';
+    foulType?: FoulType;
+    playerId?: string;
+    label?: string;
+  } | null>(null);
 
   // コーチ・ベンチファウル（選択モーダル表示）
   const handleCoachFoul = (teamId: 'teamA' | 'teamB') => {
-    setShowCoachFoulSelector({ teamId });
+    setCoachFoulState({ teamId, step: 'type' });
   };
 
-  // ベンチファウル確定
-  const handleConfirmCoachFoul = (type: 'HC' | 'Bench') => {
-    if (!showCoachFoulSelector) return;
-    const { teamId } = showCoachFoulSelector;
-    const foulType: FoulType = type === 'HC' ? 'T' : 'BT'; // HCはT(C), BenchはBT(B)
+  // ベンチファウル種類選択 → FoulInputFlowへ
+  const handleCoachFoulTypeSelect = (type: 'HC' | 'Bench') => {
+    if (!coachFoulState) return;
+    const foulType: FoulType = type === 'HC' ? 'T' : 'BT';
     const playerId = type === 'HC' ? 'COACH' : 'BENCH';
+    const label = type === 'HC' ? 'ヘッドコーチ (C)' : 'ベンチ (B)';
+    setCoachFoulState({
+      ...coachFoulState,
+      step: 'foulInput',
+      foulType,
+      playerId,
+      label,
+    });
+  };
+
+  // ベンチファウルFoulInputFlow完了
+  const handleCoachFoulComplete = (data: {
+    foulType: FoulType;
+    shotSituation: ShotSituation;
+    freeThrows: number;
+    freeThrowResults: FreeThrowResult[];
+    shooterPlayerId: string | null;
+  }) => {
+    if (!coachFoulState || !coachFoulState.foulType || !coachFoulState.playerId) return;
+    const { teamId, foulType, playerId } = coachFoulState;
+    const opponentTeamId = teamId === 'teamA' ? 'teamB' : 'teamA';
 
     dispatch({
-      type: 'ADD_FOUL',
-      payload: { teamId, playerId, foulType },
+      type: 'ADD_FOUL_WITH_FREE_THROWS',
+      payload: {
+        teamId,
+        playerId,
+        foulType,
+        shotSituation: 'none' as ShotSituation,
+        freeThrows: data.freeThrows,
+        freeThrowResults: data.freeThrowResults,
+        shooterTeamId: opponentTeamId,
+        shooterPlayerId: data.shooterPlayerId || '',
+      },
     });
     setPendingAction(null);
-    setShowCoachFoulSelector(null);
+    setCoachFoulState(null);
+  };
+
+  // ベンチファウルキャンセル
+  const handleCoachFoulCancel = () => {
+    setCoachFoulState(null);
+  };
+
+  // ベンチファウルFoulInputFlowから戻る → typeステップへ
+  const handleCoachFoulBack = () => {
+    if (!coachFoulState) return;
+    setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' });
   };
 
   // チーム選択して保留アクション作成
@@ -660,15 +709,22 @@ function AppContent() {
 
   if (screen === 'home') {
     return (
-      <Home
-        onStartGame={() => setScreen('gameSetup')}
-        onManageTeams={() => setScreen('myTeamManager')}
-        onViewHistory={() => setScreen('history')}
-        onManageOpponents={() => setScreen('opponentManager')}
-        onResumeGame={handleResumeGame}
-        isFullScreen={isFullScreen}
-        onToggleFullScreen={toggleFullScreen}
-      />
+      <>
+        <Home
+          onStartGame={() => setScreen('gameSetup')}
+          onManageTeams={() => setScreen('myTeamManager')}
+          onViewHistory={() => setScreen('history')}
+          onManageOpponents={() => setScreen('opponentManager')}
+          onResumeGame={handleResumeGame}
+          onOpenSettings={() => setShowAppSettings(true)}
+          isFullScreen={isFullScreen}
+          onToggleFullScreen={toggleFullScreen}
+        />
+        <AppSettingsModal
+          isOpen={showAppSettings}
+          onClose={() => setShowAppSettings(false)}
+        />
+      </>
     );
   }
 
@@ -1153,27 +1209,47 @@ function AppContent() {
           </div>
         </div>
       )}
-      {/* ベンチファウル選択モーダル */}
-      {showCoachFoulSelector && (
-        <div className="modal-overlay" onClick={() => setShowCoachFoulSelector(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+      {/* ベンチファウル選択モーダル - Step 1: 種類選択 */}
+      {coachFoulState && coachFoulState.step === 'type' && (
+        <div className="modal-overlay" onClick={handleCoachFoulCancel}>
+          <div className="modal-content coach-foul-modal" onClick={e => e.stopPropagation()}>
             <h3>ベンチファウル種類</h3>
             <div className="modal-actions-column">
-              <button className="btn btn-danger btn-large" onClick={() => handleConfirmCoachFoul('HC')}>
+              <button className="btn btn-danger btn-large" onClick={() => handleCoachFoulTypeSelect('HC')}>
                 ヘッドコーチ (C)
                 <span className="btn-desc">テクニカルファウル</span>
               </button>
-              <button className="btn btn-warning btn-large" onClick={() => handleConfirmCoachFoul('Bench')}>
+              <button className="btn btn-warning btn-large" onClick={() => handleCoachFoulTypeSelect('Bench')}>
                 ベンチ (B)
                 <span className="btn-desc">テクニカルファウル</span>
               </button>
             </div>
-            <button className="btn btn-secondary" onClick={() => setShowCoachFoulSelector(null)}>
+            <button className="btn btn-secondary" onClick={handleCoachFoulCancel}>
               キャンセル
             </button>
           </div>
         </div>
       )}
+
+      {/* ベンチファウル - Step 2: FoulInputFlow（シューター選択・FT結果入力） */}
+      {coachFoulState && coachFoulState.step === 'foulInput' && coachFoulState.foulType && (() => {
+        const opponentTeamId = coachFoulState.teamId === 'teamA' ? 'teamB' : 'teamA';
+        const opponentTeam = opponentTeamId === 'teamA' ? state.teamA : state.teamB;
+        return (
+          <FoulInputFlow
+            onComplete={handleCoachFoulComplete}
+            onCancel={handleCoachFoulBack}
+            hasSelectedPlayer={true}
+            teamFouls={0}
+            opponentTeamId={opponentTeamId}
+            opponentPlayers={opponentTeam.players}
+            opponentTeamName={opponentTeam.name}
+            benchFoulMode={true}
+            benchFoulType={coachFoulState.foulType}
+            benchFoulLabel={coachFoulState.label}
+          />
+        );
+      })()}
 
       {/* 履歴ポップアップ（シンプルモード用） */}
       {showHistoryPopup && gameMode === 'simple' && (

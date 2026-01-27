@@ -9,6 +9,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    touch-action: none; /* 下のレイヤーへのタッチ伝播を防ぐ */
 }
 
 .foul-input-flow {
@@ -319,12 +320,13 @@
 .shooter-number {
     font-weight: 800;
     font-size: var(--font-size-lg);
-    color: var(--primary);
+    color: var(--text-primary);
 }
 
 .shooter-name {
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-size: var(--font-size-sm);
+    font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
