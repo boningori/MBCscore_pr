@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import type { Team, Game } from '../../types/game';
+import type { Game } from '../../types/game';
 import { formatFoulDisplay } from '../../types/game';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
 import './RunningScoresheet.css';
@@ -78,19 +78,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
             ))}
         </tr>
     );
-
-    const renderTeamFoulRow = (team: Team, quarter: number) => {
-        const fouls = team.teamFouls[quarter - 1] || 0;
-        return (
-            <div className="team-foul-row">
-                {[1, 2, 3, 4].map(f => (
-                    <span key={f} className={`foul-box ${f <= fouls ? 'marked' : ''}`}>
-                        {f}
-                    </span>
-                ))}
-            </div>
-        );
-    };
 
     return (
         <div className="running-scoresheet-container">
@@ -330,14 +317,28 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                     <div className="rs-center-section">
                         {[teamA, teamB].map((team) => (
                             <div key={`center-${team.id}`} className="rs-center-team-block">
-                                <div className="rs-center-team-fouls">
-                                    <div className="tf-label">TF</div>
-                                    {[1, 2, 3, 4].map(q => (
-                                        <div key={q} className="center-foul-row">
-                                            <span className="cf-q-label">{q}Q</span>
-                                            {renderTeamFoulRow(team, q)}
-                                        </div>
-                                    ))}
+                                <div className="rs-tf-title-box">
+                                    チーム<br />ファウル
+                                </div>
+                                <div className="rs-tf-grid-group">
+                                    <div className="rs-tf-grid">
+                                        <div className="rs-tf-header-cell">1Q</div>
+                                        <div className="rs-tf-header-cell">2Q</div>
+                                        {[1, 2, 3, 4].map(num => [
+                                            <div key={`${team.id}-1q-${num}`} className={`rs-tf-cell ${team.teamFouls[0] >= num ? 'marked q-red' : ''}`}>{num}</div>,
+                                            <div key={`${team.id}-2q-${num}`} className={`rs-tf-cell ${team.teamFouls[1] >= num ? 'marked q-black' : ''}`}>{num}</div>
+                                        ])}
+                                    </div>
+                                </div>
+                                <div className="rs-tf-grid-group">
+                                    <div className="rs-tf-grid">
+                                        <div className="rs-tf-header-cell">3Q</div>
+                                        <div className="rs-tf-header-cell">4Q</div>
+                                        {[1, 2, 3, 4].map(num => [
+                                            <div key={`${team.id}-3q-${num}`} className={`rs-tf-cell ${team.teamFouls[2] >= num ? 'marked q-red' : ''}`}>{num}</div>,
+                                            <div key={`${team.id}-4q-${num}`} className={`rs-tf-cell ${team.teamFouls[3] >= num ? 'marked q-black' : ''}`}>{num}</div>
+                                        ])}
+                                    </div>
                                 </div>
                             </div>
                         ))}

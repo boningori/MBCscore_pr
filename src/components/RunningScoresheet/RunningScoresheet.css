@@ -94,67 +94,100 @@
 /* Center Section */
 .rs-center-section {
     flex: 1;
-    /* Fill remaining space (approx 29mm) */
     width: auto;
-    border-left: 1px dashed #ccc;
-    /* Visual aid, can be removed */
-    border-right: 1px dashed #ccc;
     display: flex;
     flex-direction: column;
-    gap: 5mm;
-    /* Sync with Teams Section gap */
 }
 
 .rs-center-team-block {
-    /* Match rs-team-block layout behavior */
-    /* rs-team-block has margin-bottom: 2mm. To align perfectly, we need to match or use flex distribution */
-    margin-bottom: 2mm;
     display: flex;
     flex-direction: column;
     align-items: center;
-    border: 1px solid transparent;
-    /* invisible border to match box model approx */
+    padding-top: 15mm;
 }
 
-.rs-center-team-fouls {
+/* チームBのブロックを27mm下げる */
+.rs-center-team-block:nth-child(2) {
+    margin-top: 27mm;
+}
+
+/* チームファウル タイトルボックス (11mm x 10mm) */
+.rs-tf-title-box {
+    width: 11mm;
+    height: 10mm;
+    border: 1px solid #000;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 2px;
-}
-
-.tf-label {
-    font-size: 8pt;
-    font-weight: bold;
-    border-bottom: 1px solid #000;
-    margin-bottom: 2px;
-}
-
-.center-foul-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    margin-bottom: 3px;
-}
-
-.cf-q-label {
+    justify-content: center;
+    text-align: center;
     font-size: 6pt;
     font-weight: bold;
+    line-height: 1.2;
+    box-sizing: border-box;
 }
 
-/* Re-use .team-foul-row but perhaps scaling it down? */
-.center-foul-row .team-foul-row {
-    flex-wrap: wrap;
+/* グリッドグループ (タイトルボックスの下3mm) */
+.rs-tf-grid-group {
+    margin-top: 3mm;
+}
+
+/* 2列5行のグリッド (ヘッダー8mm + 数字セル5mm×4) */
+.rs-tf-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 5.5mm);
+    grid-template-rows: 8mm repeat(4, 5mm);
+    gap: 0;
+}
+
+/* ヘッダーセル (1Q/2Q/3Q/4Q) */
+.rs-tf-header-cell {
+    width: 5.5mm;
+    height: 8mm;
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    width: 100%;
+    font-size: 6pt;
+    font-weight: bold;
+    box-sizing: border-box;
 }
 
-.center-foul-row .foul-box {
-    width: 10px;
-    /* Smaller boxes */
-    height: 10px;
-    font-size: 6px;
+/* 数字セル (1-4) */
+.rs-tf-cell {
+    width: 5.5mm;
+    height: 5mm;
+    border: 1px solid #000;
+    border-top: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6pt;
+    box-sizing: border-box;
+}
+
+/* 左列のセルは右境界を共有 */
+.rs-tf-header-cell:first-child,
+.rs-tf-cell:nth-child(odd) {
+    border-right: none;
+}
+
+/* マーク済みセル（斜線クロス×） */
+.rs-tf-cell.marked {
+    background-size: 100% 100%;
+}
+
+/* 1Q/3Q: 赤色のクロス (線の太さ約0.25mm) */
+.rs-tf-cell.marked.q-red {
+    background-image:
+        linear-gradient(to bottom right, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%),
+        linear-gradient(to bottom left, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
+}
+
+/* 2Q/4Q: 黒色のクロス (線の太さ約0.25mm) */
+.rs-tf-cell.marked.q-black {
+    background-image:
+        linear-gradient(to bottom right, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%),
+        linear-gradient(to bottom left, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
 .rs-running-score-section {
@@ -167,7 +200,7 @@
 .rs-header-grid {
     display: flex;
     flex-direction: column;
-    border: 1.5px solid #000;
+    border: 1px solid #000;
     width: 198mm;
     /* Request: 198mm (Strictly fits in 210mm - 12mm margin) */
     margin-bottom: 5mm;
@@ -518,7 +551,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 1.5px solid #000;
+    border: 1px solid #000;
     background-color: transparent;
 }
 
@@ -543,7 +576,7 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 1.5px solid #000;
+    border: 1px solid #000;
     background-color: transparent;
 }
 
@@ -662,7 +695,7 @@
 .rs-ts-box {
     width: 13.5mm;
     height: 13.5mm;
-    border: 1.5px solid #000;
+    border: 1px solid #000;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -801,7 +834,7 @@
 
 .rs-team-header-row {
     display: flex;
-    border: 1.5px solid #000;
+    border: 1px solid #000;
     border-bottom: none;
     /* Table will handle this */
     height: 14mm;
@@ -817,7 +850,7 @@
     justify-content: center;
     padding: 5px 10px;
     position: relative;
-    border-right: 1.5px solid #000;
+    border-right: 1px solid #000;
     box-sizing: border-box;
 }
 
@@ -933,7 +966,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 8pt;
-    border: 1.5px solid #000;
+    border: 1px solid #000;
     /* Outer heavy border */
 }
 
@@ -1018,8 +1051,8 @@
 }
 
 .cell-number {
-    font-size: 10pt;
-    font-weight: bold;
+    font-size: 9pt;
+    font-weight: normal;
 }
 
 .th-time {
@@ -1038,11 +1071,11 @@
 }
 
 .cell-quarter.slash-starter.q-red {
-    background-image: linear-gradient(to bottom right, transparent 46%, #f00 48%, #f00 52%, transparent 54%);
+    background-image: linear-gradient(to bottom right, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
 }
 
 .cell-quarter.slash-starter.q-black {
-    background-image: linear-gradient(to bottom right, transparent 46%, #000 48%, #000 52%, transparent 54%);
+    background-image: linear-gradient(to bottom right, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
 /* 途中交代: 左上から右下（／） */
@@ -1051,11 +1084,11 @@
 }
 
 .cell-quarter.slash-sub.q-red {
-    background-image: linear-gradient(to bottom left, transparent 46%, #f00 48%, #f00 52%, transparent 54%);
+    background-image: linear-gradient(to bottom left, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
 }
 
 .cell-quarter.slash-sub.q-black {
-    background-image: linear-gradient(to bottom left, transparent 46%, #000 48%, #000 52%, transparent 54%);
+    background-image: linear-gradient(to bottom left, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
 /* 両方（スタメンが一度退いて再出場）: ×（両方の斜線を重ねる） */
@@ -1065,19 +1098,19 @@
 
 .cell-quarter.slash-both.q-red {
     background-image:
-        linear-gradient(to bottom right, transparent 46%, #f00 48%, #f00 52%, transparent 54%),
-        linear-gradient(to bottom left, transparent 46%, #f00 48%, #f00 52%, transparent 54%);
+        linear-gradient(to bottom right, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%),
+        linear-gradient(to bottom left, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
 }
 
 .cell-quarter.slash-both.q-black {
     background-image:
-        linear-gradient(to bottom right, transparent 46%, #000 48%, #000 52%, transparent 54%),
-        linear-gradient(to bottom left, transparent 46%, #000 48%, #000 52%, transparent 54%);
+        linear-gradient(to bottom right, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%),
+        linear-gradient(to bottom left, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
 .th-foul {
     width: 23mm;
-    border-left: 1.5px solid #000;
+    border-left: 1px solid #000;
 }
 
 .cell-foul {
@@ -1087,17 +1120,17 @@
 
 /* ファウル列の左境界（出場時限との境界）*/
 td.cell-quarter+td.cell-foul {
-    border-left: 1.5px solid #000;
+    border-left: 1px solid #000;
 }
 
 /* サブヘッダー行のファウル列左境界 */
 .sub-header th:nth-child(5) {
-    border-left: 1.5px solid #000;
+    border-left: 1px solid #000;
 }
 
 /* ファウル列の下境界（コーチ行との境界）*/
 .coach-row td.cell-foul {
-    border-top: 1.5px solid #000;
+    border-top: 1px solid #000;
 }
 
 /* Coach Row Styles */
