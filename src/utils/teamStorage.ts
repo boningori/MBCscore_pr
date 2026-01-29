@@ -23,6 +23,7 @@ export interface SavedPlayer {
     uniformNumber?: number;      // ユニフォーム番号（0-99）
     name: string;
     courtName?: string;          // コートネーム（ニックネーム）
+    licenseNo?: string;          // ライセンスNo.（JBA登録番号の下3桁）
     isCaptain: boolean;
 }
 
@@ -67,7 +68,8 @@ export function savedTeamToTeam(saved: SavedTeam, teamId: 'teamA' | 'teamB', num
             playerNumber,
             p.name,
             p.isCaptain,
-            p.courtName
+            p.courtName,
+            p.licenseNo
         );
     });
     return team;

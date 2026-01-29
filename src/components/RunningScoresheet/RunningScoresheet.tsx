@@ -71,7 +71,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
         return (
             <tr key={player.id}>
                 <td className="cell-no">{index + 1}</td>
-                <td className="cell-license"></td>
+                <td className="cell-license">{player.licenseNo || ''}</td>
                 <td className="cell-name">{player.name}</td>
                 <td className="cell-number">{player.number}</td>
                 {[1, 2, 3, 4].map(q => {

@@ -176,6 +176,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
     const [newUniformNumber, setNewUniformNumber] = useState('');
     const [newName, setNewName] = useState('');
     const [newCourtName, setNewCourtName] = useState('');
+    const [newLicenseNo, setNewLicenseNo] = useState('');
 
     // 選手編集用の状態
     const [editingPlayerIndex, setEditingPlayerIndex] = useState<number | null>(null);
@@ -183,6 +184,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
     const [editUniformNumber, setEditUniformNumber] = useState('');
     const [editName, setEditName] = useState('');
     const [editCourtName, setEditCourtName] = useState('');
+    const [editLicenseNo, setEditLicenseNo] = useState('');
 
     const handleAddPlayer = () => {
         // 少なくとも1つの番号と氏名が必要
@@ -224,6 +226,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                 uniformNumber: uniNum,
                 name: newName,
                 courtName: newCourtName || undefined,
+                licenseNo: newLicenseNo || undefined,
                 isCaptain: false
             }
         ].sort((a, b) => (a.bibNumber ?? a.number) - (b.bibNumber ?? b.number)));
@@ -231,6 +234,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
         setNewUniformNumber('');
         setNewName('');
         setNewCourtName('');
+        setNewLicenseNo('');
     };
 
     const handleRemovePlayer = (index: number) => {
@@ -253,6 +257,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
         setEditUniformNumber(player.uniformNumber !== undefined ? String(player.uniformNumber) : '');
         setEditName(player.name);
         setEditCourtName(player.courtName || '');
+        setEditLicenseNo(player.licenseNo || '');
     };
 
     // 選手編集保存
@@ -310,7 +315,8 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                     bibNumber: bibNum,
                     uniformNumber: uniNum,
                     name: editName.trim(),
-                    courtName: editCourtName.trim() || undefined
+                    courtName: editCourtName.trim() || undefined,
+                    licenseNo: editLicenseNo.trim() || undefined
                 }
                 : p
         ).sort((a, b) => (a.bibNumber ?? a.number) - (b.bibNumber ?? b.number)));
@@ -448,6 +454,18 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                             name="court-name-field"
                             data-form-type="other"
                             data-lpignore="true"
+                        />
+                        <input
+                            type="text"
+                            className="input player-license-input"
+                            value={newLicenseNo}
+                            onChange={e => setNewLicenseNo(e.target.value)}
+                            placeholder="ライセンス"
+                            maxLength={3}
+                            autoComplete="one-time-code"
+                            name="license-no-field"
+                            data-form-type="other"
+                            data-lpignore="true"
                             onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
                         />
                         <button
@@ -511,6 +529,18 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                             placeholder="コートネーム"
                                             autoComplete="one-time-code"
                                             name="edit-court-name"
+                                            data-form-type="other"
+                                            data-lpignore="true"
+                                        />
+                                        <input
+                                            type="text"
+                                            className="input player-license-input"
+                                            value={editLicenseNo}
+                                            onChange={e => setEditLicenseNo(e.target.value)}
+                                            placeholder="ライセンス"
+                                            maxLength={3}
+                                            autoComplete="one-time-code"
+                                            name="edit-license-no"
                                             data-form-type="other"
                                             data-lpignore="true"
                                             onKeyDown={e => e.key === 'Enter' && handleSaveEdit()}

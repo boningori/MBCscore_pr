@@ -49,6 +49,7 @@ export interface Player {
     number: number;        // 背番号
     name: string;
     courtName?: string;    // コートネーム（ニックネーム）
+    licenseNo?: string;    // ライセンスNo.（JBA登録番号の下3桁）
     isCaptain: boolean;
     fouls: (FoulType | FoulRecord)[];     // ファウル履歴（レガシー: FoulType[], 新: FoulRecord[]）
     stats: PlayerStats;
@@ -236,11 +237,12 @@ export const createInitialStats = (): PlayerStats => ({
 });
 
 // 初期選手作成
-export const createPlayer = (id: string, number: number, name: string, isCaptain = false, courtName?: string): Player => ({
+export const createPlayer = (id: string, number: number, name: string, isCaptain = false, courtName?: string, licenseNo?: string): Player => ({
     id,
     number,
     name,
     courtName,
+    licenseNo,
     isCaptain,
     fouls: [],
     stats: createInitialStats(),
