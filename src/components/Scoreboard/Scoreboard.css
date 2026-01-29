@@ -14,7 +14,7 @@
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 /* チームスコアブロック */
@@ -26,6 +26,8 @@
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     border-left: 4px solid var(--border);
+    min-width: 0;
+    /* グリッドで同じ幅を保証 */
 }
 
 .team-score-block.color-white {

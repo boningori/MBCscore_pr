@@ -887,16 +887,7 @@ function AppContent() {
           </div>
         ) : (
           <>
-            {/* スコアボード */}
-            <div className="scoreboard-section">
-              <Scoreboard
-                onQuarterEnd={handleQuarterEnd}
-                onTimeout={handleTimeout}
-                mode={gameMode}
-              />
-            </div>
-
-            {/* 3列メインエリア: Team A | Actions | Team B */}
+            {/* 3列メインエリア: Team A | Center (Scoreboard + Actions) | Team B */}
             <div className={`game-main-area ${gameMode === 'simple' ? 'simple-mode' : 'full-mode'}`}>
               {/* Left: Team A */}
               <div className={`team-panel team-a color-${state.teamA.color} ${selectedTeamId === 'teamA' ? 'active' : ''}`}>
@@ -948,7 +939,7 @@ function AppContent() {
                       交代
                     </button>
                     <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamA')}>
-                      ベンチファウル
+                      ベンチ<br />ファウル
                     </button>
                   </div>
                 </div>
@@ -973,18 +964,30 @@ function AppContent() {
 
               </div>
 
-              {/* Center: Action Buttons */}
-              <div className={`center-actions-area ${pendingAction ? 'active' : ''}`}>
-                <ActionButtons
-                  onScore={handleScore}
-                  onStat={handleStat}
-                  onMiss={handleMiss}
-                  onFoul={handleShowFoulSelector}
-                  disabled={phase === 'finished'}
-                  hasSelection={!!selectedPlayerId}
-                  activeAction={pendingAction}
-                  gameMode={gameMode}
-                />
+              {/* Center: Scoreboard + Action Buttons */}
+              <div className="center-column">
+                {/* スコアボード */}
+                <div className="scoreboard-section">
+                  <Scoreboard
+                    onQuarterEnd={handleQuarterEnd}
+                    onTimeout={handleTimeout}
+                    mode={gameMode}
+                  />
+                </div>
+
+                {/* アクションボタン */}
+                <div className={`center-actions-area ${pendingAction ? 'active' : ''}`}>
+                  <ActionButtons
+                    onScore={handleScore}
+                    onStat={handleStat}
+                    onMiss={handleMiss}
+                    onFoul={handleShowFoulSelector}
+                    disabled={phase === 'finished'}
+                    hasSelection={!!selectedPlayerId}
+                    activeAction={pendingAction}
+                    gameMode={gameMode}
+                  />
+                </div>
               </div>
 
               {/* Right: Team B */}
@@ -1037,7 +1040,7 @@ function AppContent() {
                       交代
                     </button>
                     <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamB')}>
-                      ベンチファウル
+                      ベンチ<br />ファウル
                     </button>
                   </div>
                 </div>

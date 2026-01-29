@@ -37,25 +37,25 @@
 }
 
 .hint-up {
-    top: 2px;
+    top: 6px;
     left: 50%;
     transform: translateX(-50%);
 }
 
 .hint-down {
-    bottom: 2px;
+    bottom: 6px;
     left: 50%;
     transform: translateX(-50%);
 }
 
 .hint-left {
-    left: 4px;
+    left: 8px;
     top: 50%;
     transform: translateY(-50%);
 }
 
 .hint-right {
-    right: 4px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
 }
