@@ -15,6 +15,8 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 64px;
+  /* フルモード・シンプルモード共通の高さを維持 */
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -61,10 +63,9 @@
   overflow-y: auto;
 }
 
-/* Scoreboard Section */
+/* Scoreboard Section（中央列内） */
 .scoreboard-section {
-  display: flex;
-  justify-content: center;
+  width: 100%;
 }
 
 /* Team Tabs */
@@ -204,11 +205,6 @@
   .game-area {
     grid-template-columns: 1fr 1.2fr;
   }
-
-  .scoreboard-section {
-    max-width: 600px;
-    margin: 0 auto;
-  }
 }
 
 /* 縦向きタブレット */
@@ -237,11 +233,24 @@
 /* ===== 3列メインレイアウト ===== */
 .game-main-area {
   display: grid;
-  grid-template-columns: 1fr 340px 1fr;
+  grid-template-columns: 1fr 450px 1fr;
   gap: var(--spacing-md);
   flex: 1;
   min-height: 0;
   /* ネストしたスクロールのため */
+}
+
+/* 中央列（Scoreboard + ActionButtons） */
+.center-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  height: 100%;
+}
+
+/* 中央列内のスコアボードセクション */
+.center-column .scoreboard-section {
+  flex: none;
 }
 
 /* 中央アクションエリア */
@@ -256,8 +265,10 @@
   padding: 0;
   /* ActionButtonsContainerがpaddingを持つため */
   transition: border-color var(--transition-fast);
-  height: 100%;
-  /* 高さも合わせる */
+  flex: 1;
+  /* 残りの高さを埋める */
+  min-height: 0;
+  /* flexboxでスクロール対応 */
 }
 
 /* ActionButtons内部のコンテナスタイルをリセット */
@@ -294,22 +305,30 @@
     grid-template-columns: 1fr 1fr;
     /* 2列に変更 */
     grid-template-rows: auto auto;
-    /* アクションを下に */
+    /* 中央列を下に */
+  }
+
+  /* 中央列（Scoreboard + Actions）を全幅で下に配置 */
+  .center-column {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .center-column .scoreboard-section {
+    width: 100%;
   }
 
   .center-actions-area {
-    grid-column: 1 / -1;
-    /* 全幅 */
-    grid-row: 2;
-    /* 2行目 */
     flex-direction: row;
     /* 横並び */
     flex-wrap: wrap;
     padding-top: var(--spacing-sm);
-    /* モバイルではパネル感を消すか調整が必要かも */
     border: none;
     background: transparent;
     border-radius: 0;
+    flex: none;
   }
 
   /* モバイル時のアクションコンテナ */
@@ -507,16 +526,13 @@
   min-height: 50px;
 }
 
-/* 交代ボタン（左寄せ） */
-.bench-actions .btn:first-child {
-  flex: 0 0 auto;
-  min-width: 80px;
+/* 交代・ベンチファウルボタンを同じ幅に */
+.bench-actions .btn {
+  flex: 1;
 }
 
-/* ベンチテクニカルボタン（右寄せ、朱色） */
+/* ベンチファウルボタン（朱色） */
 .bench-actions .btn-danger {
-  position: absolute;
-  right: 0;
   background: linear-gradient(135deg, #e74c3c 0%, #ec7063 100%);
   border-color: #e74c3c;
 }
@@ -536,6 +552,12 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     gap: var(--spacing-sm);
+  }
+
+  /* 中央列を最初に表示 */
+  .center-column {
+    order: -1;
+    width: 100%;
   }
 
   /* チームパネルをコンパクトに */
@@ -909,9 +931,8 @@
   background: rgba(59, 130, 246, 0.1);
 }
 
-/* シンプルモード：アクションパネルをスコアボード直下に配置 */
+/* シンプルモード：アクションパネル */
 .game-main-area.simple-mode .center-actions-area {
-  order: -1;
   position: relative !important;
   width: 100%;
   height: auto !important;
@@ -919,7 +940,7 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
   z-index: 10;
 }
 
