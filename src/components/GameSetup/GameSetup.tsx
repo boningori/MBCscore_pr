@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SavedTeam } from '../../utils/teamStorage';
+import type { SavedTeam, NumberType } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
@@ -13,6 +13,7 @@ interface GameSetupProps {
         opponentTeam: SavedTeam;
         myTeamColor: 'white' | 'blue';
         opponentTeamColor: 'white' | 'blue';
+        numberType: NumberType;  // マイチームの使用番号タイプ
     }) => void;
     onBack: () => void;
 }
@@ -31,6 +32,9 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     // Team Colors
     const [myTeamColor, setMyTeamColor] = useState<'white' | 'blue'>('white');
     const [opponentTeamColor, setOpponentTeamColor] = useState<'white' | 'blue'>('blue');
+
+    // マイチームの使用番号タイプ
+    const [numberType, setNumberType] = useState<NumberType>('bib');
 
     // マイチーム簡易選択用
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
@@ -67,6 +71,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                 opponentTeam,
                 myTeamColor,
                 opponentTeamColor,
+                numberType,
             });
         }
     };
@@ -224,6 +229,32 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                     <button className="btn btn-secondary btn-small" onClick={handleColorSwap}>
                                         ⇄ 入れ替え
                                     </button>
+                                </div>
+                            </div>
+
+                            <div className="confirm-number-type">
+                                <span className="number-type-label">マイチームの使用番号</span>
+                                <div className="number-type-options">
+                                    <label className={`number-type-option ${numberType === 'bib' ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="numberType"
+                                            value="bib"
+                                            checked={numberType === 'bib'}
+                                            onChange={() => setNumberType('bib')}
+                                        />
+                                        <span>ビブス番号</span>
+                                    </label>
+                                    <label className={`number-type-option ${numberType === 'uniform' ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="numberType"
+                                            value="uniform"
+                                            checked={numberType === 'uniform'}
+                                            onChange={() => setNumberType('uniform')}
+                                        />
+                                        <span>ユニフォーム番号</span>
+                                    </label>
                                 </div>
                             </div>
 

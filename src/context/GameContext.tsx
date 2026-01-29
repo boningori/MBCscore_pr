@@ -11,10 +11,13 @@ import type {
     FoulRecord,
     FreeThrowResult,
     ShotSituation,
+    CoachFoulTarget,
 } from '../types/game';
 import type { PendingAction } from '../types/pendingAction';
+import type { GameInfo } from '../types/game';
 import {
     createInitialGame,
+    createInitialGameInfo,
     MAX_PERSONAL_FOULS,
 } from '../types/game';
 
@@ -226,25 +229,45 @@ function gameReducer(state: Game, action: GameAction): Game {
                 foulType: FoulType;
             };
 
-            const isCoachOrBench = playerId === 'COACH' || playerId === 'BENCH' || !playerId;
+            const isCoachOrBench = playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
+            const coachFoulTarget: CoachFoulTarget = playerId === 'COACH' ? 'COACH'
+                : playerId === 'ACOACH' ? 'ACOACH'
+                : playerId === 'BENCH' ? 'BENCH'
+                : null;
             const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
 
             const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
                 if (!isTarget) return team;
 
-                // コーチ・ベンチファウル（テクニカル）はチームファウルに数えない
-                if (playerId === 'COACH' || playerId === 'BENCH') {
+                // コーチファウル
+                if (playerId === 'COACH') {
                     return {
                         ...team,
                         coachFouls: [...team.coachFouls, foulType],
                     };
                 }
 
-                // ベンチテクニカル等（playerId が null）もチームファウルに数えない
+                // A.コーチファウル
+                if (playerId === 'ACOACH') {
+                    return {
+                        ...team,
+                        assistantCoachFouls: [...team.assistantCoachFouls, foulType],
+                    };
+                }
+
+                // ベンチファウル
+                if (playerId === 'BENCH') {
+                    return {
+                        ...team,
+                        benchFouls: [...team.benchFouls, foulType],
+                    };
+                }
+
+                // ベンチテクニカル等（playerId が null）もベンチファウルに
                 if (!playerId) {
                     return {
                         ...team,
-                        coachFouls: [...team.coachFouls, foulType],
+                        benchFouls: [...team.benchFouls, foulType],
                     };
                 }
 
@@ -272,6 +295,7 @@ function gameReducer(state: Game, action: GameAction): Game {
                 quarter: state.currentQuarter,
                 timestamp: Date.now(),
                 isCoachOrBench,
+                coachFoulTarget,
             };
 
             return {
@@ -294,6 +318,7 @@ function gameReducer(state: Game, action: GameAction): Game {
                 freeThrowResults,
                 shooterTeamId,
                 shooterPlayerId,
+                benchTechType,  // ベンチテクニカルの種類（HC/AC/Sub/Bench）
             } = action.payload as {
                 teamId: string;
                 playerId: string | null;
@@ -303,9 +328,16 @@ function gameReducer(state: Game, action: GameAction): Game {
                 freeThrowResults: FreeThrowResult[];
                 shooterTeamId: string;
                 shooterPlayerId: string;
+                benchTechType?: 'HC' | 'AC' | 'Sub' | 'Bench';
             };
 
-            const isCoachOrBench = playerId === 'COACH' || playerId === 'BENCH' || !playerId;
+            // ベンチテクニカル関連の判定
+            const isCoachOrBench = playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
+            const coachFoulTargetFT: CoachFoulTarget = playerId === 'COACH' ? 'COACH'
+                : playerId === 'ACOACH' ? 'ACOACH'
+                : playerId === 'BENCH' ? 'BENCH'
+                : benchTechType === 'Sub' ? 'BENCH'  // 交代要員のテクニカルはコーチ行へのBとして扱う
+                : null;
             const foulingPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
             const shooterPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === shooterPlayerId);
 
@@ -323,15 +355,45 @@ function gameReducer(state: Game, action: GameAction): Game {
             const updateFoulingTeam = (team: typeof state.teamA, isTarget: boolean) => {
                 if (!isTarget) return team;
 
-                // コーチ・ベンチファウルはチームファウルに数えない
-                if (isCoachOrBench) {
+                // コーチファウル（監督本人）: コーチ行に「C」(T)
+                if (playerId === 'COACH') {
                     return {
                         ...team,
-                        coachFouls: [...team.coachFouls, foulType],
+                        coachFouls: [...team.coachFouls, foulType],  // 'T' → 表示は「C」
                     };
                 }
 
-                // 通常のプレイヤーファウルはチームファウルを加算
+                // A.コーチファウル: A.コーチ行に「C」(T)、コーチ行に「B」(BT)
+                if (playerId === 'ACOACH') {
+                    return {
+                        ...team,
+                        assistantCoachFouls: [...team.assistantCoachFouls, foulType],  // 'T' → 表示は「C」
+                        coachFouls: [...team.coachFouls, 'BT' as FoulType],  // ダブルカウント: コーチ行に「B」
+                    };
+                }
+
+                // ベンチ関係者ファウル: コーチ行に「B」(BT)のみ
+                if (playerId === 'BENCH' || (!playerId && !benchTechType)) {
+                    return {
+                        ...team,
+                        coachFouls: [...team.coachFouls, 'BT' as FoulType],  // コーチ行に「B」
+                    };
+                }
+
+                // 交代要員のテクニカル: 選手行に「T」、コーチ行に「B」(BT)
+                // チームファウルには加算しない
+                if (benchTechType === 'Sub' && foulingPlayer) {
+                    return {
+                        ...team,
+                        coachFouls: [...team.coachFouls, 'BT' as FoulType],  // ダブルカウント: コーチ行に「B」
+                        players: team.players.map(p => {
+                            if (p.id !== playerId) return p;
+                            return { ...p, fouls: [...p.fouls, foulRecord] };  // 選手行に「T」
+                        })
+                    };
+                }
+
+                // 通常のプレイヤーファウル（コート上の選手）はチームファウルを加算
                 const newTeamFouls = [...team.teamFouls];
                 newTeamFouls[state.currentQuarter - 1]++;
 
@@ -363,15 +425,18 @@ function gameReducer(state: Game, action: GameAction): Game {
             };
 
             // ファウル履歴エントリを作成
+            // 交代要員の場合はplayerIdとplayerNumberを記録（選手行にTが記録されるため）
+            const isSubstitute = benchTechType === 'Sub';
             const foulEntry: FoulEntry = {
                 id: crypto.randomUUID(),
                 teamId,
-                playerId: isCoachOrBench ? null : playerId,
-                playerNumber: isCoachOrBench ? -1 : (foulingPlayer?.number || 0),
+                playerId: isSubstitute ? playerId : (isCoachOrBench ? null : playerId),
+                playerNumber: isSubstitute ? (foulingPlayer?.number || 0) : (isCoachOrBench ? -1 : (foulingPlayer?.number || 0)),
                 foulType,
                 quarter: state.currentQuarter,
                 timestamp: Date.now(),
-                isCoachOrBench,
+                isCoachOrBench: isCoachOrBench && !isSubstitute,  // 交代要員は選手扱い
+                coachFoulTarget: coachFoulTargetFT,
                 freeThrows,
                 freeThrowResults,
                 shotSituation,
@@ -598,11 +663,36 @@ function gameReducer(state: Game, action: GameAction): Game {
 
                 // コーチ・ベンチファウルの削除
                 if (entry.isCoachOrBench) {
-                    const coachFoulIndex = team.coachFouls.findIndex(f => f === entry.foulType);
-                    if (coachFoulIndex !== -1) {
-                        const newCoachFouls = [...team.coachFouls];
-                        newCoachFouls.splice(coachFoulIndex, 1);
-                        return { ...team, coachFouls: newCoachFouls };
+                    // coachFoulTargetに基づいて正しい配列から削除
+                    if (entry.coachFoulTarget === 'COACH') {
+                        const idx = team.coachFouls.findIndex(f => f === entry.foulType);
+                        if (idx !== -1) {
+                            const newFouls = [...team.coachFouls];
+                            newFouls.splice(idx, 1);
+                            return { ...team, coachFouls: newFouls };
+                        }
+                    } else if (entry.coachFoulTarget === 'ACOACH') {
+                        const idx = team.assistantCoachFouls.findIndex(f => f === entry.foulType);
+                        if (idx !== -1) {
+                            const newFouls = [...team.assistantCoachFouls];
+                            newFouls.splice(idx, 1);
+                            return { ...team, assistantCoachFouls: newFouls };
+                        }
+                    } else {
+                        // BENCH または 古いデータ（coachFoulTargetがない場合）
+                        const idx = team.benchFouls.findIndex(f => f === entry.foulType);
+                        if (idx !== -1) {
+                            const newFouls = [...team.benchFouls];
+                            newFouls.splice(idx, 1);
+                            return { ...team, benchFouls: newFouls };
+                        }
+                        // 古いデータの場合はcoachFoulsからも試す
+                        const oldIdx = team.coachFouls.findIndex(f => f === entry.foulType);
+                        if (oldIdx !== -1) {
+                            const newFouls = [...team.coachFouls];
+                            newFouls.splice(oldIdx, 1);
+                            return { ...team, coachFouls: newFouls };
+                        }
                     }
                     return team;
                 }
@@ -696,7 +786,17 @@ function gameReducer(state: Game, action: GameAction): Game {
 
         case 'RESTORE_GAME': {
             const { game } = action.payload as { game: Game };
-            return game;
+            // 古いデータとの互換性のため、新しいフィールドを補完
+            const migrateTeam = (team: typeof game.teamA) => ({
+                ...team,
+                assistantCoachFouls: team.assistantCoachFouls || [],
+                benchFouls: team.benchFouls || [],
+            });
+            return {
+                ...game,
+                teamA: migrateTeam(game.teamA),
+                teamB: migrateTeam(game.teamB),
+            };
         }
 
         case 'EDIT_SCORE': {
@@ -1394,6 +1494,17 @@ function gameReducer(state: Game, action: GameAction): Game {
             return {
                 ...newState,
                 pendingActions: newState.pendingActions.filter(p => p.id !== pendingActionId),
+            };
+        }
+
+        case 'UPDATE_GAME_INFO': {
+            const gameInfo = action.payload as Partial<GameInfo>;
+            return {
+                ...state,
+                gameInfo: {
+                    ...(state.gameInfo || createInitialGameInfo()),
+                    ...gameInfo,
+                },
             };
         }
 

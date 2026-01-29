@@ -98,7 +98,11 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                                     {team.players.length}名 | コーチ: {team.coachName || '-'}
                                 </p>
                                 <p className="team-card-players">
-                                    {team.players.slice(0, 5).map(p => `#${p.number}`).join(', ')}
+                                    {team.players.slice(0, 5).map(p => {
+                                        const bib = p.bibNumber ?? p.number;
+                                        const uni = p.uniformNumber;
+                                        return uni !== undefined ? `#${bib}/#${uni}` : `#${bib}`;
+                                    }).join(', ')}
                                     {team.players.length > 5 && '...'}
                                 </p>
                             </div>
@@ -162,32 +166,69 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
     const [name, setName] = useState(team.name);
     const [coachName, setCoachName] = useState(team.coachName);
     const [assistantCoachName, setAssistantCoachName] = useState(team.assistantCoachName || '');
-    const [players, setPlayers] = useState<SavedPlayer[]>(team.players);
-    const [newNumber, setNewNumber] = useState('');
+    // 既存データのマイグレーション: bibNumber/uniformNumberが未設定の場合はnumberを使用
+    const [players, setPlayers] = useState<SavedPlayer[]>(team.players.map(p => ({
+        ...p,
+        bibNumber: p.bibNumber ?? p.number,
+        uniformNumber: p.uniformNumber ?? p.number,
+    })));
+    const [newBibNumber, setNewBibNumber] = useState('');
+    const [newUniformNumber, setNewUniformNumber] = useState('');
     const [newName, setNewName] = useState('');
     const [newCourtName, setNewCourtName] = useState('');
 
     // 選手編集用の状態
     const [editingPlayerIndex, setEditingPlayerIndex] = useState<number | null>(null);
-    const [editNumber, setEditNumber] = useState('');
+    const [editBibNumber, setEditBibNumber] = useState('');
+    const [editUniformNumber, setEditUniformNumber] = useState('');
     const [editName, setEditName] = useState('');
     const [editCourtName, setEditCourtName] = useState('');
 
     const handleAddPlayer = () => {
-        if (!newNumber || !newName) return;
-        const number = parseInt(newNumber, 10);
-        if (isNaN(number) || number < 0 || number > 99) return;
-        if (players.some(p => p.number === number)) {
-            alert(`背番号 ${number} は既に登録されています`);
+        // 少なくとも1つの番号と氏名が必要
+        if ((!newBibNumber && !newUniformNumber) || !newName) return;
+
+        const bibNum = newBibNumber ? parseInt(newBibNumber, 10) : undefined;
+        const uniNum = newUniformNumber ? parseInt(newUniformNumber, 10) : undefined;
+
+        // 番号の範囲チェック
+        if (bibNum !== undefined && (isNaN(bibNum) || bibNum < 0 || bibNum > 99)) {
+            alert('ビブス番号は0〜99の範囲で入力してください');
             return;
         }
+        if (uniNum !== undefined && (isNaN(uniNum) || uniNum < 0 || uniNum > 99)) {
+            alert('ユニフォーム番号は0〜99の範囲で入力してください');
+            return;
+        }
+
+        // 重複チェック（それぞれの番号タイプで）
+        if (bibNum !== undefined && players.some(p => p.bibNumber === bibNum)) {
+            alert(`ビブス番号 ${bibNum} は既に登録されています`);
+            return;
+        }
+        if (uniNum !== undefined && players.some(p => p.uniformNumber === uniNum)) {
+            alert(`ユニフォーム番号 ${uniNum} は既に登録されています`);
+            return;
+        }
+
         if (players.length >= 15) return;
+
+        // デフォルト番号はビブス番号優先
+        const defaultNumber = bibNum ?? uniNum!;
 
         setPlayers([
             ...players,
-            { number, name: newName, courtName: newCourtName || undefined, isCaptain: false }
-        ].sort((a, b) => a.number - b.number));
-        setNewNumber('');
+            {
+                number: defaultNumber,
+                bibNumber: bibNum,
+                uniformNumber: uniNum,
+                name: newName,
+                courtName: newCourtName || undefined,
+                isCaptain: false
+            }
+        ].sort((a, b) => (a.bibNumber ?? a.number) - (b.bibNumber ?? b.number)));
+        setNewBibNumber('');
+        setNewUniformNumber('');
         setNewName('');
         setNewCourtName('');
     };
@@ -208,7 +249,8 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
     const handleStartEdit = (index: number) => {
         const player = players[index];
         setEditingPlayerIndex(index);
-        setEditNumber(String(player.number));
+        setEditBibNumber(player.bibNumber !== undefined ? String(player.bibNumber) : '');
+        setEditUniformNumber(player.uniformNumber !== undefined ? String(player.uniformNumber) : '');
         setEditName(player.name);
         setEditCourtName(player.courtName || '');
     };
@@ -216,27 +258,62 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
     // 選手編集保存
     const handleSaveEdit = () => {
         if (editingPlayerIndex === null) return;
-        const number = parseInt(editNumber, 10);
-        if (isNaN(number) || number < 0 || number > 99) {
-            alert('背番号は0〜99の範囲で入力してください');
+
+        const bibNum = editBibNumber ? parseInt(editBibNumber, 10) : undefined;
+        const uniNum = editUniformNumber ? parseInt(editUniformNumber, 10) : undefined;
+
+        // 少なくとも1つの番号が必要
+        if (bibNum === undefined && uniNum === undefined) {
+            alert('ビブス番号またはユニフォーム番号のいずれかを入力してください');
             return;
         }
-        // 他の選手と番号が重複していないか確認
-        const isDuplicate = players.some((p, i) => i !== editingPlayerIndex && p.number === number);
-        if (isDuplicate) {
-            alert(`背番号 ${number} は既に登録されています`);
+
+        // 番号の範囲チェック
+        if (bibNum !== undefined && (isNaN(bibNum) || bibNum < 0 || bibNum > 99)) {
+            alert('ビブス番号は0〜99の範囲で入力してください');
             return;
         }
+        if (uniNum !== undefined && (isNaN(uniNum) || uniNum < 0 || uniNum > 99)) {
+            alert('ユニフォーム番号は0〜99の範囲で入力してください');
+            return;
+        }
+
+        // 他の選手と番号が重複していないか確認（それぞれの番号タイプで）
+        if (bibNum !== undefined) {
+            const isDuplicateBib = players.some((p, i) => i !== editingPlayerIndex && p.bibNumber === bibNum);
+            if (isDuplicateBib) {
+                alert(`ビブス番号 ${bibNum} は既に登録されています`);
+                return;
+            }
+        }
+        if (uniNum !== undefined) {
+            const isDuplicateUni = players.some((p, i) => i !== editingPlayerIndex && p.uniformNumber === uniNum);
+            if (isDuplicateUni) {
+                alert(`ユニフォーム番号 ${uniNum} は既に登録されています`);
+                return;
+            }
+        }
+
         if (!editName.trim()) {
             alert('氏名を入力してください');
             return;
         }
 
+        // デフォルト番号はビブス番号優先
+        const defaultNumber = bibNum ?? uniNum!;
+
         setPlayers(players.map((p, i) =>
             i === editingPlayerIndex
-                ? { ...p, number, name: editName.trim(), courtName: editCourtName.trim() || undefined }
+                ? {
+                    ...p,
+                    number: defaultNumber,
+                    bibNumber: bibNum,
+                    uniformNumber: uniNum,
+                    name: editName.trim(),
+                    courtName: editCourtName.trim() || undefined
+                }
                 : p
-        ).sort((a, b) => a.number - b.number));
+        ).sort((a, b) => (a.bibNumber ?? a.number) - (b.bibNumber ?? b.number)));
         setEditingPlayerIndex(null);
     };
 
@@ -315,9 +392,19 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         <input
                             type="number"
                             className="input player-number-input"
-                            value={newNumber}
-                            onChange={e => setNewNumber(e.target.value)}
-                            placeholder="No."
+                            value={newBibNumber}
+                            onChange={e => setNewBibNumber(e.target.value)}
+                            placeholder="ビブス"
+                            min="0"
+                            max="99"
+                            autoComplete="off"
+                        />
+                        <input
+                            type="number"
+                            className="input player-number-input"
+                            value={newUniformNumber}
+                            onChange={e => setNewUniformNumber(e.target.value)}
+                            placeholder="ユニ"
                             min="0"
                             max="99"
                             autoComplete="off"
@@ -342,7 +429,7 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                         <button
                             className="btn btn-primary"
                             onClick={handleAddPlayer}
-                            disabled={!newNumber || !newName || players.length >= 15}
+                            disabled={(!newBibNumber && !newUniformNumber) || !newName || players.length >= 15}
                         >
                             追加
                         </button>
@@ -357,11 +444,22 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                         <input
                                             type="number"
                                             className="input player-number-input"
-                                            value={editNumber}
-                                            onChange={e => setEditNumber(e.target.value)}
+                                            value={editBibNumber}
+                                            onChange={e => setEditBibNumber(e.target.value)}
+                                            placeholder="ビブス"
                                             min="0"
                                             max="99"
                                             autoFocus
+                                            autoComplete="off"
+                                        />
+                                        <input
+                                            type="number"
+                                            className="input player-number-input"
+                                            value={editUniformNumber}
+                                            onChange={e => setEditUniformNumber(e.target.value)}
+                                            placeholder="ユニ"
+                                            min="0"
+                                            max="99"
                                             autoComplete="off"
                                         />
                                         <input
@@ -400,10 +498,15 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                     // 表示モード
                                     <>
                                         <span
-                                            className="player-number clickable"
+                                            className="player-numbers clickable"
                                             onClick={() => handleStartEdit(index)}
                                         >
-                                            #{player.number}
+                                            {player.bibNumber !== undefined && player.uniformNumber !== undefined
+                                                ? `#${player.bibNumber}/#${player.uniformNumber}`
+                                                : player.bibNumber !== undefined
+                                                    ? `ビ#${player.bibNumber}`
+                                                    : `ユ#${player.uniformNumber}`
+                                            }
                                         </span>
                                         <span
                                             className="player-name clickable"

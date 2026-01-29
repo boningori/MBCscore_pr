@@ -190,6 +190,29 @@
         linear-gradient(to bottom left, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
+/* 試合終了後: 未使用のチームファウル枠に2本の縦線 */
+.rs-tf-cell.tf-unused {
+    position: relative;
+}
+
+.rs-tf-cell.tf-unused::before,
+.rs-tf-cell.tf-unused::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: #000;
+}
+
+.rs-tf-cell.tf-unused::before {
+    left: 33%;
+}
+
+.rs-tf-cell.tf-unused::after {
+    right: 33%;
+}
+
 .rs-running-score-section {
     width: 74.2mm;
     /* Fixed 74.2mm */
@@ -426,11 +449,9 @@
     box-sizing: border-box;
     padding: 0;
     overflow: hidden;
+    position: relative;
 }
 
-.rs-rs-column:last-child {
-    /* No specialized margin needed with gap, but check if gap applies to last element? No. */
-}
 
 /* Header inside column A | B */
 .rs-rs-col-header {
@@ -609,6 +630,30 @@
 
 .rs-rs-cell.game-end.q-red {
     border-bottom-color: #f00;
+}
+
+/* 試合終了後の未使用セル斜線（SVGオーバーレイ） */
+.rs-unused-slash {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.rs-unused-slash line {
+    stroke: #000;
+    stroke-width: 1px;
+}
+
+/* Aチーム側: 左半分（a-no + a-score） */
+.rs-unused-slash-a {
+    left: 0;
+    width: 50%;
+}
+
+/* Bチーム側: 右半分（b-score + b-no） */
+.rs-unused-slash-b {
+    right: 0;
+    width: 50%;
 }
 
 /* Officials Section */
@@ -942,23 +987,45 @@
     position: relative;
 }
 
-/* タイムアウト使用時のクロス表示（斜線×） */
-.to-cell-val.to-marked {
-    background-size: 100% 100%;
+/* タイムアウト使用時：経過時間の数字を表示 */
+.to-cell-val.to-has-value {
+    background: transparent;
 }
 
-/* 1Q/3Q: 赤色のクロス */
-.to-cell-val.to-marked.q-red {
-    background-image:
-        linear-gradient(to bottom right, transparent 48%, #f00 49%, #f00 51%, transparent 52%),
-        linear-gradient(to bottom left, transparent 48%, #f00 49%, #f00 51%, transparent 52%);
+/* 経過時間の数字スタイル */
+.to-elapsed-minutes {
+    font-size: 10pt;
+    font-weight: bold;
+    font-style: italic;
 }
 
-/* 2Q/4Q/OT: 黒色のクロス */
-.to-cell-val.to-marked.q-black {
-    background-image:
-        linear-gradient(to bottom right, transparent 48%, #000 49%, #000 51%, transparent 52%),
-        linear-gradient(to bottom left, transparent 48%, #000 49%, #000 51%, transparent 52%);
+/* 1Q/3Q: 赤色の数字 */
+.to-cell-val.to-has-value.q-red .to-elapsed-minutes {
+    color: #f00;
+}
+
+/* 2Q/4Q/OT: 黒色の数字 */
+.to-cell-val.to-has-value.q-black .to-elapsed-minutes {
+    color: #000;
+}
+
+/* 試合終了後: 使用しなかったタイムアウト欄に2本の横線 */
+.to-cell-val.to-unused::before,
+.to-cell-val.to-unused::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #000;
+}
+
+.to-cell-val.to-unused::before {
+    top: 35%;
+}
+
+.to-cell-val.to-unused::after {
+    bottom: 35%;
 }
 
 /* ロスターテーブル */
@@ -1055,6 +1122,41 @@
     font-weight: normal;
 }
 
+/* 未使用選手欄（空行）のスタイル */
+/* ライセンス〜出場時限: 横線で区切る */
+.empty-cell-line {
+    position: relative;
+}
+
+.empty-cell-line::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #000;
+}
+
+/* ファウル欄: 空行全体で1本の斜線 */
+.empty-foul-slash-container {
+    position: relative;
+    overflow: visible;
+}
+
+.empty-foul-slash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.empty-foul-slash line {
+    stroke: #000;
+    stroke-width: 1px;
+}
+
 .th-time {
     width: 18mm;
 }
@@ -1118,6 +1220,37 @@
     font-weight: bold;
 }
 
+/* 第2Q終了時: 階段状の太線境界 */
+/* 最後に使用したファウル枠の右に太線 */
+.cell-foul.foul-half-border {
+    border-right: 2px solid #000;
+}
+
+/* 上境界: このセルが使用済みで、上の選手の同じ位置が未使用の場合 */
+.cell-foul.foul-half-border-top {
+    border-top: 2px solid #000;
+}
+
+/* 下境界: このセルが使用済みで、下の選手の同じ位置が未使用の場合 */
+.cell-foul.foul-half-border-bottom {
+    border-bottom: 2px solid #000;
+}
+
+/* 試合終了後: 未使用のファウル欄に横線 */
+.cell-foul.foul-unused {
+    position: relative;
+}
+
+.cell-foul.foul-unused::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #000;
+}
+
 /* ファウル列の左境界（出場時限との境界）*/
 td.cell-quarter+td.cell-foul {
     border-left: 1px solid #000;
@@ -1171,13 +1304,6 @@ td.cell-quarter+td.cell-foul {
     background-repeat: no-repeat;
 }
 
-.coach-empty {
-    /* Merged with name visually if no border? Standard has border. */
-}
-
-.coach-empty-time {
-    /* Empty cells under time */
-}
 
 /* Team Fouls Adjustment */
 .rs-team-fouls {

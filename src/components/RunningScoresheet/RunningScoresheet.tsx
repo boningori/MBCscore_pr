@@ -1,7 +1,8 @@
-import { useRef } from 'react';
-import type { Game } from '../../types/game';
-import { formatFoulDisplay } from '../../types/game';
+import { useRef, useState } from 'react';
+import type { Game, GameInfo } from '../../types/game';
+import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
+import { GameInfoModal } from '../GameInfoModal';
 import './RunningScoresheet.css';
 
 interface RunningScoresheetProps {
@@ -9,12 +10,19 @@ interface RunningScoresheetProps {
     gameName?: string;
     date?: string;
     onClose?: () => void;
+    onUpdateGameInfo?: (gameInfo: Partial<GameInfo>) => void;
 }
 
-export function RunningScoresheet({ game, gameName = '', date = '', onClose }: RunningScoresheetProps) {
+export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo }: RunningScoresheetProps) {
     const scoresheetRef = useRef<HTMLDivElement>(null);
+    const [showGameInfoModal, setShowGameInfoModal] = useState(false);
 
-    const { teamA, teamB, scoreHistory } = game;
+    const { teamA, teamB, scoreHistory, currentQuarter, phase, endTime } = game;
+    const gameInfo = game.gameInfo || createInitialGameInfo();
+
+    // 試合状態の判定
+    const isGameFinished = phase === 'finished';
+    const isHalfFinished = currentQuarter > 2 || isGameFinished; // 前半終了（2Q以降に進んでいる）
 
     // PDF出力
     const handleExportPDF = async () => {
@@ -52,32 +60,74 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
         }
     });
 
-    const renderPlayerRow = (player: typeof teamA.players[0], index: number) => (
-        <tr key={player.id}>
-            <td className="cell-no">{index + 1}</td>
-            <td className="cell-license"></td>
-            <td className="cell-name">{player.name}</td>
-            <td className="cell-number">{player.number}</td>
-            {[1, 2, 3, 4].map(q => {
-                const playType = player.quartersPlayed[q - 1];
-                // 1Q/3Q=赤, 2Q/4Q=黒
-                const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
-                // starter=右上→左下（＼）, sub=左上→右下（／）, both=×（両方重ねる）
-                // 後方互換: true（旧boolean形式）はstarterとして扱う
-                const isStarter = playType === 'starter' || (playType as unknown) === true;
-                const slashClass = playType === 'both' ? 'slash-both' : isStarter ? 'slash-starter' : playType === 'sub' ? 'slash-sub' : '';
-                return (
-                    <td key={q} className={`cell-quarter ${playType ? `${slashClass} ${colorClass}` : ''}`}>
-                    </td>
-                );
-            })}
-            {[0, 1, 2, 3, 4].map(f => (
-                <td key={f} className="cell-foul">
-                    {player.fouls[f] ? formatFoulDisplay(player.fouls[f]) : ''}
-                </td>
-            ))}
-        </tr>
-    );
+    const renderPlayerRow = (player: typeof teamA.players[0], index: number, allPlayers: typeof teamA.players) => {
+        // 選手のファウル数
+        const foulCount = player.fouls.length;
+
+        // 隣接選手のファウル数（階段状境界線用）
+        const prevFoulCount = index > 0 ? allPlayers[index - 1]?.fouls.length ?? 0 : foulCount;
+        const nextFoulCount = index < 14 ? allPlayers[index + 1]?.fouls.length ?? 0 : foulCount;
+
+        return (
+            <tr key={player.id}>
+                <td className="cell-no">{index + 1}</td>
+                <td className="cell-license"></td>
+                <td className="cell-name">{player.name}</td>
+                <td className="cell-number">{player.number}</td>
+                {[1, 2, 3, 4].map(q => {
+                    const playType = player.quartersPlayed[q - 1];
+                    // 1Q/3Q=赤, 2Q/4Q=黒
+                    const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
+                    // starter=右上→左下（＼）, sub=左上→右下（／）, both=×（両方重ねる）
+                    // 後方互換: true（旧boolean形式）はstarterとして扱う
+                    const isStarter = playType === 'starter' || (playType as unknown) === true;
+                    const slashClass = playType === 'both' ? 'slash-both' : isStarter ? 'slash-starter' : playType === 'sub' ? 'slash-sub' : '';
+                    return (
+                        <td key={q} className={`cell-quarter ${playType ? `${slashClass} ${colorClass}` : ''}`}>
+                        </td>
+                    );
+                })}
+                {[0, 1, 2, 3, 4].map(f => {
+                    const hasFoul = player.fouls[f];
+                    const isUsedFoul = foulCount > f;
+                    const isLastUsedFoul = f === foulCount - 1 && foulCount > 0;
+                    const isUnusedFoul = f >= foulCount;
+
+                    // クラス構築
+                    const classes = ['cell-foul'];
+
+                    // 第2Q終了時: 階段状の太線境界
+                    if (isHalfFinished) {
+                        // 最後に使用したファウル枠の右に太線
+                        if (isLastUsedFoul) {
+                            classes.push('foul-half-border');
+                        }
+                        // 上境界: このセルが使用済みで、上の選手の同じ位置が未使用の場合
+                        // ただし選手1（index=0）の上辺は外枠なので除外
+                        if (isUsedFoul && index > 0 && prevFoulCount <= f) {
+                            classes.push('foul-half-border-top');
+                        }
+                        // 下境界: このセルが使用済みで、下の選手の同じ位置が未使用の場合
+                        // ただし選手15（index=14）の下辺は外枠なので除外
+                        if (isUsedFoul && index < 14 && nextFoulCount <= f) {
+                            classes.push('foul-half-border-bottom');
+                        }
+                    }
+
+                    // 試合終了時: 未使用の欄に横線
+                    if (isGameFinished && isUnusedFoul) {
+                        classes.push('foul-unused');
+                    }
+
+                    return (
+                        <td key={f} className={classes.join(' ')}>
+                            {hasFoul ? formatFoulDisplay(player.fouls[f]) : ''}
+                        </td>
+                    );
+                })}
+            </tr>
+        );
+    };
 
     return (
         <div className="running-scoresheet-container">
@@ -88,6 +138,9 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                 </button>
                 <button className="btn btn-secondary" onClick={handleExportJPEG}>
                     JPEG出力
+                </button>
+                <button className="btn btn-secondary" onClick={() => setShowGameInfoModal(true)}>
+                    試合情報編集
                 </button>
                 {onClose && (
                     <button className="btn btn-secondary" onClick={onClose}>
@@ -135,17 +188,17 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                 </div>
                                 <div className="rs-time-box">
                                     <label>時間</label>
-                                    <span>:</span>
+                                    <span>{gameInfo.time || ':'}</span>
                                 </div>
                             </div>
                             <div className="rs-place-game-row">
                                 <div className="rs-place-box">
                                     <label>会場</label>
-                                    <span className="rs-place-val"></span>
+                                    <span className="rs-place-val">{gameInfo.venue}</span>
                                 </div>
                                 <div className="rs-game-no-box">
                                     <label>Game No.</label>
-                                    <span></span>
+                                    <span>{gameInfo.gameNo}</span>
                                 </div>
                             </div>
                         </div>
@@ -189,21 +242,21 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                         <div className="rs-officials-table">
                             <div className="rs-official-row">
                                 <div className="rs-official-cell label-cell">クルーチーフ</div>
-                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell value-cell">{gameInfo.crewChief}</div>
                                 <div className="rs-official-cell label-cell">アンパイア</div>
-                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell value-cell">{gameInfo.umpire}</div>
                             </div>
                             <div className="rs-official-row">
                                 <div className="rs-official-cell label-cell">スコアラー</div>
-                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell value-cell">{gameInfo.scorer}</div>
                                 <div className="rs-official-cell label-cell">タイマー</div>
-                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell value-cell">{gameInfo.timer}</div>
                             </div>
                             <div className="rs-official-row">
                                 <div className="rs-official-cell label-cell">A・スコアラー</div>
-                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell value-cell">{gameInfo.assistantScorer}</div>
                                 <div className="rs-official-cell label-cell">ショットクロックオペレーター</div>
-                                <div className="rs-official-cell value-cell"></div>
+                                <div className="rs-official-cell value-cell">{gameInfo.shotClockOperator}</div>
                             </div>
                         </div>
                     </div>
@@ -233,11 +286,28 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                             <div className="to-cell-label">③</div>
                                             <div className="to-cell-label">④</div>
                                             <div className="to-cell-label">OT</div>
-                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 1) ? 'to-marked q-red' : ''}`}></div>
-                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 2) ? 'to-marked q-black' : ''}`}></div>
-                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 3) ? 'to-marked q-red' : ''}`}></div>
-                                            <div className={`to-cell-val ${team.timeouts.some(t => t.quarter === 4) ? 'to-marked q-black' : ''}`}></div>
-                                            <div className={`to-cell-val ot ${team.timeouts.some(t => t.quarter > 4) ? 'to-marked q-black' : ''}`}></div>
+                                            {[1, 2, 3, 4].map(q => {
+                                                const timeout = team.timeouts.find(t => t.quarter === q);
+                                                const hasTimeout = !!timeout;
+                                                const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
+                                                // 試合終了時、使用しなかったクォーターに横線
+                                                const isUnused = isGameFinished && !hasTimeout;
+                                                return (
+                                                    <div key={q} className={`to-cell-val ${hasTimeout ? `to-has-value ${colorClass}` : ''} ${isUnused ? 'to-unused' : ''}`}>
+                                                        {hasTimeout && <span className="to-elapsed-minutes">{timeout.elapsedMinutes}</span>}
+                                                    </div>
+                                                );
+                                            })}
+                                            {(() => {
+                                                const otTimeout = team.timeouts.find(t => t.quarter > 4);
+                                                const hasOtTimeout = !!otTimeout;
+                                                const isOtUnused = isGameFinished && !hasOtTimeout;
+                                                return (
+                                                    <div className={`to-cell-val ot ${hasOtTimeout ? 'to-has-value q-black' : ''} ${isOtUnused ? 'to-unused' : ''}`}>
+                                                        {hasOtTimeout && <span className="to-elapsed-minutes">{otTimeout.elapsedMinutes}</span>}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
@@ -268,15 +338,31 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {team.players.slice(0, 15).map((p, i) => renderPlayerRow(p, i))}
-                                        {Array.from({ length: Math.max(0, 15 - team.players.length) }).map((_, i) => (
-                                            <tr key={`empty-${team.id}-${i}`}>
+                                        {team.players.slice(0, 15).map((p, i) => renderPlayerRow(p, i, team.players))}
+                                        {Array.from({ length: Math.max(0, 15 - team.players.length) }).map((_, i, arr) => (
+                                            <tr key={`empty-${team.id}-${i}`} className="empty-player-row">
                                                 <td className="cell-no">{team.players.length + i + 1}</td>
-                                                <td className="cell-license"></td>
-                                                <td className="cell-name"></td>
-                                                <td className="cell-number"></td>
-                                                {[1, 2, 3, 4].map(q => <td key={q} className="cell-quarter"></td>)}
-                                                {[1, 2, 3, 4, 5].map(f => <td key={f} className="cell-foul"></td>)}
+                                                {/* ライセンス〜出場時限: 横線 */}
+                                                <td className="cell-license empty-cell-line"></td>
+                                                <td className="cell-name empty-cell-line"></td>
+                                                <td className="cell-number empty-cell-line"></td>
+                                                {[1, 2, 3, 4].map(q => <td key={q} className="cell-quarter empty-cell-line"></td>)}
+                                                {/* ファウル欄: 空行全体で斜線（最初の行の最初のセルにSVGを配置） */}
+                                                {[0, 1, 2, 3, 4].map(f => (
+                                                    <td key={f} className={`cell-foul empty-foul-cell ${i === 0 && f === 0 ? 'empty-foul-slash-container' : ''}`}>
+                                                        {i === 0 && f === 0 && arr.length > 0 && (
+                                                            <svg
+                                                                className="empty-foul-slash"
+                                                                style={{
+                                                                    width: `calc(4.6mm * 5)`,
+                                                                    height: `calc(5mm * ${arr.length})`,
+                                                                }}
+                                                            >
+                                                                <line x1="0" y1="0" x2="100%" y2="100%" />
+                                                            </svg>
+                                                        )}
+                                                    </td>
+                                                ))}
                                             </tr>
                                         ))}
                                         {/* Coach Rows */}
@@ -286,19 +372,23 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                             {[0, 1, 2].map(i => {
                                                 const f = team.coachFouls[i];
                                                 const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
-                                                return <td key={i} className="cell-foul">{display}</td>;
+                                                const isUnused = !f && isGameFinished;
+                                                return <td key={i} className={`cell-foul ${isUnused ? 'foul-unused' : ''}`}>{display}</td>;
                                             })}
-                                            <td className="cell-foul"></td>
-                                            <td className="cell-foul"></td>
+                                            <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
+                                            <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
                                         </tr>
                                         <tr className="coach-row">
                                             <td colSpan={2} className="coach-label">A.コーチ:</td>
                                             <td colSpan={6} className="coach-name">{team.assistantCoachName}</td>
-                                            <td className="cell-foul"></td>
-                                            <td className="cell-foul"></td>
-                                            <td className="cell-foul"></td>
-                                            <td className="cell-foul"></td>
-                                            <td className="cell-foul"></td>
+                                            {[0, 1, 2].map(i => {
+                                                const f = team.assistantCoachFouls?.[i];
+                                                const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
+                                                const isUnused = !f && isGameFinished;
+                                                return <td key={i} className={`cell-foul ${isUnused ? 'foul-unused' : ''}`}>{display}</td>;
+                                            })}
+                                            <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
+                                            <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -324,20 +414,34 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                     <div className="rs-tf-grid">
                                         <div className="rs-tf-header-cell">1Q</div>
                                         <div className="rs-tf-header-cell">2Q</div>
-                                        {[1, 2, 3, 4].map(num => [
-                                            <div key={`${team.id}-1q-${num}`} className={`rs-tf-cell ${team.teamFouls[0] >= num ? 'marked q-red' : ''}`}>{num}</div>,
-                                            <div key={`${team.id}-2q-${num}`} className={`rs-tf-cell ${team.teamFouls[1] >= num ? 'marked q-black' : ''}`}>{num}</div>
-                                        ])}
+                                        {[1, 2, 3, 4].map(num => {
+                                            const is1QMarked = team.teamFouls[0] >= num;
+                                            const is2QMarked = team.teamFouls[1] >= num;
+                                            // 試合終了時、未使用の枠に縦線
+                                            const is1QUnused = isGameFinished && !is1QMarked;
+                                            const is2QUnused = isGameFinished && !is2QMarked;
+                                            return [
+                                                <div key={`${team.id}-1q-${num}`} className={`rs-tf-cell ${is1QMarked ? 'marked q-red' : ''} ${is1QUnused ? 'tf-unused' : ''}`}>{num}</div>,
+                                                <div key={`${team.id}-2q-${num}`} className={`rs-tf-cell ${is2QMarked ? 'marked q-black' : ''} ${is2QUnused ? 'tf-unused' : ''}`}>{num}</div>
+                                            ];
+                                        })}
                                     </div>
                                 </div>
                                 <div className="rs-tf-grid-group">
                                     <div className="rs-tf-grid">
                                         <div className="rs-tf-header-cell">3Q</div>
                                         <div className="rs-tf-header-cell">4Q</div>
-                                        {[1, 2, 3, 4].map(num => [
-                                            <div key={`${team.id}-3q-${num}`} className={`rs-tf-cell ${team.teamFouls[2] >= num ? 'marked q-red' : ''}`}>{num}</div>,
-                                            <div key={`${team.id}-4q-${num}`} className={`rs-tf-cell ${team.teamFouls[3] >= num ? 'marked q-black' : ''}`}>{num}</div>
-                                        ])}
+                                        {[1, 2, 3, 4].map(num => {
+                                            const is3QMarked = team.teamFouls[2] >= num;
+                                            const is4QMarked = team.teamFouls[3] >= num;
+                                            // 試合終了時、未使用の枠に縦線
+                                            const is3QUnused = isGameFinished && !is3QMarked;
+                                            const is4QUnused = isGameFinished && !is4QMarked;
+                                            return [
+                                                <div key={`${team.id}-3q-${num}`} className={`rs-tf-cell ${is3QMarked ? 'marked q-red' : ''} ${is3QUnused ? 'tf-unused' : ''}`}>{num}</div>,
+                                                <div key={`${team.id}-4q-${num}`} className={`rs-tf-cell ${is4QMarked ? 'marked q-black' : ''} ${is4QUnused ? 'tf-unused' : ''}`}>{num}</div>
+                                            ];
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -354,6 +458,23 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                             {[0, 1, 2].map(colIndex => {
                                 const rowsPerColumn = 40;
                                 const startScore = colIndex * rowsPerColumn + 1;
+                                const endScore = startScore + rowsPerColumn - 1;
+
+                                // 試合終了後の未使用セル用斜線の計算
+                                // Aチーム: この列に最終得点があるか、またはこの列より前で終了しているか
+                                const finalScoreInColA = finalScoreA >= startScore && finalScoreA <= endScore;
+                                const colEndedBeforeA = finalScoreA < startScore;
+                                // Bチーム
+                                const finalScoreInColB = finalScoreB >= startScore && finalScoreB <= endScore;
+                                const colEndedBeforeB = finalScoreB < startScore;
+
+                                // 斜線の開始行（0-indexed）
+                                const slashStartRowA = finalScoreInColA ? (finalScoreA - startScore + 1) : (colEndedBeforeA ? 0 : -1);
+                                const slashStartRowB = finalScoreInColB ? (finalScoreB - startScore + 1) : (colEndedBeforeB ? 0 : -1);
+
+                                // 斜線を引く必要があるか（試合に得点がある場合のみ）
+                                const needSlashA = finalScoreA > 0 && slashStartRowA >= 0 && slashStartRowA < rowsPerColumn;
+                                const needSlashB = finalScoreB > 0 && slashStartRowB >= 0 && slashStartRowB < rowsPerColumn;
 
                                 return (
                                     <div key={colIndex} className="rs-rs-column">
@@ -421,6 +542,29 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                                                 );
                                             })}
                                         </div>
+                                        {/* 試合終了後の未使用セル斜線（SVGオーバーレイ） */}
+                                        {needSlashA && (
+                                            <svg
+                                                className="rs-unused-slash rs-unused-slash-a"
+                                                style={{
+                                                    top: `calc(5.0mm + ${slashStartRowA} * 5.0mm)`,
+                                                    height: `calc(${rowsPerColumn - slashStartRowA} * 5.0mm)`,
+                                                }}
+                                            >
+                                                <line x1="0" y1="0" x2="100%" y2="100%" />
+                                            </svg>
+                                        )}
+                                        {needSlashB && (
+                                            <svg
+                                                className="rs-unused-slash rs-unused-slash-b"
+                                                style={{
+                                                    top: `calc(5.0mm + ${slashStartRowB} * 5.0mm)`,
+                                                    height: `calc(${rowsPerColumn - slashStartRowB} * 5.0mm)`,
+                                                }}
+                                            >
+                                                <line x1="0" y1="0" x2="100%" y2="100%" />
+                                            </svg>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -431,12 +575,24 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose }: R
                         </div>
                         <div className="rs-game-end-time">
                             <span className="rs-result-label">試合終了時間</span>
-                            <span className="rs-result-value"></span>
+                            <span className="rs-result-value">
+                                {endTime ? `${new Date(endTime).getHours().toString().padStart(2, '0')}:${new Date(endTime).getMinutes().toString().padStart(2, '0')}` : ''}
+                            </span>
                         </div>
                         <div className="rs-jba-credit">公益財団法人日本バスケットボール協会</div>
                     </div>
                 </div>
             </div>
+
+            {/* 試合情報編集モーダル */}
+            {showGameInfoModal && (
+                <GameInfoModal
+                    gameInfo={gameInfo}
+                    endTime={endTime}
+                    onSave={(info) => onUpdateGameInfo?.(info)}
+                    onClose={() => setShowGameInfoModal(false)}
+                />
+            )}
         </div>
     );
 }

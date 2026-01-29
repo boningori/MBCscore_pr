@@ -502,6 +502,11 @@
   position: relative;
 }
 
+/* 交代・ベンチファウルボタンの高さを統一 */
+.bench-actions .btn {
+  min-height: 50px;
+}
+
 /* 交代ボタン（左寄せ） */
 .bench-actions .btn:first-child {
   flex: 0 0 auto;

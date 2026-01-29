@@ -180,7 +180,7 @@
 .btn-game-action {
     padding: var(--spacing-xs) var(--spacing-sm);
     min-width: auto;
-    min-height: 32px;
+    min-height: 50px;
     font-size: var(--font-size-sm);
     white-space: nowrap;
 }

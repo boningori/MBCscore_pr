@@ -782,7 +782,111 @@ body {
 
 /* ベンチファウルモーダル */
 .coach-foul-modal {
-  min-width: 320px;
+  min-width: 360px;
+  max-width: 480px;
+}
+
+.coach-foul-modal h3 {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+.coach-foul-modal .modal-actions-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.coach-foul-modal .modal-actions-column .btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  min-height: 64px;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.coach-foul-modal .modal-actions-column .btn .btn-desc {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+.coach-foul-modal .modal-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+/* 交代要員選択リスト（選手交代モーダルと同じUI） */
+.bench-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-lg);
+}
+
+.bench-player-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  min-height: 56px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.bench-player-btn:hover {
+  background: var(--border);
+  border-color: var(--primary);
+}
+
+.bench-player-btn:active {
+  transform: scale(0.98);
+}
+
+.no-bench-players {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+/* スマホ向け */
+@media (max-width: 480px) {
+  .coach-foul-modal {
+    min-width: auto;
+    max-width: 100%;
+    margin: var(--spacing-sm);
+  }
+
+  .coach-foul-modal .modal-actions-column .btn {
+    min-height: 72px;
+    padding: var(--spacing-lg);
+  }
+
+  .bench-player-btn {
+    min-height: 64px;
+    font-size: var(--font-size-lg);
+  }
 }
 
 .modal-header-with-back {

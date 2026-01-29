@@ -31,16 +31,18 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
     return (
         <div className="home-container">
             <div className="home-header">
+                <div className="header-left">
+                    <button className="btn btn-secondary btn-icon" onClick={onToggleFullScreen} title={isFullScreen ? '画面縮小' : '全画面'}>
+                        {isFullScreen ? '⊟' : '⊞'}
+                    </button>
+                </div>
                 <div className="home-brand">
                     <h1 className="home-title">MBC<span className="title-accent">score</span></h1>
                     <p className="home-tagline">ミニバス用スコアシートアプリ ベータ版</p>
                 </div>
-                <div className="header-buttons">
+                <div className="header-right">
                     <button className="btn btn-secondary btn-icon" onClick={onOpenSettings} title="設定">
                         ⚙️
-                    </button>
-                    <button className="btn btn-secondary btn-icon" onClick={onToggleFullScreen} title={isFullScreen ? '画面縮小' : '全画面'}>
-                        {isFullScreen ? '⊟' : '⊞'}
                     </button>
                 </div>
             </div>

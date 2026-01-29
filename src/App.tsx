@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import type { Team, FoulType, FreeThrowResult, ShotSituation } from './types/game';
-import type { SavedTeam } from './utils/teamStorage';
+import type { SavedTeam, NumberType } from './utils/teamStorage';
 import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
 import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
@@ -78,6 +78,7 @@ function AppContent() {
     opponentTeam: SavedTeam;
     myTeamColor: 'white' | 'blue';
     opponentTeamColor: 'white' | 'blue';
+    numberType: NumberType;
   }) => {
     // 新しいゲームを開始するため状態をリセット
     dispatch({ type: 'RESET_GAME' });
@@ -85,11 +86,12 @@ function AppContent() {
     setGameName(setupData.gameName);
     setDate(setupData.date);
 
-    // Teamインスタンス作成
-    const teamA = savedTeamToTeam(setupData.myTeam, 'teamA');
+    // Teamインスタンス作成（マイチームは選択された番号タイプを使用）
+    const teamA = savedTeamToTeam(setupData.myTeam, 'teamA', setupData.numberType);
     teamA.isMyTeam = true;
     teamA.color = setupData.myTeamColor;
 
+    // 対戦チームはデフォルト番号を使用
     const teamB = savedTeamToTeam(setupData.opponentTeam, 'teamB');
     teamB.isMyTeam = false;
     teamB.color = setupData.opponentTeamColor;
@@ -253,10 +255,11 @@ function AppContent() {
   // ベンチファウルのフロー管理
   const [coachFoulState, setCoachFoulState] = useState<{
     teamId: 'teamA' | 'teamB';
-    step: 'type' | 'foulInput';
+    step: 'type' | 'selectPlayer' | 'foulInput';
     foulType?: FoulType;
     playerId?: string;
     label?: string;
+    benchTechType?: 'HC' | 'AC' | 'Sub' | 'Bench';  // ベンチテクニカルの種類
   } | null>(null);
 
   // コーチ・ベンチファウル（選択モーダル表示）
@@ -264,18 +267,47 @@ function AppContent() {
     setCoachFoulState({ teamId, step: 'type' });
   };
 
-  // ベンチファウル種類選択 → FoulInputFlowへ
-  const handleCoachFoulTypeSelect = (type: 'HC' | 'Bench') => {
+  // ベンチファウル種類選択 → FoulInputFlowへ or 選手選択へ
+  const handleCoachFoulTypeSelect = (type: 'HC' | 'AC' | 'Sub' | 'Bench') => {
     if (!coachFoulState) return;
-    const foulType: FoulType = type === 'HC' ? 'T' : 'BT';
-    const playerId = type === 'HC' ? 'COACH' : 'BENCH';
-    const label = type === 'HC' ? 'ヘッドコーチ (C)' : 'ベンチ (B)';
+
+    // 交代要員の場合は選手選択ステップへ
+    if (type === 'Sub') {
+      setCoachFoulState({
+        ...coachFoulState,
+        step: 'selectPlayer',
+        benchTechType: 'Sub',
+      });
+      return;
+    }
+
+    const foulType: FoulType = type === 'Bench' ? 'BT' : 'T';
+    const playerId = type === 'HC' ? 'COACH' : type === 'AC' ? 'ACOACH' : 'BENCH';
+    const label = type === 'HC' ? 'コーチ (C)' : type === 'AC' ? 'A.コーチ (C)' : 'ベンチ関係者 (B)';
     setCoachFoulState({
       ...coachFoulState,
       step: 'foulInput',
       foulType,
       playerId,
       label,
+      benchTechType: type,
+    });
+  };
+
+  // 交代要員選択（ベンチの選手を選択）
+  const handleBenchPlayerSelect = (playerId: string) => {
+    if (!coachFoulState) return;
+    const team = coachFoulState.teamId === 'teamA' ? state.teamA : state.teamB;
+    const player = team.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    setCoachFoulState({
+      ...coachFoulState,
+      step: 'foulInput',
+      foulType: 'T',
+      playerId,
+      label: `#${player.number} ${player.courtName || player.name} (T)`,
+      benchTechType: 'Sub',
     });
   };
 
@@ -288,7 +320,7 @@ function AppContent() {
     shooterPlayerId: string | null;
   }) => {
     if (!coachFoulState || !coachFoulState.foulType || !coachFoulState.playerId) return;
-    const { teamId, foulType, playerId } = coachFoulState;
+    const { teamId, foulType, playerId, benchTechType } = coachFoulState;
     const opponentTeamId = teamId === 'teamA' ? 'teamB' : 'teamA';
 
     dispatch({
@@ -302,6 +334,7 @@ function AppContent() {
         freeThrowResults: data.freeThrowResults,
         shooterTeamId: opponentTeamId,
         shooterPlayerId: data.shooterPlayerId || '',
+        benchTechType,  // ベンチテクニカルの種類（HC/AC/Sub/Bench）
       },
     });
     setPendingAction(null);
@@ -442,8 +475,7 @@ function AppContent() {
 
 
   // タイムアウト
-  const handleTimeout = (teamId: 'teamA' | 'teamB' = activeTab) => {
-    const elapsedMinutes = 0; // タイマー削除のため時間は記録しない
+  const handleTimeout = (teamId: 'teamA' | 'teamB' = activeTab, elapsedMinutes: number = 0) => {
     dispatch({
       type: 'ADD_TIMEOUT',
       payload: { teamId, elapsedMinutes },
@@ -582,7 +614,8 @@ function AppContent() {
       state.scoreHistory,
       state.statHistory,
       state.foulHistory,
-      new Date(date)
+      new Date(date),
+      state.gameInfo
     );
 
     // セッションデータをクリア
@@ -765,6 +798,7 @@ function AppContent() {
         gameName={gameName}
         date={date}
         onClose={() => setScreen('game')}
+        onUpdateGameInfo={(gameInfo) => dispatch({ type: 'UPDATE_GAME_INFO', payload: gameInfo })}
       />
     );
   }
@@ -1216,12 +1250,20 @@ function AppContent() {
             <h3>ベンチファウル種類</h3>
             <div className="modal-actions-column">
               <button className="btn btn-danger btn-large" onClick={() => handleCoachFoulTypeSelect('HC')}>
-                ヘッドコーチ (C)
-                <span className="btn-desc">テクニカルファウル</span>
+                コーチ (C)
+                <span className="btn-desc">監督本人のテクニカル</span>
+              </button>
+              <button className="btn btn-danger btn-large" onClick={() => handleCoachFoulTypeSelect('AC')}>
+                A.コーチ (C)
+                <span className="btn-desc">A.コーチのテクニカル → コーチにもB</span>
+              </button>
+              <button className="btn btn-warning btn-large" onClick={() => handleCoachFoulTypeSelect('Sub')}>
+                交代要員 (T)
+                <span className="btn-desc">ベンチ選手のテクニカル → コーチにもB</span>
               </button>
               <button className="btn btn-warning btn-large" onClick={() => handleCoachFoulTypeSelect('Bench')}>
-                ベンチ (B)
-                <span className="btn-desc">テクニカルファウル</span>
+                ベンチ関係者 (B)
+                <span className="btn-desc">引率者等のテクニカル → コーチにB</span>
               </button>
             </div>
             <button className="btn btn-secondary" onClick={handleCoachFoulCancel}>
@@ -1230,6 +1272,47 @@ function AppContent() {
           </div>
         </div>
       )}
+
+      {/* ベンチファウル - Step 1.5: 交代要員（ベンチ選手）選択 */}
+      {coachFoulState && coachFoulState.step === 'selectPlayer' && (() => {
+        const team = coachFoulState.teamId === 'teamA' ? state.teamA : state.teamB;
+        const benchPlayers = team.players.filter(p => !p.isOnCourt);
+        return (
+          <div className="modal-overlay" onClick={handleCoachFoulCancel}>
+            <div className="modal-content substitution-modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">交代要員を選択 - {team.name}</h2>
+                <button className="modal-close" onClick={handleCoachFoulCancel}>✕</button>
+              </div>
+              <p className="modal-note" style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+                選手行に「T」、コーチ行に「B」が記録されます
+              </p>
+              <div className="sub-player-list" style={{ maxHeight: '320px' }}>
+                {benchPlayers.length > 0 ? (
+                  benchPlayers.map(player => (
+                    <div
+                      key={player.id}
+                      className="sub-player-card"
+                      onClick={() => handleBenchPlayerSelect(player.id)}
+                    >
+                      <span className="sub-player-number">#{player.number}</span>
+                      <span className="sub-player-name">{player.courtName || player.name}</span>
+                      <span className="sub-player-stats">F:{player.fouls.length}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="sub-empty">ベンチに選手がいません</div>
+                )}
+              </div>
+              <div className="substitution-actions">
+                <button className="btn btn-secondary btn-large" onClick={() => setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' })}>
+                  戻る
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ベンチファウル - Step 2: FoulInputFlow（シューター選択・FT結果入力） */}
       {coachFoulState && coachFoulState.step === 'foulInput' && coachFoulState.foulType && (() => {

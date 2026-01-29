@@ -4,6 +4,7 @@ import { loadGameHistory, deleteGameRecord } from '../../utils/gameHistoryStorag
 import { RunningScoresheet } from '../RunningScoresheet';
 import { StatsPanel } from '../StatsPanel';
 import type { Game } from '../../types/game';
+import { createInitialGameInfo } from '../../types/game';
 import './History.css';
 
 interface HistoryProps {
@@ -55,6 +56,7 @@ export function History({ onBack }: HistoryProps) {
         startTime: record.date ? new Date(record.date) : null,
         endTime: new Date(record.createdAt),
         pendingActions: [],
+        gameInfo: (record as any).gameInfo || createInitialGameInfo(),
     });
 
     if (selectedRecord) {

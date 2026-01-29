@@ -1,4 +1,4 @@
-import type { Team, ScoreEntry, StatEntry, FoulEntry } from '../types/game';
+import type { Team, ScoreEntry, StatEntry, FoulEntry, GameInfo } from '../types/game';
 
 const GAME_HISTORY_KEY = 'minibasket-game-history';
 
@@ -16,6 +16,7 @@ export interface GameRecord {
     scoreHistory: ScoreEntry[];
     statHistory: StatEntry[];
     foulHistory: FoulEntry[];
+    gameInfo?: GameInfo; // 試合情報（審判員・会場など）
     createdAt: string;
 }
 
@@ -27,7 +28,8 @@ export function saveGameResult(
     scoreHistory: ScoreEntry[],
     statHistory: StatEntry[],
     foulHistory: FoulEntry[],
-    date: Date = new Date()
+    date: Date = new Date(),
+    gameInfo?: GameInfo
 ): GameRecord {
     const record: GameRecord = {
         id: `game-${date.getTime()}`,
@@ -42,6 +44,7 @@ export function saveGameResult(
         scoreHistory,
         statHistory,
         foulHistory,
+        gameInfo,
         createdAt: new Date().toISOString(),
     };
 

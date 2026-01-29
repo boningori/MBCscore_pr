@@ -1,14 +1,39 @@
+import { useState } from 'react';
 import { useGame } from '../../context/GameContext';
+import { TimeoutInputModal } from '../TimeoutInputModal/TimeoutInputModal';
 import './Scoreboard.css';
 
 interface ScoreboardProps {
     onQuarterEnd?: () => void;
-    onTimeout?: (teamId: 'teamA' | 'teamB') => void;
+    onTimeout?: (teamId: 'teamA' | 'teamB', elapsedMinutes: number) => void;
     mode?: 'full' | 'simple';
 }
 
 export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: ScoreboardProps) {
     const { state, dispatch, getTeamScore } = useGame();
+
+    // タイムアウト入力モーダルの状態
+    const [timeoutModalOpen, setTimeoutModalOpen] = useState(false);
+    const [timeoutTeamId, setTimeoutTeamId] = useState<'teamA' | 'teamB'>('teamA');
+
+    // タイムアウトボタン押下時
+    const handleTimeoutClick = (teamId: 'teamA' | 'teamB') => {
+        setTimeoutTeamId(teamId);
+        setTimeoutModalOpen(true);
+    };
+
+    // モーダルで確定時
+    const handleTimeoutConfirm = (elapsedMinutes: number) => {
+        setTimeoutModalOpen(false);
+        if (onTimeout) {
+            onTimeout(timeoutTeamId, elapsedMinutes);
+        }
+    };
+
+    // モーダルでキャンセル時
+    const handleTimeoutCancel = () => {
+        setTimeoutModalOpen(false);
+    };
     const { currentQuarter, phase } = state;
 
     const handleQuarterManagement = () => {
@@ -148,7 +173,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                     {phase === 'playing' && onTimeout && (
                         <button
                             className="btn btn-small btn-game-action"
-                            onClick={() => onTimeout('teamA')}
+                            onClick={() => handleTimeoutClick('teamA')}
                             disabled={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
                         >
                             タイムアウト
@@ -171,7 +196,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                     {phase === 'playing' && onTimeout && (
                         <button
                             className="btn btn-small btn-game-action"
-                            onClick={() => onTimeout('teamB')}
+                            onClick={() => handleTimeoutClick('teamB')}
                             disabled={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
                         >
                             タイムアウト
@@ -179,6 +204,16 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                     )}
                 </div>
             </div>
+
+            {/* タイムアウト入力モーダル */}
+            <TimeoutInputModal
+                isOpen={timeoutModalOpen}
+                teamName={timeoutTeamId === 'teamA' ? state.teamA.name : state.teamB.name}
+                teamColor={timeoutTeamId === 'teamA' ? state.teamA.color : state.teamB.color}
+                currentQuarter={currentQuarter}
+                onConfirm={handleTimeoutConfirm}
+                onCancel={handleTimeoutCancel}
+            />
         </div>
     );
 }

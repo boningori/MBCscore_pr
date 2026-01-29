@@ -71,7 +71,9 @@ export interface Team {
     players: Player[];
     timeouts: Timeout[];
     teamFouls: number[];   // クォーター毎のチームファウル数 [Q1, Q2, Q3, Q4]
-    coachFouls: FoulType[]; // コーチ・ベンチのファウル
+    coachFouls: FoulType[]; // コーチのファウル
+    assistantCoachFouls: FoulType[]; // A.コーチのファウル
+    benchFouls: FoulType[]; // ベンチのファウル
     isMyTeam?: boolean;    // マインチームかどうか
     color: 'white' | 'blue'; // チームカラー
 }
@@ -101,16 +103,20 @@ export interface StatEntry {
     timestamp: number;
 }
 
+// コーチ・ベンチファウルの種別
+export type CoachFoulTarget = 'COACH' | 'ACOACH' | 'BENCH' | null;
+
 // ファウル記録
 export interface FoulEntry {
     id: string;
     teamId: string;
-    playerId: string | null;  // COACH/BENCHの場合はnull
+    playerId: string | null;  // COACH/ACOACH/BENCHの場合はnull
     playerNumber: number;      // コーチ・ベンチの場合は-1
     foulType: FoulType;
     quarter: number;
     timestamp: number;
     isCoachOrBench: boolean;   // コーチ・ベンチファウルかどうか
+    coachFoulTarget?: CoachFoulTarget;  // コーチ・A.コーチ・ベンチの区別
     // フリースロー関連（新規）
     freeThrows?: number;                    // FT本数 (0, 1, 2, 3)
     freeThrowResults?: FreeThrowResult[];   // FT結果
@@ -122,6 +128,32 @@ export interface FoulEntry {
 
 // ゲームの状態
 export type GamePhase = 'setup' | 'playing' | 'paused' | 'quarterEnd' | 'finished';
+
+// 試合情報（審判員・会場など）
+export interface GameInfo {
+    venue: string;              // 会場
+    time: string;               // 開始時間（表示用 HH:MM）
+    gameNo: string;             // Game No.
+    crewChief: string;          // クルーチーフ
+    umpire: string;             // アンパイア
+    scorer: string;             // スコアラー
+    assistantScorer: string;    // A・スコアラー
+    timer: string;              // タイマー
+    shotClockOperator: string;  // ショットクロックオペレーター
+}
+
+// 初期試合情報
+export const createInitialGameInfo = (): GameInfo => ({
+    venue: '',
+    time: '',
+    gameNo: '',
+    crewChief: '',
+    umpire: '',
+    scorer: '',
+    assistantScorer: '',
+    timer: '',
+    shotClockOperator: '',
+});
 
 // ゲーム
 export interface Game {
@@ -138,6 +170,7 @@ export interface Game {
     selectedTeamId: string | null;    // 現在選択中のチーム
     startTime: Date | null;
     endTime: Date | null;
+    gameInfo: GameInfo;  // 試合情報
 }
 
 // アクション種別
@@ -172,7 +205,8 @@ export type GameActionType =
     | 'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS'
     | 'RESOLVE_PENDING_ACTION_UNKNOWN'
     | 'UPDATE_PENDING_ACTION_CANDIDATES'
-    | 'REMOVE_PENDING_ACTION';
+    | 'REMOVE_PENDING_ACTION'
+    | 'UPDATE_GAME_INFO';
 
 // ゲームアクション
 export interface GameAction {
@@ -224,6 +258,8 @@ export const createTeam = (id: string, name: string, coachName: string, assistan
     timeouts: [],
     teamFouls: [0, 0, 0, 0],
     coachFouls: [],
+    assistantCoachFouls: [],
+    benchFouls: [],
     color: 'white', // デフォルト
 });
 
@@ -242,6 +278,7 @@ export const createInitialGame = (): Game => ({
     selectedTeamId: null,
     startTime: null,
     endTime: null,
+    gameInfo: createInitialGameInfo(),
 });
 
 // ミニバスルール定数

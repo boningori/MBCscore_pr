@@ -18,10 +18,24 @@ export interface SavedTeam {
 }
 
 export interface SavedPlayer {
-    number: number;
+    number: number;              // デフォルト番号（後方互換性用）
+    bibNumber?: number;          // ビブス番号（0-99）
+    uniformNumber?: number;      // ユニフォーム番号（0-99）
     name: string;
-    courtName?: string;  // コートネーム（ニックネーム）
+    courtName?: string;          // コートネーム（ニックネーム）
     isCaptain: boolean;
+}
+
+// 番号タイプ（試合で使用する番号の種類）
+export type NumberType = 'bib' | 'uniform';
+
+// 選手の使用番号を取得（フォールバック付き）
+export function getPlayerNumber(player: SavedPlayer, numberType: NumberType): number {
+    if (numberType === 'bib') {
+        return player.bibNumber ?? player.uniformNumber ?? player.number;
+    } else {
+        return player.uniformNumber ?? player.bibNumber ?? player.number;
+    }
 }
 
 // TeamからSavedTeamへ変換
@@ -42,17 +56,20 @@ export function teamToSavedTeam(team: Team): SavedTeam {
 }
 
 // SavedTeamからTeamへ変換
-export function savedTeamToTeam(saved: SavedTeam, teamId: 'teamA' | 'teamB'): Team {
+// numberType: マイチームの場合に使用する番号タイプ（対戦チームはnumberをそのまま使用）
+export function savedTeamToTeam(saved: SavedTeam, teamId: 'teamA' | 'teamB', numberType?: NumberType): Team {
     const team = createTeam(teamId, saved.name, saved.coachName, saved.assistantCoachName || '');
-    team.players = saved.players.map((p, index) =>
-        createPlayer(
+    team.players = saved.players.map((p, index) => {
+        // numberTypeが指定されている場合は該当する番号を使用（マイチーム用）
+        const playerNumber = numberType ? getPlayerNumber(p, numberType) : p.number;
+        return createPlayer(
             `${teamId}-player-${index}`,
-            p.number,
+            playerNumber,
             p.name,
             p.isCaptain,
             p.courtName
-        )
-    );
+        );
+    });
     return team;
 }
 
