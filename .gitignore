@@ -26,3 +26,9 @@ dist-ssr
 # Environment Variables
 .env
 .env.*
+
+# Claude Code local settings
+.claude/
+
+# Temporary scoresheet files
+scoresheettemp/
