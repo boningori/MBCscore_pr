@@ -223,9 +223,14 @@ interface OpponentEditorProps {
 
 function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: OpponentEditorProps) {
     const [name, setName] = useState(team.name);
+    const [coachName, setCoachName] = useState(team.coachName || '');
+    const [coachLicenseNo, setCoachLicenseNo] = useState(team.coachLicenseNo || '');
+    const [assistantCoachName, setAssistantCoachName] = useState(team.assistantCoachName || '');
+    const [assistantCoachLicenseNo, setAssistantCoachLicenseNo] = useState(team.assistantCoachLicenseNo || '');
     const [players, setPlayers] = useState<SavedPlayer[]>(team.players);
     const [newNumber, setNewNumber] = useState('');
     const [newName, setNewName] = useState('');
+    const [newLicenseNo, setNewLicenseNo] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
 
@@ -240,10 +245,11 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
 
         setPlayers([
             ...players,
-            { number, name: playerName, isCaptain: false }
+            { number, name: playerName, licenseNo: newLicenseNo.trim() || undefined, isCaptain: false }
         ].sort((a, b) => a.number - b.number));
         setNewNumber('');
         setNewName('');
+        setNewLicenseNo('');
     };
 
     const handleRemovePlayer = (index: number) => {
@@ -256,7 +262,10 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
             ...team,
             id: team.id || generateTeamId(),
             name,
-            coachName: '', // 対戦チームのコーチ名は必須ではない
+            coachName,
+            coachLicenseNo: coachLicenseNo || undefined,
+            assistantCoachName,
+            assistantCoachLicenseNo: assistantCoachLicenseNo || undefined,
             players,
             updatedAt: new Date().toISOString(),
         });
@@ -289,6 +298,52 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                         onChange={e => setName(e.target.value)}
                         placeholder="対戦チーム名"
                     />
+                </div>
+
+                <div className="form-section">
+                    <label className="form-label">コーチ</label>
+                    <div className="opponent-coach-row">
+                        <input
+                            type="text"
+                            className="input opponent-coach-name-input"
+                            value={coachName}
+                            onChange={e => setCoachName(e.target.value)}
+                            placeholder="コーチ名（任意）"
+                            autoComplete="off"
+                        />
+                        <input
+                            type="text"
+                            className="input opponent-coach-license-input"
+                            value={coachLicenseNo}
+                            onChange={e => setCoachLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            placeholder="ライセンスNo."
+                            maxLength={10}
+                            autoComplete="off"
+                        />
+                    </div>
+                </div>
+
+                <div className="form-section">
+                    <label className="form-label">Aコーチ</label>
+                    <div className="opponent-coach-row">
+                        <input
+                            type="text"
+                            className="input opponent-coach-name-input"
+                            value={assistantCoachName}
+                            onChange={e => setAssistantCoachName(e.target.value)}
+                            placeholder="Aコーチ名（任意）"
+                            autoComplete="off"
+                        />
+                        <input
+                            type="text"
+                            className="input opponent-coach-license-input"
+                            value={assistantCoachLicenseNo}
+                            onChange={e => setAssistantCoachLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            placeholder="ライセンスNo."
+                            maxLength={10}
+                            autoComplete="off"
+                        />
+                    </div>
                 </div>
 
                 <div className="form-section">
@@ -332,6 +387,15 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
                             placeholder="名前 (任意)"
+                        />
+                        <input
+                            type="text"
+                            className="input opponent-player-license-input"
+                            value={newLicenseNo}
+                            onChange={e => setNewLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            placeholder="ライセンスNo."
+                            maxLength={10}
+                            autoComplete="off"
                             onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
                         />
                         <button className="btn btn-primary" onClick={handleAddPlayer}>追加</button>
@@ -340,7 +404,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                     <div className="players-list-simple">
                         {players.map((player, index) => (
                             <span key={index} className="player-chip">
-                                #{player.number} {player.name}
+                                #{player.number} {player.name}{player.licenseNo ? ` [${player.licenseNo}]` : ''}
                                 <button className="remove-btn" onClick={() => handleRemovePlayer(index)}>×</button>
                             </span>
                         ))}

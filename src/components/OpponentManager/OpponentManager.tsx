@@ -97,18 +97,30 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         setEditingTeam({ ...editingTeam, coachName });
     };
 
+    const handleCoachLicenseNoChange = (coachLicenseNo: string) => {
+        if (!editingTeam) return;
+        setEditingTeam({ ...editingTeam, coachLicenseNo: coachLicenseNo.replace(/[^a-zA-Z0-9]/g, '') });
+    };
+
     const handleAssistantCoachNameChange = (assistantCoachName: string) => {
         if (!editingTeam) return;
         setEditingTeam({ ...editingTeam, assistantCoachName });
     };
 
+    const handleAssistantCoachLicenseNoChange = (assistantCoachLicenseNo: string) => {
+        if (!editingTeam) return;
+        setEditingTeam({ ...editingTeam, assistantCoachLicenseNo: assistantCoachLicenseNo.replace(/[^a-zA-Z0-9]/g, '') });
+    };
+
     const [newNumber, setNewNumber] = useState('');
     const [newName, setNewName] = useState('');
+    const [newLicenseNo, setNewLicenseNo] = useState('');
 
     // 選手編集用の状態
     const [editingPlayerIndex, setEditingPlayerIndex] = useState<number | null>(null);
     const [editNumber, setEditNumber] = useState('');
     const [editName, setEditName] = useState('');
+    const [editLicenseNo, setEditLicenseNo] = useState('');
 
     // 番号グリッド選択モード
     const [showNumberGrid, setShowNumberGrid] = useState(false);
@@ -162,6 +174,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         const newPlayer: SavedPlayer = {
             number: number,
             name: newName.trim() || `選手${number}`,  // 名前が空の場合は「選手N」とする
+            licenseNo: newLicenseNo.trim() || undefined,
             isCaptain: false,
         };
 
@@ -172,6 +185,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
         setNewNumber('');
         setNewName('');
+        setNewLicenseNo('');
     };
 
     const handleRemovePlayer = (index: number) => {
@@ -197,6 +211,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         setEditingPlayerIndex(index);
         setEditNumber(String(player.number));
         setEditName(player.name);
+        setEditLicenseNo(player.licenseNo || '');
     };
 
     // 選手編集保存
@@ -218,7 +233,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
         const players = editingTeam.players.map((p, i) =>
             i === editingPlayerIndex
-                ? { ...p, number, name: playerName }
+                ? { ...p, number, name: playerName, licenseNo: editLicenseNo.trim() || undefined }
                 : p
         ).sort((a, b) => a.number - b.number);
         setEditingTeam({ ...editingTeam, players });
@@ -313,25 +328,49 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     </div>
 
                     <div className="form-group">
-                        <label>コーチ名</label>
-                        <input
-                            type="text"
-                            value={editingTeam.coachName}
-                            onChange={(e) => handleCoachNameChange(e.target.value)}
-                            placeholder="コーチ名を入力（任意）"
-                            autoComplete="off"
-                        />
+                        <label>コーチ</label>
+                        <div className="opponent-coach-row">
+                            <input
+                                type="text"
+                                className="opponent-coach-name-input"
+                                value={editingTeam.coachName}
+                                onChange={(e) => handleCoachNameChange(e.target.value)}
+                                placeholder="コーチ名（任意）"
+                                autoComplete="off"
+                            />
+                            <input
+                                type="text"
+                                className="opponent-coach-license-input"
+                                value={editingTeam.coachLicenseNo || ''}
+                                onChange={(e) => handleCoachLicenseNoChange(e.target.value)}
+                                placeholder="ライセンスNo."
+                                maxLength={10}
+                                autoComplete="off"
+                            />
+                        </div>
                     </div>
 
                     <div className="form-group">
-                        <label>Aコーチ名</label>
-                        <input
-                            type="text"
-                            value={editingTeam.assistantCoachName || ''}
-                            onChange={(e) => handleAssistantCoachNameChange(e.target.value)}
-                            placeholder="Aコーチ名を入力（任意）"
-                            autoComplete="off"
-                        />
+                        <label>Aコーチ</label>
+                        <div className="opponent-coach-row">
+                            <input
+                                type="text"
+                                className="opponent-coach-name-input"
+                                value={editingTeam.assistantCoachName || ''}
+                                onChange={(e) => handleAssistantCoachNameChange(e.target.value)}
+                                placeholder="Aコーチ名（任意）"
+                                autoComplete="off"
+                            />
+                            <input
+                                type="text"
+                                className="opponent-coach-license-input"
+                                value={editingTeam.assistantCoachLicenseNo || ''}
+                                onChange={(e) => handleAssistantCoachLicenseNoChange(e.target.value)}
+                                placeholder="ライセンスNo."
+                                maxLength={10}
+                                autoComplete="off"
+                            />
+                        </div>
                     </div>
 
                     <div className="players-section">
@@ -422,6 +461,15 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                 onChange={e => setNewName(e.target.value)}
                                 placeholder="氏名"
                                 autoComplete="off"
+                            />
+                            <input
+                                type="text"
+                                className="opponent-player-license-input"
+                                value={newLicenseNo}
+                                onChange={e => setNewLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                placeholder="ライセンスNo."
+                                maxLength={10}
+                                autoComplete="off"
                                 onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
                             />
                             <button
@@ -456,6 +504,15 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 onChange={e => setEditName(e.target.value)}
                                                 placeholder="氏名"
                                                 autoComplete="off"
+                                            />
+                                            <input
+                                                type="text"
+                                                className="opponent-player-license-input"
+                                                value={editLicenseNo}
+                                                onChange={e => setEditLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                                placeholder="ライセンスNo."
+                                                maxLength={10}
+                                                autoComplete="off"
                                                 onKeyDown={e => e.key === 'Enter' && handleSaveEdit()}
                                             />
                                             <div className="player-actions">
@@ -487,6 +544,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 onClick={() => handleStartEdit(index)}
                                             >
                                                 {player.name}
+                                            </span>
+                                            <span
+                                                className="opponent-player-license clickable"
+                                                onClick={() => handleStartEdit(index)}
+                                            >
+                                                {player.licenseNo || ''}
                                             </span>
                                             <div className="player-actions">
                                                 <button

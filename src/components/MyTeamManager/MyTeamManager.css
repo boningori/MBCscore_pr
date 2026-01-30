@@ -146,6 +146,23 @@
     flex: 0.8;
 }
 
+.player-license-input {
+    width: 100px;
+}
+
+.editor-coach-row {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.editor-coach-name-input {
+    flex: 1;
+}
+
+.editor-coach-license-input {
+    width: 140px;
+}
+
 .players-list {
     display: grid;
     gap: var(--spacing-sm);
@@ -176,6 +193,13 @@
     color: var(--text-muted);
     font-size: var(--font-size-sm);
     flex: 0.8;
+}
+
+.player-license {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    min-width: 80px;
+    text-align: right;
 }
 
 .clickable {

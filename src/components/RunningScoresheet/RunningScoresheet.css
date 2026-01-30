@@ -1079,28 +1079,25 @@
 .cell-license {
     font-size: 7pt;
     position: relative;
-    background-image:
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent 1px,
-            #ccc 1px,
-            #ccc 2px,
-            transparent 2px,
-            transparent 3px
-        ),
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent 1px,
-            #ccc 1px,
-            #ccc 2px,
-            transparent 2px,
-            transparent 3px
-        );
-    background-size: 1px 100%, 1px 100%;
-    background-position: 33.33% 0, 66.67% 0;
-    background-repeat: no-repeat;
+    padding: 0 !important;
+}
+
+.license-digits {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.license-digit {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px dotted #999;
+}
+
+.license-digit:last-child {
+    border-right: none;
 }
 
 .th-name {

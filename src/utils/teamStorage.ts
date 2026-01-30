@@ -11,7 +11,9 @@ export interface SavedTeam {
     id: string;
     name: string;
     coachName: string;
-    assistantCoachName: string;  // Aコーチ
+    coachLicenseNo?: string;          // コーチ ライセンスNo.（JBA登録番号・半角英数10桁）
+    assistantCoachName: string;       // Aコーチ
+    assistantCoachLicenseNo?: string; // Aコーチ ライセンスNo.（JBA登録番号・半角英数10桁）
     players: SavedPlayer[];
     createdAt: string;
     updatedAt: string;
@@ -23,7 +25,7 @@ export interface SavedPlayer {
     uniformNumber?: number;      // ユニフォーム番号（0-99）
     name: string;
     courtName?: string;          // コートネーム（ニックネーム）
-    licenseNo?: string;          // ライセンスNo.（JBA登録番号の下3桁）
+    licenseNo?: string;          // ライセンスNo.（JBA登録番号・半角英数10桁）
     isCaptain: boolean;
 }
 
@@ -211,7 +213,9 @@ export function createEmptySavedTeam(): SavedTeam {
         id: generateTeamId(),
         name: '',
         coachName: '',
+        coachLicenseNo: '',
         assistantCoachName: '',
+        assistantCoachLicenseNo: '',
         players: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

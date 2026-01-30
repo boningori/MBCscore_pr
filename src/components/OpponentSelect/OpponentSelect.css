@@ -176,3 +176,21 @@
 .remove-btn:hover {
     color: var(--danger);
 }
+
+/* Coach license row */
+.opponent-coach-row {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.opponent-coach-name-input {
+    flex: 1;
+}
+
+.opponent-coach-license-input {
+    width: 140px;
+}
+
+.opponent-player-license-input {
+    width: 100px;
+}

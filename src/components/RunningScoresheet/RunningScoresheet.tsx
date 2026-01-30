@@ -71,7 +71,19 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
         return (
             <tr key={player.id}>
                 <td className="cell-no">{index + 1}</td>
-                <td className="cell-license">{player.licenseNo || ''}</td>
+                <td className="cell-license">
+                    {(() => {
+                        const raw = player.licenseNo || '';
+                        const last3 = raw.length >= 3 ? raw.slice(-3) : raw.padStart(3, '');
+                        return (
+                            <div className="license-digits">
+                                <span className="license-digit">{last3[0] || ''}</span>
+                                <span className="license-digit">{last3[1] || ''}</span>
+                                <span className="license-digit">{last3[2] || ''}</span>
+                            </div>
+                        );
+                    })()}
+                </td>
                 <td className="cell-name">{player.name}</td>
                 <td className="cell-number">{player.number}</td>
                 {[1, 2, 3, 4].map(q => {
@@ -343,7 +355,13 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                             <tr key={`empty-${team.id}-${i}`} className="empty-player-row">
                                                 <td className="cell-no">{team.players.length + i + 1}</td>
                                                 {/* ライセンス〜出場時限: 横線 */}
-                                                <td className="cell-license empty-cell-line"></td>
+                                                <td className="cell-license empty-cell-line">
+                                                    <div className="license-digits">
+                                                        <span className="license-digit"></span>
+                                                        <span className="license-digit"></span>
+                                                        <span className="license-digit"></span>
+                                                    </div>
+                                                </td>
                                                 <td className="cell-name empty-cell-line"></td>
                                                 <td className="cell-number empty-cell-line"></td>
                                                 {[1, 2, 3, 4].map(q => <td key={q} className="cell-quarter empty-cell-line"></td>)}

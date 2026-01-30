@@ -165,7 +165,9 @@ interface MyTeamEditorProps {
 function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
     const [name, setName] = useState(team.name);
     const [coachName, setCoachName] = useState(team.coachName);
+    const [coachLicenseNo, setCoachLicenseNo] = useState(team.coachLicenseNo || '');
     const [assistantCoachName, setAssistantCoachName] = useState(team.assistantCoachName || '');
+    const [assistantCoachLicenseNo, setAssistantCoachLicenseNo] = useState(team.assistantCoachLicenseNo || '');
     // 既存データのマイグレーション: bibNumber/uniformNumberが未設定の場合はnumberを使用
     const [players, setPlayers] = useState<SavedPlayer[]>(team.players.map(p => ({
         ...p,
@@ -335,7 +337,9 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
             id: team.id || generateTeamId(),
             name,
             coachName,
+            coachLicenseNo: coachLicenseNo || undefined,
             assistantCoachName,
+            assistantCoachLicenseNo: assistantCoachLicenseNo || undefined,
             players,
             updatedAt: new Date().toISOString(),
         });
@@ -370,35 +374,65 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                 </div>
 
                 <div className="form-section">
-                    <label className="form-label">コーチ名</label>
-                    <input
-                        type="text"
-                        className="input"
-                        value={coachName}
-                        onChange={e => setCoachName(e.target.value)}
-                        placeholder="コーチ名を入力"
-                        autoComplete="one-time-code"
-                        name="coach-name-field"
-                        data-form-type="other"
-                        data-lpignore="true"
-                        data-1p-ignore="true"
-                    />
+                    <label className="form-label">コーチ</label>
+                    <div className="editor-coach-row">
+                        <input
+                            type="text"
+                            className="input editor-coach-name-input"
+                            value={coachName}
+                            onChange={e => setCoachName(e.target.value)}
+                            placeholder="コーチ名を入力"
+                            autoComplete="one-time-code"
+                            name="coach-name-field"
+                            data-form-type="other"
+                            data-lpignore="true"
+                            data-1p-ignore="true"
+                        />
+                        <input
+                            type="text"
+                            className="input editor-coach-license-input"
+                            value={coachLicenseNo}
+                            onChange={e => setCoachLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            placeholder="ライセンスNo."
+                            maxLength={10}
+                            autoComplete="one-time-code"
+                            name="coach-license-field"
+                            data-form-type="other"
+                            data-lpignore="true"
+                            data-1p-ignore="true"
+                        />
+                    </div>
                 </div>
 
                 <div className="form-section">
-                    <label className="form-label">Aコーチ名</label>
-                    <input
-                        type="text"
-                        className="input"
-                        value={assistantCoachName}
-                        onChange={e => setAssistantCoachName(e.target.value)}
-                        placeholder="Aコーチ名を入力"
-                        autoComplete="one-time-code"
-                        name="assistant-coach-field"
-                        data-form-type="other"
-                        data-lpignore="true"
-                        data-1p-ignore="true"
-                    />
+                    <label className="form-label">Aコーチ</label>
+                    <div className="editor-coach-row">
+                        <input
+                            type="text"
+                            className="input editor-coach-name-input"
+                            value={assistantCoachName}
+                            onChange={e => setAssistantCoachName(e.target.value)}
+                            placeholder="Aコーチ名を入力"
+                            autoComplete="one-time-code"
+                            name="assistant-coach-field"
+                            data-form-type="other"
+                            data-lpignore="true"
+                            data-1p-ignore="true"
+                        />
+                        <input
+                            type="text"
+                            className="input editor-coach-license-input"
+                            value={assistantCoachLicenseNo}
+                            onChange={e => setAssistantCoachLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            placeholder="ライセンスNo."
+                            maxLength={10}
+                            autoComplete="one-time-code"
+                            name="assistant-coach-license-field"
+                            data-form-type="other"
+                            data-lpignore="true"
+                            data-1p-ignore="true"
+                        />
+                    </div>
                 </div>
 
                 <div className="form-section">
@@ -459,9 +493,9 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                             type="text"
                             className="input player-license-input"
                             value={newLicenseNo}
-                            onChange={e => setNewLicenseNo(e.target.value)}
-                            placeholder="ライセンス"
-                            maxLength={3}
+                            onChange={e => setNewLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            placeholder="ライセンスNo."
+                            maxLength={10}
                             autoComplete="one-time-code"
                             name="license-no-field"
                             data-form-type="other"
@@ -536,9 +570,9 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                             type="text"
                                             className="input player-license-input"
                                             value={editLicenseNo}
-                                            onChange={e => setEditLicenseNo(e.target.value)}
-                                            placeholder="ライセンス"
-                                            maxLength={3}
+                                            onChange={e => setEditLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                            placeholder="ライセンスNo."
+                                            maxLength={10}
                                             autoComplete="one-time-code"
                                             name="edit-license-no"
                                             data-form-type="other"
@@ -584,7 +618,13 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
                                             className="player-courtname clickable"
                                             onClick={() => handleStartEdit(index)}
                                         >
-                                            {player.courtName ? `(${player.courtName})` : '(コートネーム未設定)'}
+                                            {player.courtName ? `(${player.courtName})` : ''}
+                                        </span>
+                                        <span
+                                            className="player-license clickable"
+                                            onClick={() => handleStartEdit(index)}
+                                        >
+                                            {player.licenseNo || ''}
                                         </span>
                                         <div className="player-edit-actions">
                                             <button

@@ -218,14 +218,15 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
 必ず以下の形式のJSONのみを出力し、他の説明文は含めないでください：
 [
-  {"number": 4, "name": "田中太郎"},
-  {"number": 5, "name": "佐藤花子"}
+  {"number": 4, "name": "田中太郎", "licenseNo": "ABC1234567"},
+  {"number": 5, "name": "佐藤花子", "licenseNo": "DEF9876543"}
 ]
 
 注意：
 - 背番号は数字で出力
 - 背番号が読み取れない場合は0
 - 名前が読み取れない場合は「選手」+連番
+- licenseNoはJBA登録番号（ライセンス番号）。半角英数字で出力。画像に記載がない場合は省略可
 - JSONのみを出力、説明文は不要`;
 
     let lastError: Error | null = null;
@@ -297,6 +298,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
             const validatedPlayers: SavedPlayer[] = players.map((p, index) => ({
                 number: typeof p.number === 'number' ? p.number : parseInt(String(p.number), 10) || index + 1,
                 name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
+                licenseNo: typeof p.licenseNo === 'string' && p.licenseNo.trim() ? p.licenseNo.trim().replace(/[^a-zA-Z0-9]/g, '') : undefined,
                 isCaptain: false,
             }));
 
