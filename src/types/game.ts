@@ -68,7 +68,9 @@ export interface Team {
     id: string;
     name: string;
     coachName: string;
+    coachLicenseNo?: string;     // コーチ ライセンスNo.
     assistantCoachName: string;  // Aコーチ
+    assistantCoachLicenseNo?: string; // Aコーチ ライセンスNo.
     players: Player[];
     timeouts: Timeout[];
     teamFouls: number[];   // クォーター毎のチームファウル数 [Q1, Q2, Q3, Q4]
@@ -251,11 +253,13 @@ export const createPlayer = (id: string, number: number, name: string, isCaptain
 });
 
 // 初期チーム作成
-export const createTeam = (id: string, name: string, coachName: string, assistantCoachName = ''): Team => ({
+export const createTeam = (id: string, name: string, coachName: string, assistantCoachName = '', coachLicenseNo?: string, assistantCoachLicenseNo?: string): Team => ({
     id,
     name,
     coachName,
+    coachLicenseNo,
     assistantCoachName,
+    assistantCoachLicenseNo,
     players: [],
     timeouts: [],
     teamFouls: [0, 0, 0, 0],

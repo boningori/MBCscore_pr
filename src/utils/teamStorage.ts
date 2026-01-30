@@ -61,7 +61,7 @@ export function teamToSavedTeam(team: Team): SavedTeam {
 // SavedTeamからTeamへ変換
 // numberType: マイチームの場合に使用する番号タイプ（対戦チームはnumberをそのまま使用）
 export function savedTeamToTeam(saved: SavedTeam, teamId: 'teamA' | 'teamB', numberType?: NumberType): Team {
-    const team = createTeam(teamId, saved.name, saved.coachName, saved.assistantCoachName || '');
+    const team = createTeam(teamId, saved.name, saved.coachName, saved.assistantCoachName || '', saved.coachLicenseNo, saved.assistantCoachLicenseNo);
     team.players = saved.players.map((p, index) => {
         // numberTypeが指定されている場合は該当する番号を使用（マイチーム用）
         const playerNumber = numberType ? getPlayerNumber(p, numberType) : p.number;

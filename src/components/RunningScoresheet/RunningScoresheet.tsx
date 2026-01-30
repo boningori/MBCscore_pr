@@ -386,7 +386,22 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                         {/* Coach Rows */}
                                         <tr className="coach-row">
                                             <td colSpan={2} className="coach-label">コーチ:</td>
-                                            <td colSpan={6} className="coach-name">{team.coachName}</td>
+                                            <td colSpan={6} className="coach-name">
+                                                <div className="coach-license-area">
+                                                    {(() => {
+                                                        const raw = team.coachLicenseNo || '';
+                                                        const last3 = raw.length >= 3 ? raw.slice(-3) : raw.padStart(3, '');
+                                                        return (
+                                                            <>
+                                                                <span className="license-digit">{last3[0] || ''}</span>
+                                                                <span className="license-digit">{last3[1] || ''}</span>
+                                                                <span className="license-digit">{last3[2] || ''}</span>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                                {team.coachName}
+                                            </td>
                                             {[0, 1, 2].map(i => {
                                                 const f = team.coachFouls[i];
                                                 const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
@@ -398,7 +413,22 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                         </tr>
                                         <tr className="coach-row">
                                             <td colSpan={2} className="coach-label">A.コーチ:</td>
-                                            <td colSpan={6} className="coach-name">{team.assistantCoachName}</td>
+                                            <td colSpan={6} className="coach-name">
+                                                <div className="coach-license-area">
+                                                    {(() => {
+                                                        const raw = team.assistantCoachLicenseNo || '';
+                                                        const last3 = raw.length >= 3 ? raw.slice(-3) : raw.padStart(3, '');
+                                                        return (
+                                                            <>
+                                                                <span className="license-digit">{last3[0] || ''}</span>
+                                                                <span className="license-digit">{last3[1] || ''}</span>
+                                                                <span className="license-digit">{last3[2] || ''}</span>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                                {team.assistantCoachName}
+                                            </td>
                                             {[0, 1, 2].map(i => {
                                                 const f = team.assistantCoachFouls?.[i];
                                                 const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
