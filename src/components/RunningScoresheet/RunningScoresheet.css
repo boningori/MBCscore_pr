@@ -775,9 +775,9 @@
 }
 
 .rs-brace {
-    font-size: 80px;
+    font-size: 100px;
     font-weight: 50;
-    font-family: Arial, sans-serif;
+    font-family: 'MS PMincho', 'MS P明朝', serif;
     display: flex;
     align-items: center;
     line-height: 1;
@@ -877,31 +877,28 @@
     margin-bottom: 1mm;
 }
 
-.rs-team-header-row {
-    display: flex;
-    border: 1px solid #000;
-    border-bottom: none;
-    /* Table will handle this */
-    height: 14mm;
-    /* Adjust height based on image */
-}
-
-/* チーム名エリア */
-.rs-team-name-area {
-    flex: none;
-    width: 73.5mm;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+/* チーム名セル（テーブル統合版） */
+.rs-roster-table td.team-name-cell {
+    text-align: left;
+    vertical-align: middle;
     padding: 5px 10px;
     position: relative;
-    border-right: 1px solid #000;
-    box-sizing: border-box;
+}
+
+.team-header-row,
+.timeout-label-row,
+.timeout-value-row {
+    height: auto;
 }
 
 .team-name-row {
-    display: flex;
-    align-items: baseline;
+    padding-right: 15mm;
+    padding-left: 13mm;
+    text-indent: -13mm;
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    right: 0;
 }
 
 .rs-team-label {
@@ -914,12 +911,16 @@
 .team-name-label {
     font-size: 11pt;
     font-weight: 700;
+    word-break: break-all;
 }
 
 .team-name-sub {
     font-size: 7pt;
     font-family: 'Century', serif;
     margin-left: 5px;
+    position: absolute;
+    bottom: 20px;
+    left: 10px;
 }
 
 .team-category-paren {
@@ -930,59 +931,25 @@
     font-size: 14pt;
 }
 
-/* タイムアウトエリア */
-.rs-team-timeout-area {
-    width: 23mm;
-    /* Match foul column width (5 cells × 4.6mm) */
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-}
-
-.timeout-header {
+/* タイムアウトヘッダーセル */
+.timeout-header-cell {
     text-align: center;
     font-size: 8pt;
     font-weight: 700;
-    border-bottom: 1px solid #000;
     padding: 2px;
 }
 
-.timeout-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: 1fr 1fr;
-}
-
-.to-cell-label,
-.to-cell-val {
-    border-right: 1px solid #000;
-    border-bottom: 1px solid #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 8pt;
-    box-sizing: border-box;
-}
-
-/* Remove right border for last column in timeout grid */
-.to-cell-label:nth-child(5n),
-.to-cell-val:nth-child(5n) {
-    border-right: none;
-}
-
-/* Remove bottom border for last row (values) */
-.to-cell-val {
-    border-bottom: none;
-}
-
+/* タイムアウトラベル・値セル */
 .to-cell-label {
+    text-align: center;
+    vertical-align: middle;
     font-family: sans-serif;
-    /* Circled numbers often look better in sans */
     font-size: 7pt;
 }
 
 .to-cell-val {
+    text-align: center;
+    vertical-align: middle;
     font-weight: bold;
     position: relative;
 }
@@ -1104,9 +1071,9 @@
     width: 32mm;
 }
 
-.cell-name {
+.rs-roster-table td.cell-name {
     text-align: left;
-    padding-left: 5px;
+    padding-left: 10px;
     font-size: 10pt;
 }
 
@@ -1143,8 +1110,8 @@
 
 .empty-foul-slash {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: -1px;
+    left: -2px;
     pointer-events: none;
     z-index: 5;
 }

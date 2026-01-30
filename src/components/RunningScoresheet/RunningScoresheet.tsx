@@ -280,34 +280,37 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                     <div className="rs-teams-section">
                         {[teamA, teamB].map((team, tIndex) => (
                             <div key={team.id} className="rs-team-block">
-                                {/* Header: Name & Timeouts */}
-                                <div className="rs-team-header-row">
-                                    <div className="rs-team-name-area">
-                                        <div className="team-name-row">
-                                            <span className="rs-team-label">{tIndex === 0 ? 'チームA：' : 'チームB：'}</span>
-                                            <span className="team-name-label">{team.name}</span>
-                                        </div>
-                                        <div className="team-name-sub">{tIndex === 0 ? 'Team A' : 'Team B'}</div>
-                                        <div className="team-category-paren">（{team.color === 'white' ? '白' : '青'}）</div>
-                                    </div>
-                                    <div className="rs-team-timeout-area">
-                                        <div className="timeout-header">タイムアウト</div>
-                                        <div className="timeout-grid">
-                                            <div className="to-cell-label">①</div>
-                                            <div className="to-cell-label">②</div>
-                                            <div className="to-cell-label">③</div>
-                                            <div className="to-cell-label">④</div>
-                                            <div className="to-cell-label">OT</div>
+                                <table className="rs-roster-table">
+                                    <thead>
+                                        {/* チーム名 + タイムアウト */}
+                                        <tr className="team-header-row">
+                                            <td rowSpan={3} colSpan={8} className="team-name-cell">
+                                                <div className="team-name-row">
+                                                    <span className="rs-team-label">{tIndex === 0 ? 'チームA：' : 'チームB：'}</span>
+                                                    <span className="team-name-label">{team.name}</span>
+                                                </div>
+                                                <div className="team-name-sub">{tIndex === 0 ? 'Team A' : 'Team B'}</div>
+                                                <div className="team-category-paren">（{team.color === 'white' ? '白' : '青'}）</div>
+                                            </td>
+                                            <th colSpan={5} className="timeout-header-cell">タイムアウト</th>
+                                        </tr>
+                                        <tr className="timeout-label-row">
+                                            <td className="to-cell-label">①</td>
+                                            <td className="to-cell-label">②</td>
+                                            <td className="to-cell-label">③</td>
+                                            <td className="to-cell-label">④</td>
+                                            <td className="to-cell-label">OT</td>
+                                        </tr>
+                                        <tr className="timeout-value-row">
                                             {[1, 2, 3, 4].map(q => {
                                                 const timeout = team.timeouts.find(t => t.quarter === q);
                                                 const hasTimeout = !!timeout;
                                                 const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
-                                                // 試合終了時、使用しなかったクォーターに横線
                                                 const isUnused = isGameFinished && !hasTimeout;
                                                 return (
-                                                    <div key={q} className={`to-cell-val ${hasTimeout ? `to-has-value ${colorClass}` : ''} ${isUnused ? 'to-unused' : ''}`}>
+                                                    <td key={q} className={`to-cell-val ${hasTimeout ? `to-has-value ${colorClass}` : ''} ${isUnused ? 'to-unused' : ''}`}>
                                                         {hasTimeout && <span className="to-elapsed-minutes">{timeout.elapsedMinutes}</span>}
-                                                    </div>
+                                                    </td>
                                                 );
                                             })}
                                             {(() => {
@@ -315,17 +318,13 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 const hasOtTimeout = !!otTimeout;
                                                 const isOtUnused = isGameFinished && !hasOtTimeout;
                                                 return (
-                                                    <div className={`to-cell-val ot ${hasOtTimeout ? 'to-has-value q-black' : ''} ${isOtUnused ? 'to-unused' : ''}`}>
+                                                    <td className={`to-cell-val ot ${hasOtTimeout ? 'to-has-value q-black' : ''} ${isOtUnused ? 'to-unused' : ''}`}>
                                                         {hasOtTimeout && <span className="to-elapsed-minutes">{otTimeout.elapsedMinutes}</span>}
-                                                    </div>
+                                                    </td>
                                                 );
                                             })()}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <table className="rs-roster-table">
-                                    <thead>
+                                        </tr>
+                                        {/* 選手ヘッダー */}
                                         <tr>
                                             <th rowSpan={2} className="th-no">No.</th>
                                             <th rowSpan={2} className="th-license">ライセンスNo.</th>
@@ -376,7 +375,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                                     height: `calc(5mm * ${arr.length})`,
                                                                 }}
                                                             >
-                                                                <line x1="0" y1="0" x2="100%" y2="100%" />
+                                                                <line x1="0" y1="2.5mm" x2="100%" y2="100%" />
                                                             </svg>
                                                         )}
                                                     </td>
