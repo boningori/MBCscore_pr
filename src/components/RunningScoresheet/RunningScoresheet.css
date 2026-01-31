@@ -446,6 +446,8 @@
     flex-direction: column;
     width: 21.2mm;
     border: 1px solid #000;
+    border-top: none;
+    /* border-top はタイトル行の border-bottom が担当（二重描画防止） */
     box-sizing: border-box;
     padding: 0;
     overflow: hidden;
@@ -775,8 +777,8 @@
 }
 
 .rs-brace {
-    font-size: 100px;
-    font-weight: 50;
+    font-size: 80px;
+    font-weight: 40;
     font-family: 'MS PMincho', 'MS P明朝', serif;
     display: flex;
     align-items: center;
@@ -906,12 +908,14 @@
     font-weight: 700;
     color: #000;
     margin-right: 5px;
+    letter-spacing: 0.05em;
 }
 
 .team-name-label {
     font-size: 11pt;
     font-weight: 700;
     word-break: break-all;
+    letter-spacing: 0.05em;
 }
 
 .team-name-sub {
@@ -1000,13 +1004,16 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 8pt;
-    border: 1px solid #000;
-    /* Outer heavy border */
+    /* 片側border方式: テーブルが上・左を担当、セルが右・下を担当（html2canvas二重描画防止） */
+    border-top: 1px solid #000;
+    border-left: 1px solid #000;
 }
 
 .rs-roster-table th,
 .rs-roster-table td {
-    border: 1px solid #000;
+    border: none;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
     padding: 1px 2px;
     text-align: center;
     height: 5mm;
@@ -1176,7 +1183,6 @@
 
 .th-foul {
     width: 23mm;
-    border-left: 1px solid #000;
 }
 
 .cell-foul {
@@ -1215,25 +1221,15 @@
     background-color: #000;
 }
 
-/* ファウル列の左境界（出場時限との境界）*/
-td.cell-quarter+td.cell-foul {
-    border-left: 1px solid #000;
-}
+/* ファウル列の左境界 — 片側border方式では前セルのborder-rightが担当 */
 
-/* サブヘッダー行のファウル列左境界 */
-.sub-header th:nth-child(5) {
-    border-left: 1px solid #000;
-}
+/* サブヘッダー行のファウル列左境界 — 片側border方式では前セルのborder-rightが担当 */
 
-/* ファウル列の下境界（コーチ行との境界）*/
-.coach-row td.cell-foul {
-    border-top: 1px solid #000;
-}
+/* ファウル列の下境界 — 片側border方式では前行セルのborder-bottomが担当 */
 
 /* Coach Row Styles */
 .coach-row td {
-    border-top: 1px solid #000;
-    /* Ensure separator */
+    /* border-top removed — 片側border方式では前行セルのborder-bottomが担当 */
     height: 5mm;
 }
 
