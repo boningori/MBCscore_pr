@@ -1485,6 +1485,18 @@ td.cell-quarter+td.cell-foul {
 
 /* レスポンシブ */
 @media (max-width: 768px) {
+    .rs-top-header {
+        display: none;
+    }
+
+    .rs-header-grid {
+        display: none;
+    }
+
+    .rs-center-section {
+        display: none;
+    }
+
     .rs-main-content {
         flex-direction: column;
     }

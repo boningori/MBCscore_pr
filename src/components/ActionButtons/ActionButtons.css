@@ -89,6 +89,7 @@
 
 .btn-2p {
     background: rgba(5, 150, 105, 0.15);
+    border-color: #00BFFF;
 }
 
 .btn-2p:hover:not(:disabled) {
@@ -142,7 +143,7 @@
 
 .btn-foul {
     background: rgba(245, 158, 11, 0.15);
-    border: 4px solid #D8B4FE;
+    border: 2px solid #50C878;
     min-height: 90px;
 }
 

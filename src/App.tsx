@@ -856,23 +856,22 @@ function AppContent() {
               📜 履歴
             </button>
           )}
-          {/* フルモード用: スコアシート・統計 */}
+          {/* スコアシートボタン（両モード共通） */}
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={() => setScreen('scoresheet')}
+            style={{ marginRight: '8px' }}
+          >
+            📄 スコアシート
+          </button>
+          {/* フルモード用: 統計 */}
           {gameMode === 'full' && (
-            <>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setScreen('scoresheet')}
-                style={{ marginRight: '12px' }}
-              >
-                📄 スコアシート
-              </button>
-              <button
-                className={`btn ${showStats ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setShowStats(!showStats)}
-              >
-                📊 統計
-              </button>
-            </>
+            <button
+              className={`btn ${showStats ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setShowStats(!showStats)}
+            >
+              📊 統計
+            </button>
           )}
         </div>
       </header>
