@@ -843,7 +843,8 @@ function AppContent() {
           </button>
         </div>
         <div className="header-center">
-          {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />}
+          {/* 音声入力機能は一時的に非表示 */}
+          {/* {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />} */}
         </div>
         <div className="header-right">
           {/* シンプルモード用: 履歴ボタン */}
