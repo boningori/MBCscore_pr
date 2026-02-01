@@ -15,7 +15,7 @@ import { OpponentManager } from './components/OpponentManager';
 import { Scoreboard } from './components/Scoreboard';
 import { ActionButtons } from './components/ActionButtons';
 import { ActionHistory } from './components/ActionHistory';
-import { VoiceInput } from './components/VoiceInput';
+// import { VoiceInput } from './components/VoiceInput'; // 一時的に非表示
 import { SubstitutionModal } from './components/SubstitutionModal';
 import { StatsPanel } from './components/StatsPanel';
 import { QuarterLineup } from './components/QuarterLineup';
@@ -25,7 +25,7 @@ import { PendingActionResolver } from './components/PendingActionResolver';
 import { FoulInputFlow } from './components/FoulInputFlow';
 import { RunningScoresheet } from './components/RunningScoresheet';
 import { AppSettingsModal } from './components/Settings/AppSettingsModal';
-import type { VoiceCommand } from './utils/voiceCommands';
+// import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import './App.css';
 
 // アプリの画面状態
@@ -493,63 +493,10 @@ function AppContent() {
     });
   };
 
-  // 音声コマンド処理
-  const handleVoiceCommand = useCallback((command: VoiceCommand) => {
-    if (command.type === 'timeout') {
-      handleTimeout();
-      return;
-    }
-
-    if (command.type === 'quarter') {
-      dispatch({ type: 'END_QUARTER' });
-      return;
-    }
-
-    // 背番号から選手を検索
-    if (command.playerNumber) {
-      let targetTeamId: string | null = null;
-      let candidatePlayers = [...state.teamA.players, ...state.teamB.players].filter(p => p.isOnCourt);
-
-      // チームカラーが指定されている場合、対象チームを絞り込む
-      if (command.teamColor) {
-        if (state.teamA.color === command.teamColor) {
-          candidatePlayers = state.teamA.players.filter(p => p.isOnCourt);
-          targetTeamId = 'teamA';
-        } else if (state.teamB.color === command.teamColor) {
-          candidatePlayers = state.teamB.players.filter(p => p.isOnCourt);
-          targetTeamId = 'teamB';
-        }
-      }
-
-      const player = candidatePlayers.find(p => p.number === command.playerNumber);
-
-      if (!player) return;
-
-      // チームIDが確定していない場合は選手から判定
-      const teamId = targetTeamId || (state.teamA.players.includes(player) ? 'teamA' : 'teamB');
-
-      switch (command.type) {
-        case 'score':
-          dispatch({
-            type: 'ADD_SCORE',
-            payload: { teamId, playerId: player.id, scoreType: command.action },
-          });
-          break;
-        case 'stat':
-          dispatch({
-            type: 'ADD_STAT',
-            payload: { teamId, playerId: player.id, statType: command.action },
-          });
-          break;
-        case 'foul':
-          dispatch({
-            type: 'ADD_FOUL',
-            payload: { teamId, playerId: player.id, foulType: command.action as FoulType },
-          });
-          break;
-      }
-    }
-  }, [state.teamA, state.teamB, dispatch]);
+  // 音声コマンド処理 (一時的に非表示)
+  // const handleVoiceCommand = useCallback((command: VoiceCommand) => {
+  //   ... 省略 ...
+  // }, [state.teamA, state.teamB, dispatch]);
 
   // クォーター開始時のスタメン確定
   const handleLineupConfirm = (startingPlayerIds: string[]) => {
