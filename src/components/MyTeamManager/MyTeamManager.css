@@ -303,12 +303,99 @@
 }
 
 @media (max-width: 600px) {
+    .my-team-manager {
+        padding: var(--spacing-md);
+    }
+
+    .my-team-editor {
+        padding: var(--spacing-sm);
+    }
+
+    .editor-form {
+        padding: var(--spacing-md);
+    }
+
     .team-list {
         grid-template-columns: 1fr;
     }
 
     .team-card-actions {
         flex-wrap: wrap;
+    }
+
+    .editor-coach-row {
+        flex-direction: column;
+    }
+
+    .editor-coach-license-input {
+        width: 100%;
+    }
+
+    .add-player-row {
+        flex-wrap: wrap;
+    }
+
+    .add-player-row .player-number-input {
+        width: calc(50% - var(--spacing-sm) / 2);
+    }
+
+    .add-player-row .player-name-input,
+    .add-player-row .player-courtname-input {
+        flex: 1 1 calc(50% - var(--spacing-sm) / 2);
+        min-width: 0;
+    }
+
+    .add-player-row .player-license-input {
+        flex: 1;
+        width: auto;
+    }
+
+    .add-player-row .btn {
+        width: 100%;
+    }
+
+    .player-edit-card {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+
+    .player-edit-card .player-numbers,
+    .player-edit-card .player-number {
+        width: auto;
+    }
+
+    .player-edit-card .player-name {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .player-edit-card .player-courtname,
+    .player-edit-card .player-license {
+        font-size: 0.7rem;
+    }
+
+    .player-edit-card .input {
+        min-width: 0;
+    }
+
+    .player-edit-card .player-number-input {
+        width: 60px;
+    }
+
+    .player-edit-card .player-name-input {
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .player-edit-card .player-courtname-input {
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .player-edit-card .player-license-input {
+        flex: 1;
+        width: auto;
+        min-width: 80px;
     }
 
     .editor-actions {

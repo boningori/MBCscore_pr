@@ -109,7 +109,7 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
 
             <div className="home-footer">
                 <p className="text-muted text-sm">
-                    音声入力対応 | タブレット最適化 | オフライン動作
+                    タブレット最適化 | オフライン動作
                 </p>
             </div>
         </div>
