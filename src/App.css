@@ -791,6 +791,11 @@
   gap: var(--spacing-sm);
 }
 
+/* シンプルモード：中央列の高さを自動に（余分なスペース防止） */
+.game-main-area.simple-mode .center-column {
+  height: auto;
+}
+
 .game-main-area.simple-mode .team-panel {
   flex: none;
   width: 100%;

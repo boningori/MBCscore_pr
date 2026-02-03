@@ -3,7 +3,7 @@ import type { FoulType, FreeThrowResult, ShotSituation, Player } from '../../typ
 import { MAX_PERSONAL_FOULS, suggestFreeThrowCount } from '../../types/game';
 import './FoulInputFlow.css';
 
-type Step = 'foulType' | 'shotSituation' | 'ftCount' | 'shooter' | 'ftResult';
+type Step = 'foulType' | 'shotSituation' | 'shotResult' | 'ftCount' | 'shooter' | 'ftResult';
 
 const LONG_PRESS_DURATION = 500; // 長押し判定時間（ミリ秒）
 
@@ -11,6 +11,7 @@ interface FoulInputFlowProps {
     onComplete: (data: {
         foulType: FoulType;
         shotSituation: ShotSituation;
+        shotMade: boolean;
         freeThrows: number;
         freeThrowResults: FreeThrowResult[];
         shooterPlayerId: string | null;
@@ -61,6 +62,7 @@ export function FoulInputFlow({
     const [freeThrows, setFreeThrows] = useState<number>(benchFoulMode ? 1 : 0);
     const [freeThrowResults, setFreeThrowResults] = useState<FreeThrowResult[]>(benchFoulMode ? [null as unknown as FreeThrowResult] : []);
     const [shooterPlayerId, setShooterPlayerId] = useState<string | null>(null);
+    const [shotMade, setShotMade] = useState<boolean>(false);
 
     // 長押し検出用
     const longPressTimer = useRef<number | null>(null);
@@ -75,6 +77,7 @@ export function FoulInputFlow({
     const stepTitles: Record<Step, string> = {
         foulType: 'ファウル種類を選択',
         shotSituation: 'シュート状況を選択（シュートファウル）',
+        shotResult: 'シュートの結果',
         ftCount: 'フリースロー本数を選択',
         ftResult: benchFoulMode && benchFoulLabel ? `${benchFoulLabel} - FT結果` : 'フリースロー結果を入力',
         shooter: benchFoulMode && benchFoulLabel ? `${benchFoulLabel} - シューター選択` : 'シューターを選択',
@@ -102,6 +105,7 @@ export function FoulInputFlow({
             onComplete({
                 foulType: 'P',
                 shotSituation: 'none',
+                shotMade: false,
                 freeThrows: 0,
                 freeThrowResults: [],
                 shooterPlayerId: null,
@@ -116,7 +120,11 @@ export function FoulInputFlow({
     }, []);
 
     // 長押し開始
-    const handlePressStart = useCallback(() => {
+    const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        // タッチイベントの場合、ブラウザによるclick合成（ゴーストクリック）を防止
+        if (e.type === 'touchstart') {
+            e.preventDefault();
+        }
         isLongPress.current = false;
         longPressTimer.current = window.setTimeout(() => {
             isLongPress.current = true;
@@ -125,7 +133,11 @@ export function FoulInputFlow({
     }, [handlePFoulLongPress]);
 
     // 長押し終了
-    const handlePressEnd = useCallback(() => {
+    const handlePressEnd = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        // タッチイベントの場合、ブラウザによるclick合成（ゴーストクリック）を防止
+        if (e.type === 'touchend') {
+            e.preventDefault();
+        }
         if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;
@@ -150,12 +162,18 @@ export function FoulInputFlow({
     // シュート状況選択（Pファウル長押し時のみ、2Pか3Pのみ）
     const handleShotSituationSelect = useCallback((situation: ShotSituation) => {
         setShotSituation(situation);
-        // シュート中のファウル → シューター選択へ
-        const suggested = suggestFreeThrowCount('P', teamFouls, situation);
+        // シュート中のファウル → シュート結果選択へ
+        setStep('shotResult');
+    }, []);
+
+    // シュート結果選択（成功=バスケットカウント / 失敗）
+    const handleShotResultSelect = useCallback((made: boolean) => {
+        setShotMade(made);
+        const suggested = suggestFreeThrowCount('P', teamFouls, shotSituation, made);
         setFreeThrows(suggested);
         setFreeThrowResults(new Array(suggested).fill(null));
         setStep('shooter');
-    }, [teamFouls]);
+    }, [teamFouls, shotSituation]);
 
     // FT本数選択
     const handleFtCountSelect = useCallback((count: number) => {
@@ -165,6 +183,7 @@ export function FoulInputFlow({
             onComplete({
                 foulType: foulType!,
                 shotSituation,
+                shotMade,
                 freeThrows: 0,
                 freeThrowResults: [],
                 shooterPlayerId: null,
@@ -192,11 +211,12 @@ export function FoulInputFlow({
         onComplete({
             foulType,
             shotSituation,
+            shotMade,
             freeThrows,
             freeThrowResults: freeThrowResults as FreeThrowResult[],
             shooterPlayerId,
         });
-    }, [freeThrowResults, foulType, shotSituation, freeThrows, shooterPlayerId, onComplete]);
+    }, [freeThrowResults, foulType, shotSituation, shotMade, freeThrows, shooterPlayerId, onComplete]);
 
     // シューター選択
     const handleShooterSelect = useCallback((playerId: string) => {
@@ -216,6 +236,10 @@ export function FoulInputFlow({
                 setStep('foulType');
                 setFoulType(null);
                 break;
+            case 'shotResult':
+                setStep('shotSituation');
+                setShotMade(false);
+                break;
             case 'ftCount':
                 if (['T', 'U', 'D'].includes(foulType!)) {
                     setStep('foulType');
@@ -231,13 +255,13 @@ export function FoulInputFlow({
                     onCancel();
                     return;
                 }
-                // シュートファウル（2P/3P）からの場合はshotSituationへ
+                // シュートファウル（2P/3P）からの場合はshotResultへ
                 // ペナルティからの場合はfoulTypeへ
                 // T/U/DからはftCountへ
                 if (['T', 'U', 'D'].includes(foulType!)) {
                     setStep('ftCount');
                 } else if (shotSituation !== 'none') {
-                    setStep('shotSituation');
+                    setStep('shotResult');
                 } else {
                     setStep('foulType');
                     setFoulType(null);
@@ -360,6 +384,24 @@ export function FoulInputFlow({
                                 {situation.label}
                             </button>
                         ))}
+                    </div>
+                )}
+
+                {/* Step 2.5: シュート結果選択（バスケットカウント判定） */}
+                {step === 'shotResult' && (
+                    <div className="shot-result-list">
+                        <button
+                            className="shot-result-btn success"
+                            onClick={() => handleShotResultSelect(true)}
+                        >
+                            シュート成功（バスケットカウント → FT1本）
+                        </button>
+                        <button
+                            className="shot-result-btn fail"
+                            onClick={() => handleShotResultSelect(false)}
+                        >
+                            シュート失敗（FT{shotSituation === '3P' ? '3' : '2'}本）
+                        </button>
                     </div>
                 )}
 

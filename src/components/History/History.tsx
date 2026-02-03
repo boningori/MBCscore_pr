@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { GameRecord } from '../../utils/gameHistoryStorage';
-import { loadGameHistory, deleteGameRecord } from '../../utils/gameHistoryStorage';
+import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
 import { StatsPanel } from '../StatsPanel';
 import type { Game } from '../../types/game';
@@ -98,6 +98,12 @@ export function History({ onBack }: HistoryProps) {
                         gameName={selectedRecord.gameName}
                         date={selectedRecord.date ? new Date(selectedRecord.date).toLocaleDateString() : ''}
                         onClose={() => setViewMode('stats')}
+                        onUpdateGameInfo={(partialInfo) => {
+                            const currentGameInfo = selectedRecord.gameInfo || createInitialGameInfo();
+                            const updatedGameInfo = { ...currentGameInfo, ...partialInfo };
+                            updateGameRecordGameInfo(selectedRecord.id, updatedGameInfo);
+                            setSelectedRecord({ ...selectedRecord, gameInfo: updatedGameInfo });
+                        }}
                     />
                 )}
             </div>

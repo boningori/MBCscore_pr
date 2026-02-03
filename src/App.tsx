@@ -205,6 +205,7 @@ function AppContent() {
   const handleFoulWithFreeThrows = (data: {
     foulType: FoulType;
     shotSituation: ShotSituation;
+    shotMade: boolean;
     freeThrows: number;
     freeThrowResults: FreeThrowResult[];
     shooterPlayerId: string | null;
@@ -221,6 +222,7 @@ function AppContent() {
           playerId: resolvingFoulPending.playerId,
           foulType: data.foulType,
           shotSituation: data.shotSituation,
+          shotMade: data.shotMade,
           freeThrows: data.freeThrows,
           freeThrowResults: data.freeThrowResults,
           shooterTeamId: opponentTeamId,
@@ -243,6 +245,7 @@ function AppContent() {
         playerId: selectedPlayerId,
         foulType: data.foulType,
         shotSituation: data.shotSituation,
+        shotMade: data.shotMade,
         freeThrows: data.freeThrows,
         freeThrowResults: data.freeThrowResults,
         shooterTeamId: opponentTeamId,

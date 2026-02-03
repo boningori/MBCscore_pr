@@ -77,6 +77,20 @@ export function loadGameRecord(infoId: string): GameRecord | null {
     return history.find(r => r.id === infoId) || null;
 }
 
+// 試合記録のgameInfoを更新
+export function updateGameRecordGameInfo(id: string, gameInfo: GameInfo): void {
+    try {
+        const history = loadGameHistory();
+        const index = history.findIndex(r => r.id === id);
+        if (index !== -1) {
+            history[index].gameInfo = gameInfo;
+            localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(history));
+        }
+    } catch (error) {
+        console.error('Failed to update game record:', error);
+    }
+}
+
 // 履歴削除
 export function deleteGameRecord(id: string): void {
     try {

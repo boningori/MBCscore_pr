@@ -121,6 +121,10 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  /* タッチデバイスでの長押し時テキスト選択を防止 */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #root {
@@ -284,6 +288,15 @@ body {
 .input:focus {
   outline: none;
   border-color: var(--primary-light);
+}
+
+/* 入力フィールドではテキスト選択を許可 */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 .input::placeholder {

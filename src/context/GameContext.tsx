@@ -232,8 +232,8 @@ function gameReducer(state: Game, action: GameAction): Game {
             const isCoachOrBench = playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
             const coachFoulTarget: CoachFoulTarget = playerId === 'COACH' ? 'COACH'
                 : playerId === 'ACOACH' ? 'ACOACH'
-                : playerId === 'BENCH' ? 'BENCH'
-                : null;
+                    : playerId === 'BENCH' ? 'BENCH'
+                        : null;
             const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
 
             const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
@@ -318,12 +318,14 @@ function gameReducer(state: Game, action: GameAction): Game {
                 freeThrowResults,
                 shooterTeamId,
                 shooterPlayerId,
+                shotMade,
                 benchTechType,  // ベンチテクニカルの種類（HC/AC/Sub/Bench）
             } = action.payload as {
                 teamId: string;
                 playerId: string | null;
                 foulType: FoulType;
                 shotSituation: ShotSituation;
+                shotMade?: boolean;
                 freeThrows: number;
                 freeThrowResults: FreeThrowResult[];
                 shooterTeamId: string;
@@ -335,9 +337,9 @@ function gameReducer(state: Game, action: GameAction): Game {
             const isCoachOrBench = playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
             const coachFoulTargetFT: CoachFoulTarget = playerId === 'COACH' ? 'COACH'
                 : playerId === 'ACOACH' ? 'ACOACH'
-                : playerId === 'BENCH' ? 'BENCH'
-                : benchTechType === 'Sub' ? 'BENCH'  // 交代要員のテクニカルはコーチ行へのBとして扱う
-                : null;
+                    : playerId === 'BENCH' ? 'BENCH'
+                        : benchTechType === 'Sub' ? 'BENCH'  // 交代要員のテクニカルはコーチ行へのBとして扱う
+                            : null;
             const foulingPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
             const shooterPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === shooterPlayerId);
 
@@ -407,18 +409,36 @@ function gameReducer(state: Game, action: GameAction): Game {
                 };
             };
 
-            // シューターチームを更新（FT得点とスタッツ）
+            // バスケットカウント（シュート成功）の得点
+            const basketPoints = shotMade && shotSituation !== 'none' ? (shotSituation === '3P' ? 3 : 2) : 0;
+
+            // シューターチームを更新（バスケット得点 + FT得点とスタッツ）
             const updateShooterTeam = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget || freeThrows === 0 || !shooterPlayerId) return team;
+                if (!isTarget || !shooterPlayerId) return team;
+                if (freeThrows === 0 && !shotMade) return team;
 
                 return {
                     ...team,
                     players: team.players.map(p => {
                         if (p.id !== shooterPlayerId) return p;
                         const stats = { ...p.stats };
-                        stats.freeThrowAttempt += freeThrows;
-                        stats.freeThrowMade += ftMade;
-                        stats.points += ftMade;
+                        // バスケットカウント：シュート成功分のスタッツ
+                        if (shotMade && shotSituation !== 'none') {
+                            if (shotSituation === '2P') {
+                                stats.twoPointAttempt += 1;
+                                stats.twoPointMade += 1;
+                            } else {
+                                stats.threePointAttempt += 1;
+                                stats.threePointMade += 1;
+                            }
+                            stats.points += basketPoints;
+                        }
+                        // FTスタッツ
+                        if (freeThrows > 0) {
+                            stats.freeThrowAttempt += freeThrows;
+                            stats.freeThrowMade += ftMade;
+                            stats.points += ftMade;
+                        }
                         return { ...p, stats };
                     })
                 };
@@ -440,9 +460,10 @@ function gameReducer(state: Game, action: GameAction): Game {
                 freeThrows,
                 freeThrowResults,
                 shotSituation,
-                shooterTeamId: freeThrows > 0 ? shooterTeamId : undefined,
-                shooterPlayerId: freeThrows > 0 ? shooterPlayerId : undefined,
-                shooterPlayerNumber: freeThrows > 0 ? (shooterPlayer?.number || 0) : undefined,
+                shotMade: shotMade || undefined,
+                shooterTeamId: (freeThrows > 0 || shotMade) ? shooterTeamId : undefined,
+                shooterPlayerId: (freeThrows > 0 || shotMade) ? shooterPlayerId : undefined,
+                shooterPlayerNumber: (freeThrows > 0 || shotMade) ? (shooterPlayer?.number || 0) : undefined,
             };
 
             // チーム更新（ファウル側）
@@ -453,18 +474,40 @@ function gameReducer(state: Game, action: GameAction): Game {
             newTeamA = updateShooterTeam(newTeamA, shooterTeamId === 'teamA');
             newTeamB = updateShooterTeam(newTeamB, shooterTeamId === 'teamB');
 
-            // FT成功分のスコア履歴を追加
+            // スコア履歴を追加（バスケット + FT）
             let newScoreHistory = [...state.scoreHistory];
+            const now = Date.now();
+
+            // バスケットカウント（シュート成功）のスコア履歴
+            if (shotMade && basketPoints > 0 && shooterPlayerId) {
+                const finalScoreA = newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0);
+                const finalScoreB = newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+                const basketScoreA = shooterTeamId === 'teamA' ? finalScoreA - ftMade : finalScoreA;
+                const basketScoreB = shooterTeamId === 'teamB' ? finalScoreB - ftMade : finalScoreB;
+
+                const basketEntry: ScoreEntry = {
+                    id: crypto.randomUUID(),
+                    teamId: shooterTeamId,
+                    playerId: shooterPlayerId,
+                    playerNumber: shooterPlayer?.number || 0,
+                    scoreType: shotSituation === '3P' ? '3P' : '2P',
+                    points: basketPoints,
+                    quarter: state.currentQuarter,
+                    timestamp: now,
+                    runningScoreA: basketScoreA,
+                    runningScoreB: basketScoreB,
+                };
+                newScoreHistory.push(basketEntry);
+            }
+
+            // FT成功分のスコア履歴
             if (ftMade > 0 && shooterPlayerId) {
-                // FT後の最終スコア
                 const finalScoreA = newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0);
                 const finalScoreB = newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0);
 
-                // FT前の基準スコア（シューターのチームのみftMadeを引く）
                 const baseScoreA = shooterTeamId === 'teamA' ? finalScoreA - ftMade : finalScoreA;
                 const baseScoreB = shooterTeamId === 'teamB' ? finalScoreB - ftMade : finalScoreB;
 
-                // 各FT成功を個別のScoreEntryとして記録
                 for (let i = 0; i < ftMade; i++) {
                     const scoreEntry: ScoreEntry = {
                         id: crypto.randomUUID(),
@@ -474,8 +517,7 @@ function gameReducer(state: Game, action: GameAction): Game {
                         scoreType: 'FT',
                         points: 1,
                         quarter: state.currentQuarter,
-                        timestamp: Date.now() + i, // 順序を保持するため
-                        // 各FTごとにランニングスコアをインクリメント
+                        timestamp: now + 1 + i,
                         runningScoreA: shooterTeamId === 'teamA' ? baseScoreA + (i + 1) : baseScoreA,
                         runningScoreB: shooterTeamId === 'teamB' ? baseScoreB + (i + 1) : baseScoreB,
                     };
@@ -1339,11 +1381,13 @@ function gameReducer(state: Game, action: GameAction): Game {
                 freeThrowResults,
                 shooterTeamId,
                 shooterPlayerId,
+                shotMade,
             } = action.payload as {
                 pendingActionId: string;
                 playerId: string;
                 foulType: FoulType;
                 shotSituation: ShotSituation;
+                shotMade?: boolean;
                 freeThrows: number;
                 freeThrowResults: FreeThrowResult[];
                 shooterTeamId: string;
@@ -1382,17 +1426,36 @@ function gameReducer(state: Game, action: GameAction): Game {
                 };
             };
 
-            // シューターチームを更新（FT得点とスタッツ）
+            // バスケットカウント（シュート成功）の得点
+            const basketPoints = shotMade && shotSituation !== 'none' ? (shotSituation === '3P' ? 3 : 2) : 0;
+
+            // シューターチームを更新（バスケット得点 + FT得点とスタッツ）
             const updateShooterTeam = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget || freeThrows === 0 || !shooterPlayerId) return team;
+                if (!isTarget || !shooterPlayerId) return team;
+                if (freeThrows === 0 && !shotMade) return team;
+
                 return {
                     ...team,
                     players: team.players.map(p => {
                         if (p.id !== shooterPlayerId) return p;
                         const stats = { ...p.stats };
-                        stats.freeThrowAttempt += freeThrows;
-                        stats.freeThrowMade += ftMade;
-                        stats.points += ftMade;
+                        // バスケットカウント：シュート成功分のスタッツ
+                        if (shotMade && shotSituation !== 'none') {
+                            if (shotSituation === '2P') {
+                                stats.twoPointAttempt += 1;
+                                stats.twoPointMade += 1;
+                            } else {
+                                stats.threePointAttempt += 1;
+                                stats.threePointMade += 1;
+                            }
+                            stats.points += basketPoints;
+                        }
+                        // FTスタッツ
+                        if (freeThrows > 0) {
+                            stats.freeThrowAttempt += freeThrows;
+                            stats.freeThrowMade += ftMade;
+                            stats.points += ftMade;
+                        }
                         return { ...p, stats };
                     })
                 };
@@ -1411,9 +1474,10 @@ function gameReducer(state: Game, action: GameAction): Game {
                 freeThrows,
                 freeThrowResults,
                 shotSituation,
-                shooterTeamId: freeThrows > 0 ? shooterTeamId : undefined,
-                shooterPlayerId: freeThrows > 0 ? shooterPlayerId : undefined,
-                shooterPlayerNumber: freeThrows > 0 ? (shooterPlayer?.number || 0) : undefined,
+                shotMade: shotMade || undefined,
+                shooterTeamId: (freeThrows > 0 || shotMade) ? shooterTeamId : undefined,
+                shooterPlayerId: (freeThrows > 0 || shotMade) ? shooterPlayerId : undefined,
+                shooterPlayerNumber: (freeThrows > 0 || shotMade) ? (shooterPlayer?.number || 0) : undefined,
             };
 
             // チーム更新（ファウル側）
@@ -1424,8 +1488,33 @@ function gameReducer(state: Game, action: GameAction): Game {
             newTeamA = updateShooterTeam(newTeamA, shooterTeamId === 'teamA');
             newTeamB = updateShooterTeam(newTeamB, shooterTeamId === 'teamB');
 
-            // FT成功分のスコア履歴を追加
+            // スコア履歴を追加（バスケット + FT）
             let newScoreHistory = [...state.scoreHistory];
+            const now = pending.timestamp;
+
+            // バスケットカウント（シュート成功）のスコア履歴
+            if (shotMade && basketPoints > 0 && shooterPlayerId) {
+                const finalScoreA = newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0);
+                const finalScoreB = newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+                const basketScoreA = shooterTeamId === 'teamA' ? finalScoreA - ftMade : finalScoreA;
+                const basketScoreB = shooterTeamId === 'teamB' ? finalScoreB - ftMade : finalScoreB;
+
+                const basketEntry: ScoreEntry = {
+                    id: crypto.randomUUID(),
+                    teamId: shooterTeamId,
+                    playerId: shooterPlayerId,
+                    playerNumber: shooterPlayer?.number || 0,
+                    scoreType: shotSituation === '3P' ? '3P' : '2P',
+                    points: basketPoints,
+                    quarter: pending.quarter,
+                    timestamp: now,
+                    runningScoreA: basketScoreA,
+                    runningScoreB: basketScoreB,
+                };
+                newScoreHistory.push(basketEntry);
+            }
+
+            // FT成功分のスコア履歴を追加
             if (ftMade > 0 && shooterPlayerId) {
                 // FT後の最終スコア
                 const finalScoreA = newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0);
@@ -1444,7 +1533,7 @@ function gameReducer(state: Game, action: GameAction): Game {
                         scoreType: 'FT',
                         points: 1,
                         quarter: pending.quarter,
-                        timestamp: pending.timestamp + i,
+                        timestamp: now + 1 + i,
                         // 各FTごとにランニングスコアをインクリメント
                         runningScoreA: shooterTeamId === 'teamA' ? baseScoreA + (i + 1) : baseScoreA,
                         runningScoreB: shooterTeamId === 'teamB' ? baseScoreB + (i + 1) : baseScoreB,

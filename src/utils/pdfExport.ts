@@ -16,14 +16,22 @@ export async function exportElement(
 ): Promise<void> {
     const { filename, format, quality = 0.85 } = options;
 
-    // html2canvasでキャンバスに変換
-    const canvas = await html2canvas(element, {
-        scale: 4, // 300DPI対応 (A4 @ 96DPI * 3.125 = 300DPI, 4x is safe margin)
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: 1280, // デスクトップ表示を強制
-    });
+    // エクスポート中はレスポンシブの display:none を無効化してA4レイアウトを復元
+    element.classList.add('exporting');
+
+    let canvas: HTMLCanvasElement;
+    try {
+        // html2canvasでキャンバスに変換
+        canvas = await html2canvas(element, {
+            scale: 4, // 300DPI対応 (A4 @ 96DPI * 3.125 = 300DPI, 4x is safe margin)
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            windowWidth: 1280, // デスクトップ表示を強制
+        });
+    } finally {
+        element.classList.remove('exporting');
+    }
 
     if (format === 'jpeg') {
         // JPEG出力

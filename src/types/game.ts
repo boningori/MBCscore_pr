@@ -124,6 +124,7 @@ export interface FoulEntry {
     freeThrows?: number;                    // FT本数 (0, 1, 2, 3)
     freeThrowResults?: FreeThrowResult[];   // FT結果
     shotSituation?: ShotSituation;          // シュート状況
+    shotMade?: boolean;                     // シュート成功（バスケットカウント）
     shooterTeamId?: string;                 // FTを打った選手のチーム
     shooterPlayerId?: string;               // FTを打った選手ID
     shooterPlayerNumber?: number;           // FTを打った選手の背番号
@@ -344,7 +345,8 @@ export const shouldShowFreeThrowInput = (
 export const suggestFreeThrowCount = (
     foulType: FoulType,
     teamFouls: number,
-    shotSituation: ShotSituation
+    shotSituation: ShotSituation,
+    shotMade: boolean = false
 ): number => {
     // T（テクニカル）は1本
     if (foulType === 'T' || foulType === 'BT') return 1;
@@ -352,9 +354,9 @@ export const suggestFreeThrowCount = (
     // U/D は2本
     if (['U', 'D'].includes(foulType)) return 2;
 
-    // シュート中のファウル
-    if (shotSituation === '3P') return 3;
-    if (shotSituation === '2P') return 2;
+    // シュート中のファウル（バスケットカウント対応）
+    if (shotSituation === '3P') return shotMade ? 1 : 3;
+    if (shotSituation === '2P') return shotMade ? 1 : 2;
 
     // チームファウル5個目以降（ペナルティ状態）は2本
     if (teamFouls >= TEAM_FOUL_LIMIT) return 2;
