@@ -131,6 +131,22 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <p className="section-description">音声での記録入力機能の設定</p>
                     </section>
                     */}
+
+                    {/* ヘルプセクション */}
+                    <section className="settings-section">
+                        <h3>ヘルプ</h3>
+                        <a
+                            href="https://github.com/boningori/MBCscore_pr#readme"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="help-link help-link-large"
+                        >
+                            📖 使い方を見る (README)
+                        </a>
+                        <p className="section-description">
+                            フリック入力や保留処理など、アプリの詳しい使い方を確認できます。
+                        </p>
+                    </section>
                 </div>
 
                 <div className="settings-footer">

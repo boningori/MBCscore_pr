@@ -175,6 +175,23 @@
     text-decoration: underline;
 }
 
+.help-link-large {
+    display: inline-block;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-md);
+    margin-bottom: var(--spacing-sm);
+    transition: all 0.2s ease;
+}
+
+.help-link-large:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary);
+    text-decoration: none;
+}
+
 .settings-footer {
     display: flex;
     justify-content: flex-end;
