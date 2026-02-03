@@ -65,7 +65,9 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <h3>AI機能 (Google Gemini API)</h3>
                         <p className="section-description">
                             Gemini APIキーを設定すると、写真読み込みの精度が向上します。
-                            将来的に音声認識などの機能も利用できるようになります。
+                        </p>
+                        <p className="security-notice">
+                            🔒 APIキーはこのデバイスのみに保存され、外部サーバーには送信されません。
                         </p>
 
                         <div className="api-status">
