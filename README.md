@@ -92,7 +92,6 @@ MBCscoreは**フルモード**と**シンプルモード**の2つの表示モー
   - ※APIキーは端末内（ブラウザ）にのみ保存され、外部サーバーには送信されないプライバシー設計です。
 
 ### 7. その他の便利機能
-- **音声入力**: Web Speech APIを使用した音声コマンド入力（Chrome, Safari等でAPIキー不要で利用可能）。
 - **統計表示**: チームごとの詳細な統計データの閲覧。
 - **アプリ設定**: Gemini APIキーなどの設定を管理する設定画面。
 
@@ -130,4 +129,4 @@ npm run preview
 - **PDF/Image**: jspdf, html2canvas
 
 ---
-© 2024-2026 MBCscore Project
+© 2026 MBCscore Project
