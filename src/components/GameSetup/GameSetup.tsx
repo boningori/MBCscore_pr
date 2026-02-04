@@ -18,7 +18,7 @@ interface GameSetupProps {
     onBack: () => void;
 }
 
-type SetupStep = 'basic' | 'myTeam' | 'opponent' | 'confirm';
+type SetupStep = 'basic' | 'myTeam' | 'players' | 'opponent' | 'confirm';
 
 export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     const [step, setStep] = useState<SetupStep>('basic');
@@ -36,6 +36,9 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     // マイチームの使用番号タイプ
     const [numberType, setNumberType] = useState<NumberType>('bib');
 
+    // 出場選手確認用（除外する選手のインデックス）
+    const [excludedPlayerIndices, setExcludedPlayerIndices] = useState<Set<number>>(new Set());
+
     // マイチーム簡易選択用
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [showMyTeamManager, setShowMyTeamManager] = useState(false);
@@ -48,9 +51,24 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
     const handleMyTeamSelect = (team: SavedTeam) => {
         setMyTeam(team);
-        setStep('opponent');
+        setExcludedPlayerIndices(new Set());
+        setStep('players');
         setShowMyTeamManager(false);
     };
+
+    const togglePlayerExclusion = (index: number) => {
+        setExcludedPlayerIndices(prev => {
+            const next = new Set(prev);
+            if (next.has(index)) {
+                next.delete(index);
+            } else {
+                next.add(index);
+            }
+            return next;
+        });
+    };
+
+    const activePlayerCount = myTeam ? myTeam.players.length - excludedPlayerIndices.size : 0;
 
     const handleOpponentSelect = (team: SavedTeam) => {
         setOpponentTeam(team);
@@ -64,10 +82,15 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
     const handleConfirm = () => {
         if (myTeam && opponentTeam) {
+            // 除外選手を除いたマイチームのコピーを作成
+            const filteredMyTeam: SavedTeam = {
+                ...myTeam,
+                players: myTeam.players.filter((_, i) => !excludedPlayerIndices.has(i)),
+            };
             onComplete({
                 gameName,
                 date,
-                myTeam,
+                myTeam: filteredMyTeam,
                 opponentTeam,
                 myTeamColor,
                 opponentTeamColor,
@@ -103,35 +126,44 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
             <div className="setup-progress">
                 {/* Step 1 */}
-                <div className={`step-item ${step === 'basic' ? 'active' : ''} ${['myTeam', 'opponent', 'confirm'].includes(step) ? 'completed' : ''}`}>
+                <div className={`step-item ${step === 'basic' ? 'active' : ''} ${['myTeam', 'players', 'opponent', 'confirm'].includes(step) ? 'completed' : ''}`}>
                     <div className="step-circle">
-                        {['myTeam', 'opponent', 'confirm'].includes(step) ? '✓' : '1'}
+                        {['myTeam', 'players', 'opponent', 'confirm'].includes(step) ? '✓' : '1'}
                     </div>
                     <span className="step-label">試合情報</span>
                 </div>
-                <div className={`step-connector ${['myTeam', 'opponent', 'confirm'].includes(step) ? 'completed' : ''}`}></div>
+                <div className={`step-connector ${['myTeam', 'players', 'opponent', 'confirm'].includes(step) ? 'completed' : ''}`}></div>
 
                 {/* Step 2 */}
-                <div className={`step-item ${step === 'myTeam' ? 'active' : ''} ${['opponent', 'confirm'].includes(step) ? 'completed' : ''}`}>
+                <div className={`step-item ${step === 'myTeam' ? 'active' : ''} ${['players', 'opponent', 'confirm'].includes(step) ? 'completed' : ''}`}>
                     <div className="step-circle">
-                        {['opponent', 'confirm'].includes(step) ? '✓' : '2'}
+                        {['players', 'opponent', 'confirm'].includes(step) ? '✓' : '2'}
                     </div>
                     <span className="step-label">マイチーム</span>
                 </div>
-                <div className={`step-connector ${['opponent', 'confirm'].includes(step) ? 'completed' : ''}`}></div>
+                <div className={`step-connector ${['players', 'opponent', 'confirm'].includes(step) ? 'completed' : ''}`}></div>
 
                 {/* Step 3 */}
+                <div className={`step-item ${step === 'players' ? 'active' : ''} ${['opponent', 'confirm'].includes(step) ? 'completed' : ''}`}>
+                    <div className="step-circle">
+                        {['opponent', 'confirm'].includes(step) ? '✓' : '3'}
+                    </div>
+                    <span className="step-label">出場選手</span>
+                </div>
+                <div className={`step-connector ${['opponent', 'confirm'].includes(step) ? 'completed' : ''}`}></div>
+
+                {/* Step 4 */}
                 <div className={`step-item ${step === 'opponent' ? 'active' : ''} ${step === 'confirm' ? 'completed' : ''}`}>
                     <div className="step-circle">
-                        {step === 'confirm' ? '✓' : '3'}
+                        {step === 'confirm' ? '✓' : '4'}
                     </div>
                     <span className="step-label">対戦チーム</span>
                 </div>
                 <div className={`step-connector ${step === 'confirm' ? 'completed' : ''}`}></div>
 
-                {/* Step 4 */}
+                {/* Step 5 */}
                 <div className={`step-item ${step === 'confirm' ? 'active' : ''}`}>
-                    <div className="step-circle">4</div>
+                    <div className="step-circle">5</div>
                     <span className="step-label">確認</span>
                 </div>
             </div>
@@ -199,6 +231,48 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 </button>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {step === 'players' && myTeam && (
+                    <div className="setup-step player-confirm">
+                        <h3>出場選手確認</h3>
+                        <p className="player-confirm-desc">
+                            {myTeam.name} — 欠席の選手はチェックを外してください
+                        </p>
+                        <div className="player-count">
+                            出場: <strong>{activePlayerCount}</strong> / {myTeam.players.length}名
+                            {activePlayerCount < 5 && (
+                                <span className="player-count-warning">（最低5名必要）</span>
+                            )}
+                        </div>
+                        <div className="player-check-list">
+                            {myTeam.players.map((player, index) => {
+                                const excluded = excludedPlayerIndices.has(index);
+                                return (
+                                    <label
+                                        key={index}
+                                        className={`player-check-item ${excluded ? 'excluded' : ''}`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={!excluded}
+                                            onChange={() => togglePlayerExclusion(index)}
+                                        />
+                                        <span className="player-number">#{player.bibNumber ?? player.uniformNumber ?? player.number}</span>
+                                        <span className="player-name-text">{player.name}</span>
+                                        {player.isCaptain && <span className="captain-badge">C</span>}
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        <button
+                            className="btn btn-primary btn-large next-btn"
+                            onClick={() => setStep('opponent')}
+                            disabled={activePlayerCount < 5}
+                        >
+                            次へ
+                        </button>
                     </div>
                 )}
 
@@ -289,7 +363,8 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 function getPrevStep(current: SetupStep): SetupStep {
     switch (current) {
         case 'myTeam': return 'basic';
-        case 'opponent': return 'myTeam';
+        case 'players': return 'myTeam';
+        case 'opponent': return 'players';
         case 'confirm': return 'opponent';
         default: return 'basic';
     }

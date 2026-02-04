@@ -12,6 +12,7 @@ import { MyTeamManager } from './components/MyTeamManager';
 import { GameSetup } from './components/GameSetup';
 import { History } from './components/History';
 import { OpponentManager } from './components/OpponentManager';
+import { PlayerStatsAnalysis } from './components/PlayerStatsAnalysis';
 import { Scoreboard } from './components/Scoreboard';
 import { ActionButtons } from './components/ActionButtons';
 import { ActionHistory } from './components/ActionHistory';
@@ -29,7 +30,7 @@ import { AppSettingsModal } from './components/Settings/AppSettingsModal';
 import './App.css';
 
 // アプリの画面状態
-type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet';
+type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet' | 'playerStats';
 
 function AppContent() {
   const { state, dispatch } = useGame();
@@ -698,6 +699,7 @@ function AppContent() {
           onManageTeams={() => setScreen('myTeamManager')}
           onViewHistory={() => setScreen('history')}
           onManageOpponents={() => setScreen('opponentManager')}
+          onViewPlayerStats={() => setScreen('playerStats')}
           onResumeGame={handleResumeGame}
           onOpenSettings={() => setShowAppSettings(true)}
           isFullScreen={isFullScreen}
@@ -738,6 +740,11 @@ function AppContent() {
   // 履歴画面
   if (screen === 'history') {
     return <History onBack={handleBackToHome} />;
+  }
+
+  // 選手スタッツ分析画面
+  if (screen === 'playerStats') {
+    return <PlayerStatsAnalysis onBack={handleBackToHome} />;
   }
 
   // スコアシート画面

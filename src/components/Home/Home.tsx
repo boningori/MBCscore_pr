@@ -11,13 +11,14 @@ interface HomeProps {
     onManageTeams: () => void;
     onViewHistory: () => void;
     onManageOpponents: () => void;
+    onViewPlayerStats: () => void;
     onResumeGame?: () => void;
     onOpenSettings: () => void;
     isFullScreen: boolean;
     onToggleFullScreen: () => void;
 }
 
-export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen }: HomeProps) {
+export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onViewPlayerStats, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen }: HomeProps) {
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [recentOpponents] = useState<SavedTeam[]>(loadRecentOpponents);
     const [canResume, setCanResume] = useState(false);
@@ -82,6 +83,12 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                             <span className="menu-icon">📋</span>
                             <span className="menu-label">試合履歴</span>
                             <span className="menu-description">過去の記録を見る</span>
+                        </button>
+
+                        <button className="home-menu-item" onClick={onViewPlayerStats}>
+                            <span className="menu-icon">📊</span>
+                            <span className="menu-label">選手スタッツ分析</span>
+                            <span className="menu-description">選手の成長を可視化</span>
                         </button>
 
                         <button className="home-menu-item" onClick={onManageOpponents}>
