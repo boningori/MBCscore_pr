@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { SavedTeam } from '../../utils/teamStorage';
 import {
     aggregatePlayerStats,
@@ -10,6 +10,7 @@ import {
     type PeriodType,
     type TeamRecord,
 } from '../../utils/playerStatsAnalysis';
+import { exportElement } from '../../utils/pdfExport';
 import './PlayerStatsAnalysis.css';
 
 interface PlayerStatsAnalysisProps {
@@ -121,15 +122,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     <span className="back-icon">←</span>
                     <span>{viewMode === 'summary' ? 'ホーム' : '一覧'}</span>
                 </button>
-                <h2>
-                    {viewMode === 'summary' && '📊 選手スタッツ分析'}
-                    {viewMode === 'detail' && selectedPlayer && (
-                        <span className="player-title">
-                            <span className="player-number">#{selectedPlayer.number}</span>
-                            {selectedPlayer.name}
-                        </span>
-                    )}
-                </h2>
+                {viewMode === 'summary' && <h2>📊 選手スタッツ分析</h2>}
             </div>
 
             {viewMode === 'summary' && (
@@ -270,12 +263,51 @@ interface DetailViewProps {
 }
 
 function DetailView({ player }: DetailViewProps) {
+    const detailRef = useRef<HTMLDivElement>(null);
     const totalRebounds = player.totalStats.offensiveRebounds + player.totalStats.defensiveRebounds;
     const avgRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
     const stdDevRebounds = player.stdDevStats.offensiveRebounds + player.stdDevStats.defensiveRebounds;
 
+    const playerName = player.name || `#${player.number}`;
+    const title = `#${player.number} ${player.name}（${player.gamesPlayed}試合）`;
+    const filename = `stats_${playerName}_${player.gamesPlayed}games`;
+
+    // A4縦 (210mm) 最適化: windowWidth=827px, scale=3 → 2481px ≈ 300DPI
+    const handleExportPDF = async () => {
+        if (!detailRef.current) return;
+        await exportElement(detailRef.current, {
+            filename, format: 'pdf',
+            windowWidth: 827, scale: 3, title,
+        });
+    };
+
+    const handleExportJPEG = async () => {
+        if (!detailRef.current) return;
+        await exportElement(detailRef.current, {
+            filename, format: 'jpeg',
+            windowWidth: 827, scale: 3, title,
+        });
+    };
+
     return (
         <div className="player-detail-view">
+            {/* エクスポートツールバー */}
+            <div className="detail-toolbar">
+                <button className="btn btn-primary" onClick={handleExportPDF}>
+                    PDF出力
+                </button>
+                <button className="btn btn-secondary" onClick={handleExportJPEG}>
+                    JPEG出力
+                </button>
+            </div>
+
+            {/* 選手名タイトル */}
+            <h2 className="detail-player-title">
+                <span className="player-number">#{player.number}</span>
+                {player.name}
+            </h2>
+
+            <div className="detail-export-area" ref={detailRef}>
             {/* 期間の統計サマリー */}
             <div className="stats-period-header">
                 <span className="period-badge">📅 {player.gamesPlayed}試合の統計</span>
@@ -441,6 +473,7 @@ function DetailView({ player }: DetailViewProps) {
             <GrowthComparison
                 gameHistory={player.gameHistory}
             />
+            </div>
         </div>
     );
 }
@@ -516,6 +549,15 @@ const STAT_LABELS: Record<StatType, string> = {
     turnovers: 'TO',
 };
 
+const STAT_UNITS: Record<StatType, string> = {
+    points: '点',
+    rebounds: '回',
+    assists: '回',
+    steals: '回',
+    blocks: '回',
+    turnovers: '回',
+};
+
 const STAT_COLORS: Record<StatType, string> = {
     points: '#3b82f6',
     rebounds: '#22c55e',
@@ -560,7 +602,11 @@ function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
         chartIndex: number
     ) => {
         const reversed = periods.slice().reverse();
-        const maxVal = Math.max(...reversed.map(p => getStatValue(p, statType)), 1);
+        const rawMax = Math.max(...reversed.map(p => getStatValue(p, statType)), 1);
+        // きりの良い最大値を計算（5段階目盛りに適した値）
+        const niceMax = getNiceMaxValue(rawMax);
+        const tickCount = 5;
+        const ticks = Array.from({ length: tickCount }, (_, i) => niceMax - (niceMax / (tickCount - 1)) * i);
 
         return (
             <div className="standard-chart" key={statType}>
@@ -568,39 +614,50 @@ function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
                     <span className="chart-title" style={{ color: STAT_COLORS[statType] }}>
                         {STAT_LABELS[statType]}
                     </span>
+                    <span className="chart-unit">({STAT_UNITS[statType]})</span>
                     <span className="chart-subtitle">{periodLabels[periodType]}平均</span>
                 </div>
                 <div className="chart-area">
-                    {/* Y軸 */}
+                    {/* Y軸（固定） */}
                     <div className="y-axis">
-                        <span>{maxVal.toFixed(1)}</span>
-                        <span>{(maxVal / 2).toFixed(1)}</span>
-                        <span>0</span>
-                    </div>
-                    {/* プロットエリア */}
-                    <div className="plot-area">
-                        {reversed.map((p) => (
-                            <div key={`${chartIndex}-${p.periodKey}`} className="bar-wrapper">
-                                <div className="bar-track">
-                                    <div
-                                        className="bar-fill"
-                                        style={{
-                                            height: `${(getStatValue(p, statType) / maxVal) * 100}%`,
-                                            backgroundColor: STAT_COLORS[statType]
-                                        }}
-                                    />
-                                    <span className="bar-value">{getStatValue(p, statType).toFixed(1)}</span>
-                                </div>
-                            </div>
+                        {ticks.map((tick, i) => (
+                            <span key={i}>{formatTick(tick)}</span>
                         ))}
                     </div>
-                </div>
-                {/* X軸 */}
-                <div className="x-axis">
-                    <div className="x-axis-spacer"></div>
-                    {reversed.map((p) => (
-                        <span key={`x-${chartIndex}-${p.periodKey}`} className="x-label">{p.periodLabel}</span>
-                    ))}
+                    {/* スクロール可能エリア */}
+                    <div className="chart-scroll-area">
+                        <div className="plot-area">
+                            {/* グリッド線 */}
+                            {ticks.map((_, i) => (
+                                <div
+                                    key={`grid-${i}`}
+                                    className="grid-line"
+                                    style={{ bottom: `${(i / (tickCount - 1)) * 100}%` }}
+                                />
+                            ))}
+                            {reversed.map((p) => (
+                                <div key={`${chartIndex}-${p.periodKey}`} className="bar-wrapper">
+                                    <div className="bar-track">
+                                        <div
+                                            className="bar-fill"
+                                            style={{
+                                                height: `${(getStatValue(p, statType) / niceMax) * 100}%`,
+                                                backgroundColor: STAT_COLORS[statType]
+                                            }}
+                                        />
+                                        <span className="bar-value">{getStatValue(p, statType).toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="x-axis">
+                            {reversed.map((p) => (
+                                <span key={`x-${chartIndex}-${p.periodKey}`} className="x-label">
+                                    {formatXLabel(p.periodLabel, periodType)}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -630,6 +687,53 @@ function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
             </div>
         </div>
     );
+}
+
+// Y軸のきりの良い最大値を計算
+function getNiceMaxValue(rawMax: number): number {
+    if (rawMax <= 0) return 1;
+    // 目盛り間隔の候補: 1, 2, 2.5, 5, 10, 20, 25, 50, ...
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
+    const normalized = rawMax / magnitude;
+    let niceStep: number;
+    if (normalized <= 1) niceStep = 0.25 * magnitude;
+    else if (normalized <= 2) niceStep = 0.5 * magnitude;
+    else if (normalized <= 5) niceStep = 1 * magnitude;
+    else niceStep = 2 * magnitude;
+    // 4段階分（5目盛り）でrawMaxを超える値
+    return Math.ceil(rawMax / niceStep) * niceStep;
+}
+
+// Y軸目盛りラベルのフォーマット
+function formatTick(value: number): string {
+    if (value === 0) return '0';
+    if (Number.isInteger(value)) return value.toString();
+    return value.toFixed(1);
+}
+
+// X軸ラベルの短縮フォーマット
+function formatXLabel(label: string, periodType: PeriodType): string {
+    switch (periodType) {
+        case 'game':
+            // "2026/01/15" → "1/15"
+            const parts = label.split('/');
+            if (parts.length === 3) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+            return label;
+        case 'month':
+            // "2026年1月" → "1月"
+            const monthMatch = label.match(/(\d+)月/);
+            return monthMatch ? `${monthMatch[1]}月` : label;
+        case 'quarter':
+            // "2026年Q1" → "Q1"
+            const qMatch = label.match(/(Q\d)/);
+            return qMatch ? qMatch[1] : label;
+        case 'year':
+            // "2026年" → "'26"
+            const yearMatch = label.match(/(\d{4})年/);
+            return yearMatch ? `'${yearMatch[1].slice(2)}` : label;
+        default:
+            return label;
+    }
 }
 
 // ユーティリティ関数
