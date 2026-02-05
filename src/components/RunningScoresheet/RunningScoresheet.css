@@ -1481,6 +1481,28 @@
     }
 }
 
+/* エクスポート時はA4レイアウトを強制（デバイス非依存） */
+.running-scoresheet.exporting .rs-top-header {
+    display: flex;
+}
+
+.running-scoresheet.exporting .rs-header-grid {
+    display: flex;
+}
+
+.running-scoresheet.exporting .rs-center-section {
+    display: flex;
+}
+
+.running-scoresheet.exporting .rs-main-content {
+    flex-direction: row;
+}
+
+.running-scoresheet.exporting .rs-teams-section {
+    flex: none;
+    width: 96.5mm;
+}
+
 /* レスポンシブ */
 @media (max-width: 768px) {
     .rs-top-header {
@@ -1501,27 +1523,5 @@
 
     .rs-teams-section {
         flex: none;
-    }
-
-    /* エクスポート時はレスポンシブの非表示を解除し、A4レイアウトを復元 */
-    .running-scoresheet.exporting .rs-top-header {
-        display: flex;
-    }
-
-    .running-scoresheet.exporting .rs-header-grid {
-        display: flex;
-    }
-
-    .running-scoresheet.exporting .rs-center-section {
-        display: flex;
-    }
-
-    .running-scoresheet.exporting .rs-main-content {
-        flex-direction: row;
-    }
-
-    .running-scoresheet.exporting .rs-teams-section {
-        flex: none;
-        width: 96.5mm;
     }
 }

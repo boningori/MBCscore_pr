@@ -101,19 +101,15 @@ function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): void {
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const marginX = 8;
-    const marginY = 6;
-    const contentWidth = pageWidth - marginX * 2;
-    const contentHeight = pageHeight - marginY * 2;
 
-    // アスペクト比を維持してマージン内に収める
-    const ratio = Math.min(contentWidth / canvas.width, contentHeight / canvas.height);
+    // アスペクト比を維持してページ全体に収める（余白はCSS側で設定済み）
+    const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
     const scaledWidth = canvas.width * ratio;
     const scaledHeight = canvas.height * ratio;
 
-    // 上寄せ・左右中央
+    // 左右中央・上寄せ
     const x = (pageWidth - scaledWidth) / 2;
-    const y = marginY;
+    const y = 0;
 
     const imgData = canvas.toDataURL('image/jpeg', 0.85);
     pdf.addImage(imgData, 'JPEG', x, y, scaledWidth, scaledHeight);
