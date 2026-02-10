@@ -443,14 +443,14 @@
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
 }
 
-.player-stats-container .highlight-value {
+.player-stats-container .highlight-stat .highlight-value {
     font-size: 2rem;
     font-weight: 800;
     line-height: 1;
     color: #1e293b;
 }
 
-.player-stats-container .highlight-std {
+.player-stats-container .highlight-stat .highlight-std {
     font-size: 0.75rem;
     opacity: 0.6;
     color: #64748b;
@@ -1390,7 +1390,7 @@
         min-width: 90px;
     }
 
-    .player-stats-container .highlight-value {
+    .player-stats-container .highlight-stat .highlight-value {
         font-size: 1.5rem;
     }
 
@@ -1491,11 +1491,11 @@
         color: #94a3b8;
     }
 
-    .highlight-stat .highlight-value {
+    .player-stats-container .highlight-stat .highlight-value {
         color: #f1f5f9;
     }
 
-    .highlight-stat .highlight-std {
+    .player-stats-container .highlight-stat .highlight-std {
         color: #94a3b8;
     }
 
