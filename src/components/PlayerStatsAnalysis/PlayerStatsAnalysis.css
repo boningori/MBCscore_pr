@@ -447,11 +447,13 @@
     font-size: 2rem;
     font-weight: 800;
     line-height: 1;
+    color: #1e293b;
 }
 
 .highlight-std {
     font-size: 0.75rem;
     opacity: 0.6;
+    color: #64748b;
 }
 
 .highlight-label {
@@ -1486,6 +1488,14 @@
     }
 
     .highlight-stat .highlight-label {
+        color: #94a3b8;
+    }
+
+    .highlight-stat .highlight-value {
+        color: #f1f5f9;
+    }
+
+    .highlight-stat .highlight-std {
         color: #94a3b8;
     }
 
