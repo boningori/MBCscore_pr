@@ -1090,6 +1090,12 @@ function AppContent() {
           teamId={substitutionTeamId}
           players={substitutionTeamId === 'teamA' ? state.teamA.players : state.teamB.players}
           onSubstitute={handleSubstitute}
+          onAddPlayer={(number, name) => {
+            dispatch({
+              type: 'ADD_PLAYER_TO_TEAM',
+              payload: { teamId: substitutionTeamId, number, name }
+            });
+          }}
           onClose={() => setShowSubstitutionModal(false)}
         />
       )}

@@ -114,6 +114,60 @@
 }
 
 /* スマホ向けレスポンシブ対応 */
+/* 選手追加セクション */
+.add-player-section {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px dashed var(--border);
+}
+
+.add-player-btn {
+    width: 100%;
+}
+
+.add-player-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.add-player-inputs {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.add-player-number {
+    width: 60px;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-md);
+    text-align: center;
+}
+
+.add-player-name {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-md);
+}
+
+.add-player-error {
+    color: var(--danger);
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: var(--radius-sm);
+}
+
+.add-player-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+}
+
+/* スマホ向けレスポンシブ対応 */
 @media (max-width: 600px) {
     .substitution-modal {
         max-width: 100%;

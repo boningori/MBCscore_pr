@@ -90,13 +90,68 @@
     background: var(--border);
     margin-top: 18px;
     /* Half of circle height to center */
-    min-width: 40px;
+    min-width: 20px;
     max-width: 80px;
     transition: background 0.3s ease;
 }
 
 .step-connector.completed {
     background: linear-gradient(90deg, var(--success), var(--primary));
+}
+
+/* Responsive: 狭い画面ではコネクタをさらに縮小 */
+@media (max-width: 480px) {
+    .setup-progress {
+        padding: var(--spacing-sm) var(--spacing-xs);
+    }
+
+    .step-item {
+        min-width: 50px;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        font-size: var(--font-size-sm);
+        border-width: 2px;
+    }
+
+    .step-item.active .step-circle {
+        transform: scale(1.05);
+    }
+
+    .step-connector {
+        min-width: 8px;
+        max-width: 30px;
+        margin-top: 14px; /* 円の高さ32pxの半分-2px */
+    }
+
+    .step-label {
+        font-size: 10px;
+    }
+}
+
+/* さらに狭い画面ではラベルを非表示 */
+@media (max-width: 360px) {
+    .step-label {
+        display: none;
+    }
+
+    .step-item {
+        min-width: 36px;
+    }
+
+    .step-circle {
+        width: 28px;
+        height: 28px;
+        font-size: var(--font-size-xs);
+    }
+
+    .step-connector {
+        min-width: 4px;
+        max-width: 20px;
+        margin-top: 12px;
+    }
 }
 
 /* Setup Content */

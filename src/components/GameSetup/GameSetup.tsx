@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { SavedTeam, NumberType } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
+import { getGameNameSuggestions } from '../../utils/gameHistoryStorage';
 import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
 import './GameSetup.css';
@@ -43,6 +44,9 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [showMyTeamManager, setShowMyTeamManager] = useState(false);
 
+    // 試合名の候補（同日・最近の試合名）
+    const gameNameSuggestions = useMemo(() => getGameNameSuggestions(date), [date]);
+
     const handleBasicSubmit = () => {
         if (gameName && date) {
             setStep('myTeam');
@@ -82,10 +86,27 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
     const handleConfirm = () => {
         if (myTeam && opponentTeam) {
-            // 除外選手を除いたマイチームのコピーを作成
+            // 除外選手を除いたマイチームの選手
+            const filteredPlayers = myTeam.players.filter((_, i) => !excludedPlayerIndices.has(i));
+
+            // numberTypeに応じてソート
+            const sortedPlayers = [...filteredPlayers].sort((a, b) => {
+                if (numberType === 'uniform') {
+                    // ユニフォーム番号でソート
+                    const aNum = a.uniformNumber ?? a.number;
+                    const bNum = b.uniformNumber ?? b.number;
+                    return aNum - bNum;
+                } else {
+                    // ビブス番号でソート（デフォルト）
+                    const aNum = a.bibNumber ?? a.number;
+                    const bNum = b.bibNumber ?? b.number;
+                    return aNum - bNum;
+                }
+            });
+
             const filteredMyTeam: SavedTeam = {
                 ...myTeam,
-                players: myTeam.players.filter((_, i) => !excludedPlayerIndices.has(i)),
+                players: sortedPlayers,
             };
             onComplete({
                 gameName,
@@ -182,7 +203,15 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 placeholder="例: 冬季大会 第1回戦"
                                 autoFocus
                                 autoComplete="off"
+                                list="game-name-suggestions"
                             />
+                            {gameNameSuggestions.length > 0 && (
+                                <datalist id="game-name-suggestions">
+                                    {gameNameSuggestions.map((name, idx) => (
+                                        <option key={idx} value={name} />
+                                    ))}
+                                </datalist>
+                            )}
                         </div>
                         <div className="form-group">
                             <label>日付</label>

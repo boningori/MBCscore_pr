@@ -191,6 +191,7 @@ export type GameActionType =
     | 'ADD_FOUL_WITH_FREE_THROWS'
     | 'ADD_TIMEOUT'
     | 'SUBSTITUTE_PLAYER'
+    | 'ADD_PLAYER_TO_TEAM'
     | 'SELECT_PLAYER'
     | 'CLEAR_SELECTION'
     | 'UNDO_LAST_ACTION'

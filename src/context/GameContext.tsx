@@ -598,6 +598,61 @@ function gameReducer(state: Game, action: GameAction): Game {
             };
         }
 
+        case 'ADD_PLAYER_TO_TEAM': {
+            const { teamId, number, name } = action.payload as {
+                teamId: string;
+                number: number;
+                name: string;
+            };
+
+            const newPlayer: Player = {
+                id: crypto.randomUUID(),
+                number,
+                name,
+                isCaptain: false,
+                fouls: [],
+                stats: {
+                    points: 0,
+                    twoPointMade: 0,
+                    twoPointAttempt: 0,
+                    threePointMade: 0,
+                    threePointAttempt: 0,
+                    freeThrowMade: 0,
+                    freeThrowAttempt: 0,
+                    offensiveRebounds: 0,
+                    defensiveRebounds: 0,
+                    assists: 0,
+                    steals: 0,
+                    blocks: 0,
+                    turnovers: 0,
+                    turnoverDD: 0,
+                    turnoverTR: 0,
+                    turnoverPM: 0,
+                    turnoverCM: 0,
+                },
+                quartersPlayed: [false, false, false, false],
+                isOnCourt: false,
+            };
+
+            const addPlayerToTeam = (team: typeof state.teamA, isTarget: boolean) => {
+                if (!isTarget) return team;
+                // 背番号順にソートして追加
+                const players = [...team.players, newPlayer].sort((a, b) => {
+                    // 00 (DOUBLE_ZERO_INTERNAL = 100) は最後
+                    const numA = a.number === 100 ? 1000 : a.number;
+                    const numB = b.number === 100 ? 1000 : b.number;
+                    return numA - numB;
+                });
+                return { ...team, players };
+            };
+
+            return {
+                ...state,
+                teamA: addPlayerToTeam(state.teamA, teamId === 'teamA'),
+                teamB: addPlayerToTeam(state.teamB, teamId === 'teamB'),
+            };
+        }
+
         case 'SELECT_PLAYER': {
             const { playerId, teamId } = action.payload;
             return { ...state, selectedPlayerId: playerId, selectedTeamId: teamId };

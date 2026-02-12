@@ -3,12 +3,21 @@ import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
     loadRecentOpponents,
     saveRecentOpponent,
+    saveOpponent,
     createEmptySavedTeam,
     generateTeamId,
     clearRecentOpponents,
     loadOpponents
 } from '../../utils/teamStorage';
 import { recognizePlayerList, isOCRAvailable, getStoredApiKey } from '../../utils/imageOCR';
+import {
+    DOUBLE_ZERO_INTERNAL,
+    formatPlayerNumber,
+    parsePlayerNumber,
+    isValidPlayerNumber,
+    sortPlayersByNumber,
+} from '../../utils/playerNumber';
+import '../../styles/number-grid.css';
 import './OpponentSelect.css';
 
 interface OpponentSelectProps {
@@ -42,8 +51,11 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
         setIsCreating(true);
     };
 
-    const handleSaveNew = (team: SavedTeam) => {
+    const handleSaveNew = (team: SavedTeam, saveToRegistry: boolean) => {
         saveRecentOpponent(team);
+        if (saveToRegistry) {
+            saveOpponent(team);
+        }
         setEditingTeam(null);
         setIsCreating(false);
         refreshHistory();
@@ -215,7 +227,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
 // 簡易エディタ（使い捨て、または履歴保存用）
 interface OpponentEditorProps {
     team: SavedTeam;
-    onSave: (team: SavedTeam) => void;
+    onSave: (team: SavedTeam, saveToRegistry: boolean) => void;
     onCancel: () => void;
     onImageImport: (file: File) => void;
     isLoading: boolean;
@@ -231,22 +243,51 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
     const [newNumber, setNewNumber] = useState('');
     const [newName, setNewName] = useState('');
     const [newLicenseNo, setNewLicenseNo] = useState('');
+    const [saveToRegistry, setSaveToRegistry] = useState(false);
+    const [showNumberGrid, setShowNumberGrid] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
 
+    // 番号をトグル（追加/削除）
+    const handleToggleNumber = (num: number) => {
+        const existingIndex = players.findIndex(p => p.number === num);
+
+        if (existingIndex >= 0) {
+            // 既存なら削除
+            setPlayers(players.filter((_, i) => i !== existingIndex));
+        } else {
+            // 新規なら追加
+            const displayNum = formatPlayerNumber(num);
+            const newPlayer: SavedPlayer = {
+                number: num,
+                name: `選手${displayNum}`,
+                isCaptain: false,
+            };
+            setPlayers(sortPlayersByNumber([...players, newPlayer]));
+        }
+    };
+
     const handleAddPlayer = () => {
         if (!newNumber) return;
-        const number = parseInt(newNumber, 10);
-        if (isNaN(number)) return;
-        if (players.some(p => p.number === number)) return;
+        const number = parsePlayerNumber(newNumber);
+        if (number === null || !isValidPlayerNumber(number)) {
+            alert('背番号は0〜99または00を入力してください');
+            return;
+        }
+
+        const displayNum = formatPlayerNumber(number);
+        if (players.some(p => p.number === number)) {
+            alert(`背番号 ${displayNum} は既に登録されています`);
+            return;
+        }
 
         // 名前がなくても対戦チームならOKとする（番号だけで管理する場合もあるため）
-        const playerName = newName || `Player ${number}`;
+        const playerName = newName || `選手${displayNum}`;
 
-        setPlayers([
+        setPlayers(sortPlayersByNumber([
             ...players,
             { number, name: playerName, licenseNo: newLicenseNo.trim() || undefined, isCaptain: false }
-        ].sort((a, b) => a.number - b.number));
+        ]));
         setNewNumber('');
         setNewName('');
         setNewLicenseNo('');
@@ -268,7 +309,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
             assistantCoachLicenseNo: assistantCoachLicenseNo || undefined,
             players,
             updatedAt: new Date().toISOString(),
-        });
+        }, saveToRegistry);
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -347,10 +388,16 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                 </div>
 
                 <div className="form-section">
-                    <div className="form-label-row">
-                        <label className="form-label">選手 ({players.length}名)</label>
-                        {isOCRAvailable() && (
-                            <>
+                    <div className="players-header-row">
+                        <label className="form-label">選手登録 ({players.length}人)</label>
+                        <div className="player-actions-row">
+                            <button
+                                className={`btn btn-small ${showNumberGrid ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => setShowNumberGrid(!showNumberGrid)}
+                            >
+                                # 番号一括選択
+                            </button>
+                            {isOCRAvailable() && (
                                 <button
                                     className={`btn btn-small ${hasApiKey ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => fileInputRef.current?.click()}
@@ -359,27 +406,62 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                                 >
                                     {hasApiKey ? '✨ AI読込' : '📷 写真読込'}
                                 </button>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    onChange={handleFileSelect}
-                                    style={{ display: 'none' }}
-                                />
-                            </>
-                        )}
+                            )}
+                            <button
+                                className="btn btn-danger btn-small"
+                                onClick={() => {
+                                    if (players.length > 0 && confirm('登録済みの選手を全てクリアしますか？')) {
+                                        setPlayers([]);
+                                    }
+                                }}
+                                disabled={players.length === 0}
+                            >
+                                全クリア
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={handleFileSelect}
+                                style={{ display: 'none' }}
+                            />
+                        </div>
                     </div>
 
                     {isLoading && <div className="ocr-loading">{hasApiKey ? 'AIが解析中...' : 'OCRで解析中...'}</div>}
 
+                    {/* 番号グリッド選択UI */}
+                    {showNumberGrid && (
+                        <div className="number-grid-container">
+                            <p className="number-grid-hint">タップで追加/削除</p>
+                            <div className="number-grid">
+                                {/* 0-99 と 00 の番号ボタン（00は99の後） */}
+                                {[...Array.from({ length: 100 }, (_, i) => i), DOUBLE_ZERO_INTERNAL].map((num) => {
+                                    const isSelected = players.some(p => p.number === num);
+                                    return (
+                                        <button
+                                            key={num}
+                                            className={`number-grid-item ${isSelected ? 'selected' : ''}`}
+                                            onClick={() => handleToggleNumber(num)}
+                                        >
+                                            {formatPlayerNumber(num)}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="add-player-row">
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
                             className="input player-number-input"
                             value={newNumber}
                             onChange={e => setNewNumber(e.target.value)}
                             placeholder="No."
+                            maxLength={2}
                         />
                         <input
                             type="text"
@@ -404,11 +486,22 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                     <div className="players-list-simple">
                         {players.map((player, index) => (
                             <span key={index} className="player-chip">
-                                #{player.number} {player.name}{player.licenseNo ? ` [${player.licenseNo}]` : ''}
+                                #{formatPlayerNumber(player.number)} {player.name}{player.licenseNo ? ` [${player.licenseNo}]` : ''}
                                 <button className="remove-btn" onClick={() => handleRemovePlayer(index)}>×</button>
                             </span>
                         ))}
                     </div>
+                </div>
+
+                <div className="save-option">
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={saveToRegistry}
+                            onChange={e => setSaveToRegistry(e.target.checked)}
+                        />
+                        対戦チーム管理にも登録する
+                    </label>
                 </div>
 
                 <div className="editor-actions">

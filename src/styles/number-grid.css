@@ -1,0 +1,74 @@
+/* 番号グリッド選択UI - 共通スタイル */
+/* OpponentManager, OpponentSelect で共有 */
+
+.number-grid-container {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border);
+}
+
+.number-grid-hint {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-sm) 0;
+    text-align: center;
+}
+
+.number-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+}
+
+.number-grid-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+    padding: 0;
+}
+
+.number-grid-item:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+.number-grid-item.selected {
+    background: var(--secondary);
+    border-color: var(--secondary-light);
+    color: white;
+}
+
+.number-grid-item.selected:hover {
+    background: var(--danger);
+    border-color: var(--danger-light);
+}
+
+/* Mobile adjustments for number grid */
+@media (max-width: 600px) {
+    .number-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+    }
+
+    .number-grid-item {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1rem;
+    }
+}

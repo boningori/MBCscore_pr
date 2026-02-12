@@ -100,3 +100,33 @@ export function deleteGameRecord(id: string): void {
         console.error('Failed to delete game record:', error);
     }
 }
+
+// 試合名の候補を取得（同日優先、最近の試合名も含む）
+export function getGameNameSuggestions(targetDate?: string): string[] {
+    const history = loadGameHistory();
+    if (history.length === 0) return [];
+
+    const suggestions: string[] = [];
+    const seen = new Set<string>();
+
+    // 同日の試合名を優先
+    if (targetDate) {
+        for (const record of history) {
+            const recordDate = record.date.substring(0, 10); // YYYY-MM-DD
+            if (recordDate === targetDate && !seen.has(record.gameName)) {
+                suggestions.push(record.gameName);
+                seen.add(record.gameName);
+            }
+        }
+    }
+
+    // 最近の試合名も追加（最大10件）
+    for (const record of history) {
+        if (!seen.has(record.gameName) && suggestions.length < 10) {
+            suggestions.push(record.gameName);
+            seen.add(record.gameName);
+        }
+    }
+
+    return suggestions;
+}

@@ -7,6 +7,14 @@ import {
     createEmptySavedTeam,
 } from '../../utils/teamStorage';
 import { recognizePlayerList, getStoredApiKey } from '../../utils/imageOCR';
+import {
+    DOUBLE_ZERO_INTERNAL,
+    formatPlayerNumber,
+    parsePlayerNumber,
+    isValidPlayerNumber,
+    sortPlayersByNumber,
+} from '../../utils/playerNumber';
+import '../../styles/number-grid.css';
 import './OpponentManager.css';
 
 interface OpponentManagerProps {
@@ -137,14 +145,15 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
             setEditingTeam({ ...editingTeam, players });
         } else {
             // 新規なら追加
+            const displayNum = formatPlayerNumber(num);
             const newPlayer: SavedPlayer = {
                 number: num,
-                name: `選手${num}`,
+                name: `選手${displayNum}`,
                 isCaptain: false,
             };
             setEditingTeam({
                 ...editingTeam,
-                players: [...editingTeam.players, newPlayer].sort((a, b) => a.number - b.number),
+                players: sortPlayersByNumber([...editingTeam.players, newPlayer]),
             });
         }
     };
@@ -162,25 +171,29 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const handleAddPlayer = () => {
         if (!editingTeam || !newNumber) return;  // 名前は任意
 
-        const number = parseInt(newNumber, 10);
-        if (isNaN(number) || number < 0 || number > 99) return;
+        const number = parsePlayerNumber(newNumber);
+        if (number === null || !isValidPlayerNumber(number)) {
+            alert('背番号は0〜99または00を入力してください');
+            return;
+        }
 
         // 重複チェック
+        const displayNum = formatPlayerNumber(number);
         if (editingTeam.players.some(p => p.number === number)) {
-            alert(`背番号 ${number} は既に登録されています`);
+            alert(`背番号 ${displayNum} は既に登録されています`);
             return;
         }
 
         const newPlayer: SavedPlayer = {
             number: number,
-            name: newName.trim() || `選手${number}`,  // 名前が空の場合は「選手N」とする
+            name: newName.trim() || `選手${displayNum}`,  // 名前が空の場合は「選手N」とする
             licenseNo: newLicenseNo.trim() || undefined,
             isCaptain: false,
         };
 
         setEditingTeam({
             ...editingTeam,
-            players: [...editingTeam.players, newPlayer].sort((a, b) => a.number - b.number),
+            players: sortPlayersByNumber([...editingTeam.players, newPlayer]),
         });
 
         setNewNumber('');
@@ -209,7 +222,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         if (!editingTeam) return;
         const player = editingTeam.players[index];
         setEditingPlayerIndex(index);
-        setEditNumber(String(player.number));
+        setEditNumber(formatPlayerNumber(player.number));
         setEditName(player.name);
         setEditLicenseNo(player.licenseNo || '');
     };
@@ -217,25 +230,26 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     // 選手編集保存
     const handleSaveEdit = () => {
         if (!editingTeam || editingPlayerIndex === null) return;
-        const number = parseInt(editNumber, 10);
-        if (isNaN(number) || number < 0 || number > 99) {
-            alert('背番号は0〜99の範囲で入力してください');
+        const number = parsePlayerNumber(editNumber);
+        if (number === null || !isValidPlayerNumber(number)) {
+            alert('背番号は0〜99または00を入力してください');
             return;
         }
         // 他の選手と番号が重複していないか確認
+        const displayNum = formatPlayerNumber(number);
         const isDuplicate = editingTeam.players.some((p, i) => i !== editingPlayerIndex && p.number === number);
         if (isDuplicate) {
-            alert(`背番号 ${number} は既に登録されています`);
+            alert(`背番号 ${displayNum} は既に登録されています`);
             return;
         }
         // 対戦チームは名前任意なので空の場合は「選手N」とする
-        const playerName = editName.trim() || `選手${number}`;
+        const playerName = editName.trim() || `選手${displayNum}`;
 
-        const players = editingTeam.players.map((p, i) =>
+        const players = sortPlayersByNumber(editingTeam.players.map((p, i) =>
             i === editingPlayerIndex
                 ? { ...p, number, name: playerName, licenseNo: editLicenseNo.trim() || undefined }
                 : p
-        ).sort((a, b) => a.number - b.number);
+        ));
         setEditingTeam({ ...editingTeam, players });
         setEditingPlayerIndex(null);
     };
@@ -427,15 +441,16 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             <div className="number-grid-container">
                                 <p className="number-grid-hint">タップで追加/削除</p>
                                 <div className="number-grid">
-                                    {Array.from({ length: 100 }, (_, i) => {
-                                        const isSelected = editingTeam.players.some(p => p.number === i);
+                                    {/* 0-99 と 00 の番号ボタン（00は99の後） */}
+                                    {[...Array.from({ length: 100 }, (_, i) => i), DOUBLE_ZERO_INTERNAL].map((num) => {
+                                        const isSelected = editingTeam.players.some(p => p.number === num);
                                         return (
                                             <button
-                                                key={i}
+                                                key={num}
                                                 className={`number-grid-item ${isSelected ? 'selected' : ''}`}
-                                                onClick={() => handleToggleNumber(i)}
+                                                onClick={() => handleToggleNumber(num)}
                                             >
-                                                {i}
+                                                {formatPlayerNumber(num)}
                                             </button>
                                         );
                                     })}
@@ -445,13 +460,13 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
                         <div className="add-player-row">
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 className="player-number-input"
                                 value={newNumber}
                                 onChange={e => setNewNumber(e.target.value)}
                                 placeholder="No."
-                                min="0"
-                                max="99"
+                                maxLength={2}
                                 autoComplete="off"
                             />
                             <input
@@ -488,12 +503,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                         // 編集モード
                                         <>
                                             <input
-                                                type="number"
+                                                type="text"
+                                                inputMode="numeric"
                                                 className="player-number-input"
                                                 value={editNumber}
                                                 onChange={e => setEditNumber(e.target.value)}
-                                                min="0"
-                                                max="99"
+                                                maxLength={2}
                                                 autoFocus
                                                 autoComplete="off"
                                             />
@@ -537,7 +552,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 className="player-number clickable"
                                                 onClick={() => handleStartEdit(index)}
                                             >
-                                                #{player.number}
+                                                #{formatPlayerNumber(player.number)}
                                             </span>
                                             <span
                                                 className="player-name clickable"
