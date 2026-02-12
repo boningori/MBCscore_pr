@@ -422,8 +422,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  /* 5人分固定の高さ (60px * 5 + 4px * 4 = 316px) */
-  height: 316px;
+  /* 5人分固定の高さ (100px * 5 + 4px * 4 = 516px) */
+  height: 516px;
   min-height: 316px;
   flex: none;
   /* 伸縮させない */
@@ -437,7 +437,7 @@
   gap: var(--spacing-sm);
   padding: 0 var(--spacing-md);
   /* 高さを固定するため上下パディング調整 */
-  height: 60px;
+  height: 100px;
   /* 高さ固定 */
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
@@ -523,7 +523,7 @@
 
 /* 交代・ベンチファウルボタンの高さを統一 */
 .bench-actions .btn {
-  min-height: 50px;
+  min-height: 80px;
 }
 
 /* 交代・ベンチファウルボタンを同じ幅に */

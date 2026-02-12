@@ -152,11 +152,13 @@ export function ActionButtons({
                 </div>
             </div>
 
+            {/* アクション選択ヒント（不要のため無効化）
             {!hasSelection && !activeAction && gameMode !== 'simple' && (
                 <div className="action-hint">
                     👆 アクションを選択してください
                 </div>
             )}
+            */}
             {activeAction && (
                 <div className="action-hint active">
                     👇 選手を選択してください

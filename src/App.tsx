@@ -886,11 +886,13 @@ function AppContent() {
                   )}
                 </div>
                 <div className="team-bench">
+                  {/* ベンチ選手のショートカット（一時的に無効化）
                   {state.teamA.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (
                     <span key={p.id} className="bench-num" onClick={() => handlePlayerSelect(p.id, 'teamA')}>
                       #{p.number}
                     </span>
                   ))}
+                  */}
                   <div className="bench-actions">
                     <button className="btn btn-small" onClick={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}>
                       交代
@@ -987,11 +989,13 @@ function AppContent() {
                   )}
                 </div>
                 <div className="team-bench">
+                  {/* ベンチ選手のショートカット（一時的に無効化）
                   {state.teamB.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (
                     <span key={p.id} className="bench-num" onClick={() => handlePlayerSelect(p.id, 'teamB')}>
                       #{p.number}
                     </span>
                   ))}
+                  */}
                   <div className="bench-actions">
                     <button className="btn btn-small" onClick={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}>
                       交代
