@@ -20,7 +20,7 @@ export function ActionButtons({
     onMiss,
     onFoul,
     disabled = false,
-    hasSelection = true, // デフォルトtrueにしてボタンを有効化（App側で制御）
+    // hasSelection = true, // デフォルトtrueにしてボタンを有効化（App側で制御） - unused
     activeAction = null,
     gameMode = 'full',
 }: ActionButtonsProps) {
