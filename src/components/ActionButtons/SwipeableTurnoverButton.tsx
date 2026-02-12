@@ -150,7 +150,7 @@ export function SwipeableTurnoverButton({
                 )}
             </button>
 
-            {/* タップ時のセレクター */}
+            {/* タップ時のセレクター（ファウルスタイルに統一） */}
             {showSelector && (
                 <div
                     className="turnover-selector-overlay"
@@ -160,27 +160,36 @@ export function SwipeableTurnoverButton({
                     onTouchMove={e => e.stopPropagation()}
                 >
                     <div className="turnover-selector" onClick={e => e.stopPropagation()}>
-                        <div className="selector-title">TO種類を選択</div>
+                        <div className="selector-header">
+                            <h3>TO種類を選択</h3>
+                        </div>
                         <div className="selector-options">
                             <button className="selector-btn" onClick={() => handleSelectType('TO')}>
-                                TO（その他）
+                                <span className="selector-btn-label">TO</span>
+                                <span className="selector-btn-desc">ターンオーバー（その他）</span>
                             </button>
                             <button className="selector-btn" onClick={() => handleSelectType('TO:DD')}>
-                                ダブドリ
+                                <span className="selector-btn-label">DD</span>
+                                <span className="selector-btn-desc">ダブドリ</span>
                             </button>
                             <button className="selector-btn" onClick={() => handleSelectType('TO:TR')}>
-                                トラベ
+                                <span className="selector-btn-label">TR</span>
+                                <span className="selector-btn-desc">トラベリング</span>
                             </button>
                             <button className="selector-btn" onClick={() => handleSelectType('TO:PM')}>
-                                パスミス
+                                <span className="selector-btn-label">PM</span>
+                                <span className="selector-btn-desc">パスミス</span>
                             </button>
                             <button className="selector-btn" onClick={() => handleSelectType('TO:CM')}>
-                                キャッチミス
+                                <span className="selector-btn-label">CM</span>
+                                <span className="selector-btn-desc">キャッチミス</span>
                             </button>
                         </div>
-                        <button className="selector-cancel" onClick={handleCancelSelector}>
-                            キャンセル
-                        </button>
+                        <div className="selector-cancel">
+                            <button className="btn btn-secondary" onClick={handleCancelSelector}>
+                                キャンセル
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

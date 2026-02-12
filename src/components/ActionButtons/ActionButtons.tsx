@@ -101,7 +101,7 @@ export function ActionButtons({
                     </div>
                     <div className="action-row">
                         <button
-                            className={`action-btn stat-btn ${isActive('STAT', 'AST') ? 'active' : ''}`}
+                            className={`action-btn stat-btn btn-ast ${isActive('STAT', 'AST') ? 'active' : ''}`}
                             onClick={() => onStat('AST')}
                             disabled={isBtnDisabled}
                         >
@@ -109,7 +109,7 @@ export function ActionButtons({
                             <span className="action-label">AST</span>
                         </button>
                         <button
-                            className={`action-btn stat-btn ${isActive('STAT', 'STL') ? 'active' : ''}`}
+                            className={`action-btn stat-btn btn-stl ${isActive('STAT', 'STL') ? 'active' : ''}`}
                             onClick={() => onStat('STL')}
                             disabled={isBtnDisabled}
                         >
@@ -117,7 +117,7 @@ export function ActionButtons({
                             <span className="action-label">STL</span>
                         </button>
                         <button
-                            className={`action-btn stat-btn ${isActive('STAT', 'BLK') ? 'active' : ''}`}
+                            className={`action-btn stat-btn btn-blk ${isActive('STAT', 'BLK') ? 'active' : ''}`}
                             onClick={() => onStat('BLK')}
                             disabled={isBtnDisabled}
                         >

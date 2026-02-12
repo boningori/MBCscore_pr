@@ -89,7 +89,7 @@
 
 .btn-2p {
     background: rgba(5, 150, 105, 0.15);
-    border-color: #00BFFF;
+    border-color: var(--secondary);
 }
 
 .btn-2p:hover:not(:disabled) {
@@ -98,7 +98,7 @@
 
 .btn-3p {
     background: rgba(37, 99, 235, 0.15);
-    border-color: var(--primary);
+    border-color: #00BFFF;
 }
 
 .btn-3p:hover:not(:disabled) {
@@ -106,12 +106,12 @@
 }
 
 .btn-ft {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: var(--warning);
+    background: rgba(236, 72, 153, 0.15);
+    border-color: #f9a8d4;
 }
 
 .btn-ft:hover:not(:disabled) {
-    background: rgba(245, 158, 11, 0.3);
+    background: rgba(236, 72, 153, 0.3);
 }
 
 /* ミスボタン */
@@ -131,6 +131,19 @@
     min-height: 100px;
 }
 
+.btn-ast,
+.btn-stl,
+.btn-blk {
+    background: rgba(148, 163, 184, 0.1);
+    border-color: #94a3b8;
+}
+
+.btn-ast:hover:not(:disabled),
+.btn-stl:hover:not(:disabled),
+.btn-blk:hover:not(:disabled) {
+    background: rgba(148, 163, 184, 0.2);
+}
+
 .btn-turnover {
     background: rgba(220, 38, 38, 0.1);
     border-color: var(--danger);
@@ -143,7 +156,7 @@
 
 .btn-foul {
     background: rgba(245, 158, 11, 0.15);
-    border: 2px solid #50C878;
+    border: 2px solid var(--warning);
     min-height: 100px;
 }
 

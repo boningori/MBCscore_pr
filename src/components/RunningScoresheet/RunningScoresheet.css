@@ -485,6 +485,10 @@
 
 /* Grey for B header too? Image seems so */
 
+.rs-rs-rows-container {
+    position: relative;
+}
+
 .rs-rs-row {
     display: flex;
     border-bottom: 1px solid #000;

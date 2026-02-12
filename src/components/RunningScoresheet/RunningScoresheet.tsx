@@ -588,30 +588,30 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                     </div>
                                                 );
                                             })}
+                                            {/* 試合終了後の未使用セル斜線（SVGオーバーレイ） */}
+                                            {needSlashA && (
+                                                <svg
+                                                    className="rs-unused-slash rs-unused-slash-a"
+                                                    style={{
+                                                        top: `calc(${slashStartRowA} * 5.0mm)`,
+                                                        height: `calc(${rowsPerColumn - slashStartRowA} * 5.0mm)`,
+                                                    }}
+                                                >
+                                                    <line x1="0" y1="0" x2="100%" y2="100%" />
+                                                </svg>
+                                            )}
+                                            {needSlashB && (
+                                                <svg
+                                                    className="rs-unused-slash rs-unused-slash-b"
+                                                    style={{
+                                                        top: `calc(${slashStartRowB} * 5.0mm)`,
+                                                        height: `calc(${rowsPerColumn - slashStartRowB} * 5.0mm)`,
+                                                    }}
+                                                >
+                                                    <line x1="0" y1="0" x2="100%" y2="100%" />
+                                                </svg>
+                                            )}
                                         </div>
-                                        {/* 試合終了後の未使用セル斜線（SVGオーバーレイ） */}
-                                        {needSlashA && (
-                                            <svg
-                                                className="rs-unused-slash rs-unused-slash-a"
-                                                style={{
-                                                    top: `calc(5.0mm + ${slashStartRowA} * 5.0mm)`,
-                                                    height: `calc(${rowsPerColumn - slashStartRowA} * 5.0mm)`,
-                                                }}
-                                            >
-                                                <line x1="0" y1="0" x2="100%" y2="100%" />
-                                            </svg>
-                                        )}
-                                        {needSlashB && (
-                                            <svg
-                                                className="rs-unused-slash rs-unused-slash-b"
-                                                style={{
-                                                    top: `calc(5.0mm + ${slashStartRowB} * 5.0mm)`,
-                                                    height: `calc(${rowsPerColumn - slashStartRowB} * 5.0mm)`,
-                                                }}
-                                            >
-                                                <line x1="0" y1="0" x2="100%" y2="100%" />
-                                            </svg>
-                                        )}
                                     </div>
                                 );
                             })}

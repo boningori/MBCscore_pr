@@ -154,93 +154,111 @@
     }
 }
 
-/* セレクターオーバーレイ */
+/* セレクターオーバーレイ（ファウルスタイルに統一） */
 .turnover-selector-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: turnoverFadeIn 0.2s ease;
-    touch-action: none; /* 下のレイヤーへのタッチ伝播を防ぐ */
+    touch-action: none;
+    /* 下のレイヤーへのタッチ伝播を防ぐ */
 }
 
 .turnover-selector {
     background: var(--bg-secondary);
-    border-radius: 16px;
-    padding: 20px;
-    min-width: 280px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    animation: turnoverSlideUp 0.2s ease;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    min-width: 320px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
-.selector-title {
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 16px;
+.selector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+}
+
+.selector-header h3 {
+    margin: 0;
     color: var(--text-primary);
 }
 
 .selector-options {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--spacing-sm);
 }
 
 .selector-btn {
-    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
     border: 2px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--bg-tertiary);
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s;
 }
 
 .selector-btn:hover {
-    border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.1);
+    border-color: #e8503a;
+    background: rgba(232, 80, 58, 0.1);
 }
 
 .selector-btn:active {
     transform: scale(0.98);
 }
 
+.selector-btn-label {
+    font-weight: 800;
+    font-size: var(--font-size-lg);
+    color: #e8503a;
+    min-width: 40px;
+    text-align: center;
+}
+
+.selector-btn-desc {
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
 .selector-cancel {
     width: 100%;
-    margin-top: 12px;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    background: var(--text-muted);
-    color: white;
-    font-size: 0.9rem;
-    cursor: pointer;
+    margin-top: var(--spacing-lg);
+    display: flex;
+    justify-content: center;
 }
 
-@keyframes turnoverFadeIn {
-    from {
-        opacity: 0;
+/* スマホ向けレスポンシブ対応 */
+@media (max-width: 600px) {
+    .turnover-selector {
+        min-width: auto;
+        width: 95%;
+        max-width: none;
+        padding: var(--spacing-md);
     }
 
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes turnoverSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
+    .selector-btn {
+        padding: var(--spacing-lg);
+        min-height: 60px;
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    .selector-btn-label {
+        font-size: var(--font-size-xl);
+        min-width: 50px;
+    }
+
+    .selector-btn-desc {
+        font-size: var(--font-size-md);
     }
 }
