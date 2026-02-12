@@ -185,6 +185,12 @@
     min-height: 50px;
     font-size: var(--font-size-sm);
     white-space: nowrap;
+    background: var(--primary);
+    color: white;
+}
+
+.btn-game-action:hover:not(:disabled) {
+    background: var(--primary-hover);
 }
 
 .btn-game-action:disabled {
@@ -331,9 +337,33 @@
     font-weight: 600;
     background: var(--bg-primary);
     color: var(--text-secondary);
+    line-height: 1.4;
 }
 
 .tf-badge.bonus {
     background: var(--danger);
     color: white;
+}
+
+/* シンプルモード用タイムアウトボタン */
+.btn-timeout-simple {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.4;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-timeout-simple:hover:not(:disabled) {
+    background: var(--primary-hover);
+}
+
+.btn-timeout-simple:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }

@@ -91,6 +91,15 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             <span className={`tf-badge ${state.teamA.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
                                 TF {state.teamA.teamFouls[currentQuarter - 1]}
                             </span>
+                            {phase === 'playing' && onTimeout && (
+                                <button
+                                    className="btn-timeout-simple"
+                                    onClick={() => handleTimeoutClick('teamA')}
+                                    disabled={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
+                                >
+                                    タイムアウト
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -104,9 +113,28 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             <span className={`tf-badge ${state.teamB.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
                                 TF {state.teamB.teamFouls[currentQuarter - 1]}
                             </span>
+                            {phase === 'playing' && onTimeout && (
+                                <button
+                                    className="btn-timeout-simple"
+                                    onClick={() => handleTimeoutClick('teamB')}
+                                    disabled={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
+                                >
+                                    タイムアウト
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
+
+                {/* タイムアウト入力モーダル */}
+                <TimeoutInputModal
+                    isOpen={timeoutModalOpen}
+                    teamName={timeoutTeamId === 'teamA' ? state.teamA.name : state.teamB.name}
+                    teamColor={timeoutTeamId === 'teamA' ? state.teamA.color : state.teamB.color}
+                    currentQuarter={currentQuarter}
+                    onConfirm={handleTimeoutConfirm}
+                    onCancel={handleTimeoutCancel}
+                />
             </div>
         );
     }
