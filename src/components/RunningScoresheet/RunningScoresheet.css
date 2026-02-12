@@ -213,6 +213,12 @@
     right: 33%;
 }
 
+/* 1Q/3Q: 赤色の縦線 */
+.rs-tf-cell.tf-unused.q-red::before,
+.rs-tf-cell.tf-unused.q-red::after {
+    background-color: #f00;
+}
+
 .rs-running-score-section {
     width: 74.2mm;
     /* Fixed 74.2mm */
@@ -1005,6 +1011,12 @@
     bottom: 35%;
 }
 
+/* 1Q/3Q: 赤色の横線 */
+.to-cell-val.to-unused.q-red::before,
+.to-cell-val.to-unused.q-red::after {
+    background-color: #f00;
+}
+
 /* ロスターテーブル */
 .rs-roster-table {
     width: 100%;
@@ -1225,6 +1237,16 @@
     right: 0;
     height: 1px;
     background-color: #000;
+}
+
+/* 個人ファウル: 1Q/3Qは赤色 */
+.cell-foul.q-red {
+    color: #f00;
+}
+
+/* 個人ファウル: 2Q/4Q/OTは黒色 */
+.cell-foul.q-black {
+    color: #000;
 }
 
 /* ファウル列の左境界 — 片側border方式では前セルのborder-rightが担当 */

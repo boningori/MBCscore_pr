@@ -17,7 +17,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
     const scoresheetRef = useRef<HTMLDivElement>(null);
     const [showGameInfoModal, setShowGameInfoModal] = useState(false);
 
-    const { teamA, teamB, scoreHistory, currentQuarter, phase, endTime } = game;
+    const { teamA, teamB, scoreHistory, foulHistory, currentQuarter, phase, endTime } = game;
     const gameInfo = game.gameInfo || createInitialGameInfo();
 
     // 試合状態の判定
@@ -68,6 +68,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
         const prevFoulCount = index > 0 ? allPlayers[index - 1]?.fouls.length ?? 0 : foulCount;
         const nextFoulCount = index < 14 ? allPlayers[index + 1]?.fouls.length ?? 0 : foulCount;
 
+        // この選手のファウル履歴をfoulHistoryから取得（クォーター情報取得用）
+        const playerFoulHistory = foulHistory
+            .filter(f => f.playerId === player.id)
+            .sort((a, b) => a.timestamp - b.timestamp);
+
         return (
             <tr key={player.id}>
                 <td className="cell-no">{index + 1}</td>
@@ -107,6 +112,14 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
 
                     // クラス構築
                     const classes = ['cell-foul'];
+
+                    // ファウルのクォーター情報を取得して色クラスを適用
+                    if (hasFoul && playerFoulHistory[f]) {
+                        const quarter = playerFoulHistory[f].quarter;
+                        // 1Q/3Q=赤, 2Q/4Q/OT=黒
+                        const colorClass = (quarter === 1 || quarter === 3) ? 'q-red' : 'q-black';
+                        classes.push(colorClass);
+                    }
 
                     // 第2Q終了時: 階段状の太線境界
                     if (isHalfFinished) {
@@ -308,7 +321,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
                                                 const isUnused = isGameFinished && !hasTimeout;
                                                 return (
-                                                    <td key={q} className={`to-cell-val ${hasTimeout ? `to-has-value ${colorClass}` : ''} ${isUnused ? 'to-unused' : ''}`}>
+                                                    <td key={q} className={`to-cell-val ${hasTimeout ? `to-has-value ${colorClass}` : ''} ${isUnused ? `to-unused ${colorClass}` : ''}`}>
                                                         {hasTimeout && <span className="to-elapsed-minutes">{timeout.elapsedMinutes}</span>}
                                                     </td>
                                                 );
@@ -353,17 +366,17 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                         {Array.from({ length: Math.max(0, 15 - team.players.length) }).map((_, i, arr) => (
                                             <tr key={`empty-${team.id}-${i}`} className="empty-player-row">
                                                 <td className="cell-no">{team.players.length + i + 1}</td>
-                                                {/* ライセンス〜出場時限: 横線 */}
-                                                <td className="cell-license empty-cell-line">
+                                                {/* ライセンス〜出場時限: 一番上の行のみ横線 */}
+                                                <td className={`cell-license ${i === 0 ? 'empty-cell-line' : ''}`}>
                                                     <div className="license-digits">
                                                         <span className="license-digit"></span>
                                                         <span className="license-digit"></span>
                                                         <span className="license-digit"></span>
                                                     </div>
                                                 </td>
-                                                <td className="cell-name empty-cell-line"></td>
-                                                <td className="cell-number empty-cell-line"></td>
-                                                {[1, 2, 3, 4].map(q => <td key={q} className="cell-quarter empty-cell-line"></td>)}
+                                                <td className={`cell-name ${i === 0 ? 'empty-cell-line' : ''}`}></td>
+                                                <td className={`cell-number ${i === 0 ? 'empty-cell-line' : ''}`}></td>
+                                                {[1, 2, 3, 4].map(q => <td key={q} className={`cell-quarter ${i === 0 ? 'empty-cell-line' : ''}`}></td>)}
                                                 {/* ファウル欄: 空行全体で斜線（最初の行の最初のセルにSVGを配置） */}
                                                 {[0, 1, 2, 3, 4].map(f => (
                                                     <td key={f} className={`cell-foul empty-foul-cell ${i === 0 && f === 0 ? 'empty-foul-slash-container' : ''}`}>
@@ -401,12 +414,21 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 </div>
                                                 {team.coachName}
                                             </td>
-                                            {[0, 1, 2].map(i => {
-                                                const f = team.coachFouls[i];
-                                                const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
-                                                const isUnused = !f && isGameFinished;
-                                                return <td key={i} className={`cell-foul ${isUnused ? 'foul-unused' : ''}`}>{display}</td>;
-                                            })}
+                                            {(() => {
+                                                // コーチのファウル履歴をfoulHistoryから取得
+                                                const coachFoulHistory = foulHistory
+                                                    .filter(f => f.teamId === team.id && f.coachFoulTarget === 'COACH')
+                                                    .sort((a, b) => a.timestamp - b.timestamp);
+                                                return [0, 1, 2].map(i => {
+                                                    const f = team.coachFouls[i];
+                                                    const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
+                                                    const isUnused = !f && isGameFinished;
+                                                    // クォーター情報から色クラスを決定
+                                                    const quarter = coachFoulHistory[i]?.quarter;
+                                                    const colorClass = f && quarter ? ((quarter === 1 || quarter === 3) ? 'q-red' : 'q-black') : '';
+                                                    return <td key={i} className={`cell-foul ${colorClass} ${isUnused ? 'foul-unused' : ''}`}>{display}</td>;
+                                                });
+                                            })()}
                                             <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
                                             <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
                                         </tr>
@@ -428,12 +450,21 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 </div>
                                                 {team.assistantCoachName}
                                             </td>
-                                            {[0, 1, 2].map(i => {
-                                                const f = team.assistantCoachFouls?.[i];
-                                                const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
-                                                const isUnused = !f && isGameFinished;
-                                                return <td key={i} className={`cell-foul ${isUnused ? 'foul-unused' : ''}`}>{display}</td>;
-                                            })}
+                                            {(() => {
+                                                // Aコーチのファウル履歴をfoulHistoryから取得
+                                                const aCoachFoulHistory = foulHistory
+                                                    .filter(f => f.teamId === team.id && f.coachFoulTarget === 'ACOACH')
+                                                    .sort((a, b) => a.timestamp - b.timestamp);
+                                                return [0, 1, 2].map(i => {
+                                                    const f = team.assistantCoachFouls?.[i];
+                                                    const display = f === 'T' ? 'C' : f === 'BT' ? 'B' : f || '';
+                                                    const isUnused = !f && isGameFinished;
+                                                    // クォーター情報から色クラスを決定
+                                                    const quarter = aCoachFoulHistory[i]?.quarter;
+                                                    const colorClass = f && quarter ? ((quarter === 1 || quarter === 3) ? 'q-red' : 'q-black') : '';
+                                                    return <td key={i} className={`cell-foul ${colorClass} ${isUnused ? 'foul-unused' : ''}`}>{display}</td>;
+                                                });
+                                            })()}
                                             <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
                                             <td className={`cell-foul ${isGameFinished ? 'foul-unused' : ''}`}></td>
                                         </tr>
@@ -468,8 +499,8 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                             const is1QUnused = isGameFinished && !is1QMarked;
                                             const is2QUnused = isGameFinished && !is2QMarked;
                                             return [
-                                                <div key={`${team.id}-1q-${num}`} className={`rs-tf-cell ${is1QMarked ? 'marked q-red' : ''} ${is1QUnused ? 'tf-unused' : ''}`}>{num}</div>,
-                                                <div key={`${team.id}-2q-${num}`} className={`rs-tf-cell ${is2QMarked ? 'marked q-black' : ''} ${is2QUnused ? 'tf-unused' : ''}`}>{num}</div>
+                                                <div key={`${team.id}-1q-${num}`} className={`rs-tf-cell ${is1QMarked ? 'marked q-red' : ''} ${is1QUnused ? 'tf-unused q-red' : ''}`}>{num}</div>,
+                                                <div key={`${team.id}-2q-${num}`} className={`rs-tf-cell ${is2QMarked ? 'marked q-black' : ''} ${is2QUnused ? 'tf-unused q-black' : ''}`}>{num}</div>
                                             ];
                                         })}
                                     </div>
@@ -485,8 +516,8 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                             const is3QUnused = isGameFinished && !is3QMarked;
                                             const is4QUnused = isGameFinished && !is4QMarked;
                                             return [
-                                                <div key={`${team.id}-3q-${num}`} className={`rs-tf-cell ${is3QMarked ? 'marked q-red' : ''} ${is3QUnused ? 'tf-unused' : ''}`}>{num}</div>,
-                                                <div key={`${team.id}-4q-${num}`} className={`rs-tf-cell ${is4QMarked ? 'marked q-black' : ''} ${is4QUnused ? 'tf-unused' : ''}`}>{num}</div>
+                                                <div key={`${team.id}-3q-${num}`} className={`rs-tf-cell ${is3QMarked ? 'marked q-red' : ''} ${is3QUnused ? 'tf-unused q-red' : ''}`}>{num}</div>,
+                                                <div key={`${team.id}-4q-${num}`} className={`rs-tf-cell ${is4QMarked ? 'marked q-black' : ''} ${is4QUnused ? 'tf-unused q-black' : ''}`}>{num}</div>
                                             ];
                                         })}
                                     </div>

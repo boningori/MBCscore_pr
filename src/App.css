@@ -1037,8 +1037,8 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border: 2px solid #50C878 !important;
-  /* エメラルドグリーン */
+  border: 2px solid var(--warning) !important;
+  /* オレンジ（フルモード合わせ） */
 }
 
 /* シンプルモード：不要なアクション行（ターンオーバー、REB）を非表示 */
