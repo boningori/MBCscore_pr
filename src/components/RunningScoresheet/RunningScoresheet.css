@@ -394,6 +394,11 @@
     border-right: 1px solid #000;
 }
 
+.rs-game-no-box span {
+    flex: 1;
+    text-align: center;
+}
+
 /* Row 2: Scores & Officials */
 .rs-header-second-row {
     display: flex;
@@ -1488,6 +1493,8 @@
 .rs-license-note {
     font-size: 6pt;
     text-align: left;
+    margin-top: -2mm;
+    letter-spacing: 0.3pt;
 }
 
 /* 印刷用スタイル */

@@ -87,15 +87,23 @@ function AppContent() {
     setGameName(setupData.gameName);
     setDate(setupData.date);
 
-    // Teamインスタンス作成（マイチームは選択された番号タイプを使用）
-    const teamA = savedTeamToTeam(setupData.myTeam, 'teamA', setupData.numberType);
-    teamA.isMyTeam = true;
-    teamA.color = setupData.myTeamColor;
+    // 白チーム=teamA（上段）、青チーム=teamB（下段）に固定
+    // マイチームの色に応じて割り当てを決定
+    const isMyTeamWhite = setupData.myTeamColor === 'white';
 
-    // 対戦チームはデフォルト番号を使用
-    const teamB = savedTeamToTeam(setupData.opponentTeam, 'teamB');
-    teamB.isMyTeam = false;
-    teamB.color = setupData.opponentTeamColor;
+    // 白チーム（teamA）の作成
+    const whiteTeamSource = isMyTeamWhite ? setupData.myTeam : setupData.opponentTeam;
+    const whiteNumberType = isMyTeamWhite ? setupData.numberType : undefined;
+    const teamA = savedTeamToTeam(whiteTeamSource, 'teamA', whiteNumberType);
+    teamA.isMyTeam = isMyTeamWhite;
+    teamA.color = 'white';
+
+    // 青チーム（teamB）の作成
+    const blueTeamSource = isMyTeamWhite ? setupData.opponentTeam : setupData.myTeam;
+    const blueNumberType = isMyTeamWhite ? undefined : setupData.numberType;
+    const teamB = savedTeamToTeam(blueTeamSource, 'teamB', blueNumberType);
+    teamB.isMyTeam = !isMyTeamWhite;
+    teamB.color = 'blue';
 
     // コート上選手はクリア（QuarterLineupで選択）
     teamA.players = teamA.players.map(p => ({ ...p, isOnCourt: false }));
@@ -106,7 +114,7 @@ function AppContent() {
     // 対戦チームを履歴に保存（念のため更新）
     saveRecentOpponent(setupData.opponentTeam);
 
-    // Q1スタメン選択画面へ
+    // Q1スタメン選択画面へ（常に白チーム=teamAから開始）
     setLineupTeamId('teamA');
     setScreen('quarterLineup');
   };
