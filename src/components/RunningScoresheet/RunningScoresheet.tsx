@@ -627,6 +627,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                         top: `calc(${slashStartRowA} * 5.0mm)`,
                                                         height: `calc(${rowsPerColumn - slashStartRowA} * 5.0mm)`,
                                                     }}
+                                                    preserveAspectRatio="none"
                                                 >
                                                     <line x1="0" y1="0" x2="100%" y2="100%" />
                                                 </svg>
@@ -638,6 +639,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                         top: `calc(${slashStartRowB} * 5.0mm)`,
                                                         height: `calc(${rowsPerColumn - slashStartRowB} * 5.0mm)`,
                                                     }}
+                                                    preserveAspectRatio="none"
                                                 >
                                                     <line x1="0" y1="0" x2="100%" y2="100%" />
                                                 </svg>

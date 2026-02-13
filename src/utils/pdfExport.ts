@@ -1,6 +1,57 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
+/**
+ * SVG斜線の位置情報を収集
+ */
+interface SlashLineInfo {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+function collectSlashLinePositions(container: HTMLElement): SlashLineInfo[] {
+    const containerRect = container.getBoundingClientRect();
+    const svgs = container.querySelectorAll('svg.rs-unused-slash');
+    const positions: SlashLineInfo[] = [];
+
+    svgs.forEach((svg) => {
+        const rect = svg.getBoundingClientRect();
+        positions.push({
+            x: rect.left - containerRect.left,
+            y: rect.top - containerRect.top,
+            width: rect.width,
+            height: rect.height,
+        });
+    });
+
+    return positions;
+}
+
+/**
+ * Canvasに斜線を直接描画
+ */
+function drawSlashLinesOnCanvas(
+    canvas: HTMLCanvasElement,
+    positions: SlashLineInfo[],
+    scale: number
+): void {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1 * scale;
+    ctx.lineCap = 'square';
+
+    positions.forEach(({ x, y, width, height }) => {
+        ctx.beginPath();
+        ctx.moveTo(x * scale, y * scale);
+        ctx.lineTo((x + width) * scale, (y + height) * scale);
+        ctx.stroke();
+    });
+}
+
 interface ExportOptions {
     filename: string;
     format: 'pdf' | 'jpeg';
@@ -29,6 +80,9 @@ export async function exportElement(
     // エクスポート中はレスポンシブの display:none を無効化してA4レイアウトを復元
     element.classList.add('exporting');
 
+    // SVG斜線の位置情報を収集（html2canvasがSVGを正しくレンダリングしないため）
+    const slashPositions = collectSlashLinePositions(element);
+
     let canvas: HTMLCanvasElement;
     try {
         // html2canvasでキャンバスに変換
@@ -38,10 +92,23 @@ export async function exportElement(
             logging: false,
             backgroundColor: '#ffffff',
             windowWidth,
+            ignoreElements: (el) => el.classList?.contains('rs-unused-slash'), // SVG斜線は除外
         });
     } finally {
         element.classList.remove('exporting');
     }
+
+    // html2canvasのCanvasを新しいCanvasにコピーして斜線を描画
+    // （html2canvasが返すCanvasには直接描画できないため）
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width = canvas.width;
+    newCanvas.height = canvas.height;
+    const newCtx = newCanvas.getContext('2d');
+    if (newCtx) {
+        newCtx.drawImage(canvas, 0, 0);
+        drawSlashLinesOnCanvas(newCanvas, slashPositions, scale);
+    }
+    canvas = newCanvas;
 
     // タイトル付きcanvasを生成
     const finalCanvas = options.title ? addTitleToCanvas(canvas, options.title) : canvas;
