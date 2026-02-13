@@ -57,7 +57,7 @@ export function ActionButtons({
         <div className="action-buttons-container">
             {/* シュートボタン（スワイプ対応: 上=成功, 下=ミス） */}
             <div className="action-group">
-                <h4 className="action-group-title">シュート</h4>
+                {/* <h4 className="action-group-title">シュート</h4> */}
                 <div className="action-row score-row">
                     <SwipeableScoreButton
                         scoreType="2P"
@@ -89,7 +89,7 @@ export function ActionButtons({
             {/* 統計ボタン（フルモードのみ表示） */}
             {gameMode === 'full' && (
                 <div className="action-group">
-                    <h4 className="action-group-title">統計</h4>
+                    {/* <h4 className="action-group-title">統計</h4> */}
                     <div className="action-row">
                         {/* スワイプ可能なリバウンドボタン */}
                         <SwipeableReboundButton
@@ -139,7 +139,7 @@ export function ActionButtons({
 
             {/* ファウル（選手アクション） */}
             <div className="action-group">
-                <h4 className="action-group-title">ファウル</h4>
+                {/* <h4 className="action-group-title">ファウル</h4> */}
                 <div className="action-row">
                     <button
                         className={`action-btn game-btn btn-foul ${isActive('FOUL') ? 'active' : ''}`}

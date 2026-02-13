@@ -185,12 +185,12 @@
     min-height: 50px;
     font-size: var(--font-size-sm);
     white-space: nowrap;
-    background: var(--primary);
-    color: white;
+    background: #ffffff;
+    color: #374151;
 }
 
 .btn-game-action:hover:not(:disabled) {
-    background: var(--primary-hover);
+    background: #f3f4f6;
 }
 
 .btn-game-action:disabled {
@@ -352,15 +352,15 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     line-height: 1.4;
-    background: var(--primary);
-    color: white;
-    border: none;
+    background: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
     cursor: pointer;
     transition: background 0.15s;
 }
 
 .btn-timeout-simple:hover:not(:disabled) {
-    background: var(--primary-hover);
+    background: #f3f4f6;
 }
 
 .btn-timeout-simple:disabled {

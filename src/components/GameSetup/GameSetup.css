@@ -339,6 +339,28 @@
     border-top: 1px solid var(--border);
 }
 
+/* Color Swap */
+.confirm-colors {
+    margin-top: var(--spacing-lg);
+}
+
+.confirm-colors .btn {
+    width: 100%;
+    font-size: var(--font-size-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.confirm-colors .btn:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--primary);
+}
+
 .number-type-label {
     display: block;
     color: var(--text-secondary);

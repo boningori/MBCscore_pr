@@ -318,6 +318,10 @@
     letter-spacing: 0.5px;
 }
 
+.stat-box.primary .stat-value {
+    color: white;
+}
+
 .stat-box.primary .stat-label {
     color: rgba(255, 255, 255, 0.8);
 }

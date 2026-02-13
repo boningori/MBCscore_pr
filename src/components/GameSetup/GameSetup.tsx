@@ -326,15 +326,6 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 <span>{date}</span>
                             </div>
 
-                            <div className="confirm-colors">
-                                <div className="color-section">
-                                    <span className="color-label">チームカラー（音声入力用）</span>
-                                    <button className="btn btn-secondary btn-small" onClick={handleColorSwap}>
-                                        ⇄ 入れ替え
-                                    </button>
-                                </div>
-                            </div>
-
                             <div className="confirm-number-type">
                                 <span className="number-type-label">マイチームの使用番号</span>
                                 <div className="number-type-options">
@@ -359,6 +350,12 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                         <span>ユニフォーム番号</span>
                                     </label>
                                 </div>
+                            </div>
+
+                            <div className="confirm-colors">
+                                <button className="btn btn-secondary" onClick={handleColorSwap}>
+                                    ⇄ チームカラー入れ替え
+                                </button>
                             </div>
 
                             <div className="confirm-vs">

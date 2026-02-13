@@ -79,6 +79,12 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                             <span className="menu-description">{myTeams.length}チーム登録済み</span>
                         </button>
 
+                        <button className="home-menu-item" onClick={onManageOpponents}>
+                            <span className="menu-icon">🆚</span>
+                            <span className="menu-label">対戦チーム管理</span>
+                            <span className="menu-description">対戦チームを登録・編集</span>
+                        </button>
+
                         <button className="home-menu-item" onClick={onViewHistory}>
                             <span className="menu-icon">📋</span>
                             <span className="menu-label">試合履歴</span>
@@ -89,12 +95,6 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                             <span className="menu-icon">📊</span>
                             <span className="menu-label">選手スタッツ分析</span>
                             <span className="menu-description">選手の成長を可視化</span>
-                        </button>
-
-                        <button className="home-menu-item" onClick={onManageOpponents}>
-                            <span className="menu-icon">🆚</span>
-                            <span className="menu-label">対戦チーム管理</span>
-                            <span className="menu-description">対戦チームを登録・編集</span>
                         </button>
                     </div>
                 )}
