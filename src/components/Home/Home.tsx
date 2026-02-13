@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { SavedTeam } from '../../utils/teamStorage';
-import { loadMyTeams, loadRecentOpponents } from '../../utils/teamStorage';
+import { loadMyTeams } from '../../utils/teamStorage';
 import { hasGameSession } from '../../utils/gameSessionStorage';
 import './Home.css';
 
@@ -20,7 +20,6 @@ interface HomeProps {
 
 export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onViewPlayerStats, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen }: HomeProps) {
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
-    const [recentOpponents] = useState<SavedTeam[]>(loadRecentOpponents);
     const [canResume, setCanResume] = useState(false);
 
     useEffect(() => {
@@ -99,19 +98,6 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                     </div>
                 )}
 
-                {recentOpponents.length > 0 && (
-                    <div className="home-recent">
-                        <h3>最近の対戦チーム</h3>
-                        <div className="recent-list">
-                            {recentOpponents.slice(0, 3).map(team => (
-                                <div key={team.id} className="recent-item">
-                                    <span className="recent-name">{team.name}</span>
-                                    <span className="recent-players">{team.players.length}名</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="home-footer">
