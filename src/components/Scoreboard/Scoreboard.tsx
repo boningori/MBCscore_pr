@@ -145,10 +145,6 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
             <div className="scoreboard-main">
                 {/* チームA */}
                 <div className={`team-score-block team-a-block color-${state.teamA.color}`}>
-                    <div className="team-info">
-                        <span className="team-label">{state.teamA.name}</span>
-                        <span className="team-color-badge">{state.teamA.color === 'white' ? '白' : '青'}</span>
-                    </div>
                     <div className="score-display">{scoreA}</div>
                 </div>
 
@@ -176,10 +172,6 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
 
                 {/* チームB */}
                 <div className={`team-score-block team-b-block color-${state.teamB.color}`}>
-                    <div className="team-info">
-                        <span className="team-label">{state.teamB.name}</span>
-                        <span className="team-color-badge">{state.teamB.color === 'white' ? '白' : '青'}</span>
-                    </div>
                     <div className="score-display">{scoreB}</div>
                 </div>
             </div>

@@ -858,9 +858,6 @@ function AppContent() {
               <div className={`team-panel team-a color-${state.teamA.color} ${selectedTeamId === 'teamA' ? 'active' : ''}`}>
                 <div className="team-panel-header">
                   <span className="team-name">{state.teamA.name}</span>
-                  <span className="team-score">
-                    {state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0)}
-                  </span>
                 </div>
                 <div className="team-players">
                   {state.teamA.players.filter(p => p.isOnCourt).map(player => (
@@ -961,9 +958,6 @@ function AppContent() {
               <div className={`team-panel team-b color-${state.teamB.color} ${selectedTeamId === 'teamB' ? 'active' : ''}`}>
                 <div className="team-panel-header">
                   <span className="team-name">{state.teamB.name}</span>
-                  <span className="team-score">
-                    {state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0)}
-                  </span>
                 </div>
                 <div className="team-players">
                   {state.teamB.players.filter(p => p.isOnCourt).map(player => (
