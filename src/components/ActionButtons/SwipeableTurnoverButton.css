@@ -8,7 +8,8 @@
     position: relative;
     touch-action: manipulation;
     user-select: none;
-    min-height: 100px;
+    /* 高さを画面サイズに応じてスケール */
+    min-height: clamp(70px, 11vh, 100px);
     overflow: visible;
 }
 

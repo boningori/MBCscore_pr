@@ -17,9 +17,10 @@
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-xl);
-    min-width: 320px;
+    /* 最小幅を画面サイズに応じてスケール */
+    min-width: clamp(280px, 40vw, 320px);
     max-width: 90%;
-    max-height: 90vh;
+    max-height: 85vh;
     overflow-y: auto;
 }
 
@@ -197,8 +198,9 @@
 }
 
 .ft-count-btn {
-    width: 60px;
-    height: 60px;
+    /* サイズを画面に応じてスケール */
+    width: clamp(48px, 7vw, 60px);
+    height: clamp(48px, 7vw, 60px);
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--bg-tertiary);

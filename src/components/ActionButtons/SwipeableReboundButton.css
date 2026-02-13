@@ -8,13 +8,14 @@
     position: relative;
     overflow: hidden;
     touch-action: pan-y;
-    min-height: 100px;
+    /* 高さを画面サイズに応じてスケール */
+    min-height: clamp(70px, 11vh, 100px);
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 16px;
+    padding: var(--spacing-sm) var(--spacing-md);
 }
 
 .action-btn.swipeable-rebound-btn {

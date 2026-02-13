@@ -60,27 +60,27 @@
   --border-light: #475569;
   --bg-hover: #475569;
 
-  /* タッチ最適化 */
-  --touch-target: 48px;
-  --touch-target-large: 64px;
+  /* タッチ最適化 - 画面サイズに応じてスケール */
+  --touch-target: clamp(40px, 5vh, 48px);
+  --touch-target-large: clamp(52px, 7vh, 64px);
 
-  /* スペーシング */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
+  /* スペーシング - 画面サイズに応じてスケール */
+  --spacing-xs: clamp(2px, 0.4vh, 4px);
+  --spacing-sm: clamp(4px, 0.8vh, 8px);
+  --spacing-md: clamp(8px, 1.5vh, 16px);
+  --spacing-lg: clamp(12px, 2vh, 24px);
+  --spacing-xl: clamp(16px, 3vh, 32px);
 
-  /* フォント */
+  /* フォント - 画面サイズに応じてスケール */
   --font-score: 'Inter', system-ui, sans-serif;
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-md: 16px;
-  --font-size-lg: 20px;
-  --font-size-xl: 24px;
-  --font-size-2xl: 32px;
-  --font-size-3xl: 48px;
-  --font-size-score: 72px;
+  --font-size-xs: clamp(10px, 1.2vh, 12px);
+  --font-size-sm: clamp(12px, 1.5vh, 14px);
+  --font-size-md: clamp(13px, 1.8vh, 16px);
+  --font-size-lg: clamp(16px, 2.2vh, 20px);
+  --font-size-xl: clamp(18px, 2.8vh, 24px);
+  --font-size-2xl: clamp(24px, 3.5vh, 32px);
+  --font-size-3xl: clamp(32px, 5vh, 48px);
+  --font-size-score: clamp(48px, 8vh, 72px);
 
   /* ボーダー */
   --radius-sm: 6px;

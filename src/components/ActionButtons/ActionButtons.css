@@ -6,7 +6,8 @@
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
-    min-width: 320px;
+    /* 最小幅を画面サイズに応じてスケール */
+    min-width: clamp(260px, 28vw, 320px);
 }
 
 .action-group {
@@ -33,7 +34,8 @@
 .action-row.score-row {
     gap: var(--spacing-sm);
     position: relative;
-    min-height: 100px;
+    /* 最小高さを画面サイズに応じてスケール */
+    min-height: clamp(70px, 11vh, 100px);
 }
 
 .action-row.score-row>* {
@@ -47,7 +49,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100px;
+    /* 最小高さを画面サイズに応じてスケール */
+    min-height: clamp(70px, 11vh, 100px);
     padding: var(--spacing-sm);
     background: var(--bg-tertiary);
     border: 2px solid var(--border);
@@ -128,7 +131,7 @@
 
 /* 統計ボタン */
 .stat-btn {
-    min-height: 100px;
+    min-height: clamp(70px, 11vh, 100px);
 }
 
 .btn-ast,
@@ -151,13 +154,13 @@
 
 /* ゲーム操作ボタン */
 .game-btn {
-    min-height: 100px;
+    min-height: clamp(70px, 11vh, 100px);
 }
 
 .btn-foul {
     background: rgba(245, 158, 11, 0.15);
     border: 2px solid var(--warning);
-    min-height: 100px;
+    min-height: clamp(70px, 11vh, 100px);
 }
 
 .btn-foul:hover:not(:disabled) {

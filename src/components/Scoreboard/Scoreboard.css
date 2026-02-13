@@ -80,7 +80,8 @@
 }
 
 .score-display {
-    font-size: var(--font-size-3xl);
+    /* フォントサイズを画面に応じてスケール */
+    font-size: clamp(var(--font-size-2xl), 4.5vh, var(--font-size-3xl));
     font-weight: 800;
     color: var(--text-primary);
     line-height: 1;
@@ -100,7 +101,8 @@
     border-radius: var(--radius-md);
     font-weight: 800;
     font-size: var(--font-size-xl);
-    min-width: 60px;
+    /* 最小幅を画面サイズに応じてスケール */
+    min-width: clamp(48px, 5vw, 60px);
     text-align: center;
 }
 
@@ -182,7 +184,8 @@
 .btn-game-action {
     padding: var(--spacing-xs) var(--spacing-sm);
     min-width: auto;
-    min-height: 50px;
+    /* 高さを画面サイズに応じてスケール */
+    min-height: clamp(40px, 6vh, 50px);
     font-size: var(--font-size-sm);
     white-space: nowrap;
     background: #ffffff;

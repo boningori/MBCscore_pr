@@ -8,7 +8,8 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast);
-    min-height: 60px;
+    /* 高さを画面サイズに応じてスケール */
+    min-height: clamp(50px, 7vh, 60px);
     position: relative;
 }
 
@@ -36,8 +37,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    /* サイズを画面に応じてスケール */
+    width: clamp(36px, 5vw, 44px);
+    height: clamp(36px, 5vw, 44px);
     background: var(--bg-secondary);
     border-radius: var(--radius-sm);
     font-size: var(--font-size-xl);
