@@ -470,6 +470,14 @@
     opacity: 0.9;
 }
 
+.highlight-stat.primary .highlight-value {
+    color: white;
+}
+
+.highlight-stat.primary .highlight-std {
+    color: rgba(255, 255, 255, 0.8);
+}
+
 /* ハイライトセクション */
 .highlight-section {
     background: white;
@@ -1501,6 +1509,14 @@
 
     .player-stats-container .highlight-stat .highlight-std {
         color: #94a3b8;
+    }
+
+    .highlight-stat.primary .highlight-value {
+        color: white;
+    }
+
+    .highlight-stat.primary .highlight-std {
+        color: rgba(255, 255, 255, 0.8);
     }
 
     .stats-card {
