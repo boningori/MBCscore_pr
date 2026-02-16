@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/imageOCR';
+import { getDefaultGameMode, saveDefaultGameMode, type GameMode } from '../../utils/appSettings';
 import './AppSettingsModal.css';
 
 interface AppSettingsModalProps {
@@ -11,16 +12,19 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [apiKey, setApiKey] = useState('');
     const [showKey, setShowKey] = useState(false);
     const [testStatus, setTestStatus] = useState<{ loading: boolean; message: string; success?: boolean } | null>(null);
+    const [defaultMode, setDefaultMode] = useState<GameMode>('full');
 
     useEffect(() => {
         if (isOpen) {
             setApiKey(getStoredApiKey());
             setTestStatus(null);
+            setDefaultMode(getDefaultGameMode());
         }
     }, [isOpen]);
 
     const handleSave = () => {
         saveApiKey(apiKey.trim());
+        saveDefaultGameMode(defaultMode);
         onClose();
         alert('設定を保存しました。');
     };
@@ -60,6 +64,32 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                 </div>
 
                 <div className="settings-content">
+                    {/* デフォルトゲームモード設定 */}
+                    <section className="settings-section">
+                        <h3>デフォルトゲームモード</h3>
+                        <p className="section-description">
+                            試合開始時に使用するモードを選択します。スマホではシンプルモード、タブレットではフルモードがおすすめです。
+                        </p>
+                        <div className="mode-selector">
+                            <button
+                                className={`mode-btn ${defaultMode === 'full' ? 'active' : ''}`}
+                                onClick={() => setDefaultMode('full')}
+                            >
+                                <span className="mode-icon">💻</span>
+                                <span className="mode-label">フルモード</span>
+                                <span className="mode-desc">全機能表示（タブレット向け）</span>
+                            </button>
+                            <button
+                                className={`mode-btn ${defaultMode === 'simple' ? 'active' : ''}`}
+                                onClick={() => setDefaultMode('simple')}
+                            >
+                                <span className="mode-icon">📱</span>
+                                <span className="mode-label">シンプルモード</span>
+                                <span className="mode-desc">コンパクト表示（スマホ向け）</span>
+                            </button>
+                        </div>
+                    </section>
+
                     {/* AI設定セクション */}
                     <section className="settings-section">
                         <h3>AI機能 (Google Gemini API)</h3>

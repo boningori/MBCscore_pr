@@ -7,6 +7,7 @@ import { createPendingAction } from './types/pendingAction';
 import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
 import { saveGameResult } from './utils/gameHistoryStorage';
 import { saveGameSession, loadGameSession, clearGameSession } from './utils/gameSessionStorage';
+import { getDefaultGameMode } from './utils/appSettings';
 import { Home } from './components/Home';
 import { MyTeamManager } from './components/MyTeamManager';
 import { GameSetup } from './components/GameSetup';
@@ -638,8 +639,8 @@ function AppContent() {
   // フルスクリーン制御
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  // ゲームモード（フル/シンプル）
-  const [gameMode, setGameMode] = useState<'full' | 'simple'>('full');
+  // ゲームモード（フル/シンプル） - アプリ設定からデフォルト値を読み込み
+  const [gameMode, setGameMode] = useState<'full' | 'simple'>(getDefaultGameMode);
 
   // 履歴ポップアップ（シンプルモード用）
   const [showHistoryPopup, setShowHistoryPopup] = useState(false);
