@@ -187,17 +187,6 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                         </div>
                     </div>
 
-                    {hiddenPlayerCount > 0 && (
-                        <label className="hidden-toggle">
-                            <input
-                                type="checkbox"
-                                checked={showHiddenPlayers}
-                                onChange={e => setShowHiddenPlayers(e.target.checked)}
-                            />
-                            <span>非表示選手を含める ({hiddenPlayerCount}人)</span>
-                        </label>
-                    )}
-
                     {teamRecord && teamRecord.totalGames > 0 && (
                         <div className="team-summary-card">
                             <div className="team-name">{selectedTeam?.name}</div>
@@ -231,6 +220,17 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     )}
 
                     <PlayerCardList players={playerStats} onPlayerClick={handlePlayerClick} />
+
+                    {hiddenPlayerCount > 0 && (
+                        <label className="hidden-toggle">
+                            <input
+                                type="checkbox"
+                                checked={showHiddenPlayers}
+                                onChange={e => setShowHiddenPlayers(e.target.checked)}
+                            />
+                            <span>非表示選手を含める ({hiddenPlayerCount}人)</span>
+                        </label>
+                    )}
                 </>
             )}
 
