@@ -79,18 +79,22 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setSelectedPlayer(null);
     };
 
+    const [hiddenToggleKey, setHiddenToggleKey] = useState(0);
+
     const handleTogglePlayerHidden = useCallback(() => {
         if (!selectedTeam || !selectedPlayer) return;
         const playerKey = generatePlayerKey(selectedPlayer.name, selectedPlayer.licenseNo);
         togglePlayerHidden(selectedTeam.id, playerKey);
         setHiddenPlayerCount(loadHiddenPlayers(selectedTeam.id).length);
+        setHiddenToggleKey(prev => prev + 1); // 再描画をトリガー
     }, [selectedTeam, selectedPlayer]);
 
     const isSelectedPlayerHidden = useMemo(() => {
         if (!selectedTeam || !selectedPlayer) return false;
         const playerKey = generatePlayerKey(selectedPlayer.name, selectedPlayer.licenseNo);
         return isPlayerHidden(selectedTeam.id, playerKey);
-    }, [selectedTeam, selectedPlayer]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTeam, selectedPlayer, hiddenToggleKey]);
 
     if (myTeams.length === 0) {
         return (
