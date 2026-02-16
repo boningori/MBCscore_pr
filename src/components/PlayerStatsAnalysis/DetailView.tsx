@@ -44,7 +44,17 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                     className={`btn btn-hide-toggle ${isHidden ? 'hidden-state' : ''}`}
                     onClick={onToggleHidden}
                 >
-                    {isHidden ? '一覧に表示する' : '一覧から非表示'}
+                    {isHidden ? (
+                        <>
+                            <span className="hide-status">非表示中</span>
+                            <span className="hide-action">→ 表示する</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="hide-status">表示中</span>
+                            <span className="hide-action">→ 非表示</span>
+                        </>
+                    )}
                 </button>
             </div>
 
