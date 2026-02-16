@@ -30,6 +30,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
     const [showHiddenPlayers, setShowHiddenPlayers] = useState(false);
     const [hiddenPlayerCount, setHiddenPlayerCount] = useState(0);
+    const [hiddenToggleKey, setHiddenToggleKey] = useState(0);
 
     useEffect(() => {
         const teams = getAvailableMyTeams();
@@ -52,7 +53,8 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     const playerStats = useMemo(() => {
         if (!selectedTeam) return [];
         return aggregatePlayerStats(selectedTeam, startDate, endDate, { includeHidden: showHiddenPlayers });
-    }, [selectedTeam, startDate, endDate, showHiddenPlayers]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTeam, startDate, endDate, showHiddenPlayers, hiddenToggleKey]);
 
     const teamRecord = useMemo((): TeamRecord | null => {
         if (!selectedTeam) return null;
@@ -78,8 +80,6 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setViewMode('summary');
         setSelectedPlayer(null);
     };
-
-    const [hiddenToggleKey, setHiddenToggleKey] = useState(0);
 
     const handleTogglePlayerHidden = useCallback(() => {
         if (!selectedTeam || !selectedPlayer) return;
