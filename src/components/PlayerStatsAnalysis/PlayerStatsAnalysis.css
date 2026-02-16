@@ -414,11 +414,11 @@
 .toggle-switch .toggle-label {
     font-size: 0.85rem;
     font-weight: 600;
-    color: #991b1b;
+    color: #166534;
 }
 
 .toggle-switch.hidden-state .toggle-label {
-    color: #166534;
+    color: #991b1b;
 }
 
 .toggle-switch input[type="checkbox"] {
@@ -429,7 +429,7 @@
     position: relative;
     width: 50px;
     height: 26px;
-    background: #ef4444;
+    background: #22c55e;
     border-radius: 13px;
     transition: all 0.3s ease;
 }
@@ -448,7 +448,7 @@
 }
 
 .toggle-switch.hidden-state .toggle-slider {
-    background: #22c55e;
+    background: #ef4444;
 }
 
 .toggle-switch.hidden-state .toggle-slider::after {
@@ -1702,19 +1702,19 @@
     }
 
     .toggle-switch .toggle-label {
-        color: #fca5a5;
-    }
-
-    .toggle-switch.hidden-state .toggle-label {
         color: #86efac;
     }
 
+    .toggle-switch.hidden-state .toggle-label {
+        color: #fca5a5;
+    }
+
     .toggle-switch .toggle-slider {
-        background: #dc2626;
+        background: #16a34a;
     }
 
     .toggle-switch.hidden-state .toggle-slider {
-        background: #16a34a;
+        background: #dc2626;
     }
 
     .hidden-toggle {
