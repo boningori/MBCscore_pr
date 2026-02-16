@@ -56,15 +56,19 @@
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    background: white;
+    background: white !important;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    color: #64748b;
+    color: #475569 !important;
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: var(--stats-card-shadow);
+}
+
+.btn-back span {
+    color: inherit !important;
 }
 
 .btn-back:hover {
@@ -1439,14 +1443,14 @@
     }
 
     .btn-back {
-        background: #334155;
+        background: #334155 !important;
         border-color: #475569;
-        color: #cbd5e1;
+        color: #e2e8f0 !important;
     }
 
     .btn-back:hover {
-        background: #475569;
-        color: #f1f5f9;
+        background: #475569 !important;
+        color: #f8fafc !important;
     }
 
     .team-select {
