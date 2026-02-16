@@ -812,16 +812,14 @@ function AppContent() {
           {/* {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />} */}
         </div>
         <div className="header-right">
-          {/* シンプルモード用: 履歴ボタン */}
-          {gameMode === 'simple' && (
-            <button
-              className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small`}
-              onClick={() => setShowHistoryPopup(!showHistoryPopup)}
-              style={{ marginRight: '8px' }}
-            >
-              📜 履歴
-            </button>
-          )}
+          {/* 履歴ボタン（両モード共通） */}
+          <button
+            className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small`}
+            onClick={() => setShowHistoryPopup(!showHistoryPopup)}
+            style={{ marginRight: '8px' }}
+          >
+            📜 履歴
+          </button>
           {/* スコアシートボタン（両モード共通） */}
           <button
             className="btn btn-secondary btn-small"
@@ -1306,8 +1304,8 @@ function AppContent() {
         );
       })()}
 
-      {/* 履歴ポップアップ（シンプルモード用） */}
-      {showHistoryPopup && gameMode === 'simple' && (
+      {/* 履歴ポップアップ（両モード共通） */}
+      {showHistoryPopup && (
         <div className="history-popup-overlay" onClick={() => setShowHistoryPopup(false)}>
           <div className="history-popup-content" onClick={e => e.stopPropagation()}>
             <div className="history-popup-header">

@@ -1133,6 +1133,62 @@
   border-radius: var(--radius-sm);
 }
 
+/* 履歴ポップアップ：横画面タブレット（フルモード）向け - 大きく表示 */
+@media (min-width: 1000px) and (orientation: landscape) {
+  .history-popup-content {
+    max-width: 90vw;
+    width: 90vw;
+    max-height: 90vh;
+    height: 90vh;
+  }
+
+  .history-popup-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .history-popup-header h3 {
+    font-size: var(--font-size-xl);
+  }
+
+  .history-popup-body {
+    padding: var(--spacing-md) var(--spacing-lg);
+    gap: var(--spacing-lg);
+  }
+
+  .history-popup-team {
+    padding-left: var(--spacing-md);
+  }
+
+  .history-popup-team h4 {
+    font-size: var(--font-size-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  /* 履歴アイテムを大きく表示 */
+  .history-popup-content .history-item {
+    height: 48px;
+    padding: 0 var(--spacing-md);
+  }
+
+  .history-popup-content .history-item .player-number {
+    font-size: var(--font-size-md);
+    min-width: 40px;
+  }
+
+  .history-popup-content .history-item .action-desc {
+    font-size: var(--font-size-md);
+  }
+
+  .history-popup-content .history-header {
+    height: 32px;
+    padding: 0 var(--spacing-md);
+  }
+
+  .history-popup-content .history-header .team-name {
+    font-size: var(--font-size-md);
+  }
+}
+
 /* 履歴ポップアップ：スマホ向け改善 */
 @media (max-width: 600px) {
   .history-popup-overlay {

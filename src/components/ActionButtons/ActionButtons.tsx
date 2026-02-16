@@ -1,4 +1,3 @@
-import { SwipeableReboundButton } from './SwipeableReboundButton';
 import { SwipeableTurnoverButton } from './SwipeableTurnoverButton';
 import { SwipeableScoreButton } from './SwipeableScoreButton';
 import './ActionButtons.css';
@@ -35,13 +34,6 @@ export function ActionButtons({
     // ただし、もし従来の挙動（選手選択必須）を維持したい箇所があれば...
     // 今回は「アクション→選手」にするので、ボタンは常に有効であるべき。
     const isBtnDisabled = disabled;
-
-    // リバウンドのアクティブ状態を判定
-    const getActiveReboundType = (): 'OREB' | 'DREB' | null => {
-        if (isActive('STAT', 'OREB')) return 'OREB';
-        if (isActive('STAT', 'DREB')) return 'DREB';
-        return null;
-    };
 
     // ターンオーバーのアクティブ状態を判定
     const getActiveTurnoverType = (): 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | null => {
@@ -91,13 +83,25 @@ export function ActionButtons({
                 <div className="action-group">
                     {/* <h4 className="action-group-title">統計</h4> */}
                     <div className="action-row">
-                        {/* スワイプ可能なリバウンドボタン */}
-                        <SwipeableReboundButton
-                            onRebound={(type) => onStat(type)}
+                        {/* リバウンドボタン（OR/DR分割） */}
+                        <button
+                            className={`action-btn stat-btn btn-oreb ${isActive('STAT', 'OREB') ? 'active' : ''}`}
+                            onClick={() => onStat('OREB')}
                             disabled={isBtnDisabled}
-                            isActive={isActive('STAT', 'OREB') || isActive('STAT', 'DREB')}
-                            activeType={getActiveReboundType()}
-                        />
+                        >
+                            <span className="rebound-label">OR</span>
+                            <span className="rebound-sublabel">オフェンス</span>
+                            <span className="rebound-sublabel">リバウンド</span>
+                        </button>
+                        <button
+                            className={`action-btn stat-btn btn-dreb ${isActive('STAT', 'DREB') ? 'active' : ''}`}
+                            onClick={() => onStat('DREB')}
+                            disabled={isBtnDisabled}
+                        >
+                            <span className="rebound-label">DR</span>
+                            <span className="rebound-sublabel">ディフェンス</span>
+                            <span className="rebound-sublabel">リバウンド</span>
+                        </button>
                     </div>
                     <div className="action-row">
                         <button

@@ -147,6 +147,37 @@
     background: rgba(148, 163, 184, 0.2);
 }
 
+/* リバウンドボタン（OR/DR分割） */
+.btn-oreb {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: #8b5cf6;
+}
+
+.btn-oreb:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.4);
+}
+
+.btn-dreb {
+    background: rgba(139, 69, 19, 0.35);
+    border-color: #8b4513;
+}
+
+.btn-dreb:hover:not(:disabled) {
+    background: rgba(139, 69, 19, 0.5);
+}
+
+.rebound-label {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.rebound-sublabel {
+    font-size: 0.65rem;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
 .btn-turnover {
     background: rgba(220, 38, 38, 0.1);
     border-color: var(--danger);
