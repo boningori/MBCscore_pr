@@ -60,7 +60,7 @@ function formatXLabel(label: string, periodType: PeriodType): string {
 }
 
 export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
-    const [periodType, setPeriodType] = useState<PeriodType>('month');
+    const [periodType, setPeriodType] = useState<PeriodType>('game');
 
     const periodStats = useMemo(() => aggregateByPeriod(gameHistory, periodType), [gameHistory, periodType]);
 
