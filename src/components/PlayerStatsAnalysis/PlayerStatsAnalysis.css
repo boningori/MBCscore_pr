@@ -401,37 +401,62 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.detail-toolbar .btn-hide-toggle {
-    background: #dcfce7;
-    color: #166534;
-    border: 2px solid #86efac;
-    margin-left: auto;
+/* トグルスイッチ */
+.toggle-switch {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    margin-left: auto;
+    cursor: pointer;
+    user-select: none;
 }
 
-.detail-toolbar .btn-hide-toggle .hide-status {
-    font-weight: 700;
+.toggle-switch .toggle-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #166534;
 }
 
-.detail-toolbar .btn-hide-toggle .hide-action {
-    font-size: 0.75rem;
-    opacity: 0.7;
-}
-
-.detail-toolbar .btn-hide-toggle.hidden-state {
-    background: #fef2f2;
+.toggle-switch.hidden-state .toggle-label {
     color: #991b1b;
-    border-color: #fca5a5;
 }
 
-.detail-toolbar .btn-hide-toggle:hover {
-    transform: translateY(-1px);
+.toggle-switch input[type="checkbox"] {
+    display: none;
 }
 
-.detail-toolbar .btn-hide-toggle:active {
-    transform: scale(0.98);
+.toggle-switch .toggle-slider {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    background: #22c55e;
+    border-radius: 13px;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch .toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch.hidden-state .toggle-slider {
+    background: #ef4444;
+}
+
+.toggle-switch.hidden-state .toggle-slider::after {
+    left: 27px;
+}
+
+.toggle-switch:hover .toggle-slider {
+    opacity: 0.9;
 }
 
 /* 非表示選手トグル */
@@ -1676,16 +1701,20 @@
         border-color: #64748b;
     }
 
-    .detail-toolbar .btn-hide-toggle {
-        background: #14532d;
-        color: #bbf7d0;
-        border-color: #22c55e;
+    .toggle-switch .toggle-label {
+        color: #86efac;
     }
 
-    .detail-toolbar .btn-hide-toggle.hidden-state {
-        background: #7f1d1d;
-        color: #fecaca;
-        border-color: #ef4444;
+    .toggle-switch.hidden-state .toggle-label {
+        color: #fca5a5;
+    }
+
+    .toggle-switch .toggle-slider {
+        background: #16a34a;
+    }
+
+    .toggle-switch.hidden-state .toggle-slider {
+        background: #dc2626;
     }
 
     .hidden-toggle {

@@ -40,22 +40,15 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                 <button className="btn btn-secondary" onClick={handleExportJPEG}>
                     JPEG出力
                 </button>
-                <button
-                    className={`btn btn-hide-toggle ${isHidden ? 'hidden-state' : ''}`}
-                    onClick={onToggleHidden}
-                >
-                    {isHidden ? (
-                        <>
-                            <span className="hide-status">非表示中</span>
-                            <span className="hide-action">→ 表示する</span>
-                        </>
-                    ) : (
-                        <>
-                            <span className="hide-status">表示中</span>
-                            <span className="hide-action">→ 非表示</span>
-                        </>
-                    )}
-                </button>
+                <label className={`toggle-switch ${isHidden ? 'hidden-state' : ''}`}>
+                    <span className="toggle-label">一覧に表示</span>
+                    <input
+                        type="checkbox"
+                        checked={!isHidden}
+                        onChange={onToggleHidden}
+                    />
+                    <span className="toggle-slider"></span>
+                </label>
             </div>
 
             <h2 className="detail-player-title">
