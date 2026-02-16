@@ -47,6 +47,13 @@
   justify-content: center;
 }
 
+/* スマホのフルモード時は履歴ボタンを非表示（チームパネル内の履歴を使用） */
+@media (max-width: 767px) {
+  .game-mode-full .history-popup-btn {
+    display: none;
+  }
+}
+
 .app-title {
   font-size: var(--font-size-lg);
   font-weight: 700;
@@ -1101,11 +1108,12 @@
 
 .history-popup-body {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   padding: var(--spacing-sm);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-sm);
+  min-height: 0;
 }
 
 .history-popup-team {
@@ -1114,6 +1122,8 @@
   gap: var(--spacing-xs);
   padding-left: var(--spacing-sm);
   border-left: 4px solid var(--border);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .history-popup-team.color-white {
@@ -1133,12 +1143,16 @@
   border-radius: var(--radius-sm);
 }
 
-/* 履歴ポップアップ：横画面タブレット（フルモード）向け - 大きく表示 */
-@media (min-width: 1000px) and (orientation: landscape) {
+/* ポップアップ内ではActionHistoryのヘッダーを非表示 */
+.history-popup-content .history-header {
+  display: none;
+}
+
+/* 履歴ポップアップ：タブレット向け - 画面にフィット */
+@media (min-width: 768px) {
   .history-popup-content {
     max-width: 90vw;
     width: 90vw;
-    max-height: 90vh;
     height: 90vh;
   }
 

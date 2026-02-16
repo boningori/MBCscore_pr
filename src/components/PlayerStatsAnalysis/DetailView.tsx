@@ -5,7 +5,7 @@ import { exportElement } from '../../utils/pdfExport';
 import { GrowthComparison } from './GrowthComparison';
 import { formatDate, type DetailViewProps } from './types';
 
-export function DetailView({ player }: DetailViewProps) {
+export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps) {
     const detailRef = useRef<HTMLDivElement>(null);
     const totalRebounds = player.totalStats.offensiveRebounds + player.totalStats.defensiveRebounds;
     const avgRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
@@ -39,6 +39,12 @@ export function DetailView({ player }: DetailViewProps) {
                 </button>
                 <button className="btn btn-secondary" onClick={handleExportJPEG}>
                     JPEG出力
+                </button>
+                <button
+                    className={`btn btn-hide-toggle ${isHidden ? 'hidden-state' : ''}`}
+                    onClick={onToggleHidden}
+                >
+                    {isHidden ? '一覧に表示する' : '一覧から非表示'}
                 </button>
             </div>
 

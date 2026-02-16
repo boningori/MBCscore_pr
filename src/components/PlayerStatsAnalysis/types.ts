@@ -52,6 +52,9 @@ export interface PlayerCardListProps {
 
 export interface DetailViewProps {
     player: AggregatedPlayerStats;
+    teamId: string;
+    isHidden: boolean;
+    onToggleHidden: () => void;
 }
 
 export interface GrowthComparisonProps {

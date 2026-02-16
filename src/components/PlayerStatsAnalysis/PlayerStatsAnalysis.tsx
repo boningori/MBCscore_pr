@@ -1,11 +1,15 @@
 // 選手スタッツ分析 メインコンポーネント
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { SavedTeam } from '../../utils/teamStorage';
 import {
     aggregatePlayerStats,
     getAvailableMyTeams,
     getTeamRecord,
+    generatePlayerKey,
+    togglePlayerHidden,
+    isPlayerHidden,
+    loadHiddenPlayers,
     type AggregatedPlayerStats,
     type TeamRecord,
 } from '../../utils/playerStatsAnalysis';
@@ -24,6 +28,8 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('summary');
     const [selectedPlayer, setSelectedPlayer] = useState<AggregatedPlayerStats | null>(null);
     const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+    const [showHiddenPlayers, setShowHiddenPlayers] = useState(false);
+    const [hiddenPlayerCount, setHiddenPlayerCount] = useState(0);
 
     useEffect(() => {
         const teams = getAvailableMyTeams();
@@ -33,13 +39,20 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         }
     }, []);
 
+    // 非表示選手数を更新
+    useEffect(() => {
+        if (selectedTeam) {
+            setHiddenPlayerCount(loadHiddenPlayers(selectedTeam.id).length);
+        }
+    }, [selectedTeam, viewMode]);
+
     const startDate = dateRange.start ? new Date(dateRange.start) : undefined;
     const endDate = dateRange.end ? new Date(dateRange.end + 'T23:59:59') : undefined;
 
     const playerStats = useMemo(() => {
         if (!selectedTeam) return [];
-        return aggregatePlayerStats(selectedTeam, startDate, endDate);
-    }, [selectedTeam, startDate, endDate]);
+        return aggregatePlayerStats(selectedTeam, startDate, endDate, { includeHidden: showHiddenPlayers });
+    }, [selectedTeam, startDate, endDate, showHiddenPlayers]);
 
     const teamRecord = useMemo((): TeamRecord | null => {
         if (!selectedTeam) return null;
@@ -52,6 +65,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
             setSelectedTeam(team);
             setSelectedPlayer(null);
             setViewMode('summary');
+            setShowHiddenPlayers(false);
         }
     };
 
@@ -64,6 +78,19 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setViewMode('summary');
         setSelectedPlayer(null);
     };
+
+    const handleTogglePlayerHidden = useCallback(() => {
+        if (!selectedTeam || !selectedPlayer) return;
+        const playerKey = generatePlayerKey(selectedPlayer.name, selectedPlayer.licenseNo);
+        togglePlayerHidden(selectedTeam.id, playerKey);
+        setHiddenPlayerCount(loadHiddenPlayers(selectedTeam.id).length);
+    }, [selectedTeam, selectedPlayer]);
+
+    const isSelectedPlayerHidden = useMemo(() => {
+        if (!selectedTeam || !selectedPlayer) return false;
+        const playerKey = generatePlayerKey(selectedPlayer.name, selectedPlayer.licenseNo);
+        return isPlayerHidden(selectedTeam.id, playerKey);
+    }, [selectedTeam, selectedPlayer]);
 
     if (myTeams.length === 0) {
         return (
@@ -160,6 +187,17 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                         </div>
                     </div>
 
+                    {hiddenPlayerCount > 0 && (
+                        <label className="hidden-toggle">
+                            <input
+                                type="checkbox"
+                                checked={showHiddenPlayers}
+                                onChange={e => setShowHiddenPlayers(e.target.checked)}
+                            />
+                            <span>非表示選手を含める ({hiddenPlayerCount}人)</span>
+                        </label>
+                    )}
+
                     {teamRecord && teamRecord.totalGames > 0 && (
                         <div className="team-summary-card">
                             <div className="team-name">{selectedTeam?.name}</div>
@@ -196,8 +234,13 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                 </>
             )}
 
-            {viewMode === 'detail' && selectedPlayer && (
-                <DetailView player={selectedPlayer} />
+            {viewMode === 'detail' && selectedPlayer && selectedTeam && (
+                <DetailView
+                    player={selectedPlayer}
+                    teamId={selectedTeam.id}
+                    isHidden={isSelectedPlayerHidden}
+                    onToggleHidden={handleTogglePlayerHidden}
+                />
             )}
         </div>
     );

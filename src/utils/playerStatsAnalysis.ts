@@ -5,6 +5,63 @@ import type { GameRecord } from './gameHistoryStorage';
 import { loadGameHistory } from './gameHistoryStorage';
 import { loadMyTeams, type SavedTeam } from './teamStorage';
 
+// 非表示選手ストレージ
+const HIDDEN_PLAYERS_KEY = 'minibasket-hidden-players';
+
+// チームごとの非表示選手キーを保存
+export function saveHiddenPlayers(teamId: string, playerKeys: string[]): void {
+    try {
+        const all = loadAllHiddenPlayers();
+        all[teamId] = playerKeys;
+        localStorage.setItem(HIDDEN_PLAYERS_KEY, JSON.stringify(all));
+    } catch (error) {
+        console.error('Failed to save hidden players:', error);
+    }
+}
+
+// チームの非表示選手キーを取得
+export function loadHiddenPlayers(teamId: string): string[] {
+    try {
+        const all = loadAllHiddenPlayers();
+        return all[teamId] || [];
+    } catch (error) {
+        console.error('Failed to load hidden players:', error);
+        return [];
+    }
+}
+
+// 全チームの非表示選手を取得
+function loadAllHiddenPlayers(): Record<string, string[]> {
+    try {
+        const data = localStorage.getItem(HIDDEN_PLAYERS_KEY);
+        if (!data) return {};
+        return JSON.parse(data);
+    } catch {
+        return {};
+    }
+}
+
+// 選手の非表示状態をトグル
+export function togglePlayerHidden(teamId: string, playerKey: string): boolean {
+    const hidden = loadHiddenPlayers(teamId);
+    const index = hidden.indexOf(playerKey);
+    if (index >= 0) {
+        hidden.splice(index, 1);
+        saveHiddenPlayers(teamId, hidden);
+        return false; // 表示状態に変更
+    } else {
+        hidden.push(playerKey);
+        saveHiddenPlayers(teamId, hidden);
+        return true; // 非表示状態に変更
+    }
+}
+
+// 選手が非表示かチェック
+export function isPlayerHidden(teamId: string, playerKey: string): boolean {
+    const hidden = loadHiddenPlayers(teamId);
+    return hidden.includes(playerKey);
+}
+
 // 期間タイプ
 export type PeriodType = 'game' | 'month' | 'quarter' | 'year';
 
@@ -175,10 +232,12 @@ export function getMyTeamGames(myTeam: SavedTeam): { record: GameRecord; isTeamA
 export function aggregatePlayerStats(
     myTeam: SavedTeam,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    options?: { includeHidden?: boolean }
 ): AggregatedPlayerStats[] {
     const games = getMyTeamGames(myTeam);
     const playerMap = new Map<string, AggregatedPlayerStats>();
+    const hiddenPlayers = options?.includeHidden ? [] : loadHiddenPlayers(myTeam.id);
 
     for (const { record, isTeamA } of games) {
         const gameDate = new Date(record.date);
@@ -197,6 +256,9 @@ export function aggregatePlayerStats(
         for (const player of myTeamData.players) {
             // 氏名 + ライセンスNo. で識別
             const key = generatePlayerKey(player.name, player.licenseNo);
+
+            // 非表示選手をスキップ
+            if (hiddenPlayers.includes(key)) continue;
 
             const hasStats = player.stats.points > 0 ||
                 player.stats.twoPointAttempt > 0 ||

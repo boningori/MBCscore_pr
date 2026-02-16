@@ -790,7 +790,7 @@ function AppContent() {
 
   // ゲーム画面
   return (
-    <div className="app-container" onContextMenu={(e) => e.preventDefault()}>
+    <div className={`app-container game-mode-${gameMode}`} onContextMenu={(e) => e.preventDefault()}>
       {/* ヘッダー */}
       <header className="app-header">
         <div className="header-left">
@@ -813,9 +813,9 @@ function AppContent() {
           {/* {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />} */}
         </div>
         <div className="header-right">
-          {/* 履歴ボタン（両モード共通） */}
+          {/* 履歴ボタン（シンプルモード、またはタブレット以上で表示） */}
           <button
-            className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small`}
+            className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small history-popup-btn`}
             onClick={() => setShowHistoryPopup(!showHistoryPopup)}
             style={{ marginRight: '8px' }}
           >
