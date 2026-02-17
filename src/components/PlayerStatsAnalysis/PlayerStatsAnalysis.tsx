@@ -228,7 +228,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     {hiddenPlayerCount > 0 && (
                         <label className={`hidden-players-toggle ${showHiddenPlayers ? 'active' : ''}`}>
                             <span className="toggle-label">
-                                非表示選手 ({hiddenPlayerCount}人)
+                                {showHiddenPlayers ? '全選手表示中' : `非表示選手 (${hiddenPlayerCount}人)`}
                             </span>
                             <input
                                 type="checkbox"
