@@ -41,7 +41,7 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                     JPEG出力
                 </button>
                 <label className={`toggle-switch ${isHidden ? 'hidden-state' : ''}`}>
-                    <span className="toggle-label">{isHidden ? '一覧に表示' : '非表示にする'}</span>
+                    <span className="toggle-label">{isHidden ? '非表示中' : '表示中'}</span>
                     <input
                         type="checkbox"
                         checked={!isHidden}
