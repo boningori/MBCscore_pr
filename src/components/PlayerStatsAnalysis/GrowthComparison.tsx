@@ -14,9 +14,9 @@ import {
     type GrowthComparisonProps,
 } from './types';
 
-// Y軸のきりの良い最大値を計算
+// Y軸のきりの良い最大値を計算（目盛り間隔は最低0.5）
 function getNiceMaxValue(rawMax: number): number {
-    if (rawMax <= 0) return 1;
+    if (rawMax <= 0) return 2;
     const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
     const normalized = rawMax / magnitude;
     let niceStep: number;
@@ -24,7 +24,9 @@ function getNiceMaxValue(rawMax: number): number {
     else if (normalized <= 2) niceStep = 0.5 * magnitude;
     else if (normalized <= 5) niceStep = 1 * magnitude;
     else niceStep = 2 * magnitude;
-    return Math.ceil(rawMax / niceStep) * niceStep;
+    const result = Math.ceil(rawMax / niceStep) * niceStep;
+    // 目盛り間隔（result / 4）が0.5未満にならないように最低2を確保
+    return Math.max(result, 2);
 }
 
 // Y軸目盛りラベルのフォーマット
@@ -100,7 +102,7 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
                         {STAT_LABELS[statType]}
                     </span>
                     <span className="chart-unit">({STAT_UNITS[statType]})</span>
-                    <span className="chart-subtitle">{periodLabels[periodType]}平均</span>
+                    <span className="chart-subtitle">{periodType === 'game' ? '試合別' : `${periodLabels[periodType]}平均`}</span>
                 </div>
                 <div className="chart-area">
                     <div className="y-axis">
@@ -114,7 +116,7 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
                                 <div
                                     key={`grid-${i}`}
                                     className="grid-line"
-                                    style={{ bottom: `${(i / (tickCount - 1)) * 100}%` }}
+                                    style={{ bottom: `${((tickCount - 1 - i) / (tickCount - 1)) * 100}%` }}
                                 />
                             ))}
                             {reversed.map((p) => (

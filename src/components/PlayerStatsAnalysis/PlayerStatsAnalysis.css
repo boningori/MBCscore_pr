@@ -1349,7 +1349,7 @@
 }
 
 .standard-chart .chart-title {
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 700;
 }
 
@@ -1368,7 +1368,7 @@
 .standard-chart .chart-area {
     display: flex;
     gap: 0;
-    height: 100px;
+    height: 120px;
 }
 
 .standard-chart .y-axis {
@@ -1376,9 +1376,10 @@
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-end;
-    width: 32px;
-    min-width: 32px;
-    font-size: 0.55rem;
+    width: 36px;
+    min-width: 36px;
+    height: 100px;
+    font-size: 0.7rem;
     color: #94a3b8;
     padding-right: 4px;
     border-right: 1px solid #cbd5e1;
