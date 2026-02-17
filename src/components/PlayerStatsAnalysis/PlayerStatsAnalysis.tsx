@@ -226,13 +226,16 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     <PlayerCardList players={playerStats} onPlayerClick={handlePlayerClick} />
 
                     {hiddenPlayerCount > 0 && (
-                        <label className="hidden-toggle">
+                        <label className={`hidden-players-toggle ${showHiddenPlayers ? 'active' : ''}`}>
+                            <span className="toggle-label">
+                                非表示選手 ({hiddenPlayerCount}人)
+                            </span>
                             <input
                                 type="checkbox"
                                 checked={showHiddenPlayers}
                                 onChange={e => setShowHiddenPlayers(e.target.checked)}
                             />
-                            <span>非表示選手を含める ({hiddenPlayerCount}人)</span>
+                            <span className="toggle-slider"></span>
                         </label>
                     )}
                 </>
