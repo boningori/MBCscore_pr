@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
     loadMyTeams,
@@ -7,6 +7,14 @@ import {
     createEmptySavedTeam,
     generateTeamId
 } from '../../utils/teamStorage';
+import {
+    exportTeam,
+    downloadJSON,
+    shareFile,
+    generateTeamFilename,
+    importFromFile,
+    importTeamAsMyTeam,
+} from '../../utils/dataBackup';
 import './MyTeamManager.css';
 
 interface MyTeamManagerProps {
@@ -19,6 +27,7 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
     const [teams, setTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+    const jsonImportInputRef = useRef<HTMLInputElement>(null);
 
     const refreshTeams = () => {
         setTeams(loadMyTeams());
@@ -58,6 +67,57 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
         onSelectTeam?.(team);
     };
 
+    const handleExportTeam = async (e: React.MouseEvent, team: SavedTeam) => {
+        e.stopPropagation();
+        const data = exportTeam(team);
+        const filename = generateTeamFilename(team.name);
+
+        // モバイルデバイスの場合はWeb Share APIを試す
+        if (navigator.share && navigator.userAgent.match(/mobile/i)) {
+            const shared = await shareFile(data, filename, `${team.name} - チームデータ`);
+            if (shared) return;
+        }
+
+        // ダウンロード
+        downloadJSON(data, filename);
+    };
+
+    const handleImportTeam = () => {
+        jsonImportInputRef.current?.click();
+    };
+
+    const handleJsonImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const result = await importFromFile(file);
+            if (result.success && result.imported) {
+                // チーム単位のインポートの場合
+                const text = await file.text();
+                const data = JSON.parse(text);
+                if (data.type === 'team' && data.team) {
+                    const importResult = importTeamAsMyTeam(data.team);
+                    if (importResult.success) {
+                        alert(importResult.message);
+                        refreshTeams();
+                    } else {
+                        alert(`インポート失敗: ${importResult.message}`);
+                    }
+                } else {
+                    alert(result.message);
+                    refreshTeams();
+                }
+            } else {
+                alert(`インポート失敗: ${result.message}\n${result.errors?.join('\n') || ''}`);
+            }
+        } catch (error) {
+            alert('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+        }
+
+        e.target.value = '';
+    };
+
     if (editingTeam) {
         return (
             <MyTeamEditor
@@ -81,6 +141,16 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                 <button className="btn btn-primary" onClick={handleCreateNew}>
                     + 新規作成
                 </button>
+                <button className="btn btn-secondary" onClick={handleImportTeam}>
+                    📥 チームインポート
+                </button>
+                <input
+                    ref={jsonImportInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleJsonImport}
+                    style={{ display: 'none' }}
+                />
             </div>
 
             <div className="team-list">
@@ -120,6 +190,13 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                                     onClick={() => handleEdit(team)}
                                 >
                                     編集
+                                </button>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={(e) => handleExportTeam(e, team)}
+                                    title="このチームをエクスポート"
+                                >
+                                    📤
                                 </button>
                                 <button
                                     className="btn btn-danger"
