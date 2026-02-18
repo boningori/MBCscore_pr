@@ -394,6 +394,82 @@ function importSingleTeam(data: TeamExportData): ImportResult {
 }
 
 /**
+ * マイチームとしてインポート
+ */
+export function importTeamAsMyTeam(team: SavedTeam): ImportResult {
+    try {
+        if (!team || !team.id) {
+            return {
+                success: false,
+                message: 'チームデータが不正です',
+                errors: ['必須フィールドが不足しています'],
+            };
+        }
+
+        const myTeams = loadMyTeams();
+        const existingIndex = myTeams.findIndex(t => t.id === team.id);
+
+        if (existingIndex >= 0) {
+            myTeams[existingIndex] = team;
+        } else {
+            myTeams.push(team);
+        }
+
+        localStorage.setItem('minibasket-my-teams', JSON.stringify(myTeams));
+
+        return {
+            success: true,
+            message: 'マイチームとしてインポートしました',
+            imported: { games: 0, teams: 1, opponents: 0 },
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: 'インポートに失敗しました',
+            errors: [error instanceof Error ? error.message : '不明なエラー'],
+        };
+    }
+}
+
+/**
+ * 対戦チームとしてインポート
+ */
+export function importTeamAsOpponent(team: SavedTeam): ImportResult {
+    try {
+        if (!team || !team.id) {
+            return {
+                success: false,
+                message: 'チームデータが不正です',
+                errors: ['必須フィールドが不足しています'],
+            };
+        }
+
+        const opponents = loadOpponents();
+        const existingIndex = opponents.findIndex(t => t.id === team.id);
+
+        if (existingIndex >= 0) {
+            opponents[existingIndex] = team;
+        } else {
+            opponents.push(team);
+        }
+
+        localStorage.setItem('minibasket-saved-opponents', JSON.stringify(opponents));
+
+        return {
+            success: true,
+            message: '対戦チームとしてインポートしました',
+            imported: { games: 0, teams: 0, opponents: 1 },
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: 'インポートに失敗しました',
+            errors: [error instanceof Error ? error.message : '不明なエラー'],
+        };
+    }
+}
+
+/**
  * 全データバックアップのインポート
  */
 function importFullBackup(data: BackupData): ImportResult {
