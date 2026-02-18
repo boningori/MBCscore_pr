@@ -50,6 +50,24 @@ export interface ImportResult {
         teams?: number;
         opponents?: number;
     };
+    details?: {
+        newGames?: number;
+        updatedGames?: number;
+        newTeams?: number;
+        updatedTeams?: number;
+        newOpponents?: number;
+        updatedOpponents?: number;
+    };
+}
+
+// インポートデータの解析結果
+export interface ParsedImportData {
+    type: 'game' | 'team' | 'backup' | 'unknown';
+    data: any;
+    summary: string;
+    hasDuplicates?: boolean;
+    duplicateDetails?: string;
+    preview?: string[];
 }
 
 // ===== エクスポート機能 =====
@@ -123,7 +141,7 @@ export function exportTeam(team: SavedTeam): TeamExportData {
 }
 
 /**
- * 試合履歴をCSV形式でエクスポート
+ * 試合履歴をCSV形式でエクスポート（試合サマリー版）
  */
 export function exportGameHistoryCSV(): string {
     const gameHistory = loadGameHistory();
@@ -144,7 +162,7 @@ export function exportGameHistoryCSV(): string {
     const rows = gameHistory.map(game => {
         const date = new Date(game.date).toLocaleDateString('ja-JP');
         const result = game.finalScore.teamA > game.finalScore.teamB ? '勝利' :
-                      game.finalScore.teamA < game.finalScore.teamB ? '敗北' : '引分';
+            game.finalScore.teamA < game.finalScore.teamB ? '敗北' : '引分';
 
         return [
             date,
@@ -157,6 +175,205 @@ export function exportGameHistoryCSV(): string {
             game.gameInfo?.venue || '',
         ];
     });
+
+    // CSV文字列を生成
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+    ].join('\n');
+
+    // BOM付きUTF-8（Excelで正しく開くため）
+    return '\uFEFF' + csvContent;
+}
+
+/**
+ * 試合履歴をCSV形式でエクスポート（選手スタッツ詳細版）
+ */
+export function exportGameHistoryDetailCSV(): string {
+    const gameHistory = loadGameHistory();
+
+    // CSVヘッダー
+    const headers = [
+        '日付',
+        '大会名',
+        '会場',
+        'チーム名',
+        '対戦相手',
+        '結果',
+        '自チーム得点',
+        '相手得点',
+        '背番号',
+        '選手名',
+        'コートネーム',
+        'キャプテン',
+        '得点',
+        '2P成功',
+        '2P試投',
+        '2P成功率',
+        '3P成功',
+        '3P試投',
+        '3P成功率',
+        'FT成功',
+        'FT試投',
+        'FT成功率',
+        'FG成功',
+        'FG試投',
+        'FG成功率',
+        'オフェンスリバウンド',
+        'ディフェンスリバウンド',
+        '総リバウンド',
+        'アシスト',
+        'スティール',
+        'ブロック',
+        'ターンオーバー',
+        'TO:ダブドリ',
+        'TO:トラベ',
+        'TO:パスミス',
+        'TO:キャッチミス',
+        'ファウル数',
+        'Q1出場',
+        'Q2出場',
+        'Q3出場',
+        'Q4出場',
+    ];
+
+    // データ行
+    const rows: string[][] = [];
+
+    for (const game of gameHistory) {
+        const date = new Date(game.date).toLocaleDateString('ja-JP');
+        const venue = game.gameInfo?.venue || '';
+
+        // チームAの選手データ
+        const resultA = game.finalScore.teamA > game.finalScore.teamB ? '勝利' :
+            game.finalScore.teamA < game.finalScore.teamB ? '敗北' : '引分';
+
+        for (const player of game.teamA.players) {
+            const stats = player.stats;
+            const twoPercent = stats.twoPointAttempt > 0 ? (stats.twoPointMade / stats.twoPointAttempt * 100).toFixed(1) : '-';
+            const threePercent = stats.threePointAttempt > 0 ? (stats.threePointMade / stats.threePointAttempt * 100).toFixed(1) : '-';
+            const ftPercent = stats.freeThrowAttempt > 0 ? (stats.freeThrowMade / stats.freeThrowAttempt * 100).toFixed(1) : '-';
+            const fgMade = stats.twoPointMade + stats.threePointMade;
+            const fgAttempt = stats.twoPointAttempt + stats.threePointAttempt;
+            const fgPercent = fgAttempt > 0 ? (fgMade / fgAttempt * 100).toFixed(1) : '-';
+
+            const formatQuarterPlay = (qp: any) => {
+                if (qp === 'starter') return 'スタメン';
+                if (qp === 'sub') return '途中出場';
+                if (qp === 'both') return 'スタメン+再出場';
+                return '';
+            };
+
+            rows.push([
+                date,
+                game.gameName,
+                venue,
+                game.teamA.name,
+                game.teamB.name,
+                resultA,
+                game.finalScore.teamA.toString(),
+                game.finalScore.teamB.toString(),
+                player.number.toString(),
+                player.name,
+                player.courtName || '',
+                player.isCaptain ? 'C' : '',
+                stats.points.toString(),
+                stats.twoPointMade.toString(),
+                stats.twoPointAttempt.toString(),
+                twoPercent,
+                stats.threePointMade.toString(),
+                stats.threePointAttempt.toString(),
+                threePercent,
+                stats.freeThrowMade.toString(),
+                stats.freeThrowAttempt.toString(),
+                ftPercent,
+                fgMade.toString(),
+                fgAttempt.toString(),
+                fgPercent,
+                stats.offensiveRebounds.toString(),
+                stats.defensiveRebounds.toString(),
+                (stats.offensiveRebounds + stats.defensiveRebounds).toString(),
+                stats.assists.toString(),
+                stats.steals.toString(),
+                stats.blocks.toString(),
+                stats.turnovers.toString(),
+                stats.turnoverDD.toString(),
+                stats.turnoverTR.toString(),
+                stats.turnoverPM.toString(),
+                stats.turnoverCM.toString(),
+                player.fouls.length.toString(),
+                formatQuarterPlay(player.quartersPlayed[0]),
+                formatQuarterPlay(player.quartersPlayed[1]),
+                formatQuarterPlay(player.quartersPlayed[2]),
+                formatQuarterPlay(player.quartersPlayed[3]),
+            ]);
+        }
+
+        // チームBの選手データ
+        const resultB = game.finalScore.teamB > game.finalScore.teamA ? '勝利' :
+            game.finalScore.teamB < game.finalScore.teamA ? '敗北' : '引分';
+
+        for (const player of game.teamB.players) {
+            const stats = player.stats;
+            const twoPercent = stats.twoPointAttempt > 0 ? (stats.twoPointMade / stats.twoPointAttempt * 100).toFixed(1) : '-';
+            const threePercent = stats.threePointAttempt > 0 ? (stats.threePointMade / stats.threePointAttempt * 100).toFixed(1) : '-';
+            const ftPercent = stats.freeThrowAttempt > 0 ? (stats.freeThrowMade / stats.freeThrowAttempt * 100).toFixed(1) : '-';
+            const fgMade = stats.twoPointMade + stats.threePointMade;
+            const fgAttempt = stats.twoPointAttempt + stats.threePointAttempt;
+            const fgPercent = fgAttempt > 0 ? (fgMade / fgAttempt * 100).toFixed(1) : '-';
+
+            const formatQuarterPlay = (qp: any) => {
+                if (qp === 'starter') return 'スタメン';
+                if (qp === 'sub') return '途中出場';
+                if (qp === 'both') return 'スタメン+再出場';
+                return '';
+            };
+
+            rows.push([
+                date,
+                game.gameName,
+                venue,
+                game.teamB.name,
+                game.teamA.name,
+                resultB,
+                game.finalScore.teamB.toString(),
+                game.finalScore.teamA.toString(),
+                player.number.toString(),
+                player.name,
+                player.courtName || '',
+                player.isCaptain ? 'C' : '',
+                stats.points.toString(),
+                stats.twoPointMade.toString(),
+                stats.twoPointAttempt.toString(),
+                twoPercent,
+                stats.threePointMade.toString(),
+                stats.threePointAttempt.toString(),
+                threePercent,
+                stats.freeThrowMade.toString(),
+                stats.freeThrowAttempt.toString(),
+                ftPercent,
+                fgMade.toString(),
+                fgAttempt.toString(),
+                fgPercent,
+                stats.offensiveRebounds.toString(),
+                stats.defensiveRebounds.toString(),
+                (stats.offensiveRebounds + stats.defensiveRebounds).toString(),
+                stats.assists.toString(),
+                stats.steals.toString(),
+                stats.blocks.toString(),
+                stats.turnovers.toString(),
+                stats.turnoverDD.toString(),
+                stats.turnoverTR.toString(),
+                stats.turnoverPM.toString(),
+                stats.turnoverCM.toString(),
+                player.fouls.length.toString(),
+                formatQuarterPlay(player.quartersPlayed[0]),
+                formatQuarterPlay(player.quartersPlayed[1]),
+                formatQuarterPlay(player.quartersPlayed[2]),
+                formatQuarterPlay(player.quartersPlayed[3]),
+            ]);
+        }
+    }
 
     // CSV文字列を生成
     const csvContent = [
@@ -244,69 +461,172 @@ export async function copyToClipboard(data: any): Promise<boolean> {
 // ===== インポート機能 =====
 
 /**
- * JSONファイルからデータをインポート
+ * JSONファイルを解析し、インポートデータの種別と内容を返す（実際のインポートは行わない）
  */
-export async function importFromFile(file: File): Promise<ImportResult> {
+export async function parseImportFile(file: File): Promise<ParsedImportData> {
+    // ファイルサイズチェック（10MB制限）
+    if (file.size > 10 * 1024 * 1024) {
+        return { type: 'unknown', data: null, summary: 'ファイルサイズが大きすぎます（最大10MB）。正しいバックアップファイルか確認してください。' };
+    }
     try {
         const text = await file.text();
-        return importFromJSON(text);
-    } catch (error) {
-        return {
-            success: false,
-            message: 'ファイルの読み込みに失敗しました',
-            errors: [error instanceof Error ? error.message : '不明なエラー'],
-        };
+        return parseImportJSON(text);
+    } catch {
+        return { type: 'unknown', data: null, summary: 'ファイルの読み込みに失敗しました。ファイルが破損していないか確認してください。' };
     }
 }
 
 /**
- * JSON文字列からデータをインポート
+ * JSON文字列を解析し、種別と内容を返す（実際のインポートは行わない）
  */
-export function importFromJSON(jsonText: string): ImportResult {
+export function parseImportJSON(jsonText: string): ParsedImportData {
     try {
         const data = JSON.parse(jsonText);
-        return validateAndImport(data);
-    } catch (error) {
-        return {
-            success: false,
-            message: '不正なJSON形式です',
-            errors: [error instanceof Error ? error.message : '不明なエラー'],
-        };
+        return classifyImportData(data);
+    } catch {
+        return { type: 'unknown', data: null, summary: '不正なJSON形式です。MBCscoreからエクスポートしたファイルを使用してください。' };
     }
 }
 
 /**
- * データを検証してインポート
+ * インポートデータを分類・検証する
  */
-function validateAndImport(data: any): ImportResult {
-    const errors: string[] = [];
-    const imported = {
-        games: 0,
-        teams: 0,
-        opponents: 0,
-    };
-
-    // バージョンチェック
+function classifyImportData(data: any): ParsedImportData {
     if (!data.version) {
-        errors.push('バージョン情報がありません');
+        return {
+            type: 'unknown',
+            data: null,
+            summary: 'このファイルはMBCscoreのエクスポートデータではないようです。バージョン情報が見つかりません。',
+        };
     }
 
-    // データ種別の判定
-    if (data.type === 'game') {
-        // 試合単位のインポート
-        return importSingleGame(data as GameExportData);
-    } else if (data.type === 'team') {
-        // チーム単位のインポート
-        return importSingleTeam(data as TeamExportData);
-    } else if (data.data) {
-        // 全データのインポート
-        return importFullBackup(data as BackupData);
-    } else {
+    if (data.type === 'game' && data.game) {
+        const game = data.game as GameRecord;
+        const existing = loadGameHistory();
+        const isDuplicate = existing.some(g => g.id === game.id);
+        const dateStr = game.date ? new Date(game.date).toLocaleDateString('ja-JP') : '不明';
+        const score = game.finalScore ? `${game.finalScore.teamA} - ${game.finalScore.teamB}` : '';
+        const preview: string[] = [
+            `📅 ${dateStr}`,
+            `🏀 ${game.teamA?.name || '?'} vs ${game.teamB?.name || '?'}`,
+        ];
+        if (score) preview.push(`📊 スコア: ${score}`);
+        if (game.gameInfo?.venue) preview.push(`📍 会場: ${game.gameInfo.venue}`);
+        const playerCount = (game.teamA?.players?.length || 0) + (game.teamB?.players?.length || 0);
+        if (playerCount > 0) preview.push(`👥 記録選手数: ${playerCount}名`);
         return {
-            success: false,
-            message: '認識できないデータ形式です',
-            errors: ['データ形式が不正です'],
+            type: 'game',
+            data: data as GameExportData,
+            summary: `試合: ${game.gameName || '不明'}`,
+            hasDuplicates: isDuplicate,
+            duplicateDetails: isDuplicate ? '同一IDの試合データが既に存在します。上書きされます。' : undefined,
+            preview,
         };
+    }
+
+    if (data.type === 'team' && data.team) {
+        const team = data.team as SavedTeam;
+        // 重複チェック: マイチーム・対戦チーム両方を確認
+        const myTeams = loadMyTeams();
+        const opponents = loadOpponents();
+        const existsInMyTeam = myTeams.some(t => t.id === team.id);
+        const existsInOpponent = opponents.some(t => t.id === team.id);
+        const isDuplicate = existsInMyTeam || existsInOpponent;
+        let duplicateDetails: string | undefined;
+        if (existsInMyTeam) {
+            duplicateDetails = '同名のチームがマイチームに既に存在します。上書きされます。';
+        } else if (existsInOpponent) {
+            duplicateDetails = '同名のチームが対戦チームに既に存在します。上書きされます。';
+        }
+        // プレビュー: 選手リスト上位5名
+        const preview: string[] = [
+            `👥 ${team.players?.length || 0}名の選手`,
+        ];
+        if (team.coachName) preview.push(`🧑‍🏫 コーチ: ${team.coachName}`);
+        if (team.players && team.players.length > 0) {
+            const playerList = team.players.slice(0, 5).map(p => `#${p.number} ${p.name}`).join(', ');
+            preview.push(`選手: ${playerList}${team.players.length > 5 ? ` 他${team.players.length - 5}名` : ''}`);
+        }
+        return {
+            type: 'team',
+            data: data as TeamExportData,
+            summary: `チーム: ${team.name || '不明'}（${team.players?.length || 0}名）`,
+            hasDuplicates: isDuplicate,
+            duplicateDetails,
+            preview,
+        };
+    }
+
+    if (data.data) {
+        const bd = data as BackupData;
+        const parts: string[] = [];
+        if (bd.data.gameHistory?.length) parts.push(`試合${bd.data.gameHistory.length}件`);
+        if (bd.data.myTeams?.length) parts.push(`マイチーム${bd.data.myTeams.length}件`);
+        if (bd.data.opponents?.length) parts.push(`対戦チーム${bd.data.opponents.length}件`);
+        if (bd.data.settings) parts.push('設定');
+
+        // 既存データとの比較で新規/上書きの内訳を計算
+        const preview: string[] = [];
+        let hasDuplicates = false;
+        if (bd.data.gameHistory?.length) {
+            const existing = loadGameHistory();
+            const newCount = bd.data.gameHistory.filter(g => !existing.some(e => e.id === g.id)).length;
+            const updateCount = bd.data.gameHistory.length - newCount;
+            preview.push(`試合: 新規${newCount}件${updateCount > 0 ? `、上書き${updateCount}件` : ''}`);
+            if (updateCount > 0) hasDuplicates = true;
+        }
+        if (bd.data.myTeams?.length) {
+            const existing = loadMyTeams();
+            const newCount = bd.data.myTeams.filter(t => !existing.some(e => e.id === t.id)).length;
+            const updateCount = bd.data.myTeams.length - newCount;
+            preview.push(`マイチーム: 新規${newCount}件${updateCount > 0 ? `、上書き${updateCount}件` : ''}`);
+            if (updateCount > 0) hasDuplicates = true;
+        }
+        if (bd.data.opponents?.length) {
+            const existing = loadOpponents();
+            const newCount = bd.data.opponents.filter(t => !existing.some(e => e.id === t.id)).length;
+            const updateCount = bd.data.opponents.length - newCount;
+            preview.push(`対戦チーム: 新規${newCount}件${updateCount > 0 ? `、上書き${updateCount}件` : ''}`);
+            if (updateCount > 0) hasDuplicates = true;
+        }
+        if (bd.data.settings) preview.push('設定: 上書き');
+
+        return {
+            type: 'backup',
+            data: bd,
+            summary: `全データバックアップ（${parts.join('、')}）`,
+            hasDuplicates,
+            duplicateDetails: hasDuplicates ? '既存データの一部が上書きされます。' : undefined,
+            preview,
+        };
+    }
+
+    return {
+        type: 'unknown',
+        data: null,
+        summary: 'このファイルはMBCscoreのエクスポートデータではないようです。MBCscoreからエクスポートしたJSONファイルを使用してください。',
+    };
+}
+
+/**
+ * 解析済みデータを実際にインポートする
+ */
+export function executeImport(parsed: ParsedImportData, options?: { teamTarget?: 'myTeam' | 'opponent' }): ImportResult {
+    switch (parsed.type) {
+        case 'game':
+            return importSingleGame(parsed.data as GameExportData);
+        case 'team': {
+            const teamData = parsed.data as TeamExportData;
+            if (options?.teamTarget === 'myTeam') {
+                return importTeamAsMyTeam(teamData.team);
+            } else {
+                return importTeamAsOpponent(teamData.team);
+            }
+        }
+        case 'backup':
+            return importFullBackup(parsed.data as BackupData);
+        default:
+            return { success: false, message: parsed.summary, errors: ['データ形式が不正です'] };
     }
 }
 
@@ -327,12 +647,11 @@ function importSingleGame(data: GameExportData): ImportResult {
 
         // 既存の試合と重複チェック
         const existingIndex = gameHistory.findIndex(g => g.id === data.game.id);
+        const isUpdate = existingIndex >= 0;
 
-        if (existingIndex >= 0) {
-            // 上書き確認（ここでは上書き）
+        if (isUpdate) {
             gameHistory[existingIndex] = data.game;
         } else {
-            // 新規追加
             gameHistory.unshift(data.game);
         }
 
@@ -340,8 +659,9 @@ function importSingleGame(data: GameExportData): ImportResult {
 
         return {
             success: true,
-            message: '試合データをインポートしました',
+            message: isUpdate ? '試合データを更新しました' : '試合データを新規追加しました',
             imported: { games: 1, teams: 0, opponents: 0 },
+            details: { newGames: isUpdate ? 0 : 1, updatedGames: isUpdate ? 1 : 0 },
         };
     } catch (error) {
         return {
@@ -352,46 +672,7 @@ function importSingleGame(data: GameExportData): ImportResult {
     }
 }
 
-/**
- * 単一チームデータのインポート
- */
-function importSingleTeam(data: TeamExportData): ImportResult {
-    try {
-        if (!data.team || !data.team.id) {
-            return {
-                success: false,
-                message: 'チームデータが不正です',
-                errors: ['必須フィールドが不足しています'],
-            };
-        }
-
-        // マイチームまたは対戦チームどちらに追加するかは後で選択可能にする
-        // とりあえず対戦チームに追加
-        const opponents = loadOpponents();
-
-        const existingIndex = opponents.findIndex(t => t.id === data.team.id);
-
-        if (existingIndex >= 0) {
-            opponents[existingIndex] = data.team;
-        } else {
-            opponents.push(data.team);
-        }
-
-        localStorage.setItem('minibasket-saved-opponents', JSON.stringify(opponents));
-
-        return {
-            success: true,
-            message: 'チームデータをインポートしました',
-            imported: { games: 0, teams: 0, opponents: 1 },
-        };
-    } catch (error) {
-        return {
-            success: false,
-            message: 'インポートに失敗しました',
-            errors: [error instanceof Error ? error.message : '不明なエラー'],
-        };
-    }
-}
+// importSingleTeam は廃止 → importTeamAsMyTeam / importTeamAsOpponent を使用
 
 /**
  * マイチームとしてインポート
@@ -408,8 +689,9 @@ export function importTeamAsMyTeam(team: SavedTeam): ImportResult {
 
         const myTeams = loadMyTeams();
         const existingIndex = myTeams.findIndex(t => t.id === team.id);
+        const isUpdate = existingIndex >= 0;
 
-        if (existingIndex >= 0) {
+        if (isUpdate) {
             myTeams[existingIndex] = team;
         } else {
             myTeams.push(team);
@@ -419,8 +701,9 @@ export function importTeamAsMyTeam(team: SavedTeam): ImportResult {
 
         return {
             success: true,
-            message: 'マイチームとしてインポートしました',
+            message: isUpdate ? 'マイチームを更新しました' : 'マイチームに新規追加しました',
             imported: { games: 0, teams: 1, opponents: 0 },
+            details: { newTeams: isUpdate ? 0 : 1, updatedTeams: isUpdate ? 1 : 0 },
         };
     } catch (error) {
         return {
@@ -446,8 +729,9 @@ export function importTeamAsOpponent(team: SavedTeam): ImportResult {
 
         const opponents = loadOpponents();
         const existingIndex = opponents.findIndex(t => t.id === team.id);
+        const isUpdate = existingIndex >= 0;
 
-        if (existingIndex >= 0) {
+        if (isUpdate) {
             opponents[existingIndex] = team;
         } else {
             opponents.push(team);
@@ -457,8 +741,9 @@ export function importTeamAsOpponent(team: SavedTeam): ImportResult {
 
         return {
             success: true,
-            message: '対戦チームとしてインポートしました',
+            message: isUpdate ? '対戦チームを更新しました' : '対戦チームに新規追加しました',
             imported: { games: 0, teams: 0, opponents: 1 },
+            details: { newOpponents: isUpdate ? 0 : 1, updatedOpponents: isUpdate ? 1 : 0 },
         };
     } catch (error) {
         return {
@@ -474,15 +759,20 @@ export function importTeamAsOpponent(team: SavedTeam): ImportResult {
  */
 function importFullBackup(data: BackupData): ImportResult {
     try {
-        const imported = {
-            games: 0,
-            teams: 0,
-            opponents: 0,
+        const imported = { games: 0, teams: 0, opponents: 0 };
+        const details = {
+            newGames: 0, updatedGames: 0,
+            newTeams: 0, updatedTeams: 0,
+            newOpponents: 0, updatedOpponents: 0,
         };
 
         // 試合履歴のインポート
         if (data.data.gameHistory && Array.isArray(data.data.gameHistory)) {
             const existingGames = loadGameHistory();
+            for (const g of data.data.gameHistory) {
+                if (existingGames.some(e => e.id === g.id)) details.updatedGames++;
+                else details.newGames++;
+            }
             const mergedGames = mergeArrayById(existingGames, data.data.gameHistory);
             localStorage.setItem('minibasket-game-history', JSON.stringify(mergedGames));
             imported.games = data.data.gameHistory.length;
@@ -491,6 +781,10 @@ function importFullBackup(data: BackupData): ImportResult {
         // マイチームのインポート
         if (data.data.myTeams && Array.isArray(data.data.myTeams)) {
             const existingTeams = loadMyTeams();
+            for (const t of data.data.myTeams) {
+                if (existingTeams.some(e => e.id === t.id)) details.updatedTeams++;
+                else details.newTeams++;
+            }
             const mergedTeams = mergeArrayById(existingTeams, data.data.myTeams);
             localStorage.setItem('minibasket-my-teams', JSON.stringify(mergedTeams));
             imported.teams = data.data.myTeams.length;
@@ -499,25 +793,50 @@ function importFullBackup(data: BackupData): ImportResult {
         // 対戦チームのインポート
         if (data.data.opponents && Array.isArray(data.data.opponents)) {
             const existingOpponents = loadOpponents();
+            for (const t of data.data.opponents) {
+                if (existingOpponents.some(e => e.id === t.id)) details.updatedOpponents++;
+                else details.newOpponents++;
+            }
             const mergedOpponents = mergeArrayById(existingOpponents, data.data.opponents);
             localStorage.setItem('minibasket-saved-opponents', JSON.stringify(mergedOpponents));
             imported.opponents = data.data.opponents.length;
         }
 
-        // アプリ設定のインポート
+        // アプリ設定のインポート（既存設定とマージ）
         if (data.data.settings) {
-            localStorage.setItem('minibasket-app-settings', JSON.stringify(data.data.settings));
+            const existingSettings = loadAppSettings();
+            const mergedSettings = { ...existingSettings, ...data.data.settings };
+            localStorage.setItem('minibasket-app-settings', JSON.stringify(mergedSettings));
         }
 
-        // 非表示選手情報のインポート
+        // 非表示選手情報のインポート（既存データとマージ）
         if (data.data.hiddenPlayers) {
-            localStorage.setItem('minibasket-hidden-players', JSON.stringify(data.data.hiddenPlayers));
+            const existingHidden = getHiddenPlayersData();
+            const mergedHidden = { ...existingHidden };
+            for (const [teamId, playerIds] of Object.entries(data.data.hiddenPlayers)) {
+                const existing = mergedHidden[teamId] || [];
+                mergedHidden[teamId] = [...new Set([...existing, ...playerIds])];
+            }
+            localStorage.setItem('minibasket-hidden-players', JSON.stringify(mergedHidden));
+        }
+
+        // 詳細メッセージ生成
+        const msgParts: string[] = [];
+        if (imported.games > 0) {
+            msgParts.push(`試合: 新規${details.newGames}件${details.updatedGames > 0 ? `・更新${details.updatedGames}件` : ''}`);
+        }
+        if (imported.teams > 0) {
+            msgParts.push(`チーム: 新規${details.newTeams}件${details.updatedTeams > 0 ? `・更新${details.updatedTeams}件` : ''}`);
+        }
+        if (imported.opponents > 0) {
+            msgParts.push(`対戦相手: 新規${details.newOpponents}件${details.updatedOpponents > 0 ? `・更新${details.updatedOpponents}件` : ''}`);
         }
 
         return {
             success: true,
-            message: `データを復元しました（試合:${imported.games}件、チーム:${imported.teams}件、対戦相手:${imported.opponents}件）`,
+            message: `データを復元しました（${msgParts.join('、')}）`,
             imported,
+            details,
         };
     } catch (error) {
         return {
@@ -552,8 +871,10 @@ function mergeArrayById<T extends { id: string }>(existing: T[], imported: T[]):
  * バックアップファイル名を生成
  */
 export function generateBackupFilename(prefix: string = 'MBCscore_backup'): string {
-    const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    return `${prefix}_${date}.json`;
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const time = now.toTimeString().slice(0, 5).replace(':', '-'); // HH-MM
+    return `${prefix}_${date}_${time}.json`;
 }
 
 /**
@@ -561,14 +882,26 @@ export function generateBackupFilename(prefix: string = 'MBCscore_backup'): stri
  */
 export function generateGameFilename(gameName: string, date: string): string {
     const dateStr = new Date(date).toISOString().slice(0, 10);
-    const safeName = gameName.replace(/[^a-zA-Z0-9ぁ-んァ-ヶー一-龠]/g, '_');
-    return `MBCscore_game_${safeName}_${dateStr}.json`;
+    const safeName = gameName
+        .replace(/[\\/:*?"<>|]/g, '') // Windows非対応文字のみ削除
+        .replace(/\s+/g, '-') // スペースはハイフンに
+        .replace(/-+/g, '-') // 連続ハイフンを1つに
+        .trim();
+    // マルチバイト文字を安全に切り詰め
+    const truncated = Array.from(safeName).slice(0, 50).join('');
+    return `MBCscore_game_${truncated || 'unnamed'}_${dateStr}.json`;
 }
 
 /**
  * チームエクスポートファイル名を生成
  */
 export function generateTeamFilename(teamName: string): string {
-    const safeName = teamName.replace(/[^a-zA-Z0-9ぁ-んァ-ヶー一-龠]/g, '_');
-    return `MBCscore_team_${safeName}.json`;
+    const safeName = teamName
+        .replace(/[\\/:*?"<>|]/g, '') // Windows非対応文字のみ削除
+        .replace(/\s+/g, '-') // スペースはハイフンに
+        .replace(/-+/g, '-') // 連続ハイフンを1つに
+        .trim();
+    // マルチバイト文字を安全に切り詰め
+    const truncated = Array.from(safeName).slice(0, 50).join('');
+    return `MBCscore_team_${truncated || 'unnamed'}.json`;
 }

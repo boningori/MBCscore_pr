@@ -27,6 +27,7 @@ import { PendingActionResolver } from './components/PendingActionResolver';
 import { FoulInputFlow } from './components/FoulInputFlow';
 import { RunningScoresheet } from './components/RunningScoresheet';
 import { AppSettingsModal } from './components/Settings/AppSettingsModal';
+import { ToastContainer } from './components/Toast/Toast';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import './App.css';
 
@@ -1364,6 +1365,7 @@ function App() {
   return (
     <GameProvider>
       <AppContent />
+      <ToastContainer />
     </GameProvider>
   );
 }

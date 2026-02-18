@@ -13,9 +13,11 @@ import {
     downloadJSON,
     shareFile,
     generateTeamFilename,
-    importFromFile,
-    importTeamAsMyTeam,
+    parseImportFile,
+    parseImportJSON,
+    executeImport,
 } from '../../utils/dataBackup';
+import type { ParsedImportData } from '../../utils/dataBackup';
 import './TeamManager.css';
 
 interface TeamManagerProps {
@@ -29,6 +31,12 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
+    const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+    const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
+    const [importTarget, setImportTarget] = useState<'myTeam' | 'opponent'>('myTeam');
+    const [showTextImport, setShowTextImport] = useState(false);
+    const [importText, setImportText] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
@@ -45,11 +53,27 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
         setEditingTeam({ ...team });
     };
 
-    const handleDelete = (teamId: string) => {
-        if (confirm('このチームを削除しますか？')) {
-            deleteMyTeam(teamId);
-            refreshTeams();
+    const showStatus = (text: string, type: 'success' | 'error') => {
+        setStatusMessage({ text, type });
+        if (type === 'success') {
+            setTimeout(() => setStatusMessage(null), 4000);
         }
+    };
+
+    const handleDelete = (teamId: string) => {
+        setDeleteTargetId(teamId);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTargetId) {
+            deleteMyTeam(deleteTargetId);
+            refreshTeams();
+            setDeleteTargetId(null);
+        }
+    };
+
+    const cancelDelete = () => {
+        setDeleteTargetId(null);
     };
 
     const handleSave = (team: SavedTeam) => {
@@ -98,7 +122,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
         const filename = generateTeamFilename(team.name);
 
         // モバイルデバイスの場合はWeb Share APIを試す
-        if (navigator.share && navigator.userAgent.match(/mobile/i)) {
+        if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
             const shared = await shareFile(data, filename, `${team.name} - チームデータ`);
             if (shared) return;
         }
@@ -116,31 +140,65 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
         if (!file) return;
 
         try {
-            const result = await importFromFile(file);
-            if (result.success && result.imported) {
-                // チーム単位のインポートの場合
-                const text = await file.text();
-                const data = JSON.parse(text);
-                if (data.type === 'team' && data.team) {
-                    const importResult = importTeamAsMyTeam(data.team);
-                    if (importResult.success) {
-                        alert(importResult.message);
-                        refreshTeams();
-                    } else {
-                        alert(`インポート失敗: ${importResult.message}`);
-                    }
-                } else {
-                    alert(result.message);
-                    refreshTeams();
-                }
+            const parsed = await parseImportFile(file);
+            if (parsed.type === 'unknown') {
+                showStatus(`インポート失敗: ${parsed.summary}`, 'error');
+            } else if (parsed.type === 'team') {
+                // チームデータの場合は確認パネルを表示
+                setPendingImport(parsed);
             } else {
-                alert(`インポート失敗: ${result.message}\n${result.errors?.join('\n') || ''}`);
+                // チーム以外のデータはそのままインポート
+                const result = executeImport(parsed);
+                if (result.success) {
+                    showStatus(`✓ ${result.message}`, 'success');
+                    refreshTeams();
+                } else {
+                    showStatus(`インポート失敗: ${result.message}`, 'error');
+                }
             }
         } catch (error) {
-            alert('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+            showStatus('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'), 'error');
         }
 
         e.target.value = '';
+    };
+
+    const handleConfirmImport = () => {
+        if (!pendingImport) return;
+        const result = executeImport(pendingImport, { teamTarget: importTarget });
+        if (result.success) {
+            showStatus(`✓ ${result.message}`, 'success');
+            refreshTeams();
+        } else {
+            showStatus(`インポート失敗: ${result.message}`, 'error');
+        }
+        setPendingImport(null);
+    };
+
+    const handleCancelImport = () => {
+        setPendingImport(null);
+    };
+
+    const handleImportTextSubmit = () => {
+        if (!importText.trim()) return;
+        const parsed = parseImportJSON(importText.trim());
+        if (parsed.type === 'unknown') {
+            showStatus(`インポート失敗: ${parsed.summary}`, 'error');
+        } else if (parsed.type === 'team') {
+            setPendingImport(parsed);
+            setShowTextImport(false);
+            setImportText('');
+        } else {
+            const result = executeImport(parsed);
+            if (result.success) {
+                showStatus(`✓ ${result.message}`, 'success');
+                refreshTeams();
+            } else {
+                showStatus(`インポート失敗: ${result.message}`, 'error');
+            }
+            setShowTextImport(false);
+            setImportText('');
+        }
     };
 
     if (editingTeam) {
@@ -197,6 +255,9 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
                     onChange={handleJsonImport}
                     style={{ display: 'none' }}
                 />
+                <button className="btn btn-secondary" onClick={() => setShowTextImport(true)}>
+                    📝 データを貼り付け
+                </button>
             </div>
 
             {isLoading && (
@@ -209,6 +270,62 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
             {ocrError && (
                 <div className="alert alert-danger">
                     {ocrError}
+                </div>
+            )}
+
+            {statusMessage && (
+                <div className={`status-message ${statusMessage.type}`}>
+                    {statusMessage.text}
+                    {statusMessage.type === 'error' && (
+                        <button className="status-dismiss" onClick={() => setStatusMessage(null)}>×</button>
+                    )}
+                </div>
+            )}
+
+            {/* テキスト貼り付けUI */}
+            {showTextImport && (
+                <div className="text-import-panel">
+                    <h4>📝 JSONデータの貼り付け</h4>
+                    <textarea
+                        className="text-import-textarea"
+                        value={importText}
+                        onChange={e => setImportText(e.target.value)}
+                        placeholder='JSONデータをここに貼り付けてください'
+                        rows={6}
+                    />
+                    <div className="text-import-actions">
+                        <button className="btn btn-secondary" onClick={() => { setShowTextImport(false); setImportText(''); }}>キャンセル</button>
+                        <button className="btn btn-primary" onClick={handleImportTextSubmit} disabled={!importText.trim()}>読み込む</button>
+                    </div>
+                </div>
+            )}
+
+            {/* インポート確認UI */}
+            {pendingImport && (
+                <div className={`import-confirm-panel ${pendingImport.hasDuplicates ? 'has-duplicates' : ''}`}>
+                    <h4>📋 インポート内容の確認</h4>
+                    <p className="import-summary">{pendingImport.summary}</p>
+                    {pendingImport.preview && pendingImport.preview.length > 0 && (
+                        <div className="import-preview">
+                            {pendingImport.preview.map((line, i) => (
+                                <p key={i} className="import-preview-line">{line}</p>
+                            ))}
+                        </div>
+                    )}
+                    {pendingImport.hasDuplicates && (
+                        <p className="import-warning">⚠️ {pendingImport.duplicateDetails}</p>
+                    )}
+                    <div className="import-target-selector">
+                        <label>インポート先：</label>
+                        <select value={importTarget} onChange={e => setImportTarget(e.target.value as 'myTeam' | 'opponent')}>
+                            <option value="myTeam">マイチーム</option>
+                            <option value="opponent">対戦チーム</option>
+                        </select>
+                    </div>
+                    <div className="import-confirm-actions">
+                        <button className="btn btn-secondary" onClick={handleCancelImport}>キャンセル</button>
+                        <button className="btn btn-primary" onClick={handleConfirmImport}>インポート実行</button>
+                    </div>
                 </div>
             )}
 
@@ -251,7 +368,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
                                             onClick={() => handleExportTeam(team)}
                                             title="このチームをエクスポート"
                                         >
-                                            📤
+                                            📤 エクスポート
                                         </button>
                                         <button
                                             className="btn btn-danger"
@@ -266,6 +383,21 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
                     ))
                 )}
             </div>
+
+            {/* 削除確認モーダル */}
+            {deleteTargetId && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>チームの削除</h3>
+                        <p>このチームを削除してもよろしいですか？</p>
+                        <p className="text-muted text-sm">※この操作は取り消せません</p>
+                        <div className="modal-actions">
+                            <button className="btn btn-secondary" onClick={cancelDelete}>キャンセル</button>
+                            <button className="btn btn-danger" onClick={confirmDelete}>削除する</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

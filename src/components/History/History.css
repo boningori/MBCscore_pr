@@ -145,12 +145,18 @@
     right: var(--spacing-sm);
     display: flex;
     gap: var(--spacing-xs);
-    opacity: 0;
-    transition: opacity 0.2s;
 }
 
-.history-container .history-card:hover .history-card-actions {
-    opacity: 1;
+/* ホバー対応デバイス（PC）ではホバー時のみ表示 */
+@media (hover: hover) {
+    .history-container .history-card-actions {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .history-container .history-card:hover .history-card-actions {
+        opacity: 1;
+    }
 }
 
 .history-container .delete-btn,

@@ -150,7 +150,7 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
     return (
         <div className="growth-comparison-section">
             <div className="section-header-row">
-                <h4>📈 成長推移比較</h4>
+                <h4>📈 スタッツの推移</h4>
                 <div className="comparison-controls-simple">
                     <select
                         value={periodType}

@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { showToast } from '../Toast/Toast';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
     loadMyTeams,
@@ -12,9 +13,11 @@ import {
     downloadJSON,
     shareFile,
     generateTeamFilename,
-    importFromFile,
-    importTeamAsMyTeam,
+    parseImportFile,
+    parseImportJSON,
+    executeImport,
 } from '../../utils/dataBackup';
+import type { ParsedImportData } from '../../utils/dataBackup';
 import './MyTeamManager.css';
 
 interface MyTeamManagerProps {
@@ -27,7 +30,35 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
     const [teams, setTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+    const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
+    const [importTarget, setImportTarget] = useState<'myTeam' | 'opponent'>('myTeam');
+    const [showTextImport, setShowTextImport] = useState(false);
+    const [importText, setImportText] = useState('');
+    const [textValidation, setTextValidation] = useState<{ valid: boolean; message: string } | null>(null);
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
+
+    // リアルタイムJSONバリデーション（500msデバウンス）
+    useEffect(() => {
+        if (!importText.trim()) {
+            setTextValidation(null);
+            return;
+        }
+        const timer = setTimeout(() => {
+            try {
+                const parsed = parseImportJSON(importText.trim());
+                if (parsed.type === 'unknown') {
+                    setTextValidation({ valid: false, message: '有効なJSONデータを入力してください' });
+                } else {
+                    const typeLabel = parsed.type === 'team' ? 'チームデータ' : parsed.type === 'backup' ? '全データバックアップ' : parsed.type === 'game' ? '試合データ' : 'データ';
+                    setTextValidation({ valid: true, message: `✓ ${typeLabel}が検出されました` });
+                }
+            } catch {
+                setTextValidation({ valid: false, message: '有効なJSONデータを入力してください' });
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [importText]);
 
     const refreshTeams = () => {
         setTeams(loadMyTeams());
@@ -73,13 +104,21 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
         const filename = generateTeamFilename(team.name);
 
         // モバイルデバイスの場合はWeb Share APIを試す
-        if (navigator.share && navigator.userAgent.match(/mobile/i)) {
+        if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
             const shared = await shareFile(data, filename, `${team.name} - チームデータ`);
-            if (shared) return;
+            if (shared) {
+                showToast(`✓ ${team.name} のデータを共有しました`, 'success');
+                return;
+            }
         }
 
         // ダウンロード
         downloadJSON(data, filename);
+        showToast(`✓ ${filename} をダウンロードしました`, 'success');
+    };
+
+    const showStatus = (text: string, type: 'success' | 'error') => {
+        showToast(text, type);
     };
 
     const handleImportTeam = () => {
@@ -91,31 +130,48 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
         if (!file) return;
 
         try {
-            const result = await importFromFile(file);
-            if (result.success && result.imported) {
-                // チーム単位のインポートの場合
-                const text = await file.text();
-                const data = JSON.parse(text);
-                if (data.type === 'team' && data.team) {
-                    const importResult = importTeamAsMyTeam(data.team);
-                    if (importResult.success) {
-                        alert(importResult.message);
-                        refreshTeams();
-                    } else {
-                        alert(`インポート失敗: ${importResult.message}`);
-                    }
-                } else {
-                    alert(result.message);
-                    refreshTeams();
-                }
+            const parsed = await parseImportFile(file);
+            if (parsed.type === 'unknown') {
+                showStatus(`インポート失敗: ${parsed.summary}`, 'error');
             } else {
-                alert(`インポート失敗: ${result.message}\n${result.errors?.join('\n') || ''}`);
+                // すべてのインポートタイプで確認画面を表示（データ損失防止）
+                setPendingImport(parsed);
             }
         } catch (error) {
-            alert('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+            showStatus('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'), 'error');
         }
 
         e.target.value = '';
+    };
+
+    const handleConfirmImport = () => {
+        if (!pendingImport) return;
+        const options = pendingImport.type === 'team' ? { teamTarget: importTarget } : undefined;
+        const result = executeImport(pendingImport, options);
+        if (result.success) {
+            showStatus(`✓ ${result.message}`, 'success');
+            refreshTeams();
+        } else {
+            showStatus(`インポート失敗: ${result.message}`, 'error');
+        }
+        setPendingImport(null);
+    };
+
+    const handleCancelImport = () => {
+        setPendingImport(null);
+    };
+
+    const handleImportTextSubmit = () => {
+        if (!importText.trim()) return;
+        const parsed = parseImportJSON(importText.trim());
+        if (parsed.type === 'unknown') {
+            showStatus(`インポート失敗: ${parsed.summary}`, 'error');
+        } else {
+            // すべてのインポートタイプで確認画面を表示（データ損失防止）
+            setPendingImport(parsed);
+            setShowTextImport(false);
+            setImportText('');
+        }
     };
 
     if (editingTeam) {
@@ -124,6 +180,7 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                 team={editingTeam}
                 onSave={handleSave}
                 onCancel={() => setEditingTeam(null)}
+                showStatus={showStatus}
             />
         );
     }
@@ -137,10 +194,7 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                 <h2>{isSelectionMode ? 'マイチーム選択' : 'マイチーム管理'}</h2>
             </div>
 
-            <div className="manager-actions">
-                <button className="btn btn-primary" onClick={handleCreateNew}>
-                    + 新規作成
-                </button>
+            <div className="manager-content">
                 <button className="btn btn-secondary" onClick={handleImportTeam}>
                     📥 チームインポート
                 </button>
@@ -151,7 +205,103 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                     onChange={handleJsonImport}
                     style={{ display: 'none' }}
                 />
+                <button className="btn btn-secondary" onClick={() => setShowTextImport(true)}>
+                    📝 データを貼り付け
+                </button>
+                <button className="btn btn-primary btn-large add-team-btn" onClick={handleCreateNew}>
+                    + 新規チーム作成
+                </button>
             </div>
+
+
+
+            {/* テキスト貼り付けUI */}
+            {showTextImport && (
+                <div className="text-import-panel">
+                    <h4>📝 JSONデータの貼り付け</h4>
+                    <p className="text-import-hint">MBCscoreの「エクスポート」や「クリップボードにコピー」で取得したJSONデータを貼り付けてください。</p>
+                    <textarea
+                        className="text-import-textarea"
+                        value={importText}
+                        onChange={e => setImportText(e.target.value)}
+                        placeholder='ここにコピーしたデータを貼り付けてください'
+                        rows={10}
+                        style={{ minHeight: '200px' }}
+                    />
+                    {textValidation && (
+                        <p className={`text-validation ${textValidation.valid ? 'valid' : 'invalid'}`}>
+                            {textValidation.message}
+                        </p>
+                    )}
+                    <div className="text-import-actions">
+                        <button className="btn btn-secondary" onClick={() => { setShowTextImport(false); setImportText(''); }}>キャンセル</button>
+                        <button className="btn btn-primary" onClick={handleImportTextSubmit} disabled={!importText.trim()}>読み込む</button>
+                    </div>
+                </div>
+            )}
+
+            {pendingImport && (
+                <div className={`import-confirm-panel ${pendingImport.hasDuplicates ? 'has-duplicates' : ''}`}>
+                    <h4>📋 インポート内容の確認</h4>
+                    <p className="import-summary">{pendingImport.summary}</p>
+                    {pendingImport.type === 'backup' && (
+                        <div className="import-danger-warning">
+                            <p className="import-warning-title">⚠️ 重要な警告</p>
+                            <p className="import-warning-text">
+                                これは全データバックアップファイルです。<br />
+                                インポートすると、<strong>試合履歴・マイチーム・対戦チーム・設定</strong>が上書きされます。
+                            </p>
+                        </div>
+                    )}
+                    {pendingImport.type === 'backup' && (
+                        <div className="import-merge-info">
+                            <p className="import-info">
+                                📌 復元ルール:<br />
+                                • 同じデータがあれば新しい方に更新されます<br />
+                                • 新しいデータは追加されます<br />
+                                • 既存データが削除されることはありません
+                            </p>
+                        </div>
+                    )}
+                    {pendingImport.type === 'game' && (
+                        <p className="import-info">ℹ️ 試合データをインポートします。同じIDの試合がある場合は上書きされます。</p>
+                    )}
+                    {pendingImport.type === 'team' && (
+                        <>
+                            <p className="import-info">📌 同じIDのチームが既にある場合、インポートしたデータで上書きされます。</p>
+                            <div className="import-target-selector">
+                                <label>インポート先：</label>
+                                <select value={importTarget} onChange={e => setImportTarget(e.target.value as 'myTeam' | 'opponent')}>
+                                    <option value="myTeam">マイチーム</option>
+                                    <option value="opponent">対戦チーム</option>
+                                </select>
+                            </div>
+                        </>
+                    )}
+                    {pendingImport.preview && pendingImport.preview.length > 0 && (
+                        <div className="import-preview">
+                            {pendingImport.preview.map((line, i) => (
+                                <p key={i} className="import-preview-line">{line}</p>
+                            ))}
+                        </div>
+                    )}
+                    {pendingImport.hasDuplicates && (
+                        <p className="import-warning">⚠️ {pendingImport.duplicateDetails}</p>
+                    )}
+                    <div className="import-confirm-actions">
+                        <button className="btn btn-secondary" onClick={handleCancelImport}>キャンセル</button>
+                        {pendingImport.type === 'backup' ? (
+                            <button className="btn btn-danger" onClick={handleConfirmImport}>全データをインポート（上書き）</button>
+                        ) : (
+                            <button className="btn btn-primary" onClick={handleConfirmImport}>
+                                {pendingImport.type === 'team'
+                                    ? (importTarget === 'myTeam' ? 'マイチームにインポート' : '対戦チームにインポート')
+                                    : 'インポート実行'}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <div className="team-list">
                 {teams.length === 0 ? (
@@ -179,27 +329,27 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                             <div className="team-card-actions">
                                 {isSelectionMode && (
                                     <button
-                                        className="btn btn-success"
+                                        className="btn btn-success btn-small"
                                         onClick={() => handleSelect(team)}
                                     >
                                         選択
                                     </button>
                                 )}
                                 <button
-                                    className="btn btn-secondary"
+                                    className="btn btn-secondary btn-small"
                                     onClick={() => handleEdit(team)}
                                 >
                                     編集
                                 </button>
                                 <button
-                                    className="btn btn-secondary"
+                                    className="btn btn-secondary btn-small"
                                     onClick={(e) => handleExportTeam(e, team)}
                                     title="このチームをエクスポート"
                                 >
-                                    📤
+                                    📤 エクスポート
                                 </button>
                                 <button
-                                    className="btn btn-danger"
+                                    className="btn btn-danger btn-small"
                                     onClick={() => handleDelete(team.id)}
                                 >
                                     削除
@@ -237,9 +387,10 @@ interface MyTeamEditorProps {
     team: SavedTeam;
     onSave: (team: SavedTeam) => void;
     onCancel: () => void;
+    showStatus: (text: string, type: 'success' | 'error') => void;
 }
 
-function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
+function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps) {
     const [name, setName] = useState(team.name);
     const [coachName, setCoachName] = useState(team.coachName);
     const [coachLicenseNo, setCoachLicenseNo] = useState(team.coachLicenseNo || '');
@@ -274,21 +425,21 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
 
         // 番号の範囲チェック
         if (bibNum !== undefined && (isNaN(bibNum) || bibNum < 0 || bibNum > 99)) {
-            alert('ビブス番号は0〜99の範囲で入力してください');
+            showStatus('ビブス番号は0〜99の範囲で入力してください', 'error');
             return;
         }
         if (uniNum !== undefined && (isNaN(uniNum) || uniNum < 0 || uniNum > 99)) {
-            alert('ユニフォーム番号は0〜99の範囲で入力してください');
+            showStatus('ユニフォーム番号は0〜99の範囲で入力してください', 'error');
             return;
         }
 
         // 重複チェック（それぞれの番号タイプで）
         if (bibNum !== undefined && players.some(p => p.bibNumber === bibNum)) {
-            alert(`ビブス番号 ${bibNum} は既に登録されています`);
+            showStatus(`ビブス番号 ${bibNum} は既に登録されています`, 'error');
             return;
         }
         if (uniNum !== undefined && players.some(p => p.uniformNumber === uniNum)) {
-            alert(`ユニフォーム番号 ${uniNum} は既に登録されています`);
+            showStatus(`ユニフォーム番号 ${uniNum} は既に登録されています`, 'error');
             return;
         }
 
@@ -348,17 +499,17 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
 
         // 少なくとも1つの番号が必要
         if (bibNum === undefined && uniNum === undefined) {
-            alert('ビブス番号またはユニフォーム番号のいずれかを入力してください');
+            showStatus('ビブス番号またはユニフォーム番号のいずれかを入力してください', 'error');
             return;
         }
 
         // 番号の範囲チェック
         if (bibNum !== undefined && (isNaN(bibNum) || bibNum < 0 || bibNum > 99)) {
-            alert('ビブス番号は0〜99の範囲で入力してください');
+            showStatus('ビブス番号は0〜99の範囲で入力してください', 'error');
             return;
         }
         if (uniNum !== undefined && (isNaN(uniNum) || uniNum < 0 || uniNum > 99)) {
-            alert('ユニフォーム番号は0〜99の範囲で入力してください');
+            showStatus('ユニフォーム番号は0〜99の範囲で入力してください', 'error');
             return;
         }
 
@@ -366,20 +517,20 @@ function MyTeamEditor({ team, onSave, onCancel }: MyTeamEditorProps) {
         if (bibNum !== undefined) {
             const isDuplicateBib = players.some((p, i) => i !== editingPlayerIndex && p.bibNumber === bibNum);
             if (isDuplicateBib) {
-                alert(`ビブス番号 ${bibNum} は既に登録されています`);
+                showStatus(`ビブス番号 ${bibNum} は既に登録されています`, 'error');
                 return;
             }
         }
         if (uniNum !== undefined) {
             const isDuplicateUni = players.some((p, i) => i !== editingPlayerIndex && p.uniformNumber === uniNum);
             if (isDuplicateUni) {
-                alert(`ユニフォーム番号 ${uniNum} は既に登録されています`);
+                showStatus(`ユニフォーム番号 ${uniNum} は既に登録されています`, 'error');
                 return;
             }
         }
 
         if (!editName.trim()) {
-            alert('氏名を入力してください');
+            showStatus('氏名を入力してください', 'error');
             return;
         }
 

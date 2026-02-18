@@ -126,15 +126,18 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     <h2>📊 選手スタッツ分析</h2>
                 </div>
                 <div className="controls-bar">
-                    <select
-                        value={selectedTeam?.id || ''}
-                        onChange={e => handleTeamChange(e.target.value)}
-                        className="team-select"
-                    >
-                        {myTeams.map(team => (
-                            <option key={team.id} value={team.id}>{team.name}</option>
-                        ))}
-                    </select>
+                    <div className="field-group">
+                        <label className="field-label">マイチーム選択：</label>
+                        <select
+                            value={selectedTeam?.id || ''}
+                            onChange={e => handleTeamChange(e.target.value)}
+                            className="team-select"
+                        >
+                            {myTeams.map(team => (
+                                <option key={team.id} value={team.id}>{team.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div className="empty-state">
                     <div className="empty-icon">📋</div>
@@ -158,17 +161,22 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
             {viewMode === 'summary' && (
                 <>
                     <div className="controls-bar">
-                        <select
-                            value={selectedTeam?.id || ''}
-                            onChange={e => handleTeamChange(e.target.value)}
-                            className="team-select"
-                        >
-                            {myTeams.map(team => (
-                                <option key={team.id} value={team.id}>{team.name}</option>
-                            ))}
-                        </select>
+                        <div className="field-group">
+                            <label className="field-label">マイチーム選択：</label>
+                            <select
+                                value={selectedTeam?.id || ''}
+                                onChange={e => handleTeamChange(e.target.value)}
+                                className="team-select"
+                            >
+                                {myTeams.map(team => (
+                                    <option key={team.id} value={team.id}>{team.name}</option>
+                                ))}
+                            </select>
+                        </div>
 
-                        <div className="date-range">
+                        <div className="field-group">
+                            <label className="field-label">データ表示期間：</label>
+                            <div className="date-range">
                             <input
                                 type="date"
                                 value={dateRange.start || ''}
@@ -188,6 +196,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                                     ✕
                                 </button>
                             )}
+                            </div>
                         </div>
                     </div>
 

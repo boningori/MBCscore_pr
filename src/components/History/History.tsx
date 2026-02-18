@@ -59,7 +59,7 @@ export function History({ onBack }: HistoryProps) {
         const filename = generateGameFilename(record.gameName, record.date);
 
         // モバイルデバイスの場合はWeb Share APIを試す
-        if (navigator.share && navigator.userAgent.match(/mobile/i)) {
+        if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
             const shared = await shareFile(data, filename, `${record.gameName} - 試合データ`);
             if (shared) {
                 return;
