@@ -668,21 +668,19 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
             </div>
 
             <div className="opponent-manager-content">
-                <div className="opponent-actions-row">
-                    <button className="btn btn-primary btn-large add-team-btn" onClick={handleCreateNew}>
-                        + 新規チーム登録
-                    </button>
-                    <button className="btn btn-secondary" onClick={handleImportTeam}>
-                        📥 チームインポート
-                    </button>
-                    <input
-                        ref={jsonImportInputRef}
-                        type="file"
-                        accept=".json"
-                        onChange={handleJsonImport}
-                        style={{ display: 'none' }}
-                    />
-                </div>
+                <button className="btn btn-secondary" onClick={handleImportTeam} style={{ marginBottom: 'var(--spacing-md)' }}>
+                    📥 チームインポート
+                </button>
+                <input
+                    ref={jsonImportInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleJsonImport}
+                    style={{ display: 'none' }}
+                />
+                <button className="btn btn-primary btn-large add-team-btn" onClick={handleCreateNew}>
+                    + 新規チーム登録
+                </button>
 
                 {teams.length === 0 ? (
                     <div className="empty-state">
