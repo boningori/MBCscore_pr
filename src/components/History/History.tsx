@@ -5,6 +5,12 @@ import { RunningScoresheet } from '../RunningScoresheet';
 import { StatsPanel } from '../StatsPanel';
 import type { Game } from '../../types/game';
 import { createInitialGameInfo } from '../../types/game';
+import {
+    exportGame,
+    downloadJSON,
+    shareFile,
+    generateGameFilename,
+} from '../../utils/dataBackup';
 import './History.css';
 
 interface HistoryProps {
@@ -39,6 +45,29 @@ export function History({ onBack }: HistoryProps) {
 
     const cancelDelete = () => {
         setDeleteTargetId(null);
+    };
+
+    const handleExportGame = async (e: React.MouseEvent, record: GameRecord) => {
+        e.stopPropagation();
+
+        const data = exportGame(record.id);
+        if (!data) {
+            alert('試合データが見つかりませんでした');
+            return;
+        }
+
+        const filename = generateGameFilename(record.gameName, record.date);
+
+        // モバイルデバイスの場合はWeb Share APIを試す
+        if (navigator.share && navigator.userAgent.match(/mobile/i)) {
+            const shared = await shareFile(data, filename, `${record.gameName} - 試合データ`);
+            if (shared) {
+                return;
+            }
+        }
+
+        // ダウンロード
+        downloadJSON(data, filename);
     };
 
     // GameRecordからGame型に変換するヘルパー関数
@@ -155,12 +184,21 @@ export function History({ onBack }: HistoryProps) {
                                         <span className="team-score-val">{record.finalScore.teamB}</span>
                                     </div>
                                 </div>
-                                <button
-                                    className="btn btn-danger btn-small delete-btn"
-                                    onClick={(e) => handleDelete(e, record.id)}
-                                >
-                                    削除
-                                </button>
+                                <div className="history-card-actions">
+                                    <button
+                                        className="btn btn-secondary btn-small export-btn"
+                                        onClick={(e) => handleExportGame(e, record)}
+                                        title="この試合をエクスポート"
+                                    >
+                                        📤 共有
+                                    </button>
+                                    <button
+                                        className="btn btn-danger btn-small delete-btn"
+                                        onClick={(e) => handleDelete(e, record.id)}
+                                    >
+                                        削除
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

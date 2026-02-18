@@ -1,6 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/imageOCR';
 import { getDefaultGameMode, saveDefaultGameMode, type GameMode } from '../../utils/appSettings';
+import {
+    exportAllData,
+    exportGameHistoryCSV,
+    downloadJSON,
+    downloadCSV,
+    shareFile,
+    copyToClipboard,
+    importFromFile,
+    importFromJSON,
+    generateBackupFilename,
+} from '../../utils/dataBackup';
 import './AppSettingsModal.css';
 
 interface AppSettingsModalProps {
@@ -13,6 +24,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [showKey, setShowKey] = useState(false);
     const [testStatus, setTestStatus] = useState<{ loading: boolean; message: string; success?: boolean } | null>(null);
     const [defaultMode, setDefaultMode] = useState<GameMode>('full');
+    const [importStatus, setImportStatus] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -49,6 +62,105 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             message: result.message,
             success: result.success
         });
+    };
+
+    // データ管理ハンドラー
+    const handleExportAll = async () => {
+        try {
+            const data = exportAllData();
+            const filename = generateBackupFilename();
+
+            // モバイルデバイスの場合はWeb Share APIを試す
+            if (navigator.share && navigator.userAgent.match(/mobile/i)) {
+                const shared = await shareFile(data, filename, 'MBCscore 全データバックアップ');
+                if (shared) {
+                    setImportStatus('✓ データを共有しました');
+                    setTimeout(() => setImportStatus(''), 3000);
+                    return;
+                }
+            }
+
+            // ダウンロード
+            downloadJSON(data, filename);
+            setImportStatus('✓ バックアップファイルをダウンロードしました');
+            setTimeout(() => setImportStatus(''), 3000);
+        } catch (error) {
+            alert('エクスポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+        }
+    };
+
+    const handleExportCSV = () => {
+        try {
+            const csv = exportGameHistoryCSV();
+            const filename = `MBCscore_試合履歴_${new Date().toISOString().slice(0, 10)}.csv`;
+            downloadCSV(csv, filename);
+            setImportStatus('✓ CSV形式でダウンロードしました');
+            setTimeout(() => setImportStatus(''), 3000);
+        } catch (error) {
+            alert('CSVエクスポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+        }
+    };
+
+    const handleCopyBackup = async () => {
+        try {
+            const data = exportAllData();
+            const success = await copyToClipboard(data);
+            if (success) {
+                setImportStatus('✓ クリップボードにコピーしました');
+                setTimeout(() => setImportStatus(''), 3000);
+            } else {
+                alert('クリップボードへのコピーに失敗しました');
+            }
+        } catch (error) {
+            alert('コピーに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+        }
+    };
+
+    const handleImportFile = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const result = await importFromFile(file);
+            if (result.success) {
+                setImportStatus(`✓ ${result.message}`);
+                setTimeout(() => setImportStatus(''), 5000);
+                // データが変更されたので、設定を再読み込み
+                setDefaultMode(getDefaultGameMode());
+            } else {
+                alert(`インポート失敗: ${result.message}\n${result.errors?.join('\n') || ''}`);
+            }
+        } catch (error) {
+            alert('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+        }
+
+        // inputをリセット（同じファイルを再度選択できるように）
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleImportText = () => {
+        const text = prompt('JSONデータを貼り付けてください:');
+        if (!text) return;
+
+        try {
+            const result = importFromJSON(text);
+            if (result.success) {
+                setImportStatus(`✓ ${result.message}`);
+                setTimeout(() => setImportStatus(''), 5000);
+                // データが変更されたので、設定を再読み込み
+                setDefaultMode(getDefaultGameMode());
+            } else {
+                alert(`インポート失敗: ${result.message}\n${result.errors?.join('\n') || ''}`);
+            }
+        } catch (error) {
+            alert('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+        }
     };
 
     if (!isOpen) return null;
@@ -163,6 +275,74 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <p className="section-description">音声での記録入力機能の設定</p>
                     </section>
                     */}
+
+                    {/* データ管理セクション */}
+                    <section className="settings-section">
+                        <h3>📊 データ管理</h3>
+                        <p className="section-description">
+                            試合履歴・チーム情報などをバックアップ・復元できます。
+                        </p>
+
+                        {importStatus && (
+                            <div className="import-status-message">
+                                {importStatus}
+                            </div>
+                        )}
+
+                        <div className="data-management-buttons">
+                            <h4 className="subsection-title">バックアップ</h4>
+                            <button
+                                className="btn btn-primary btn-block"
+                                onClick={handleExportAll}
+                            >
+                                💾 全データをエクスポート
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-block"
+                                onClick={handleExportCSV}
+                            >
+                                📊 試合履歴をCSVでエクスポート
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-block"
+                                onClick={handleCopyBackup}
+                            >
+                                📋 クリップボードにコピー
+                            </button>
+
+                            <h4 className="subsection-title">復元</h4>
+                            <button
+                                className="btn btn-primary btn-block"
+                                onClick={handleImportFile}
+                            >
+                                📂 ファイルから復元
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-block"
+                                onClick={handleImportText}
+                            >
+                                📝 データを貼り付けて復元
+                            </button>
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".json"
+                                onChange={handleFileChange}
+                                style={{ display: 'none' }}
+                            />
+                        </div>
+
+                        <div className="backup-notice">
+                            <p>⚠️ <strong>重要な注意事項</strong></p>
+                            <ul>
+                                <li>ブラウザの「サイトデータ削除」を行うと全データが消えます</li>
+                                <li>定期的にバックアップを取ることを推奨します</li>
+                                <li>復元時は既存データとマージされます（重複は上書き）</li>
+                                <li>バックアップには選手名などの個人情報が含まれます</li>
+                            </ul>
+                        </div>
+                    </section>
 
                     {/* ヘルプセクション */}
                     <section className="settings-section">

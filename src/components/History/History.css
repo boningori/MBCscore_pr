@@ -139,17 +139,35 @@
     margin-right: 4px;
 }
 
-.history-container .delete-btn {
+.history-container .history-card-actions {
     position: absolute;
     top: var(--spacing-sm);
     right: var(--spacing-sm);
-    padding: 4px 8px;
+    display: flex;
+    gap: var(--spacing-xs);
     opacity: 0;
     transition: opacity 0.2s;
 }
 
-.history-container .history-card:hover .delete-btn {
+.history-container .history-card:hover .history-card-actions {
     opacity: 1;
+}
+
+.history-container .delete-btn,
+.history-container .export-btn {
+    padding: 4px 8px;
+}
+
+.history-container .export-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.history-container .export-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
 }
 
 /* Detail View */
