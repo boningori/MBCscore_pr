@@ -1114,6 +1114,7 @@
 .cell-number {
     font-size: 9pt;
     font-weight: normal;
+    font-style: italic;
 }
 
 /* 未使用選手欄（空行）のスタイル */
