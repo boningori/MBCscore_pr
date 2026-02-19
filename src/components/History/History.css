@@ -65,7 +65,6 @@
     display: flex;
     justify-content: space-between;
     margin-bottom: var(--spacing-sm);
-    padding-right: 60px;
     font-size: var(--font-size-sm);
     color: var(--text-muted);
 }
@@ -141,7 +140,7 @@
 
 .history-container .history-card-actions {
     position: absolute;
-    top: var(--spacing-sm);
+    bottom: var(--spacing-sm);
     right: var(--spacing-sm);
     display: flex;
     gap: var(--spacing-xs);

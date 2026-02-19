@@ -22,7 +22,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: var(--spacing-sm) var(--spacing-md);
+    /* 横paddingを削減してスコア表示域を確保 */
+    padding: var(--spacing-sm) var(--spacing-xs);
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     border-left: 4px solid var(--border);
@@ -80,11 +81,12 @@
 }
 
 .score-display {
-    /* フォントサイズを画面に応じてスケール */
-    font-size: clamp(var(--font-size-2xl), 4.5vh, var(--font-size-3xl));
+    /* フォントサイズを画面に応じてスケール（3桁対応のため上限を抑制） */
+    font-size: clamp(var(--font-size-xl), 3.5vw, var(--font-size-2xl));
     font-weight: 800;
     color: var(--text-primary);
     line-height: 1;
+    /* クリッピングなし・テキストをそのまま表示 */
 }
 
 /* クォーターセクション */
@@ -201,20 +203,20 @@
     cursor: not-allowed;
 }
 
-/* レスポンシブ */
-@media (max-width: 600px) {
-    .scoreboard-main {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-sm);
+/* レスポンシブ: タブレット縦向き (iPad Air 11インチ等) */
+@media (max-width: 900px) {
+    .score-display {
+        /* 3列レイアウト時、中央列が狭いため文字を抑制 */
+        font-size: clamp(var(--font-size-xl), 3vh, var(--font-size-2xl));
     }
+}
 
-    .team-score-block {
-        flex-direction: row;
-        justify-content: space-between;
-    }
+/* レスポンシブ: スマホ縦向き */
+@media (max-width: 600px) {
+    /* scoreboard-main は常に横並び（TeamA | Q | TeamB）を維持するため変更しない */
 
     .score-display {
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-xl);
     }
 
     .quarter-section {
@@ -286,11 +288,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 80px;
+    /* 画面幅に応じた最大幅（固定値からvwベースに変更） */
+    max-width: clamp(60px, 10vw, 120px);
 }
 
 .simple-team-score {
-    font-size: var(--font-size-2xl);
+    /* 3桁スコアも枝内に収まるようclampで制御 */
+    font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-2xl));
     font-weight: 800;
     color: var(--text-primary);
 }
