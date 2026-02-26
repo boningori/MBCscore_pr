@@ -476,7 +476,6 @@
 
         /* ====== CTA フッター ====== */
         .cta-section {
-            text-align: center;
             padding: 14px 18px;
             border-radius: 16px;
             background: linear-gradient(135deg,
@@ -517,9 +516,38 @@
         .cta-title {
             font-size: 17px;
             font-weight: 900;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             color: #ffffff;
+            text-align: center;
             text-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .cta-body {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .cta-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .cta-right {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 10px;
+        }
+
+        .cta-divider {
+            width: 1px;
+            align-self: stretch;
+            background: linear-gradient(180deg, transparent, rgba(59, 130, 246, 0.3), rgba(16, 185, 129, 0.3), transparent);
         }
 
         .cta-btn {
@@ -555,8 +583,8 @@
 
         .cta-url {
             display: block;
-            margin-top: 12px;
-            font-size: 12px;
+            margin-top: 10px;
+            font-size: 11.5px;
             color: var(--accent-blue);
             text-decoration: none;
             word-break: break-all;
@@ -567,9 +595,38 @@
         }
 
         .cta-note {
-            margin-top: 10px;
-            font-size: 11px;
+            margin-top: 8px;
+            font-size: 10px;
             color: var(--text-muted);
+        }
+
+        /* ====== QRコード ====== */
+        .qr-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .qr-code {
+            width: 130px;
+            height: 130px;
+            padding: 8px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .qr-label {
+            margin-top: 6px;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 700;
         }
 
         /* ====== 印刷対応 ====== */
@@ -706,6 +763,17 @@
             .cta-note {
                 color: #64748b !important;
                 -webkit-text-fill-color: #64748b !important;
+            }
+
+            /* QRコード */
+            .qr-code {
+                background: #ffffff !important;
+                box-shadow: none !important;
+            }
+
+            .qr-label {
+                color: #475569 !important;
+                -webkit-text-fill-color: #475569 !important;
             }
 
             /* 背景装飾を非表示 */
@@ -855,15 +923,31 @@
             <div class="cta-section">
                 <p class="cta-title">⬇️ アクセスして今すぐ使ってみよう！ ⬇️</p>
 
-                <a href="https://boningori.github.io/MBCscore_pr/" target="_blank" class="cta-btn">
-                    🏀 MBCscore を開く
-                </a>
+                <div class="cta-body">
+                    <div class="cta-left">
+                        <a href="https://boningori.github.io/MBCscore_pr/" target="_blank" class="cta-btn">
+                            🏀 MBCscore を開く
+                        </a>
 
-                <a href="https://boningori.github.io/MBCscore_pr/" target="_blank" class="cta-url">
-                    https://boningori.github.io/MBCscore_pr/
-                </a>
+                        <a href="https://boningori.github.io/MBCscore_pr/" target="_blank" class="cta-url">
+                            https://boningori.github.io/MBCscore_pr/
+                        </a>
 
-                <p class="cta-note">※ インストール不要・登録不要・完全無料でご利用いただけます</p>
+                        <p class="cta-note">※ インストール不要・登録不要・完全無料</p>
+                    </div>
+
+                    <div class="cta-divider"></div>
+
+                    <div class="cta-right">
+                        <div class="qr-wrapper">
+                            <div class="qr-code">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fboningori.github.io%2FMBCscore_pr%2F"
+                                    alt="QRコード">
+                            </div>
+                            <span class="qr-label">📷 スマホでスキャン</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div>
