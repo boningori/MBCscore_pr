@@ -32,3 +32,16 @@ dist-ssr
 
 # Temporary scoresheet files
 scoresheettemp/
+
+# 開発内部ドキュメント
+PROJECT_MAP.md
+CODE_REVIEW_REPORT.md
+
+# セキュリティ関連ファイル（念のため）
+*.pem
+*.key
+*.p12
+*.pfx
+
+# AI アシスタント設定
+.agent/

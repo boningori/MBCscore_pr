@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBCscore - ミニバス スコアシート チラシ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0a1628;
+            --secondary-bg: #111d35;
+            --accent-blue: #3b82f6;
+            --accent-blue-dark: #2563eb;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --text-white: #f1f5f9;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-white);
+            background: #000;
+            line-height: 1.7;
+        }
+
+        /* ====== A4 ページコンテナ ====== */
+        .page {
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            background: var(--primary-bg);
+        }
+
+        /* ====== ダイナミック背景 ====== */
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        /* 大きなグラデーション球体 */
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: orbFloat 8s ease-in-out infinite alternate;
+        }
+
+        .bg-orb--blue {
+            width: 420px;
+            height: 420px;
+            top: -100px;
+            right: -80px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, transparent 70%);
+        }
+
+        .bg-orb--green {
+            width: 350px;
+            height: 350px;
+            bottom: 50px;
+            left: -100px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%);
+            animation-delay: 2s;
+        }
+
+        .bg-orb--orange {
+            width: 250px;
+            height: 250px;
+            top: 40%;
+            right: -60px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+            animation-delay: 4s;
+        }
+
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(-20px, 20px) scale(1.08);
+            }
+        }
+
+        /* 斜めストライプ装飾 */
+        .bg-stripe {
+            position: absolute;
+            width: 200%;
+            height: 120px;
+            background: linear-gradient(90deg,
+                    transparent 0%,
+                    rgba(59, 130, 246, 0.06) 30%,
+                    rgba(16, 185, 129, 0.06) 70%,
+                    transparent 100%);
+            transform: rotate(-12deg);
+        }
+
+        .bg-stripe--1 {
+            top: 8%;
+            left: -50%;
+        }
+
+        .bg-stripe--2 {
+            top: 55%;
+            left: -50%;
+            opacity: 0.6;
+        }
+
+        .bg-stripe--3 {
+            top: 85%;
+            left: -50%;
+            opacity: 0.4;
+        }
+
+        /* バスケットボールパターン（SVG） */
+        .bg-basketball {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            opacity: 0.04;
+            animation: ballSpin 20s linear infinite;
+        }
+
+        .bg-basketball--1 {
+            bottom: 12%;
+            right: 5%;
+        }
+
+        .bg-basketball--2 {
+            top: 25%;
+            left: -5%;
+            width: 180px;
+            height: 180px;
+            animation-direction: reverse;
+            animation-duration: 30s;
+        }
+
+        @keyframes ballSpin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ドットグリッドパターン */
+        .bg-dots {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* ====== コンテンツ ====== */
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 18mm 18mm 12mm;
+        }
+
+        /* ====== ヘッダー ====== */
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .logo-wrap {
+            display: inline-block;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .logo-wrap::after {
+            content: '';
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%);
+            z-index: -1;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes logoPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+        }
+
+        .logo {
+            width: 88px;
+            height: 88px;
+            border-radius: 20px;
+            filter: drop-shadow(0 6px 20px rgba(59, 130, 246, 0.4));
+            object-fit: cover;
+        }
+
+        .main-title {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            margin-bottom: 2px;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .sub-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            letter-spacing: 2px;
+        }
+
+        /* ====== キャッチフレーズバナー ====== */
+        .catch-banner {
+            position: relative;
+            margin: 10px 0 12px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            background: linear-gradient(135deg,
+                    rgba(59, 130, 246, 0.85) 0%,
+                    rgba(16, 185, 129, 0.85) 100%);
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            box-shadow:
+                0 8px 32px rgba(59, 130, 246, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .catch-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* ====== セクションタイトル ====== */
+        .section-heading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid;
+            border-image: linear-gradient(90deg, var(--accent-blue), var(--accent-green)) 1;
+        }
+
+        .section-heading .emoji {
+            font-size: 18px;
+        }
+
+        /* ====== 3大機能カード ====== */
+        .feature-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+        }
+
+        .feature-card:nth-child(1)::before {
+            background: linear-gradient(180deg, var(--accent-blue), var(--accent-green));
+        }
+
+        .feature-card:nth-child(2)::before {
+            background: linear-gradient(180deg, var(--accent-orange), var(--accent-red));
+        }
+
+        .feature-card:nth-child(3)::before {
+            background: linear-gradient(180deg, var(--accent-green), var(--accent-blue));
+        }
+
+        .feature-icon {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:nth-child(1) .feature-icon {
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+        }
+
+        .feature-card:nth-child(2) .feature-icon {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+        }
+
+        .feature-card:nth-child(3) .feature-icon {
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+        }
+
+        .feature-text {
+            flex: 1;
+        }
+
+        .feature-text h4 {
+            font-size: 14px;
+            font-weight: 900;
+            margin-bottom: 2px;
+            color: #fff;
+        }
+
+        .feature-text p {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .feature-text strong {
+            color: var(--text-white);
+        }
+
+        /* ====== 便利機能グリッド ====== */
+        .sub-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .sub-card {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sub-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50px;
+            height: 50px;
+            border-radius: 0 12px 0 50px;
+            opacity: 0.15;
+        }
+
+        .sub-card:nth-child(1)::after {
+            background: var(--accent-blue);
+        }
+
+        .sub-card:nth-child(2)::after {
+            background: var(--accent-green);
+        }
+
+        .sub-card:nth-child(3)::after {
+            background: var(--accent-orange);
+        }
+
+        .sub-card:nth-child(4)::after {
+            background: var(--accent-red);
+        }
+
+        .sub-card h4 {
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            color: #fff;
+        }
+
+        .sub-card p {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
+        /* ====== PWAバッジ ====== */
+        .pwa-badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid;
+        }
+
+        .badge--blue {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+        }
+
+        .badge--green {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .badge--orange {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+
+        /* ====== CTA フッター ====== */
+        .cta-section {
+            text-align: center;
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: linear-gradient(135deg,
+                    rgba(59, 130, 246, 0.12) 0%,
+                    rgba(16, 185, 129, 0.08) 100%);
+            border: 2px solid rgba(59, 130, 246, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green), var(--accent-blue));
+            background-size: 200% 200%;
+            animation: borderGlow 4s ease infinite;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        @keyframes borderGlow {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .cta-title {
+            font-size: 17px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark));
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 34px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 700;
+            box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2.5s ease-in-out infinite;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .cta-url {
+            display: block;
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--accent-blue);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .cta-url:hover {
+            text-decoration: underline;
+        }
+
+        .cta-note {
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* ====== 印刷対応 ====== */
+        /* === 印刷用スタイル === */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* アニメーション・トランジション無効化 */
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+
+            .page {
+                margin: 0;
+                box-shadow: none;
+                width: 210mm;
+                height: 297mm;
+                /* 背景グラフィックOFF時のフォールバック */
+                background: var(--primary-bg) !important;
+            }
+
+            /* ===================================
+               背景グラフィックがOFFの場合でも
+               文字が必ず見えるようにダーク色にする
+               =================================== */
+
+            /* タイトル系 */
+            .main-title {
+                color: #0f172a !important;
+                -webkit-text-fill-color: #0f172a !important;
+                text-shadow: none !important;
+            }
+
+            .sub-title {
+                color: #2563eb !important;
+                -webkit-text-fill-color: #2563eb !important;
+            }
+
+            /* キャッチバナー */
+            .catch-banner {
+                background: #2563eb !important;
+                color: #ffffff !important;
+                -webkit-text-fill-color: #ffffff !important;
+                box-shadow: none !important;
+            }
+
+            /* PWAバッジ */
+            .badge {
+                color: #1e293b !important;
+                -webkit-text-fill-color: #1e293b !important;
+                border-color: #94a3b8 !important;
+                background: #f1f5f9 !important;
+            }
+
+            /* セクション見出し */
+            .section-heading {
+                color: #0f172a !important;
+                -webkit-text-fill-color: #0f172a !important;
+                border-image: none !important;
+                border-bottom-color: #2563eb !important;
+            }
+
+            /* 機能カード */
+            .feature-card {
+                background: #f8fafc !important;
+                border-color: #e2e8f0 !important;
+            }
+
+            .feature-text h4 {
+                color: #0f172a !important;
+                -webkit-text-fill-color: #0f172a !important;
+            }
+
+            .feature-text p {
+                color: #475569 !important;
+                -webkit-text-fill-color: #475569 !important;
+            }
+
+            .feature-text strong {
+                color: #0f172a !important;
+                -webkit-text-fill-color: #0f172a !important;
+            }
+
+            /* サブカード */
+            .sub-card {
+                background: #f8fafc !important;
+                border-color: #e2e8f0 !important;
+            }
+
+            .sub-card h4 {
+                color: #0f172a !important;
+                -webkit-text-fill-color: #0f172a !important;
+            }
+
+            .sub-card p {
+                color: #475569 !important;
+                -webkit-text-fill-color: #475569 !important;
+            }
+
+            /* CTAセクション */
+            .cta-section {
+                background: #f0f9ff !important;
+                border-color: #2563eb !important;
+            }
+
+            .cta-title {
+                color: #0f172a !important;
+                -webkit-text-fill-color: #0f172a !important;
+                text-shadow: none !important;
+            }
+
+            .cta-btn {
+                background: #2563eb !important;
+                color: #ffffff !important;
+                -webkit-text-fill-color: #ffffff !important;
+                box-shadow: none !important;
+            }
+
+            .cta-url {
+                color: #2563eb !important;
+                -webkit-text-fill-color: #2563eb !important;
+            }
+
+            .cta-note {
+                color: #64748b !important;
+                -webkit-text-fill-color: #64748b !important;
+            }
+
+            /* 背景装飾を非表示 */
+            .bg-layer {
+                display: none !important;
+            }
+
+            /* ロゴ周りのグロー無効化 */
+            .logo-wrap::after {
+                display: none !important;
+            }
+
+            .logo {
+                filter: none !important;
+            }
+
+            /* 疑似要素のアニメーション無効化 */
+            .catch-banner::before,
+            .cta-btn::before,
+            .cta-section::before {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- ========== ダイナミック背景 ========== -->
+        <div class="bg-layer">
+            <div class="bg-orb bg-orb--blue"></div>
+            <div class="bg-orb bg-orb--green"></div>
+            <div class="bg-orb bg-orb--orange"></div>
+
+            <div class="bg-stripe bg-stripe--1"></div>
+            <div class="bg-stripe bg-stripe--2"></div>
+            <div class="bg-stripe bg-stripe--3"></div>
+
+            <div class="bg-dots"></div>
+
+            <!-- バスケットボール SVG -->
+            <svg class="bg-basketball bg-basketball--1" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M50 2 Q50 50 50 98" fill="none" stroke="currentColor" stroke-width="1.5" />
+                <path d="M2 50 Q50 50 98 50" fill="none" stroke="currentColor" stroke-width="1.5" />
+                <path d="M14 14 Q50 35 86 14" fill="none" stroke="currentColor" stroke-width="1.2" />
+                <path d="M14 86 Q50 65 86 86" fill="none" stroke="currentColor" stroke-width="1.2" />
+            </svg>
+
+            <svg class="bg-basketball bg-basketball--2" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M50 2 Q50 50 50 98" fill="none" stroke="currentColor" stroke-width="1.5" />
+                <path d="M2 50 Q50 50 98 50" fill="none" stroke="currentColor" stroke-width="1.5" />
+                <path d="M14 14 Q50 35 86 14" fill="none" stroke="currentColor" stroke-width="1.2" />
+                <path d="M14 86 Q50 65 86 86" fill="none" stroke="currentColor" stroke-width="1.2" />
+            </svg>
+        </div>
+
+        <!-- ========== コンテンツ ========== -->
+        <div class="content">
+
+            <!-- ヘッダー -->
+            <div class="header">
+                <a href="https://boningori.github.io/MBCscore_pr/" target="_blank" class="logo-wrap"
+                    title="MBCscoreを開く">
+                    <img src="./public/icon-512.png" alt="MBCscore Logo" class="logo"
+                        onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%233b82f6%22 stroke-width=%222%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2210%22/%3E%3C/svg%3E'">
+                </a>
+                <h1 class="main-title">🏀 試合の感動を、指先ひとつで記録。</h1>
+                <p class="sub-title">ミニバス専用デジタルスコアシート「MBCscore」</p>
+            </div>
+
+            <!-- キャッチフレーズ -->
+            <div class="catch-banner">
+                スマホ・タブレットが、あなた専用の高性能スコアボードに。<br>
+                インストール不要！ブラウザからすぐに使えるPWAアプリ 🚀
+            </div>
+
+            <!-- PWA バッジ -->
+            <div class="pwa-badges">
+                <span class="badge badge--blue">📱 iPhone / iPad 対応</span>
+                <span class="badge badge--green">📶 オフラインOK</span>
+                <span class="badge badge--orange">⚡ 完全無料</span>
+            </div>
+
+            <!-- 3大機能 -->
+            <h3 class="section-heading">
+                <span class="emoji">✨</span> MBCscoreの「ココがすごい！」3大機能
+            </h3>
+
+            <div class="feature-cards">
+                <!-- 1. フリック入力 -->
+                <div class="feature-card">
+                    <div class="feature-icon">👆</div>
+                    <div class="feature-text">
+                        <h4>コートから目を離さない！フリック高速入力</h4>
+                        <p>得点は<strong>上フリック</strong>、ミスは<strong>下フリック</strong>。直感操作で白熱する試合のテンポを崩さず記録。子どもたちの素晴らしいプレーをその目で見届けられます。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2. 保留機能 -->
+                <div class="feature-card">
+                    <div class="feature-icon">⏳</div>
+                    <div class="feature-text">
+                        <h4>「今の誰？」でも安心。アクション保留機能</h4>
+                        <p>背番号を見逃してもまずは得点を記録、選手が分かった時点で後から紐付け。<strong>記録漏れゼロ</strong>を実現します。</p>
+                    </div>
+                </div>
+
+                <!-- 3. JBAスコアシート -->
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <div class="feature-text">
+                        <h4>ワンタップで完成！JBA準拠スコアシート自動生成</h4>
+                        <p>面倒なQ別得点計算も斜線記入もすべて自動。<strong>PDF・画像でエクスポート</strong>してすぐ共有できます。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- その他便利機能 -->
+            <h3 class="section-heading">
+                <span class="emoji">💡</span> 記録係を助ける、もっと便利な機能
+            </h3>
+
+            <div class="sub-grid">
+                <div class="sub-card">
+                    <h4>📸 カメラでOCR選手登録</h4>
+                    <p>メンバー表を撮るだけでAIが自動読み取り。手入力不要で選手登録が完了します。</p>
+                </div>
+                <div class="sub-card">
+                    <h4>📱 2つの表示モード</h4>
+                    <p>iPad向け3カラム「フルモード」とスマホ特化「シンプルモード」をワンタップ切替。</p>
+                </div>
+                <div class="sub-card">
+                    <h4>📶 オフラインで動く</h4>
+                    <p>「ホーム画面に追加」でアプリ化。電波の届かない体育館でも完璧に動作します。</p>
+                </div>
+                <div class="sub-card">
+                    <h4>💾 バックアップ & CSV</h4>
+                    <p>フルバックアップで機種変更も安心。CSVエクスポートでExcel分析も可能です。</p>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-section">
+                <p class="cta-title">⬇️ アクセスして今すぐ使ってみよう！ ⬇️</p>
+
+                <a href="https://boningori.github.io/MBCscore_pr/" target="_blank" class="cta-btn">
+                    🏀 MBCscore を開く
+                </a>
+
+                <a href="https://boningori.github.io/MBCscore_pr/" target="_blank" class="cta-url">
+                    https://boningori.github.io/MBCscore_pr/
+                </a>
+
+                <p class="cta-note">※ インストール不要・登録不要・完全無料でご利用いただけます</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PDF保存ボタン（印刷・PDF生成時は非表示） -->
+    <button id="savePdfBtn" onclick="generatePDF()" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 30px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        font-family: 'Noto Sans JP', sans-serif;
+        transition: all 0.3s ease;
+    " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(59,130,246,0.5)'"
+        onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(59,130,246,0.4)'">
+        📥 PDF保存（リンク付き）
+    </button>
+
+    <style>
+        @media print {
+            #savePdfBtn {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <!-- CDN: html2canvas & jsPDF -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+
+    <script>
+        async function generatePDF() {
+            const btn = document.getElementById('savePdfBtn');
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ 生成中...';
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+
+            try {
+                // ボタンを一時非表示
+                btn.style.display = 'none';
+
+                const page = document.querySelector('.page');
+
+                // ロゴ画像をBase64 data URIに変換（tainted canvas対策）
+                const logoImg = page.querySelector('img.logo');
+                let originalSrc = null;
+                if (logoImg && logoImg.src && !logoImg.src.startsWith('data:')) {
+                    originalSrc = logoImg.src;
+                    try {
+                        const tempCanvas = document.createElement('canvas');
+                        const tempImg = new Image();
+                        tempImg.crossOrigin = 'anonymous';
+                        await new Promise((resolve, reject) => {
+                            tempImg.onload = resolve;
+                            tempImg.onerror = () => {
+                                // crossOrigin失敗時は直接描画を試みる
+                                const img2 = new Image();
+                                img2.onload = () => {
+                                    tempCanvas.width = img2.naturalWidth;
+                                    tempCanvas.height = img2.naturalHeight;
+                                    tempCanvas.getContext('2d').drawImage(img2, 0, 0);
+                                    try {
+                                        logoImg.src = tempCanvas.toDataURL('image/png');
+                                    } catch (e) {
+                                        // file://では失敗する可能性あり、元のまま続行
+                                    }
+                                    resolve();
+                                };
+                                img2.onerror = resolve;
+                                img2.src = originalSrc;
+                            };
+                            tempImg.src = originalSrc;
+                        });
+                        if (tempImg.complete && tempImg.naturalWidth > 0) {
+                            tempCanvas.width = tempImg.naturalWidth;
+                            tempCanvas.height = tempImg.naturalHeight;
+                            tempCanvas.getContext('2d').drawImage(tempImg, 0, 0);
+                            try {
+                                logoImg.src = tempCanvas.toDataURL('image/png');
+                            } catch (e) { /* 元のまま続行 */ }
+                        }
+                    } catch (e) { /* 変換失敗時は元のまま続行 */ }
+                }
+
+                // アニメーションを一時停止
+                const allElements = page.querySelectorAll('*');
+                allElements.forEach(el => {
+                    el.style.animationPlayState = 'paused';
+                });
+
+                // html2canvasでキャプチャ（高解像度）
+                const canvas = await html2canvas(page, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false,
+                    backgroundColor: '#0a1628',
+                    width: page.offsetWidth,
+                    height: page.offsetHeight,
+                    logging: false,
+                    onclone: function (clonedDoc) {
+                        // クローンされたドキュメント内のロゴも同じBase64に置換
+                        const clonedLogo = clonedDoc.querySelector('img.logo');
+                        if (clonedLogo && logoImg) {
+                            clonedLogo.src = logoImg.src;
+                        }
+                    }
+                });
+
+                // jsPDFのコンストラクタを取得（複数パターン対応）
+                let JsPDF;
+                if (window.jspdf && window.jspdf.jsPDF) {
+                    JsPDF = window.jspdf.jsPDF;
+                } else if (window.jsPDF) {
+                    JsPDF = window.jsPDF;
+                } else {
+                    throw new Error('jsPDFライブラリが読み込まれていません。インターネット接続を確認してください。');
+                }
+
+                // A4サイズのPDFを作成
+                const pdf = new JsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pdfWidth = 210;
+                const pdfHeight = 297;
+
+                // キャプチャ画像をPDFに追加（A4全面）
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+                // ==============================
+                // クリック可能なリンクを追加
+                // ==============================
+
+                // ページの実際のサイズ（px）
+                const pageW = page.offsetWidth;
+                const pageH = page.offsetHeight;
+
+                // px→mm変換関数
+                const toMmX = (px) => (px / pageW) * pdfWidth;
+                const toMmY = (px) => (px / pageH) * pdfHeight;
+
+                // リンク要素の位置を取得してPDFにリンク注釈を追加
+                const pageRect = page.getBoundingClientRect();
+
+                const linkElements = page.querySelectorAll('a[href]');
+                linkElements.forEach(link => {
+                    const rect = link.getBoundingClientRect();
+                    const x = toMmX(rect.left - pageRect.left);
+                    const y = toMmY(rect.top - pageRect.top);
+                    const w = toMmX(rect.width);
+                    const h = toMmY(rect.height);
+
+                    if (w > 0 && h > 0) {
+                        pdf.link(x, y, w, h, { url: link.href });
+                    }
+                });
+
+                // アニメーション再開
+                allElements.forEach(el => {
+                    el.style.animationPlayState = '';
+                });
+
+                // PDF保存
+                pdf.save('MBCscore_FLYER.pdf');
+
+            } catch (error) {
+                console.error('PDF生成エラー:', error);
+                alert('PDF生成中にエラーが発生しました: ' + error.message);
+            } finally {
+                // ロゴ画像のsrcを復元
+                if (originalSrc && logoImg) {
+                    logoImg.src = originalSrc;
+                }
+                btn.style.display = '';
+                btn.textContent = originalText;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+    </script>
+</body>
+
+</html>
