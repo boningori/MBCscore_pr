@@ -93,6 +93,7 @@ export interface ScoreEntry {
     timestamp: number;
     runningScoreA: number;  // その時点でのチームAの累計点
     runningScoreB: number;  // その時点でのチームBの累計点
+    isOwnGoal?: boolean;    // オウンゴール（自殺点）フラグ
 }
 
 // 統計アクション記録
@@ -211,7 +212,8 @@ export type GameActionType =
     | 'RESOLVE_PENDING_ACTION_UNKNOWN'
     | 'UPDATE_PENDING_ACTION_CANDIDATES'
     | 'REMOVE_PENDING_ACTION'
-    | 'UPDATE_GAME_INFO';
+    | 'UPDATE_GAME_INFO'
+    | 'TOGGLE_OWN_GOAL';
 
 // ゲームアクション
 export interface GameAction {

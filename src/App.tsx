@@ -637,6 +637,11 @@ function AppContent() {
     dispatch({ type: 'CONVERT_MISS_TO_SCORE', payload: { entryId, newScoreType } });
   };
 
+  // オウンゴールトグル
+  const handleToggleOwnGoal = (entryId: string) => {
+    dispatch({ type: 'TOGGLE_OWN_GOAL', payload: { entryId } });
+  };
+
   // フルスクリーン制御
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -923,6 +928,7 @@ function AppContent() {
                     onEditStat={handleEditStat}
                     onConvertScoreToMiss={handleConvertScoreToMiss}
                     onConvertMissToScore={handleConvertMissToScore}
+                    onToggleOwnGoal={handleToggleOwnGoal}
                   />
                 )}
 
@@ -1023,6 +1029,7 @@ function AppContent() {
                     onEditStat={handleEditStat}
                     onConvertScoreToMiss={handleConvertScoreToMiss}
                     onConvertMissToScore={handleConvertMissToScore}
+                    onToggleOwnGoal={handleToggleOwnGoal}
                   />
                 )}
               </div>
@@ -1333,6 +1340,7 @@ function AppContent() {
                   onEditStat={handleEditStat}
                   onConvertScoreToMiss={handleConvertScoreToMiss}
                   onConvertMissToScore={handleConvertMissToScore}
+                  onToggleOwnGoal={handleToggleOwnGoal}
                 />
               </div>
               <div className={`history-popup-team color-${state.teamB.color}`}>
@@ -1351,6 +1359,7 @@ function AppContent() {
                   onEditStat={handleEditStat}
                   onConvertScoreToMiss={handleConvertScoreToMiss}
                   onConvertMissToScore={handleConvertMissToScore}
+                  onToggleOwnGoal={handleToggleOwnGoal}
                 />
               </div>
             </div>

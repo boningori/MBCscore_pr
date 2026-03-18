@@ -1652,6 +1652,18 @@ function gameReducer(state: Game, action: GameAction): Game {
             };
         }
 
+        case 'TOGGLE_OWN_GOAL': {
+            const { entryId } = action.payload as { entryId: string };
+            return {
+                ...state,
+                scoreHistory: state.scoreHistory.map(entry =>
+                    entry.id === entryId
+                        ? { ...entry, isOwnGoal: !entry.isOwnGoal }
+                        : entry
+                ),
+            };
+        }
+
         default:
             return state;
     }

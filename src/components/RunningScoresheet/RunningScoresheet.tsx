@@ -605,7 +605,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 return (
                                                     <div key={scoreVal} className="rs-rs-row">
                                                         <div className={`rs-rs-cell a-no ${endClassA} ${quarterClassA} ${isThreePointA ? 'circled' : ''}`}>
-                                                            {entryA ? (entryA.playerNumber === -1 ? '?' : entryA.playerNumber) : ''}
+                                                            {entryA ? (entryA.isOwnGoal ? <span style={{ fontSize: '1.2em', lineHeight: 1 }}>▲</span> : (entryA.playerNumber === -1 ? '?' : entryA.playerNumber)) : ''}
                                                         </div>
                                                         <div className={`rs-rs-cell a-score ${entryA ? `${scoreStyleA} ${quarterClassA}` : ''} ${endClassA} ${quarterClassA}`}>
                                                             {scoreVal}
@@ -614,7 +614,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                             {scoreVal}
                                                         </div>
                                                         <div className={`rs-rs-cell b-no ${endClassB} ${quarterClassB} ${isThreePointB ? 'circled' : ''}`}>
-                                                            {entryB ? (entryB.playerNumber === -1 ? '?' : entryB.playerNumber) : ''}
+                                                            {entryB ? (entryB.isOwnGoal ? <span style={{ fontSize: '1.2em', lineHeight: 1 }}>▲</span> : (entryB.playerNumber === -1 ? '?' : entryB.playerNumber)) : ''}
                                                         </div>
                                                     </div>
                                                 );

@@ -9,11 +9,13 @@ interface EditActionModalProps {
         entryType: string;
         playerId: string;
         playerNumber: number;
+        isOwnGoal?: boolean;
     };
     players: Player[];
     onSave: (itemId: string, newPlayerId: string, newType: string) => void;
     onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => void;
     onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT') => void;
+    onToggleOwnGoal?: (entryId: string) => void;
     onCancel: () => void;
 }
 
@@ -42,20 +44,30 @@ const isShotType = (type: string): boolean => {
     return ['2P', '3P', 'FT', '2PA', '3PA', 'FTA'].includes(type);
 };
 
+// scoreタイプかどうか（成功）
+const isScoreType = (type: string): boolean => {
+    return ['2P', '3P', 'FT'].includes(type);
+};
+
 export function EditActionModal({
     item,
     players,
     onSave,
     onConvertScoreToMiss,
     onConvertMissToScore,
+    onToggleOwnGoal,
     onCancel,
 }: EditActionModalProps) {
     const [selectedPlayerId, setSelectedPlayerId] = useState(item.playerId);
     const [selectedType, setSelectedType] = useState(item.entryType);
+    const [isOwnGoal, setIsOwnGoal] = useState(item.isOwnGoal ?? false);
 
     // 現在の編集対象がシュート関連かどうか
     const isOriginalShotRelated = isShotType(item.entryType);
     const isSelectedShotRelated = isShotType(selectedType);
+
+    // OGチェックボックスを表示するか（得点の成功系のみ）
+    const showOwnGoal = isOriginalShotRelated && item.type === 'score' && isScoreType(selectedType);
 
     // シュート関連の場合は統合リスト、それ以外は非シュート系のみ
     const types = isOriginalShotRelated
@@ -82,6 +94,13 @@ export function EditActionModal({
                     onConvertMissToScore(item.id, selectedType as '2P' | '3P' | 'FT');
                     return;
                 }
+            }
+        }
+
+        // OGフラグの変更があれば適用
+        if (item.type === 'score' && isScoreType(selectedType) && isOwnGoal !== (item.isOwnGoal ?? false)) {
+            if (onToggleOwnGoal) {
+                onToggleOwnGoal(item.id);
             }
         }
 
@@ -133,6 +152,18 @@ export function EditActionModal({
                             ))}
                         </select>
                     </div>
+
+                    {showOwnGoal && (
+                        <div className="form-group form-group-inline">
+                            <label htmlFor="og-checkbox">相手チームのオウンゴール（▲）</label>
+                            <input
+                                id="og-checkbox"
+                                type="checkbox"
+                                checked={isOwnGoal}
+                                onChange={e => setIsOwnGoal(e.target.checked)}
+                            />
+                        </div>
+                    )}
 
                     {isConversion() && (
                         <div className="conversion-notice">

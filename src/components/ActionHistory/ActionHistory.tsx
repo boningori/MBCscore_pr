@@ -24,6 +24,7 @@ interface ActionHistoryProps {
     onEditStat?: (entryId: string, newPlayerId: string, newStatType: string) => void;
     onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => void;
     onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT') => void;
+    onToggleOwnGoal?: (entryId: string) => void;
 }
 
 interface HistoryItem {
@@ -35,6 +36,7 @@ interface HistoryItem {
     playerName: string;
     description: string;
     entryType: string;
+    isOwnGoal?: boolean;
 }
 
 export function ActionHistory({
@@ -51,6 +53,7 @@ export function ActionHistory({
     onEditStat,
     onConvertScoreToMiss,
     onConvertMissToScore,
+    onToggleOwnGoal,
 }: ActionHistoryProps) {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [editingItem, setEditingItem] = useState<HistoryItem | null>(null);
@@ -134,8 +137,9 @@ export function ActionHistory({
                 playerId: getPlayerId(s),
                 playerNumber: s.playerNumber,
                 playerName: getPlayerName(s.playerId),
-                description: getScoreLabel(s.scoreType, s.points),
+                description: (s.isOwnGoal ? '▲OG ' : '') + getScoreLabel(s.scoreType, s.points),
                 entryType: s.scoreType,
+                isOwnGoal: s.isOwnGoal || false,
             })),
         ...statHistory
             .filter(s => s.teamId === teamId)
@@ -383,6 +387,7 @@ export function ActionHistory({
                     onSave={handleEditSave}
                     onConvertScoreToMiss={handleConvertScoreToMiss}
                     onConvertMissToScore={handleConvertMissToScore}
+                    onToggleOwnGoal={onToggleOwnGoal}
                     onCancel={() => setEditingItem(null)}
                 />
             )}
