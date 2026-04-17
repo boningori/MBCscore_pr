@@ -104,8 +104,11 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                 <p className="text-muted text-sm">
                     タブレット最適化 | オフライン動作
                 </p>
-                <p className="text-muted text-sm">
+                <p className="text-muted text-sm home-contact">
                     ご質問・ご要望: <a href="mailto:mbcscore@gmail.com">mbcscore@gmail.com</a>
+                </p>
+                <p className="text-muted text-sm home-contact">
+                    ソースコード: <a href="https://github.com/boningori/MBCscore_pr" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </p>
             </div>
         </div>
