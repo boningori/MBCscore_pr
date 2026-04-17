@@ -517,6 +517,18 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <p className="section-description">
                             フリック入力や保留処理など、アプリの詳しい使い方を確認できます。
                         </p>
+                        <div className="contact-info">
+                            <p className="contact-item">
+                                📧 ご質問・ご要望：<a href="mailto:mbcscore@gmail.com">mbcscore@gmail.com</a>
+                            </p>
+                            <p className="contact-item">
+                                💻 ソースコード：<a
+                                    href="https://github.com/boningori/MBCscore_pr"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >GitHub</a>
+                            </p>
+                        </div>
                     </section>
                 </div>
 

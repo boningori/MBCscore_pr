@@ -203,6 +203,28 @@
     text-decoration: none;
 }
 
+.contact-info {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.contact-item {
+    margin: var(--spacing-xs) 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.contact-item a {
+    color: var(--primary-light);
+    text-decoration: none;
+}
+
+.contact-item a:hover {
+    text-decoration: underline;
+}
+
 .settings-footer {
     display: flex;
     justify-content: flex-end;
