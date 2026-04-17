@@ -1,1 +1,0 @@
-export { TeamSetup } from './TeamSetup';
