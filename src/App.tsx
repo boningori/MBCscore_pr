@@ -17,6 +17,7 @@ import { PlayerStatsAnalysis } from './components/PlayerStatsAnalysis';
 import { Scoreboard } from './components/Scoreboard';
 import { ActionButtons } from './components/ActionButtons';
 import { ActionHistory } from './components/ActionHistory';
+import { TeamPanel } from './components/TeamPanel';
 // import { VoiceInput } from './components/VoiceInput'; // 一時的に非表示
 import { SubstitutionModal } from './components/SubstitutionModal';
 import { StatsPanel } from './components/StatsPanel';
@@ -176,8 +177,8 @@ function AppContent() {
     }
   };
 
-  // 統計追加
-  const handleStat = (statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM') => {
+  // 統計追加（シュートミスも含む）
+  const handleStat = (statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA') => {
     if (selectedPlayerId && selectedTeamId) {
       dispatch({
         type: 'ADD_STAT',
@@ -189,17 +190,9 @@ function AppContent() {
     }
   };
 
-  // シュートミス追加
+  // シュートミス追加（handleStatと同じロジック）
   const handleMiss = (missType: '2PA' | '3PA' | 'FTA') => {
-    if (selectedPlayerId && selectedTeamId) {
-      dispatch({
-        type: 'ADD_STAT',
-        payload: { teamId: selectedTeamId, playerId: selectedPlayerId, statType: missType },
-      });
-      dispatch({ type: 'CLEAR_SELECTION' });
-    } else {
-      setPendingAction({ type: 'MISS', value: missType });
-    }
+    handleStat(missType);
   };
 
   // ファウルセレクター表示
@@ -642,6 +635,18 @@ function AppContent() {
     dispatch({ type: 'TOGGLE_OWN_GOAL', payload: { entryId } });
   };
 
+  // ActionHistory共通ハンドラ
+  const actionHistoryHandlers = {
+    onRemoveScore: handleRemoveScore,
+    onRemoveStat: handleRemoveStat,
+    onRemoveFoul: handleRemoveFoul,
+    onEditScore: handleEditScore,
+    onEditStat: handleEditStat,
+    onConvertScoreToMiss: handleConvertScoreToMiss,
+    onConvertMissToScore: handleConvertMissToScore,
+    onToggleOwnGoal: handleToggleOwnGoal,
+  };
+
   // フルスクリーン制御
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -860,79 +865,23 @@ function AppContent() {
             {/* 3列メインエリア: Team A | Center (Scoreboard + Actions) | Team B */}
             <div className={`game-main-area ${gameMode === 'simple' ? 'simple-mode' : 'full-mode'}`}>
               {/* Left: Team A */}
-              <div className={`team-panel team-a color-${state.teamA.color} ${selectedTeamId === 'teamA' ? 'active' : ''}`}>
-                <div className="team-panel-header">
-                  <span className="team-name">{state.teamA.name}</span>
-                </div>
-                <div className="team-players">
-                  {state.teamA.players.filter(p => p.isOnCourt).map(player => (
-                    <div
-                      key={player.id}
-                      className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
-                      onClick={() => handlePlayerSelect(player.id, 'teamA')}
-                    >
-                      <span className="player-num">
-                        #{player.number}
-                        {gameMode === 'full' && state.teamA.isMyTeam
-                          ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
-                          : ''}
-                      </span>
-                      <span className="player-pts">{player.stats.points}</span>
-                      {player.fouls.length > 0 && (
-                        <span className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
-                          F{player.fouls.length}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {/* シンプルモード用の交代ボタン（選手カードと同じグリッド内） */}
-                  {gameMode === 'simple' && (
-                    <button
-                      className="simple-sub-btn"
-                      onClick={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
-                    >
-                      🔄 交代
-                    </button>
-                  )}
-                </div>
-                <div className="team-bench">
-                  {/* ベンチ選手のショートカット（一時的に無効化）
-                  {state.teamA.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (
-                    <span key={p.id} className="bench-num" onClick={() => handlePlayerSelect(p.id, 'teamA')}>
-                      #{p.number}
-                    </span>
-                  ))}
-                  */}
-                  <div className="bench-actions">
-                    <button className="btn btn-small" onClick={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}>
-                      交代
-                    </button>
-                    <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamA')}>
-                      ベンチ<br />ファウル
-                    </button>
-                  </div>
-                </div>
-                {/* アクション履歴（フルモードのみ） */}
-                {gameMode === 'full' && (
-                  <ActionHistory
-                    teamId="teamA"
-                    teamName={state.teamA.name}
-                    scoreHistory={state.scoreHistory}
-                    statHistory={state.statHistory}
-                    foulHistory={state.foulHistory}
-                    players={state.teamA.players}
-                    onRemoveScore={handleRemoveScore}
-                    onRemoveStat={handleRemoveStat}
-                    onRemoveFoul={handleRemoveFoul}
-                    onEditScore={handleEditScore}
-                    onEditStat={handleEditStat}
-                    onConvertScoreToMiss={handleConvertScoreToMiss}
-                    onConvertMissToScore={handleConvertMissToScore}
-                    onToggleOwnGoal={handleToggleOwnGoal}
-                  />
-                )}
-
-              </div>
+              <TeamPanel
+                teamId="teamA"
+                teamName={state.teamA.name}
+                teamColor={state.teamA.color}
+                players={state.teamA.players}
+                isMyTeam={state.teamA.isMyTeam}
+                isActive={selectedTeamId === 'teamA'}
+                selectedPlayerId={selectedPlayerId}
+                gameMode={gameMode}
+                scoreHistory={state.scoreHistory}
+                statHistory={state.statHistory}
+                foulHistory={state.foulHistory}
+                onPlayerSelect={handlePlayerSelect}
+                onSubstitute={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
+                onCoachFoul={() => handleCoachFoul('teamA')}
+                actionHistoryHandlers={actionHistoryHandlers}
+              />
 
               {/* Center: Scoreboard + Action Buttons */}
               <div className="center-column">
@@ -961,78 +910,23 @@ function AppContent() {
               </div>
 
               {/* Right: Team B */}
-              <div className={`team-panel team-b color-${state.teamB.color} ${selectedTeamId === 'teamB' ? 'active' : ''}`}>
-                <div className="team-panel-header">
-                  <span className="team-name">{state.teamB.name}</span>
-                </div>
-                <div className="team-players">
-                  {state.teamB.players.filter(p => p.isOnCourt).map(player => (
-                    <div
-                      key={player.id}
-                      className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
-                      onClick={() => handlePlayerSelect(player.id, 'teamB')}
-                    >
-                      <span className="player-num">
-                        #{player.number}
-                        {gameMode === 'full' && state.teamB.isMyTeam
-                          ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
-                          : ''}
-                      </span>
-                      <span className="player-pts">{player.stats.points}</span>
-                      {player.fouls.length > 0 && (
-                        <span className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
-                          F{player.fouls.length}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {/* シンプルモード用の交代ボタン（選手カードと同じグリッド内） */}
-                  {gameMode === 'simple' && (
-                    <button
-                      className="simple-sub-btn"
-                      onClick={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
-                    >
-                      🔄 交代
-                    </button>
-                  )}
-                </div>
-                <div className="team-bench">
-                  {/* ベンチ選手のショートカット（一時的に無効化）
-                  {state.teamB.players.filter(p => !p.isOnCourt && p.fouls.length < 5).slice(0, 3).map(p => (
-                    <span key={p.id} className="bench-num" onClick={() => handlePlayerSelect(p.id, 'teamB')}>
-                      #{p.number}
-                    </span>
-                  ))}
-                  */}
-                  <div className="bench-actions">
-                    <button className="btn btn-small" onClick={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}>
-                      交代
-                    </button>
-                    <button className="btn btn-small btn-danger" onClick={() => handleCoachFoul('teamB')}>
-                      ベンチ<br />ファウル
-                    </button>
-                  </div>
-                </div>
-                {/* アクション履歴（フルモードのみ） */}
-                {gameMode === 'full' && (
-                  <ActionHistory
-                    teamId="teamB"
-                    teamName={state.teamB.name}
-                    scoreHistory={state.scoreHistory}
-                    statHistory={state.statHistory}
-                    foulHistory={state.foulHistory}
-                    players={state.teamB.players}
-                    onRemoveScore={handleRemoveScore}
-                    onRemoveStat={handleRemoveStat}
-                    onRemoveFoul={handleRemoveFoul}
-                    onEditScore={handleEditScore}
-                    onEditStat={handleEditStat}
-                    onConvertScoreToMiss={handleConvertScoreToMiss}
-                    onConvertMissToScore={handleConvertMissToScore}
-                    onToggleOwnGoal={handleToggleOwnGoal}
-                  />
-                )}
-              </div>
+              <TeamPanel
+                teamId="teamB"
+                teamName={state.teamB.name}
+                teamColor={state.teamB.color}
+                players={state.teamB.players}
+                isMyTeam={state.teamB.isMyTeam}
+                isActive={selectedTeamId === 'teamB'}
+                selectedPlayerId={selectedPlayerId}
+                gameMode={gameMode}
+                scoreHistory={state.scoreHistory}
+                statHistory={state.statHistory}
+                foulHistory={state.foulHistory}
+                onPlayerSelect={handlePlayerSelect}
+                onSubstitute={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
+                onCoachFoul={() => handleCoachFoul('teamB')}
+                actionHistoryHandlers={actionHistoryHandlers}
+              />
             </div>
           </>
         )}
@@ -1324,44 +1218,23 @@ function AppContent() {
               </button>
             </div>
             <div className="history-popup-body">
-              <div className={`history-popup-team color-${state.teamA.color}`}>
-                <h4>{state.teamA.name}</h4>
-                <ActionHistory
-                  teamId="teamA"
-                  teamName={state.teamA.name}
-                  scoreHistory={state.scoreHistory}
-                  statHistory={state.statHistory}
-                  foulHistory={state.foulHistory}
-                  players={state.teamA.players}
-                  onRemoveScore={handleRemoveScore}
-                  onRemoveStat={handleRemoveStat}
-                  onRemoveFoul={handleRemoveFoul}
-                  onEditScore={handleEditScore}
-                  onEditStat={handleEditStat}
-                  onConvertScoreToMiss={handleConvertScoreToMiss}
-                  onConvertMissToScore={handleConvertMissToScore}
-                  onToggleOwnGoal={handleToggleOwnGoal}
-                />
-              </div>
-              <div className={`history-popup-team color-${state.teamB.color}`}>
-                <h4>{state.teamB.name}</h4>
-                <ActionHistory
-                  teamId="teamB"
-                  teamName={state.teamB.name}
-                  scoreHistory={state.scoreHistory}
-                  statHistory={state.statHistory}
-                  foulHistory={state.foulHistory}
-                  players={state.teamB.players}
-                  onRemoveScore={handleRemoveScore}
-                  onRemoveStat={handleRemoveStat}
-                  onRemoveFoul={handleRemoveFoul}
-                  onEditScore={handleEditScore}
-                  onEditStat={handleEditStat}
-                  onConvertScoreToMiss={handleConvertScoreToMiss}
-                  onConvertMissToScore={handleConvertMissToScore}
-                  onToggleOwnGoal={handleToggleOwnGoal}
-                />
-              </div>
+              {(['teamA', 'teamB'] as const).map(tid => {
+                const team = tid === 'teamA' ? state.teamA : state.teamB;
+                return (
+                  <div key={tid} className={`history-popup-team color-${team.color}`}>
+                    <h4>{team.name}</h4>
+                    <ActionHistory
+                      teamId={tid}
+                      teamName={team.name}
+                      scoreHistory={state.scoreHistory}
+                      statHistory={state.statHistory}
+                      foulHistory={state.foulHistory}
+                      players={team.players}
+                      {...actionHistoryHandlers}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

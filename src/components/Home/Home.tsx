@@ -104,6 +104,9 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                 <p className="text-muted text-sm">
                     タブレット最適化 | オフライン動作
                 </p>
+                <p className="text-muted text-sm">
+                    ご質問・ご要望: <a href="mailto:mbcscore@gmail.com">mbcscore@gmail.com</a>
+                </p>
             </div>
         </div>
     );
