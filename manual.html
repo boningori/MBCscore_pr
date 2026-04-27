@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBCscore 使用説明書</title>
+<style>
+  /* ===== 印刷用 & 画面用共通スタイル ===== */
+  :root {
+    --primary: #2563eb;
+    --primary-light: #60a5fa;
+    --secondary: #059669;
+    --accent: #ec4899;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg: #ffffff;
+    --bg-light: #f8fafc;
+    --bg-dark: #1e293b;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --team-white: #94a3b8;
+    --team-blue: #3b82f6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Meiryo', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.8;
+    font-size: 10.5pt;
+  }
+
+  /* ページ設定 */
+  @page {
+    size: A4;
+    margin: 18mm 15mm 20mm 15mm;
+  }
+
+  @media print {
+    body { font-size: 9.5pt; line-height: 1.7; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none !important; }
+    h2 { page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+    .info-box, .tip-box, .warn-box { page-break-inside: avoid; }
+    .diagram { page-break-inside: avoid; }
+  }
+
+  /* ===== 表紙 ===== */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 90vh;
+    text-align: center;
+    padding: 60px 40px;
+  }
+  .cover-logo {
+    font-size: 56pt;
+    font-weight: 900;
+    color: var(--primary);
+    letter-spacing: -2px;
+    margin-bottom: 8px;
+  }
+  .cover-logo .accent { color: var(--accent); }
+  .cover-subtitle {
+    font-size: 14pt;
+    color: var(--text-light);
+    margin-bottom: 60px;
+  }
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .cover-version {
+    font-size: 11pt;
+    color: var(--text-light);
+    margin-bottom: 80px;
+  }
+  .cover-info {
+    font-size: 10pt;
+    color: var(--text-light);
+    line-height: 2;
+  }
+
+  /* ===== 目次 ===== */
+  .toc {
+    padding: 30px 0;
+  }
+  .toc h2 {
+    font-size: 18pt;
+    border-bottom: 3px solid var(--primary);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  .toc-list {
+    list-style: none;
+    counter-reset: toc-counter;
+  }
+  .toc-list > li {
+    counter-increment: toc-counter;
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 11pt;
+  }
+  .toc-list > li::before {
+    content: counter(toc-counter) ". ";
+    font-weight: 700;
+    color: var(--primary);
+    margin-right: 4px;
+  }
+  .toc-sub {
+    list-style: none;
+    padding-left: 28px;
+  }
+  .toc-sub li {
+    font-size: 10pt;
+    color: var(--text-light);
+    padding: 2px 0;
+  }
+
+  /* ===== 見出し ===== */
+  h2 {
+    font-size: 16pt;
+    color: var(--primary);
+    border-left: 5px solid var(--primary);
+    padding: 6px 0 6px 14px;
+    margin: 36px 0 16px 0;
+  }
+  h3 {
+    font-size: 12pt;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 4px;
+    margin: 24px 0 12px 0;
+  }
+  h4 {
+    font-size: 10.5pt;
+    color: var(--text);
+    margin: 16px 0 8px 0;
+  }
+
+  /* ===== 本文 ===== */
+  p { margin-bottom: 10px; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+
+  strong { color: var(--primary); }
+  code {
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 9.5pt;
+    font-family: 'Consolas', 'Menlo', monospace;
+  }
+
+  /* ===== ボックス ===== */
+  .info-box, .tip-box, .warn-box, .step-box {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 10pt;
+  }
+  .info-box {
+    background: #eff6ff;
+    border-left: 4px solid var(--primary);
+  }
+  .tip-box {
+    background: #ecfdf5;
+    border-left: 4px solid var(--secondary);
+  }
+  .warn-box {
+    background: #fef3c7;
+    border-left: 4px solid var(--warning);
+  }
+  .step-box {
+    background: #fdf2f8;
+    border-left: 4px solid var(--accent);
+  }
+  .box-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  /* ===== 図解（ASCII風ダイアグラム） ===== */
+  .diagram {
+    background: var(--bg-dark);
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-family: 'Consolas', 'Menlo', 'Courier New', monospace;
+    font-size: 9pt;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .diagram .highlight { color: #60a5fa; font-weight: bold; }
+  .diagram .accent { color: #f472b6; }
+  .diagram .success { color: #34d399; }
+  .diagram .warn { color: #fbbf24; }
+  .diagram .dim { color: #64748b; }
+
+  /* ===== テーブル ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 9.5pt;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    text-align: left;
+  }
+  th {
+    background: var(--bg-light);
+    font-weight: 700;
+    color: var(--text);
+  }
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  /* ===== フロー図 ===== */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 9.5pt;
+  }
+  .flow-step {
+    background: var(--primary);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .flow-step.alt { background: var(--secondary); }
+  .flow-step.accent { background: var(--accent); }
+  .flow-step.warn { background: var(--warning); color: var(--text); }
+  .flow-arrow {
+    color: var(--text-light);
+    font-size: 14pt;
+    line-height: 1;
+  }
+
+  /* ===== アイコンカード ===== */
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .icon-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .icon-card .ic-icon { font-size: 24pt; margin-bottom: 4px; }
+  .icon-card .ic-name { font-weight: 700; font-size: 10pt; }
+  .icon-card .ic-desc { font-size: 9pt; color: var(--text-light); }
+
+  /* ===== ボタン風表示 ===== */
+  .btn-sample {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 9pt;
+    margin: 2px 2px;
+    white-space: nowrap;
+  }
+  .btn-blue { background: var(--primary); color: white; }
+  .btn-green { background: var(--secondary); color: white; }
+  .btn-pink { background: var(--accent); color: white; }
+  .btn-orange { background: var(--warning); color: var(--text); }
+  .btn-red { background: var(--danger); color: white; }
+  .btn-gray { background: #e2e8f0; color: var(--text); }
+
+  /* ===== 操作手順番号 ===== */
+  .steps { counter-reset: step-counter; list-style: none; margin-left: 0; }
+  .steps > li {
+    counter-increment: step-counter;
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 12px;
+    min-height: 28px;
+  }
+  .steps > li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-weight: 700;
+    font-size: 10pt;
+  }
+
+  /* ===== セクション区切り ===== */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* ===== 印刷ボタン ===== */
+  .print-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 12pt;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 1000;
+  }
+  .print-btn:hover { background: #1d4ed8; }
+
+  /* レイアウト図 */
+  .layout-diagram {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    background: var(--bg-light);
+  }
+  .layout-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .layout-box {
+    border: 2px solid;
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+    font-size: 9pt;
+    font-weight: 600;
+  }
+  .layout-box.header { border-color: var(--text-light); background: #f1f5f9; flex: 1; }
+  .layout-box.team-a { border-color: var(--team-white); background: #f8fafc; flex: 1; }
+  .layout-box.center { border-color: var(--primary); background: #eff6ff; flex: 1.2; }
+  .layout-box.team-b { border-color: var(--team-blue); background: #eff6ff; flex: 1; }
+  .layout-box .box-label { font-size: 8pt; color: var(--text-light); display: block; }
+</style>
+</head>
+<body>
+
+<!-- 印刷ボタン -->
+<button class="print-btn no-print" onclick="window.print()">PDF保存 / 印刷</button>
+
+<!-- =========================================================== -->
+<!-- 表紙 -->
+<!-- =========================================================== -->
+<div class="cover">
+  <div class="cover-logo">MBC<span class="accent">score</span></div>
+  <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
+  <div class="cover-title">使用説明書</div>
+  <div class="cover-version">Version 1.0 &mdash; ベータ版</div>
+  <div class="cover-info">
+    タブレット・スマートフォン対応<br>
+    オフライン動作 / PWA対応<br>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 目次 -->
+<!-- =========================================================== -->
+<div class="toc">
+  <h2>目次</h2>
+  <ol class="toc-list">
+    <li>はじめに
+      <ul class="toc-sub">
+        <li>MBCscoreとは</li>
+        <li>動作環境</li>
+        <li>アプリの起動</li>
+      </ul>
+    </li>
+    <li>ホーム画面</li>
+    <li>初期設定 &mdash; マイチーム登録
+      <ul class="toc-sub">
+        <li>チーム作成</li>
+        <li>選手登録</li>
+        <li>データのインポート</li>
+      </ul>
+    </li>
+    <li>対戦チーム管理</li>
+    <li>試合設定（新規試合開始）
+      <ul class="toc-sub">
+        <li>Step 1: 試合情報</li>
+        <li>Step 2: マイチーム選択</li>
+        <li>Step 3: 出場選手確認</li>
+        <li>Step 4: 対戦チーム選択</li>
+        <li>Step 5: 設定確認</li>
+      </ul>
+    </li>
+    <li>スタメン選択（クォーターラインナップ）</li>
+    <li>試合画面 &mdash; 基本操作
+      <ul class="toc-sub">
+        <li>画面構成（フルモード）</li>
+        <li>画面構成（シンプルモード）</li>
+        <li>得点の記録</li>
+        <li>ファウルの記録</li>
+        <li>統計の記録（フルモードのみ）</li>
+        <li>選手交代</li>
+        <li>ベンチファウル</li>
+        <li>タイムアウト</li>
+        <li>クォーター管理</li>
+      </ul>
+    </li>
+    <li>操作のコツ &mdash; 先行入力と保留アクション</li>
+    <li>アクション履歴 &mdash; 編集・削除・変換</li>
+    <li>スコアシート</li>
+    <li>統計パネル</li>
+    <li>試合終了と保存</li>
+    <li>試合履歴</li>
+    <li>選手スタッツ分析</li>
+    <li>アプリ設定</li>
+    <li>データ管理（バックアップ・復元）</li>
+    <li>よくある質問（FAQ）</li>
+  </ol>
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 1. はじめに -->
+<!-- =========================================================== -->
+<h2>1. はじめに</h2>
+
+<h3>1.1 MBCscoreとは</h3>
+<p>
+  <strong>MBCscore</strong>は、ミニバスケットボールの公式スコアシートをタブレットやスマートフォンで記録できるWebアプリケーションです。
+  試合中の得点・ファウル・統計データをリアルタイムに記録し、公式スコアシート形式で出力できます。
+</p>
+
+<div class="info-box">
+  <div class="box-title">主な特徴</div>
+  <ul>
+    <li>タブレット最適化の3列レイアウト / スマホ対応のシンプルモード</li>
+    <li>得点・ファウル・リバウンド・アシスト等のリアルタイム記録</li>
+    <li>ミニバスルール対応（5ファウル退場、クォーター出場管理）</li>
+    <li>公式スコアシート形式でのPDF / JPEG出力</li>
+    <li>選手スタッツの試合横断分析・成長可視化</li>
+    <li>オフライン動作 / 自動セッション保存（中断復帰対応）</li>
+  </ul>
+</div>
+
+<h3>1.2 動作環境</h3>
+<table>
+  <tr><th>項目</th><th>推奨環境</th></tr>
+  <tr><td>デバイス</td><td>iPad / Androidタブレット（10インチ以上推奨）/ スマートフォン</td></tr>
+  <tr><td>ブラウザ</td><td>Chrome, Safari, Edge（最新版）</td></tr>
+  <tr><td>ネットワーク</td><td>初回読み込み後はオフラインで動作可能</td></tr>
+</table>
+
+<div class="tip-box">
+  <div class="box-title">推奨</div>
+  タブレット横向き（ランドスケープ）での使用を強く推奨します。フルモードの3列レイアウトにより、両チームの選手とアクションボタンを一画面で操作できます。
+</div>
+
+<h3>1.3 アプリの起動</h3>
+<p>ブラウザでアプリのURLにアクセスすると、ホーム画面が表示されます。PWA対応のため、ホーム画面に追加してアプリのように使用することも可能です。</p>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 2. ホーム画面 -->
+<!-- =========================================================== -->
+<h2>2. ホーム画面</h2>
+
+<p>アプリ起動時に表示されるメイン画面です。すべての機能にここからアクセスします。</p>
+
+<div class="diagram">┌─────────────────────────────────────────────┐
+│  <span class="dim">⊞</span>      <span class="highlight">MBC</span><span class="accent">score</span>                    <span class="dim">⚙️</span>  │
+│        ミニバス用スコアシートアプリ              │
+├─────────────────────────────────────────────┤
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │ <span class="highlight">🏀 新規試合開始</span>                    │    │
+│  │    試合記録を開始する                │    │
+│  └─────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────┐    │
+│  │ <span class="success">▶️ 試合を再開</span>                      │    │
+│  │    中断した試合を続ける              │    │
+│  └─────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────┐    │
+│  │ 👥 マイチーム管理                   │    │
+│  │ 🆚 対戦チーム管理                   │    │
+│  │ 📋 試合履歴                         │    │
+│  │ 📊 選手スタッツ分析                 │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+└─────────────────────────────────────────────┘</div>
+
+<table>
+  <tr><th>メニュー項目</th><th>説明</th></tr>
+  <tr><td><span class="btn-sample btn-blue">🏀 新規試合開始</span></td><td>試合設定ウィザードを開始します</td></tr>
+  <tr><td><span class="btn-sample btn-green">▶️ 試合を再開</span></td><td>中断した試合がある場合に表示されます</td></tr>
+  <tr><td>👥 マイチーム管理</td><td>自チームの登録・編集を行います</td></tr>
+  <tr><td>🆚 対戦チーム管理</td><td>対戦相手チームの登録・編集を行います</td></tr>
+  <tr><td>📋 試合履歴</td><td>過去の試合記録を閲覧・出力します</td></tr>
+  <tr><td>📊 選手スタッツ分析</td><td>選手の統計データを分析・比較します</td></tr>
+  <tr><td>⚙️（右上）</td><td>アプリ設定を開きます</td></tr>
+  <tr><td>⊞（左上）</td><td>全画面表示を切り替えます</td></tr>
+</table>
+
+<div class="warn-box">
+  <div class="box-title">初回利用時</div>
+  チームが未登録の場合、「まずマイチームを登録してください」というメッセージが表示されます。<br>
+  <span class="btn-sample btn-blue">+ マイチームを登録</span> から先にチーム登録を行ってください。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 3. 初期設定 -->
+<!-- =========================================================== -->
+<h2>3. 初期設定 &mdash; マイチーム登録</h2>
+
+<p>試合を開始するには、最低1つの「マイチーム」を登録する必要があります。</p>
+
+<h3>3.1 チーム作成</h3>
+<ol class="steps">
+  <li>ホーム画面で <strong>「👥 マイチーム管理」</strong> をタップ</li>
+  <li><span class="btn-sample btn-blue">+ 新規チーム作成</span> をタップ</li>
+  <li><strong>チーム名</strong>を入力（例: 〇〇ミニバスクラブ）</li>
+  <li>選手を登録（下記参照）</li>
+  <li><span class="btn-sample btn-green">保存</span> をタップして完了</li>
+</ol>
+
+<h3>3.2 選手登録</h3>
+<p>チーム編集画面で選手を1人ずつ登録します。各選手に以下の情報を設定できます:</p>
+
+<table>
+  <tr><th>項目</th><th>必須</th><th>説明</th></tr>
+  <tr><td>ビブス番号</td><td>○</td><td>練習着（ビブス）の番号。0〜99および00が使用可能</td></tr>
+  <tr><td>ユニフォーム番号</td><td></td><td>公式ユニフォームの番号（ビブス番号と異なる場合に設定）</td></tr>
+  <tr><td>選手名</td><td>○</td><td>フルネームまたはニックネーム</td></tr>
+  <tr><td>キャプテン</td><td></td><td>キャプテンの場合はチェック（Cマーク表示）</td></tr>
+</table>
+
+<div class="tip-box">
+  <div class="box-title">ビブス番号とユニフォーム番号</div>
+  ミニバスでは練習時のビブス番号と試合時のユニフォーム番号が異なることがあります。
+  両方登録しておくと、試合設定時にどちらの番号を使用するか選択できます。
+</div>
+
+<h3>3.3 データのインポート</h3>
+<p>
+  他の端末からエクスポートしたチームデータ（JSONファイル）を読み込むことができます。
+  マイチーム管理画面の <strong>「インポート」</strong> ボタンからファイルを選択、
+  またはJSONテキストを直接貼り付けてインポートできます。
+</p>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 4. 対戦チーム管理 -->
+<!-- =========================================================== -->
+<h2>4. 対戦チーム管理</h2>
+<p>
+  対戦相手のチームを事前に登録しておくことで、試合設定がスムーズになります。
+  ホーム画面の <strong>「🆚 対戦チーム管理」</strong> から登録します。
+</p>
+<p>
+  対戦チームには<strong>背番号と選手名</strong>を登録します（番号のみでも可）。
+  試合中に対戦チーム側の選手を追加することも可能です。
+</p>
+
+<div class="info-box">
+  対戦したチームは自動的に「最近の対戦チーム」として保存され、次回以降すぐに選択できます。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 5. 試合設定 -->
+<!-- =========================================================== -->
+<h2>5. 試合設定（新規試合開始）</h2>
+
+<p>ホーム画面で <span class="btn-sample btn-blue">🏀 新規試合開始</span> をタップすると、5ステップの設定ウィザードが表示されます。</p>
+
+<div class="flow">
+  <span class="flow-step">1. 試合情報</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">2. マイチーム</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">3. 出場選手</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">4. 対戦チーム</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step accent">5. 確認</span>
+</div>
+
+<h3>Step 1: 試合情報</h3>
+<ul>
+  <li><strong>試合名 / 大会名</strong>: 大会名や回戦情報を入力（例: 冬季大会 第1回戦）</li>
+  <li><strong>日付</strong>: 試合日を選択（デフォルトは当日）</li>
+</ul>
+<div class="tip-box">
+  過去に使用した試合名が候補として表示されるので、同じ大会の複数試合を素早く設定できます。
+</div>
+
+<h3>Step 2: マイチーム選択</h3>
+<p>登録済みのマイチーム一覧から使用するチームをタップして選択します。ここから「チーム管理・新規登録」画面に移動することも可能です。</p>
+
+<h3>Step 3: 出場選手確認</h3>
+<p>選択したチームの全選手が一覧表示されます。<strong>当日欠席の選手はチェックを外してください。</strong></p>
+<div class="warn-box">
+  出場選手は最低<strong>5名</strong>必要です。5名未満では次のステップに進めません。
+</div>
+
+<h3>Step 4: 対戦チーム選択</h3>
+<p>登録済みの対戦チーム、または最近の対戦チームから選択します。未登録の場合はその場で新規登録も可能です。</p>
+
+<h3>Step 5: 設定確認</h3>
+<p>最終確認画面では以下を設定・確認します:</p>
+
+<table>
+  <tr><th>項目</th><th>説明</th></tr>
+  <tr><td>使用番号タイプ</td><td>マイチームの番号を「ビブス番号」「ユニフォーム番号」のどちらで表示するか選択</td></tr>
+  <tr><td>チームカラー</td><td>白チーム / 青チームの割り当て。<span class="btn-sample btn-gray">⇄ チームカラー入れ替え</span>で変更可能</td></tr>
+</table>
+
+<div class="info-box">
+  <div class="box-title">チームカラーと配置</div>
+  <strong>白チームは常に画面左側（Team A）</strong>、<strong>青チームは画面右側（Team B）</strong>に配置されます。
+  これはスコアシートの表記規則に準拠しています。
+</div>
+
+<p>確認後、<span class="btn-sample btn-green">試合開始</span> をタップするとスタメン選択画面に移ります。</p>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 6. スタメン選択 -->
+<!-- =========================================================== -->
+<h2>6. スタメン選択（クォーターラインナップ）</h2>
+
+<p>
+  各クォーター開始前に、両チームの<strong>コート上5名</strong>を選択する画面が表示されます。
+  白チーム（Team A）→ 青チーム（Team B）の順に選択します。
+</p>
+
+<div class="diagram">┌─────────────────────────────────────────────┐
+│  <span class="warn">Q1</span>  〇〇ミニバスクラブ <span class="highlight">スタメン選択</span>          │
+├─────────────────────────────────────────────┤
+│          <span class="success">3 / 5 名選択</span>                       │
+│                                             │
+│  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐   │
+│  │ <span class="success">#4</span>   │  │ <span class="success">#5</span>   │  │ #7   │  │ <span class="success">#8</span>   │   │
+│  │ 名前  │  │ 名前  │  │ 名前  │  │ 名前  │   │
+│  │ 0pts │  │ 0pts │  │ 0pts │  │ 0pts │   │
+│  │ <span class="dim">1 2 3 4</span>│  │ <span class="dim">1 2 3 4</span>│  │ <span class="dim">1 2 3 4</span>│  │ <span class="dim">1 2 3 4</span>│   │
+│  │  <span class="success">✓</span>   │  │  <span class="success">✓</span>   │  │      │  │  <span class="success">✓</span>   │   │
+│  └──────┘  └──────┘  └──────┘  └──────┘   │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │         <span class="success">試合開始</span>  /  <span class="success">Q2 開始</span>         │    │
+│  └─────────────────────────────────────┘    │
+│  <span class="dim">※ ミニバスルール: 各選手は最低2Q、最大3Q出場</span>  │
+└─────────────────────────────────────────────┘</div>
+
+<ol class="steps">
+  <li>出場させる<strong>5名の選手カード</strong>をタップして選択（チェックマーク表示）</li>
+  <li>5名選択したら <span class="btn-sample btn-green">試合開始</span>（1Q）または <span class="btn-sample btn-green">Q○ 開始</span> をタップ</li>
+  <li>白チームの選択後、自動的に青チームの選択画面に切り替わります</li>
+</ol>
+
+<div class="tip-box">
+  <div class="box-title">出場クォーター表示</div>
+  各選手カードの下部に「1 2 3 4」のクォーター表示があり、出場済みのクォーターが色付きで表示されます。
+  ミニバスの出場制限（最低2Q、最大3Q）を確認しながらスタメンを決められます。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 7. 試合画面 -->
+<!-- =========================================================== -->
+<h2>7. 試合画面 &mdash; 基本操作</h2>
+
+<h3>7.1 画面構成（フルモード）</h3>
+<p>フルモードはタブレット横向きに最適化された<strong>3列レイアウト</strong>です。</p>
+
+<div class="layout-diagram">
+  <div class="layout-row">
+    <div class="layout-box header" style="flex:1">
+      <span class="box-label">ヘッダー</span>
+      🏠 | 全画面 | モード切替 &nbsp;&nbsp;&nbsp; 📜履歴 | 📄スコアシート | 📊統計
+    </div>
+  </div>
+  <div class="layout-row" style="min-height: 200px; align-items: stretch;">
+    <div class="layout-box team-a">
+      <span class="box-label">左列 — 白チーム</span><br>
+      チーム名・スコア<br>
+      ─────<br>
+      #4 選手名 12pts F1<br>
+      #5 選手名 8pts<br>
+      #7 選手名 4pts<br>
+      #8 選手名 6pts<br>
+      #10 選手名 2pts<br>
+      ─────<br>
+      [交代] [ベンチファウル]<br>
+      ─────<br>
+      アクション履歴
+    </div>
+    <div class="layout-box center">
+      <span class="box-label">中央列</span><br><br>
+      【スコアボード】<br>
+      白 32 &nbsp; Q2 &nbsp; 28 青<br>
+      TF: 3 &nbsp;&nbsp;&nbsp; TF: 2<br>
+      ──────<br>
+      【アクションボタン】<br>
+      [2P] [3P] [FT]<br>
+      [OR] [DR]<br>
+      [AST] [STL] [BLK]<br>
+      [TO]<br>
+      [ファウル]
+    </div>
+    <div class="layout-box team-b">
+      <span class="box-label">右列 — 青チーム</span><br>
+      チーム名・スコア<br>
+      ─────<br>
+      #3 選手名 10pts<br>
+      #6 選手名 6pts<br>
+      #9 選手名 4pts F2<br>
+      #11 選手名 8pts<br>
+      #12 選手名 0pts<br>
+      ─────<br>
+      [交代] [ベンチファウル]<br>
+      ─────<br>
+      アクション履歴
+    </div>
+  </div>
+</div>
+
+<h3>7.2 画面構成（シンプルモード）</h3>
+<p>
+  シンプルモードはスマートフォン向けのコンパクトなレイアウトです。
+  ヘッダーの <span class="btn-sample btn-blue">📱 シンプル</span> / <span class="btn-sample btn-gray">💻 フル</span> ボタンで切り替えます。
+</p>
+<ul>
+  <li>選手は3列のコンパクトなカード表示</li>
+  <li>アクションボタンはシュート（2P / 3P / FT）とファウルに絞られます</li>
+  <li>リバウンド・アシスト等の統計ボタンは非表示</li>
+</ul>
+
+<hr>
+
+<h3>7.3 得点の記録</h3>
+
+<p>得点を記録するには、<strong>2つの入力方法</strong>があります:</p>
+
+<h4>方法A: 選手を先に選択 → アクションボタン</h4>
+<ol class="steps">
+  <li>チームパネルから<strong>得点した選手のカード</strong>をタップ（緑色にハイライト）</li>
+  <li>中央の <span class="btn-sample btn-blue">2P</span> <span class="btn-sample btn-blue">3P</span> <span class="btn-sample btn-blue">FT</span> のいずれかをタップ</li>
+  <li>得点が記録され、スコアに反映されます</li>
+</ol>
+
+<h4>方法B: アクションを先に選択 → チーム → 選手（先行入力）</h4>
+<ol class="steps">
+  <li>中央の <span class="btn-sample btn-blue">2P</span> <span class="btn-sample btn-blue">3P</span> <span class="btn-sample btn-blue">FT</span> のいずれかをタップ</li>
+  <li>チーム選択モーダルが表示されるので、該当チームをタップ</li>
+  <li>「保留アクション」として画面端に表示され、後から選手を指定して確定します</li>
+</ol>
+
+<div class="info-box">
+  <div class="box-title">スワイプ操作（フルモード）</div>
+  シュートボタンは<strong>スワイプ操作</strong>に対応しています:<br>
+  <strong>上にスワイプ → シュート成功（得点加算）</strong><br>
+  <strong>下にスワイプ → シュートミス（試投数のみ加算）</strong><br>
+  タップした場合は選択肢が表示されるので、「成功」「ミス」を選んでください。
+</div>
+
+<hr>
+
+<h3>7.4 ファウルの記録</h3>
+
+<div class="flow">
+  <span class="flow-step">選手選択</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step warn">ファウル</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">種類選択</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">シュート状況</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step alt">FT結果</span>
+</div>
+
+<ol class="steps">
+  <li><strong>ファウルした選手</strong>のカードをタップして選択</li>
+  <li><span class="btn-sample btn-orange">⚠️ ファウル</span> をタップ</li>
+  <li>ファウル種類を選択:
+    <table>
+      <tr><th>記号</th><th>種類</th><th>説明</th></tr>
+      <tr><td><strong>P</strong></td><td>パーソナル</td><td>通常のファウル</td></tr>
+      <tr><td><strong>T</strong></td><td>テクニカル</td><td>テクニカルファウル</td></tr>
+      <tr><td><strong>U</strong></td><td>アンスポーツマンライク</td><td>アンスポーツマンライクファウル</td></tr>
+      <tr><td><strong>D</strong></td><td>ディスクォリファイイング</td><td>失格ファウル</td></tr>
+    </table>
+  </li>
+  <li>シュート中のファウルの場合:
+    <ul>
+      <li>「2Pシュート中」or「3Pシュート中」を選択</li>
+      <li>シュートが成功したか（バスケットカウント）を選択</li>
+    </ul>
+  </li>
+  <li>フリースロー（FT）がある場合:
+    <ul>
+      <li>FT本数の確認（自動提案あり）</li>
+      <li>シューターの選択（相手チームの選手一覧から）</li>
+      <li>各FTの成功 / 失敗をタップして記録</li>
+    </ul>
+  </li>
+</ol>
+
+<div class="warn-box">
+  <div class="box-title">5ファウル退場</div>
+  個人ファウルが5つに達すると自動で警告が表示されます。退場した選手はスタメン選択画面で選択できなくなります。
+</div>
+
+<div class="info-box">
+  <div class="box-title">チームファウルとペナルティ</div>
+  各クォーターのチームファウルが4つ以上になるとペナルティ状態となり、FTの本数が自動的に提案されます。
+</div>
+
+<hr>
+
+<h3>7.5 統計の記録（フルモードのみ）</h3>
+<p>フルモードでは以下の統計データを記録できます:</p>
+<table>
+  <tr><th>ボタン</th><th>統計</th><th>説明</th></tr>
+  <tr><td><span class="btn-sample btn-blue">OR</span></td><td>オフェンスリバウンド</td><td>攻撃側のリバウンド</td></tr>
+  <tr><td><span class="btn-sample btn-blue">DR</span></td><td>ディフェンスリバウンド</td><td>守備側のリバウンド</td></tr>
+  <tr><td><span class="btn-sample btn-blue">AST</span></td><td>アシスト</td><td>得点に繋がったパス</td></tr>
+  <tr><td><span class="btn-sample btn-blue">STL</span></td><td>スティール</td><td>ボール奪取</td></tr>
+  <tr><td><span class="btn-sample btn-blue">BLK</span></td><td>ブロック</td><td>シュートブロック</td></tr>
+  <tr><td><span class="btn-sample btn-orange">TO</span></td><td>ターンオーバー</td><td>ボールロスト</td></tr>
+</table>
+
+<div class="tip-box">
+  <div class="box-title">ターンオーバーの詳細分類</div>
+  TOボタンはスワイプ操作で詳細な種類を選択できます:<br>
+  <strong>DD</strong>（ダブルドリブル）/ <strong>TR</strong>（トラベリング）/ <strong>PM</strong>（パスミス）/ <strong>CM</strong>（キャッチミス）
+</div>
+
+<hr>
+
+<h3>7.6 選手交代</h3>
+<ol class="steps">
+  <li>チームパネル下部の <span class="btn-sample btn-gray">交代</span> ボタンをタップ</li>
+  <li>交代モーダルが表示されます</li>
+  <li><strong>退く選手</strong>（コート上）を選択</li>
+  <li><strong>入る選手</strong>（ベンチ）を選択</li>
+  <li><span class="btn-sample btn-green">交代実行</span> をタップ</li>
+</ol>
+
+<div class="tip-box">
+  未登録の選手が急遽出場する場合は、交代モーダル内の<strong>「選手追加」</strong>フォームから背番号と名前を入力してその場で追加できます。
+</div>
+
+<hr>
+
+<h3>7.7 ベンチファウル</h3>
+<p>コーチやベンチ関係者のファウルは、チームパネル下部の <span class="btn-sample btn-red">ベンチファウル</span> から記録します。</p>
+
+<table>
+  <tr><th>種類</th><th>記録先</th><th>説明</th></tr>
+  <tr><td>コーチ (C)</td><td>コーチ行に「C」</td><td>監督本人のテクニカルファウル</td></tr>
+  <tr><td>A.コーチ (C)</td><td>A.コーチ行に「C」+ コーチ行に「B」</td><td>アシスタントコーチのテクニカル</td></tr>
+  <tr><td>交代要員 (T)</td><td>選手行に「T」+ コーチ行に「B」</td><td>ベンチの選手のテクニカル（選手を選択）</td></tr>
+  <tr><td>ベンチ関係者 (B)</td><td>コーチ行に「B」</td><td>引率者等のテクニカル</td></tr>
+</table>
+
+<hr>
+
+<h3>7.8 タイムアウト</h3>
+<p>
+  スコアボード上のタイムアウトボタン（<strong>TO</strong>）をタップすると、
+  経過時間入力モーダルが表示されます。何分経過時点のタイムアウトかを記録します。
+</p>
+
+<hr>
+
+<h3>7.9 クォーター管理</h3>
+<p>スコアボードの <span class="btn-sample btn-gray">Q終了</span> ボタンでクォーターを進行します。</p>
+
+<div class="flow">
+  <span class="flow-step">Q1 試合中</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step warn">Q終了</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step alt">Q2 スタメン選択</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Q2 開始</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">...</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step accent">試合終了</span>
+</div>
+
+<p>第4クォーター終了時に自動的に試合終了画面が表示されます。</p>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 8. 先行入力と保留アクション -->
+<!-- =========================================================== -->
+<h2>8. 操作のコツ &mdash; 先行入力と保留アクション</h2>
+
+<p>
+  試合中は展開が速いため、選手を確認する前にアクション（得点・統計）だけを先に記録したい場面があります。
+  MBCscoreでは<strong>「先行入力」</strong>方式に対応しています。
+</p>
+
+<h3>先行入力の流れ</h3>
+<ol class="steps">
+  <li>アクションボタン（例: <span class="btn-sample btn-blue">2P</span>）を<strong>選手未選択の状態</strong>でタップ</li>
+  <li>チーム選択モーダルが表示 → 該当チームをタップ</li>
+  <li><strong>「保留アクション」</strong>として画面の左下（白チーム）or 右下（青チーム）にパネル表示</li>
+  <li>後から選手を特定して<strong>保留パネルから選手を選択</strong>して確定</li>
+</ol>
+
+<div class="diagram">┌───────────────────────────────────────────────┐
+│                 試合画面                        │
+│                                                │
+│  ┌──────────────┐                              │
+│  │<span class="warn"> 保留アクション</span>│  ← 白チーム側に表示         │
+│  │ 2P成功        │                              │
+│  │ <span class="dim">コート上の候補:</span>│                              │
+│  │ [#4] [#5] [#7]│  ← タップで確定              │
+│  │ [#8] [#10]    │                              │
+│  │ [不明] [削除] │  ← 選手不明 or 取消          │
+│  └──────────────┘                              │
+└───────────────────────────────────────────────┘</div>
+
+<div class="tip-box">
+  <div class="box-title">保留アクションの活用シーン</div>
+  <ul>
+    <li>速攻の得点で、背番号が見えなかった場合</li>
+    <li>リバウンドの選手を確認する間に次のプレーが始まった場合</li>
+    <li>複数のアクションが短時間に発生した場合</li>
+  </ul>
+  保留アクションは「不明」として記録することもできます（統計には反映されますが個人成績には加算されません）。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 9. アクション履歴 -->
+<!-- =========================================================== -->
+<h2>9. アクション履歴 &mdash; 編集・削除・変換</h2>
+
+<p>
+  フルモードでは各チームパネルの下部に<strong>アクション履歴</strong>が表示されます。
+  また、ヘッダーの <span class="btn-sample btn-gray">📜 履歴</span> ボタンから両チームの履歴をポップアップ表示できます。
+</p>
+
+<h3>履歴での操作</h3>
+<table>
+  <tr><th>操作</th><th>説明</th></tr>
+  <tr><td><strong>タップ</strong></td><td>編集モーダルを開く</td></tr>
+  <tr><td><strong>編集</strong></td><td>選手の変更、シュート種別の変更が可能</td></tr>
+  <tr><td><strong>成功⇔ミス変換</strong></td><td>得点をミスに変換（例: 2P成功 → 2Pミス）、またはミスを成功に変換</td></tr>
+  <tr><td><strong>OG（オウンゴール）</strong></td><td>得点エントリにオウンゴールフラグを切り替え</td></tr>
+  <tr><td><strong>削除</strong></td><td>記録を完全に削除（得点・統計・ファウルすべて対応）</td></tr>
+</table>
+
+<div class="warn-box">
+  <div class="box-title">ファウル削除時の注意</div>
+  ファウルを削除すると、関連するフリースロー得点も自動的に削除されます。
+  誤操作に注意してください。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 10. スコアシート -->
+<!-- =========================================================== -->
+<h2>10. スコアシート</h2>
+
+<p>
+  ヘッダーの <span class="btn-sample btn-gray">📄 スコアシート</span> をタップすると、
+  <strong>公式スコアシート形式</strong>の画面が表示されます。
+</p>
+
+<h3>スコアシートの内容</h3>
+<ul>
+  <li>両チームの選手一覧（背番号・名前・キャプテンマーク）</li>
+  <li>各選手のファウル記録（クォーターごとにP/T/U/D表示）</li>
+  <li>ランニングスコア（得点経過）</li>
+  <li>クォーターごとのスコア集計</li>
+  <li>タイムアウト記録</li>
+  <li>試合情報（大会名、日付、会場など）</li>
+</ul>
+
+<h3>試合情報の編集</h3>
+<p>
+  スコアシート画面で<strong>「試合情報を編集」</strong>ボタンをタップすると、
+  以下の情報を追加・編集できます:
+</p>
+<ul>
+  <li>会場名、試合番号</li>
+  <li>主審・副審名</li>
+  <li>記録員名</li>
+  <li>その他備考</li>
+</ul>
+
+<h3>出力</h3>
+<div class="flow">
+  <span class="flow-step">PDF出力</span>
+  <span class="flow-step alt">JPEG出力</span>
+</div>
+<p>
+  スコアシート画面の出力ボタンで、<strong>PDF形式</strong>または<strong>JPEG画像形式</strong>でダウンロードできます。
+  試合終了後の提出用スコアシートとして利用できます。
+</p>
+
+<div class="tip-box">
+  スコアシートは試合中いつでも確認でき、現時点までの記録がリアルタイムに反映されます。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 11. 統計パネル -->
+<!-- =========================================================== -->
+<h2>11. 統計パネル</h2>
+
+<p>
+  フルモードのヘッダーで <span class="btn-sample btn-blue">📊 統計</span> をタップすると、
+  両チームの詳細な統計データが表示されます。
+</p>
+
+<h3>表示される統計項目</h3>
+<table>
+  <tr><th>項目</th><th>略称</th><th>説明</th></tr>
+  <tr><td>得点</td><td>PTS</td><td>合計得点</td></tr>
+  <tr><td>2Pシュート</td><td>2P</td><td>成功数 / 試投数（成功率）</td></tr>
+  <tr><td>3Pシュート</td><td>3P</td><td>成功数 / 試投数（成功率）</td></tr>
+  <tr><td>フリースロー</td><td>FT</td><td>成功数 / 試投数（成功率）</td></tr>
+  <tr><td>オフェンスリバウンド</td><td>OR</td><td>攻撃側リバウンド数</td></tr>
+  <tr><td>ディフェンスリバウンド</td><td>DR</td><td>守備側リバウンド数</td></tr>
+  <tr><td>アシスト</td><td>AST</td><td>アシスト数</td></tr>
+  <tr><td>スティール</td><td>STL</td><td>スティール数</td></tr>
+  <tr><td>ブロック</td><td>BLK</td><td>ブロック数</td></tr>
+  <tr><td>ターンオーバー</td><td>TO</td><td>ターンオーバー数</td></tr>
+  <tr><td>ファウル</td><td>F</td><td>個人ファウル数</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 12. 試合終了と保存 -->
+<!-- =========================================================== -->
+<h2>12. 試合終了と保存</h2>
+
+<p>第4クォーター終了時、またはスコアボードの操作で試合が終了すると、以下の画面が表示されます:</p>
+
+<div class="diagram">┌─────────────────────────────────────────────┐
+│                                             │
+│              <span class="highlight">試合終了</span>                       │
+│                                             │
+│     〇〇クラブ  <span class="accent">56</span>  -  <span class="accent">48</span>  △△クラブ     │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │        <span class="success">保存して終了</span>                  │    │
+│  └─────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────┐    │
+│  │      <span class="warn">保存せずにホームへ</span>               │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+└─────────────────────────────────────────────┘</div>
+
+<ul>
+  <li><span class="btn-sample btn-blue">保存して終了</span>: 試合データが履歴に保存され、ホーム画面に戻ります</li>
+  <li><span class="btn-sample btn-red">保存せずにホームへ</span>: 確認ダイアログの後、データを保存せずに終了します</li>
+</ul>
+
+<div class="info-box">
+  <div class="box-title">自動セッション保存</div>
+  試合中のデータは<strong>自動的にブラウザに保存</strong>されています。
+  ブラウザを閉じてしまった場合やアプリがクラッシュした場合でも、
+  ホーム画面の <span class="btn-sample btn-green">▶️ 試合を再開</span> から復帰できます。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 13. 試合履歴 -->
+<!-- =========================================================== -->
+<h2>13. 試合履歴</h2>
+
+<p>
+  ホーム画面の <strong>「📋 試合履歴」</strong> をタップすると、保存済みの全試合が一覧表示されます。
+</p>
+
+<h3>履歴画面でできること</h3>
+<table>
+  <tr><th>機能</th><th>説明</th></tr>
+  <tr><td>試合詳細表示</td><td>タップで選手統計またはスコアシートを表示</td></tr>
+  <tr><td>表示切替</td><td>「統計」と「スコアシート」の切り替え</td></tr>
+  <tr><td>PDF / JPEG出力</td><td>スコアシート表示時に出力可能</td></tr>
+  <tr><td>データエクスポート</td><td>試合データをJSON形式でエクスポート</td></tr>
+  <tr><td>削除</td><td>不要な試合記録を削除（確認ダイアログあり）</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 14. 選手スタッツ分析 -->
+<!-- =========================================================== -->
+<h2>14. 選手スタッツ分析</h2>
+
+<p>
+  ホーム画面の <strong>「📊 選手スタッツ分析」</strong> では、マイチームの選手の
+  <strong>複数試合にわたる統計データ</strong>を集計・分析できます。
+</p>
+
+<h3>分析機能</h3>
+<ul>
+  <li><strong>チーム選択</strong>: 分析対象のマイチームを選択</li>
+  <li><strong>期間フィルター</strong>: 日付範囲で集計対象を絞り込み</li>
+  <li><strong>選手カード一覧</strong>: 各選手の通算成績をカード形式で表示</li>
+  <li><strong>詳細ビュー</strong>: 選手をタップで、試合ごとの推移グラフや詳細統計を表示</li>
+  <li><strong>成長比較</strong>: 期間を分割して成長度合いを可視化</li>
+  <li><strong>非表示切替</strong>: 卒団した選手などを非表示にする機能</li>
+</ul>
+
+<div class="tip-box">
+  チームの戦績（勝敗数）も確認できます。選手育成の参考資料としてご活用ください。
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 15. アプリ設定 -->
+<!-- =========================================================== -->
+<h2>15. アプリ設定</h2>
+
+<p>ホーム画面右上の <strong>⚙️</strong> ボタンから設定画面を開けます。</p>
+
+<table>
+  <tr><th>設定項目</th><th>説明</th></tr>
+  <tr><td>デフォルトゲームモード</td><td>試合開始時の初期モード（フル / シンプル）を設定</td></tr>
+  <tr><td>OCR API キー</td><td>スコアシート画像読み取り用のGemini APIキー（オプション）</td></tr>
+  <tr><td>データバックアップ</td><td>全データのエクスポート / インポート</td></tr>
+  <tr><td>CSV出力</td><td>試合履歴をCSV形式でエクスポート（一覧 / 詳細）</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 16. データ管理 -->
+<!-- =========================================================== -->
+<h2>16. データ管理（バックアップ・復元）</h2>
+
+<p>
+  MBCscoreのデータはすべて<strong>ブラウザのローカルストレージ</strong>に保存されています。
+  端末の買い替えや別端末での利用には、データのエクスポート・インポートが必要です。
+</p>
+
+<h3>エクスポート方法</h3>
+<ul>
+  <li><strong>全データバックアップ</strong>: 設定画面 → 「全データエクスポート」（チーム・試合履歴すべて）</li>
+  <li><strong>チーム単位</strong>: マイチーム管理 → チーム編集画面 →「エクスポート」</li>
+  <li><strong>試合単位</strong>: 試合履歴 → 試合を選択 →「エクスポート」</li>
+  <li><strong>CSV出力</strong>: 設定画面 →「CSV出力」（試合一覧 / 詳細統計）</li>
+</ul>
+
+<h3>インポート方法</h3>
+<p>以下のいずれかの方法でデータを取り込めます:</p>
+<ol>
+  <li><strong>ファイル選択</strong>: JSONファイルを選択してインポート</li>
+  <li><strong>テキスト貼り付け</strong>: JSONテキストを直接貼り付け（リアルタイムバリデーション付き）</li>
+</ol>
+
+<div class="warn-box">
+  <div class="box-title">データの取り扱いについて</div>
+  <ul>
+    <li>ブラウザのデータを消去すると、アプリのデータもすべて失われます</li>
+    <li>定期的なバックアップをお勧めします</li>
+    <li>異なるブラウザ間ではデータは共有されません</li>
+  </ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- =========================================================== -->
+<!-- 17. FAQ -->
+<!-- =========================================================== -->
+<h2>17. よくある質問（FAQ）</h2>
+
+<h4>Q: 試合中にブラウザを閉じてしまいました。データは消えますか？</h4>
+<p>
+  <strong>A:</strong> 試合データは自動的に保存されています。アプリを再度開き、ホーム画面の
+  <span class="btn-sample btn-green">▶️ 試合を再開</span> をタップしてください。
+</p>
+
+<h4>Q: 得点を間違えて入力しました。修正できますか？</h4>
+<p>
+  <strong>A:</strong> アクション履歴から該当の記録をタップし、選手の変更・シュート種別の変更・削除が可能です。
+  また「成功⇔ミス変換」で得点をミスに変更することもできます。
+</p>
+
+<h4>Q: 選手を5名未満で試合を開始できますか？</h4>
+<p>
+  <strong>A:</strong> いいえ。ミニバスのルールに従い、各チーム最低5名の選手が必要です。
+</p>
+
+<h4>Q: 試合中に選手を追加できますか？</h4>
+<p>
+  <strong>A:</strong> はい。交代モーダル内の「選手追加」フォームから、背番号と名前を入力して追加できます。
+</p>
+
+<h4>Q: フルモードとシンプルモードはいつでも切り替えられますか？</h4>
+<p>
+  <strong>A:</strong> はい。試合中でもヘッダーのモード切替ボタンでいつでも変更できます。
+  データは共有されているので、切り替えによるデータ損失はありません。
+</p>
+
+<h4>Q: 他のタブレットにデータを移したいです。</h4>
+<p>
+  <strong>A:</strong> 設定画面の「全データエクスポート」でJSONファイルをダウンロードし、
+  新しい端末のアプリ設定画面でインポートしてください。
+</p>
+
+<h4>Q: スコアシートをそのまま提出できますか？</h4>
+<p>
+  <strong>A:</strong> スコアシート画面からPDFまたはJPEGで出力できます。
+  公式スコアシートの形式に準拠していますが、大会の規定については主催者にご確認ください。
+</p>
+
+<h4>Q: 対戦チームの選手番号がわからない場合は？</h4>
+<p>
+  <strong>A:</strong> 背番号のみで登録可能です。名前は空でも構いません。
+  また、試合中に交代モーダルから選手を追加することもできます。
+</p>
+
+<hr>
+
+<div style="text-align: center; padding: 40px 0; color: var(--text-light);">
+  <p style="font-size: 14pt; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+    MBC<span style="color: var(--accent);">score</span>
+  </p>
+  <p>ミニバスケットボール スコアシートアプリ</p>
+  <p>使用説明書 Version 1.0</p>
+  <p style="margin-top: 20px; font-size: 9pt;">
+    本書の内容はアプリのバージョンアップに伴い変更される場合があります。
+  </p>
+</div>
+
+</body>
+</html>
