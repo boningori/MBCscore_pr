@@ -165,7 +165,7 @@ export interface Game {
     id: string;
     teamA: Team;
     teamB: Team;
-    currentQuarter: number;  // 1-4
+    currentQuarter: number;  // 1-4 (Q1-Q4), 5+ (OT)
     phase: GamePhase;
     scoreHistory: ScoreEntry[];
     statHistory: StatEntry[];
@@ -213,7 +213,8 @@ export type GameActionType =
     | 'UPDATE_PENDING_ACTION_CANDIDATES'
     | 'REMOVE_PENDING_ACTION'
     | 'UPDATE_GAME_INFO'
-    | 'TOGGLE_OWN_GOAL';
+    | 'TOGGLE_OWN_GOAL'
+    | 'SET_END_TIME';
 
 // ゲームアクション
 export interface GameAction {

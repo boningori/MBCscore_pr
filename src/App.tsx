@@ -51,6 +51,7 @@ function AppContent() {
   const [resolvingPendingAction, setResolvingPendingAction] = useState<PendingAction | null>(null); // 解決中の保留アクション
   const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
   const [showAppSettings, setShowAppSettings] = useState(false);
+  const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
@@ -549,12 +550,27 @@ function AppContent() {
 
   // クォーター終了時にスタメン選択へ
   const handleQuarterEnd = useCallback(() => {
-    dispatch({ type: 'END_QUARTER' });
-    if (currentQuarter < 4) {
-      setLineupTeamId('teamA');
-      setScreen('quarterLineup');
+    if (currentQuarter >= 4) {
+      const scoreA = state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
+      const scoreB = state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+      if (scoreA !== scoreB) {
+        setShowEndGameConfirm(true);
+        return;
+      }
     }
-  }, [currentQuarter, dispatch]);
+    dispatch({ type: 'END_QUARTER' });
+    setLineupTeamId('teamA');
+    setScreen('quarterLineup');
+  }, [currentQuarter, dispatch, state.teamA, state.teamB]);
+
+  const handleEndGameConfirm = useCallback(() => {
+    setShowEndGameConfirm(false);
+    dispatch({ type: 'END_QUARTER' });
+  }, [dispatch]);
+
+  const handleEndGameCancel = useCallback(() => {
+    setShowEndGameConfirm(false);
+  }, []);
 
 
 
@@ -776,6 +792,7 @@ function AppContent() {
         date={date}
         onClose={() => setScreen('game')}
         onUpdateGameInfo={(gameInfo) => dispatch({ type: 'UPDATE_GAME_INFO', payload: gameInfo })}
+        onEndTimeChange={(endTime) => dispatch({ type: 'SET_END_TIME', payload: { endTime } })}
       />
     );
   }
@@ -1081,6 +1098,27 @@ function AppContent() {
         />
       )}
 
+
+      {/* 試合終了確認モーダル */}
+      {showEndGameConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content end-game-confirm-modal">
+            <h3>試合終了の確認</h3>
+            <p className="end-game-confirm-message">
+              試合を終了するとデータの編集ができません。<br />
+              試合を終了しますか？
+            </p>
+            <div className="modal-actions">
+              <button className="btn btn-secondary btn-large" onClick={handleEndGameCancel}>
+                戻る
+              </button>
+              <button className="btn btn-danger btn-large" onClick={handleEndGameConfirm}>
+                試合を終了する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 試合終了表示 */}
       {phase === 'finished' && (

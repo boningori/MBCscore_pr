@@ -36,6 +36,10 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
     };
     const { currentQuarter, phase } = state;
 
+    const quarterLabel = currentQuarter <= 4
+        ? `Q${currentQuarter}`
+        : currentQuarter === 5 ? 'OT' : `OT${currentQuarter - 4}`;
+
     const handleQuarterManagement = () => {
         if (phase === 'playing' || phase === 'setup') {
             if (onQuarterEnd) {
@@ -44,11 +48,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                 dispatch({ type: 'END_QUARTER' });
             }
         } else if (phase === 'quarterEnd') {
-            if (currentQuarter < 4) {
-                dispatch({ type: 'START_GAME' });
-            } else {
-                dispatch({ type: 'END_GAME' });
-            }
+            dispatch({ type: 'START_GAME' });
         }
     };
 
@@ -61,15 +61,15 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
             <div className="scoreboard-new scoreboard-simple">
                 {/* クォーター表示（上部に1セット） */}
                 <div className="simple-quarter-row">
-                    <span className={`quarter-badge q${currentQuarter}`}>Q{currentQuarter}</span>
+                    <span className={`quarter-badge ${currentQuarter <= 4 ? `q${currentQuarter}` : 'ot'}`}>{quarterLabel}</span>
                     {phase === 'playing' && (
                         <button className="btn btn-secondary btn-small" onClick={handleQuarterManagement}>
-                            Q終了
+                            {quarterLabel}終了
                         </button>
                     )}
                     {phase === 'quarterEnd' && (
                         <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
-                            {currentQuarter < 4 ? `Q${currentQuarter + 1}へ` : '終了'}
+                            {currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}
                         </button>
                     )}
                     {phase === 'setup' && (
@@ -88,8 +88,8 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             <span className="simple-team-score">{scoreA}</span>
                         </div>
                         <div className="simple-team-footer">
-                            <span className={`tf-badge ${state.teamA.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
-                                TF {state.teamA.teamFouls[currentQuarter - 1]}
+                            <span className={`tf-badge ${(state.teamA.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
+                                TF {(state.teamA.teamFouls[currentQuarter - 1] || 0)}
                             </span>
                             {phase === 'playing' && onTimeout && (
                                 <button
@@ -110,8 +110,8 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             <span className="simple-team-score">{scoreB}</span>
                         </div>
                         <div className="simple-team-footer">
-                            <span className={`tf-badge ${state.teamB.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
-                                TF {state.teamB.teamFouls[currentQuarter - 1]}
+                            <span className={`tf-badge ${(state.teamB.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
+                                TF {(state.teamB.teamFouls[currentQuarter - 1] || 0)}
                             </span>
                             {phase === 'playing' && onTimeout && (
                                 <button
@@ -150,16 +150,16 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
 
                 {/* クォーター表示 */}
                 <div className="quarter-section">
-                    <span className={`quarter-badge-large q${currentQuarter}`}>Q{currentQuarter}</span>
+                    <span className={`quarter-badge-large ${currentQuarter <= 4 ? `q${currentQuarter}` : 'ot'}`}>{quarterLabel}</span>
                     <div className="quarter-controls">
                         {phase === 'playing' && (
                             <button className="btn btn-secondary btn-small" onClick={handleQuarterManagement}>
-                                Q終了
+                                {quarterLabel}終了
                             </button>
                         )}
                         {phase === 'quarterEnd' && (
                             <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
-                                {currentQuarter < 4 ? `Q${currentQuarter + 1}へ` : '試合終了'}
+                                {currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}
                             </button>
                         )}
                         {phase === 'setup' && (
@@ -180,9 +180,9 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
             <div className="scoreboard-stats">
                 {/* チームA情報 */}
                 <div className="team-stats-block">
-                    <div className={`stat-item tf-count ${state.teamA.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
+                    <div className={`stat-item tf-count ${(state.teamA.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
                         <span className="stat-label">TF</span>
-                        <span className="stat-value">{state.teamA.teamFouls[currentQuarter - 1]}</span>
+                        <span className="stat-value">{(state.teamA.teamFouls[currentQuarter - 1] || 0)}</span>
                     </div>
                     <div className="stat-item to-count">
                         <span className="stat-label">TO</span>
@@ -203,9 +203,9 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
 
                 {/* チームB情報 */}
                 <div className="team-stats-block">
-                    <div className={`stat-item tf-count ${state.teamB.teamFouls[currentQuarter - 1] >= 4 ? 'bonus' : ''}`}>
+                    <div className={`stat-item tf-count ${(state.teamB.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
                         <span className="stat-label">TF</span>
-                        <span className="stat-value">{state.teamB.teamFouls[currentQuarter - 1]}</span>
+                        <span className="stat-value">{(state.teamB.teamFouls[currentQuarter - 1] || 0)}</span>
                     </div>
                     <div className="stat-item to-count">
                         <span className="stat-label">TO</span>

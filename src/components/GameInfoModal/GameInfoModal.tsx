@@ -6,15 +6,26 @@ interface GameInfoModalProps {
     gameInfo: GameInfo;
     endTime: Date | null;
     onSave: (gameInfo: Partial<GameInfo>) => void;
+    onEndTimeChange?: (endTime: Date | null) => void;
     onClose: () => void;
 }
 
-export function GameInfoModal({ gameInfo, endTime, onSave, onClose }: GameInfoModalProps) {
+export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onClose }: GameInfoModalProps) {
     const [formData, setFormData] = useState<GameInfo>({ ...gameInfo });
+    const [endTimeStr, setEndTimeStr] = useState('');
 
     useEffect(() => {
         setFormData({ ...gameInfo });
     }, [gameInfo]);
+
+    useEffect(() => {
+        if (endTime) {
+            const d = new Date(endTime);
+            setEndTimeStr(`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`);
+        } else {
+            setEndTimeStr('');
+        }
+    }, [endTime]);
 
     const handleChange = (field: keyof GameInfo, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -22,14 +33,13 @@ export function GameInfoModal({ gameInfo, endTime, onSave, onClose }: GameInfoMo
 
     const handleSave = () => {
         onSave(formData);
+        if (onEndTimeChange && endTimeStr) {
+            const [hours, minutes] = endTimeStr.split(':').map(Number);
+            const base = endTime ? new Date(endTime) : new Date();
+            base.setHours(hours, minutes, 0, 0);
+            onEndTimeChange(base);
+        }
         onClose();
-    };
-
-    // 試合終了時刻のフォーマット
-    const formatEndTime = (date: Date | null): string => {
-        if (!date) return '';
-        const d = new Date(date);
-        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
     };
 
     return (
@@ -70,12 +80,11 @@ export function GameInfoModal({ gameInfo, endTime, onSave, onClose }: GameInfoMo
                                 />
                             </div>
                             <div className="form-group">
-                                <label>試合終了時刻</label>
+                                <label>終了時間</label>
                                 <input
-                                    type="text"
-                                    value={formatEndTime(endTime)}
-                                    disabled
-                                    className="disabled-input"
+                                    type="time"
+                                    value={endTimeStr}
+                                    onChange={e => setEndTimeStr(e.target.value)}
                                 />
                             </div>
                         </div>

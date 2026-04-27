@@ -11,9 +11,10 @@ interface RunningScoresheetProps {
     date?: string;
     onClose?: () => void;
     onUpdateGameInfo?: (gameInfo: Partial<GameInfo>) => void;
+    onEndTimeChange?: (endTime: Date | null) => void;
 }
 
-export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo }: RunningScoresheetProps) {
+export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo, onEndTimeChange }: RunningScoresheetProps) {
     const scoresheetRef = useRef<HTMLDivElement>(null);
     const [showGameInfoModal, setShowGameInfoModal] = useState(false);
 
@@ -670,6 +671,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                     gameInfo={gameInfo}
                     endTime={endTime}
                     onSave={(info) => onUpdateGameInfo?.(info)}
+                    onEndTimeChange={onEndTimeChange}
                     onClose={() => setShowGameInfoModal(false)}
                 />
             )}

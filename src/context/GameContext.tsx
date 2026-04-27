@@ -96,6 +96,25 @@ function gameReducer(state: Game, action: GameAction): Game {
         case 'END_QUARTER': {
             const nextQuarter = state.currentQuarter + 1;
             if (nextQuarter > 4) {
+                const scoreA = state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
+                const scoreB = state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+                if (scoreA === scoreB) {
+                    const extendForOT = (team: typeof state.teamA) => ({
+                        ...team,
+                        teamFouls: [...team.teamFouls, 0],
+                        players: team.players.map(p => ({
+                            ...p,
+                            quartersPlayed: [...p.quartersPlayed, false as const],
+                        })),
+                    });
+                    return {
+                        ...state,
+                        currentQuarter: nextQuarter,
+                        phase: 'quarterEnd',
+                        teamA: extendForOT(state.teamA),
+                        teamB: extendForOT(state.teamB),
+                    };
+                }
                 return { ...state, phase: 'finished', endTime: new Date() };
             }
             return {
@@ -605,6 +624,7 @@ function gameReducer(state: Game, action: GameAction): Game {
                 name: string;
             };
 
+            const quarterCount = Math.max(4, state.teamA.teamFouls.length);
             const newPlayer: Player = {
                 id: crypto.randomUUID(),
                 number,
@@ -630,7 +650,7 @@ function gameReducer(state: Game, action: GameAction): Game {
                     turnoverPM: 0,
                     turnoverCM: 0,
                 },
-                quartersPlayed: [false, false, false, false],
+                quartersPlayed: Array(quarterCount).fill(false),
                 isOnCourt: false,
             };
 
@@ -1662,6 +1682,11 @@ function gameReducer(state: Game, action: GameAction): Game {
                         : entry
                 ),
             };
+        }
+
+        case 'SET_END_TIME': {
+            const { endTime } = action.payload as { endTime: Date | null };
+            return { ...state, endTime };
         }
 
         default:

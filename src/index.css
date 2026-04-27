@@ -755,6 +755,24 @@ textarea,
   margin: 0;
 }
 
+.modal-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.modal-actions .btn {
+  flex: 1;
+}
+
+.end-game-confirm-message {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+  margin: var(--spacing-lg) 0;
+}
+
 .modal-actions-column {
   display: flex;
   flex-direction: column;

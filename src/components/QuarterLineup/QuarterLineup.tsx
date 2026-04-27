@@ -52,8 +52,12 @@ export function QuarterLineup({
 
     const isValid = selectedIds.length === PLAYERS_ON_COURT;
 
-    // クォーター色（1Q/3Qは赤、2Q/4Qは黒）
-    const quarterClass = quarter === 1 || quarter === 3 ? 'q-odd' : 'q-even';
+    // クォーター色（1Q/3Qは赤、2Q/4Q/OTは黒）
+    const isOT = quarter > 4;
+    const quarterClass = isOT ? 'q-even' : (quarter === 1 || quarter === 3 ? 'q-odd' : 'q-even');
+    const quarterLabel = isOT
+        ? (quarter === 5 ? 'OT' : `OT${quarter - 4}`)
+        : `Q${quarter}`;
 
     return (
         <div className="quarter-lineup">
@@ -64,7 +68,7 @@ export function QuarterLineup({
                     </button>
                 )}
                 <div className={`quarter-badge ${quarterClass}`}>
-                    Q{quarter}
+                    {quarterLabel}
                 </div>
                 <h2>{teamName} スタメン選択</h2>
             </div>
@@ -107,14 +111,18 @@ export function QuarterLineup({
                                 )}
                             </div>
                             <div className="lineup-player-quarters">
-                                {[1, 2, 3, 4].map(q => (
-                                    <span
-                                        key={q}
-                                        className={`quarter-dot ${player.quartersPlayed[q - 1] ? 'played' : ''} ${q === quarter ? 'current' : ''}`}
-                                    >
-                                        {q}
-                                    </span>
-                                ))}
+                                {player.quartersPlayed.map((played, i) => {
+                                    const q = i + 1;
+                                    const label = q <= 4 ? `${q}` : (q === 5 ? 'OT' : `OT${q - 4}`);
+                                    return (
+                                        <span
+                                            key={q}
+                                            className={`quarter-dot ${played ? 'played' : ''} ${q === quarter ? 'current' : ''}`}
+                                        >
+                                            {label}
+                                        </span>
+                                    );
+                                })}
                             </div>
                             {isSelected && <div className="selection-check">✓</div>}
                         </div>
@@ -128,7 +136,7 @@ export function QuarterLineup({
                     onClick={handleConfirm}
                     disabled={!isValid}
                 >
-                    {quarter === 1 ? '試合開始' : `Q${quarter} 開始`}
+                    {quarter === 1 ? '試合開始' : `${quarterLabel} 開始`}
                 </button>
             </div>
 
