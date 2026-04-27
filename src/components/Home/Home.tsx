@@ -101,6 +101,14 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
             </div>
 
             <div className="home-footer">
+                <a
+                    href={`${import.meta.env.BASE_URL}manual.html`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="manual-link"
+                >
+                    📖 使用説明書
+                </a>
                 <p className="text-muted text-sm">
                     タブレット最適化 | オフライン動作
                 </p>
