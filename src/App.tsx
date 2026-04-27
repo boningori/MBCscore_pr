@@ -51,7 +51,7 @@ function AppContent() {
   const [resolvingPendingAction, setResolvingPendingAction] = useState<PendingAction | null>(null); // 解決中の保留アクション
   const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
   const [showAppSettings, setShowAppSettings] = useState(false);
-  const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
+  const [endGameConfirmType, setEndGameConfirmType] = useState<'tied' | 'notTied' | null>(null);
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
@@ -553,10 +553,8 @@ function AppContent() {
     if (currentQuarter >= 4) {
       const scoreA = state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
       const scoreB = state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
-      if (scoreA !== scoreB) {
-        setShowEndGameConfirm(true);
-        return;
-      }
+      setEndGameConfirmType(scoreA === scoreB ? 'tied' : 'notTied');
+      return;
     }
     dispatch({ type: 'END_QUARTER' });
     setLineupTeamId('teamA');
@@ -564,13 +562,21 @@ function AppContent() {
   }, [currentQuarter, dispatch, state.teamA, state.teamB]);
 
   const handleEndGameConfirm = useCallback(() => {
-    setShowEndGameConfirm(false);
+    setEndGameConfirmType(null);
+    if (endGameConfirmType === 'tied') {
+      dispatch({ type: 'END_GAME' });
+    } else {
+      dispatch({ type: 'END_QUARTER' });
+    }
+  }, [dispatch, endGameConfirmType]);
+
+  const handleEndGameToOT = useCallback(() => {
+    setEndGameConfirmType(null);
     dispatch({ type: 'END_QUARTER' });
+    setLineupTeamId('teamA');
+    setScreen('quarterLineup');
   }, [dispatch]);
 
-  const handleEndGameCancel = useCallback(() => {
-    setShowEndGameConfirm(false);
-  }, []);
 
 
 
@@ -1100,7 +1106,7 @@ function AppContent() {
 
 
       {/* 試合終了確認モーダル */}
-      {showEndGameConfirm && (
+      {endGameConfirmType && (
         <div className="modal-overlay">
           <div className="modal-content end-game-confirm-modal">
             <h3>試合終了の確認</h3>
@@ -1108,12 +1114,17 @@ function AppContent() {
               試合を終了するとデータの編集ができません。<br />
               試合を終了しますか？
             </p>
-            <div className="modal-actions">
-              <button className="btn btn-secondary btn-large" onClick={handleEndGameCancel}>
-                戻る
-              </button>
+            <div className="modal-actions-column">
+              {endGameConfirmType === 'tied' && (
+                <button className="btn btn-primary btn-large" onClick={handleEndGameToOT}>
+                  延長戦へ
+                </button>
+              )}
               <button className="btn btn-danger btn-large" onClick={handleEndGameConfirm}>
                 試合を終了する
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={() => setEndGameConfirmType(null)}>
+                戻る
               </button>
             </div>
           </div>
