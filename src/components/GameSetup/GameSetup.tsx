@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import type { SavedTeam, NumberType } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { getGameNameSuggestions } from '../../utils/gameHistoryStorage';
@@ -46,6 +46,60 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
     // 試合名の候補（同日・最近の試合名）
     const gameNameSuggestions = useMemo(() => getGameNameSuggestions(date), [date]);
+
+    // カスタムサジェスションドロップダウン用
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [suggestionIndex, setSuggestionIndex] = useState(-1);
+    const suggestionRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // 入力値でフィルタされた候補
+    const filteredSuggestions = useMemo(() => {
+        if (!gameName.trim()) return gameNameSuggestions;
+        const lower = gameName.toLowerCase();
+        return gameNameSuggestions.filter(s => s.toLowerCase().includes(lower));
+    }, [gameName, gameNameSuggestions]);
+
+    // ドロップダウン外クリックで閉じる
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                suggestionRef.current && !suggestionRef.current.contains(e.target as Node) &&
+                inputRef.current && !inputRef.current.contains(e.target as Node)
+            ) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside as EventListener);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside as EventListener);
+        };
+    }, []);
+
+    const handleSuggestionSelect = useCallback((value: string) => {
+        setGameName(value);
+        setShowSuggestions(false);
+        setSuggestionIndex(-1);
+        inputRef.current?.focus();
+    }, []);
+
+    const handleGameNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!showSuggestions || filteredSuggestions.length === 0) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSuggestionIndex(prev => (prev + 1) % filteredSuggestions.length);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSuggestionIndex(prev => (prev <= 0 ? filteredSuggestions.length - 1 : prev - 1));
+        } else if (e.key === 'Enter' && suggestionIndex >= 0) {
+            e.preventDefault();
+            handleSuggestionSelect(filteredSuggestions[suggestionIndex]);
+        } else if (e.key === 'Escape') {
+            setShowSuggestions(false);
+        }
+    }, [showSuggestions, filteredSuggestions, suggestionIndex, handleSuggestionSelect]);
 
     const handleBasicSubmit = () => {
         if (gameName && date) {
@@ -195,23 +249,47 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                         <h3>基本情報</h3>
                         <div className="form-group">
                             <label>試合名 / 大会名</label>
-                            <input
-                                type="text"
-                                className="input"
-                                value={gameName}
-                                onChange={e => setGameName(e.target.value)}
-                                placeholder="例: 冬季大会 第1回戦"
-                                autoFocus
-                                autoComplete="off"
-                                list="game-name-suggestions"
-                            />
-                            {gameNameSuggestions.length > 0 && (
-                                <datalist id="game-name-suggestions">
-                                    {gameNameSuggestions.map((name, idx) => (
-                                        <option key={idx} value={name} />
-                                    ))}
-                                </datalist>
-                            )}
+                            <div className="suggestion-input-wrapper">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    className="input"
+                                    value={gameName}
+                                    onChange={e => {
+                                        setGameName(e.target.value);
+                                        setShowSuggestions(true);
+                                        setSuggestionIndex(-1);
+                                    }}
+                                    onFocus={() => {
+                                        if (filteredSuggestions.length > 0) {
+                                            setShowSuggestions(true);
+                                        }
+                                    }}
+                                    onKeyDown={handleGameNameKeyDown}
+                                    placeholder="例: 冬季大会 第1回戦"
+                                    autoFocus
+                                    autoComplete="one-time-code"
+                                    name="game-name-no-autofill"
+                                />
+                                {showSuggestions && filteredSuggestions.length > 0 && (
+                                    <div className="suggestion-dropdown" ref={suggestionRef}>
+                                        <div className="suggestion-dropdown-header">最近の試合名</div>
+                                        {filteredSuggestions.map((name, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                className={`suggestion-item ${idx === suggestionIndex ? 'active' : ''}`}
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    handleSuggestionSelect(name);
+                                                }}
+                                            >
+                                                {name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="form-group">
                             <label>日付</label>
