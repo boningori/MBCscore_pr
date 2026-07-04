@@ -8,6 +8,10 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? 'dev'),
   },
+  esbuild: {
+    // 本番ビルドでデバッグ用consoleを除去（warn/errorは診断用に残す）
+    pure: ['console.log', 'console.debug', 'console.info'],
+  },
   build: {
     rollupOptions: {
       output: {

@@ -50,11 +50,12 @@ export async function testGeminiConnection(apiKey: string): Promise<{ success: b
 
     for (const model of FALLBACK_MODELS) {
         try {
-            const url = `${GEMINI_API_BASE}${model}:generateContent?key=${apiKey}`;
+            const url = `${GEMINI_API_BASE}${model}:generateContent`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey,
                 },
                 body: JSON.stringify({
                     contents: [
@@ -234,11 +235,12 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
     for (const model of FALLBACK_MODELS) {
         try {
-            const url = `${GEMINI_API_BASE}${model}:generateContent?key=${apiKey}`;
+            const url = `${GEMINI_API_BASE}${model}:generateContent`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey,
                 },
                 body: JSON.stringify({
                     contents: [

@@ -195,7 +195,6 @@ export type GameActionType =
     | 'ADD_PLAYER_TO_TEAM'
     | 'SELECT_PLAYER'
     | 'CLEAR_SELECTION'
-    | 'UNDO_LAST_ACTION'
     | 'RESET_GAME'
     | 'REMOVE_SCORE'
     | 'REMOVE_STAT'

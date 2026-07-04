@@ -681,11 +681,6 @@ export function gameReducer(state: Game, action: GameAction): Game {
         case 'CLEAR_SELECTION':
             return { ...state, selectedPlayerId: null, selectedTeamId: null };
 
-        case 'UNDO_LAST_ACTION': {
-            // TODO: 実装
-            return state;
-        }
-
         case 'RESET_GAME':
             return createInitialGame();
 
