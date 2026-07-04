@@ -1,5 +1,7 @@
 // アプリ設定の保存・読み込み
 
+import { notifyStorageError } from './storageError';
+
 const APP_SETTINGS_KEY = 'minibasket-app-settings';
 
 export type GameMode = 'full' | 'simple';
@@ -19,7 +21,7 @@ export function saveAppSettings(settings: Partial<AppSettings>): void {
         const updated = { ...current, ...settings };
         localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(updated));
     } catch (error) {
-        console.error('Failed to save app settings:', error);
+        notifyStorageError('app settings', error);
     }
 }
 

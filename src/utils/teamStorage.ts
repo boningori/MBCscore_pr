@@ -2,6 +2,7 @@
 
 import type { Team } from '../types/game';
 import { createTeam, createPlayer } from '../types/game';
+import { notifyStorageError } from './storageError';
 
 const MY_TEAMS_KEY = 'minibasket-my-teams';
 const OPPONENT_TEAMS_KEY = 'minibasket-opponent-teams';
@@ -91,7 +92,7 @@ export function saveMyTeam(team: SavedTeam): void {
 
         localStorage.setItem(MY_TEAMS_KEY, JSON.stringify(teams));
     } catch (error) {
-        console.error('Failed to save my team:', error);
+        notifyStorageError('my team', error);
     }
 }
 
@@ -134,7 +135,7 @@ export function saveRecentOpponent(team: SavedTeam): void {
         teams = teams.slice(0, 10);
         localStorage.setItem(OPPONENT_TEAMS_KEY, JSON.stringify(teams));
     } catch (error) {
-        console.error('Failed to save opponent team:', error);
+        notifyStorageError('recent opponent', error);
     }
 }
 
@@ -176,7 +177,7 @@ export function saveOpponent(team: SavedTeam): void {
 
         localStorage.setItem(SAVED_OPPONENTS_KEY, JSON.stringify(teams));
     } catch (error) {
-        console.error('Failed to save opponent:', error);
+        notifyStorageError('opponent', error);
     }
 }
 

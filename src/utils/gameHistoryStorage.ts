@@ -1,4 +1,5 @@
 import type { Team, ScoreEntry, StatEntry, FoulEntry, GameInfo } from '../types/game';
+import { notifyStorageError } from './storageError';
 
 const GAME_HISTORY_KEY = 'minibasket-game-history';
 
@@ -53,7 +54,7 @@ export function saveGameResult(
         history.unshift(record); // 新しい順
         localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(history));
     } catch (error) {
-        console.error('Failed to save game result:', error);
+        notifyStorageError('game result', error);
     }
 
     return record;
@@ -87,7 +88,7 @@ export function updateGameRecordGameInfo(id: string, gameInfo: GameInfo): void {
             localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(history));
         }
     } catch (error) {
-        console.error('Failed to update game record:', error);
+        notifyStorageError('game record', error);
     }
 }
 

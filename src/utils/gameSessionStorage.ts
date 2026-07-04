@@ -2,6 +2,7 @@
 // 試合中は連続的に保存し、画面遷移しても再開可能にする
 
 import type { Game } from '../types/game';
+import { notifyStorageError } from './storageError';
 
 const GAME_SESSION_KEY = 'minibasket-game-session';
 
@@ -23,7 +24,7 @@ export function saveGameSession(game: Game, gameName: string, date: string): voi
         };
         localStorage.setItem(GAME_SESSION_KEY, JSON.stringify(session));
     } catch (error) {
-        console.error('Failed to save game session:', error);
+        notifyStorageError('game session', error);
     }
 }
 
