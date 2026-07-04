@@ -595,3 +595,15 @@
 .backup-notice li:last-child {
     margin-bottom: 0;
 }
+
+.error-log-detail {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+}

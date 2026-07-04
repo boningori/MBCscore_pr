@@ -16,6 +16,8 @@ import {
     generateBackupFilename,
 } from '../../utils/dataBackup';
 import type { ParsedImportData } from '../../utils/dataBackup';
+import { getErrorLog, clearErrorLog, formatErrorLog } from '../../utils/errorLog';
+import type { ErrorLogEntry } from '../../utils/errorLog';
 import './AppSettingsModal.css';
 
 interface AppSettingsModalProps {
@@ -35,6 +37,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [importText, setImportText] = useState('');
     const [textValidation, setTextValidation] = useState<{ valid: boolean; message: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [errorLog, setErrorLog] = useState<ErrorLogEntry[]>([]);
+    const [showErrorDetail, setShowErrorDetail] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -45,6 +49,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setImportTarget('myTeam');
             setShowTextImport(false);
             setImportText('');
+            setErrorLog(getErrorLog());
+            setShowErrorDetail(false);
         }
     }, [isOpen]);
 
@@ -78,6 +84,21 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
         saveApiKey(apiKey.trim());
         saveDefaultGameMode(defaultMode);
         showStatus('設定を保存しました', 'success');
+    };
+
+    const handleCopyErrorLog = async () => {
+        try {
+            await navigator.clipboard.writeText(formatErrorLog());
+            showToast('エラーログをコピーしました', 'success');
+        } catch {
+            showToast('コピーに失敗しました', 'error');
+        }
+    };
+
+    const handleClearErrorLog = () => {
+        clearErrorLog();
+        setErrorLog([]);
+        showToast('エラーログを削除しました', 'success');
     };
 
     const handleClear = () => {
@@ -529,6 +550,38 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 >GitHub</a>
                             </p>
                         </div>
+                    </section>
+
+                    {/* エラーログセクション */}
+                    <section className="settings-section">
+                        <h3>エラーログ</h3>
+                        <p className="section-description">
+                            アプリ内で発生したエラーの記録です（端末内にのみ保存。外部送信はされません）。
+                            不具合報告の際は「コピー」した内容を mbcscore@gmail.com にお送りください。
+                        </p>
+                        <p className="section-description">記録件数: {errorLog.length}件</p>
+                        {errorLog.length > 0 && (
+                            <>
+                                <div className="backup-buttons">
+                                    <button className="btn btn-secondary" onClick={() => setShowErrorDetail(!showErrorDetail)}>
+                                        {showErrorDetail ? '内容を隠す' : '内容を表示'}
+                                    </button>
+                                    <button className="btn btn-secondary" onClick={handleCopyErrorLog}>
+                                        📋 コピー
+                                    </button>
+                                    <button className="btn btn-secondary" onClick={handleClearErrorLog}>
+                                        🗑 削除
+                                    </button>
+                                </div>
+                                {showErrorDetail && (
+                                    <pre className="error-log-detail">
+                                        {errorLog.slice(0, 10).map(e =>
+                                            `[${new Date(e.timestamp).toLocaleString('ja-JP')}] (${e.source}) ${e.message}`
+                                        ).join('\n')}
+                                    </pre>
+                                )}
+                            </>
+                        )}
                     </section>
                 </div>
 
