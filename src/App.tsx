@@ -28,7 +28,11 @@ import { PendingActionResolver } from './components/PendingActionResolver';
 import { FoulInputFlow } from './components/FoulInputFlow';
 import { RunningScoresheet } from './components/RunningScoresheet';
 import { AppSettingsModal } from './components/Settings/AppSettingsModal';
-import { ToastContainer } from './components/Toast/Toast';
+import { ToastContainer, showToast } from './components/Toast/Toast';
+import { RestorePrompt } from './components/RestorePrompt';
+import type { MirrorSnapshot } from './utils/mirrorBackup';
+import { hasAppData, getLatestSnapshot, saveSnapshot, maybeSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
+import { STORAGE_ERROR_EVENT } from './utils/storageError';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import './App.css';
 
@@ -55,6 +59,39 @@ function AppContent() {
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
+  const [restoreCandidate, setRestoreCandidate] = useState<MirrorSnapshot | null>(null);
+
+  // 起動時: 永続ストレージ要求・データ消失検知・起動スナップショット
+  useEffect(() => {
+    requestPersistentStorage();
+    (async () => {
+      if (!hasAppData() && !sessionStorage.getItem('mbc-restore-dismissed')) {
+        const snapshot = await getLatestSnapshot();
+        if (snapshot && Object.keys(snapshot.entries).length > 0) {
+          setRestoreCandidate(snapshot);
+          return;
+        }
+      }
+      saveSnapshot();
+    })();
+  }, []);
+
+  // 保存失敗をToastでユーザーに通知
+  useEffect(() => {
+    const handler = () => {
+      showToast('⚠️ データの保存に失敗しました。設定画面からバックアップを保存してください', 'error');
+    };
+    window.addEventListener(STORAGE_ERROR_EVENT, handler);
+    return () => window.removeEventListener(STORAGE_ERROR_EVENT, handler);
+  }, []);
+
+  // 試合終了時は即座にミラーバックアップ
+  useEffect(() => {
+    if (phase === 'finished') {
+      saveSnapshot();
+    }
+  }, [phase]);
+
   // 試合状態が変更されたらセッション保存（デバウンス付き）
   const saveTimeoutRef = useRef<number | null>(null);
   useEffect(() => {
@@ -66,6 +103,7 @@ function AppContent() {
       // 500ms後に保存（UIブロックを防止）
       saveTimeoutRef.current = window.setTimeout(() => {
         saveGameSession(state, gameName, date);
+        maybeSnapshot();
       }, 500);
     }
     return () => {
@@ -732,6 +770,19 @@ function AppContent() {
       document.removeEventListener('MSFullscreenChange', handleFullScreenChange);
     };
   }, []);
+
+  if (restoreCandidate) {
+    return (
+      <RestorePrompt
+        snapshot={restoreCandidate}
+        onDismiss={() => {
+          sessionStorage.setItem('mbc-restore-dismissed', '1');
+          setRestoreCandidate(null);
+          saveSnapshot();
+        }}
+      />
+    );
+  }
 
   if (screen === 'home') {
     return (
