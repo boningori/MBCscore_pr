@@ -57,7 +57,7 @@ function recalculateRunningScores(
 }
 
 // Reducer
-function gameReducer(state: Game, action: GameAction): Game {
+export function gameReducer(state: Game, action: GameAction): Game {
     switch (action.type) {
         case 'SET_TEAMS': {
             const { teamA, teamB } = action.payload;
