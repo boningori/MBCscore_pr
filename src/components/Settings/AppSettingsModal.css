@@ -607,3 +607,10 @@
     max-height: 200px;
     overflow-y: auto;
 }
+
+.backup-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
