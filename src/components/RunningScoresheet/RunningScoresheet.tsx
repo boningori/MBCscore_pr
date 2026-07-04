@@ -175,6 +175,10 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                 )}
             </div>
 
+            <p className="rs-unofficial-note">
+                ※JBA公式スコアシート準拠レイアウト（JBA公認製品ではありません）。公式記録は大会指定のスコアシートが優先されます。
+            </p>
+
             {/* スコアシート本体 */}
             <div className="running-scoresheet" ref={scoresheetRef}>
                 {/* Logo & Title Header */}

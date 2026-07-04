@@ -18,6 +18,8 @@ import {
 import type { ParsedImportData } from '../../utils/dataBackup';
 import { getErrorLog, clearErrorLog, formatErrorLog } from '../../utils/errorLog';
 import type { ErrorLogEntry } from '../../utils/errorLog';
+import { LegalModal } from '../Legal';
+import type { LegalTab } from '../Legal';
 import './AppSettingsModal.css';
 
 interface AppSettingsModalProps {
@@ -39,6 +41,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [errorLog, setErrorLog] = useState<ErrorLogEntry[]>([]);
     const [showErrorDetail, setShowErrorDetail] = useState(false);
+    const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -583,12 +586,38 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                             </>
                         )}
                     </section>
+
+                    {/* アプリについてセクション */}
+                    <section className="settings-section">
+                        <h3>アプリについて</h3>
+                        <p className="section-description">MBCscore バージョン {__APP_VERSION__}</p>
+                        <div className="backup-buttons">
+                            <button className="btn btn-secondary" onClick={() => setLegalTab('terms')}>
+                                📜 利用規約
+                            </button>
+                            <button className="btn btn-secondary" onClick={() => setLegalTab('privacy')}>
+                                🔒 プライバシーポリシー
+                            </button>
+                            <button className="btn btn-secondary" onClick={() => setLegalTab('licenses')}>
+                                📦 OSSライセンス
+                            </button>
+                        </div>
+                        <p className="section-description">
+                            ※本アプリはJBA公式スコアシートに準拠したレイアウトを提供しますが、JBA公認製品ではありません。
+                        </p>
+                    </section>
                 </div>
 
                 <div className="settings-footer">
                     <button className="btn btn-secondary" onClick={onClose}>キャンセル</button>
                     <button className="btn btn-primary" onClick={handleSave}>保存</button>
                 </div>
+
+                <LegalModal
+                    isOpen={legalTab !== null}
+                    initialTab={legalTab ?? 'terms'}
+                    onClose={() => setLegalTab(null)}
+                />
             </div>
         </div>
     );
