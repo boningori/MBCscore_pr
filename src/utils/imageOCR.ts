@@ -170,7 +170,7 @@ function parseOcrText(text: string): SavedPlayer[] {
  */
 async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> {
     try {
-        console.log('Using OCR Engine: Tesseract.js');
+        if (import.meta.env.DEV) console.log('Using OCR Engine: Tesseract.js');
         const result = await Tesseract.recognize(
             imageFile,
             'jpn', // 日本語優先
@@ -180,7 +180,7 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
         );
 
         const text = result.data.text;
-        console.log('OCR Raw Text (Tesseract):', text);
+        if (import.meta.env.DEV) console.log('OCR Raw Text (Tesseract):', text);
 
         const players = parseOcrText(text);
 
@@ -210,7 +210,7 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
  * Gemini APIによるOCR処理
  */
 async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
-    console.log('Using OCR Engine: Gemini API');
+    if (import.meta.env.DEV) console.log('Using OCR Engine: Gemini API');
     const base64Image = await imageToBase64(imageFile);
     const mimeType = imageFile.type || 'image/jpeg';
 
@@ -279,7 +279,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
             const data = await response.json();
             const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            console.log(`OCR Raw Text (Gemini - ${model}):`, textResponse);
+            if (import.meta.env.DEV) console.log(`OCR Raw Text (Gemini - ${model}):`, textResponse);
 
 
             // JSONを抽出

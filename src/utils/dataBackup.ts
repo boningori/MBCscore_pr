@@ -439,7 +439,7 @@ export async function shareFile(data: any, filename: string, title: string = 'MB
         return true;
     } catch (error) {
         // ユーザーがキャンセルした場合もここに来る
-        console.log('Share cancelled or failed:', error);
+        if (import.meta.env.DEV) console.log('Share cancelled or failed:', error);
         return false;
     }
 }
