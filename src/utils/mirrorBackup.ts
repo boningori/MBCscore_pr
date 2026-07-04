@@ -75,8 +75,10 @@ export async function saveSnapshot(now: number = Date.now()): Promise<void> {
         });
         db.close();
         lastSnapshotAt = now;
-    } catch {
-        // IndexedDB不可の環境では静かに無効化
+    } catch (error) {
+        // IndexedDB不可の環境（プライベートブラウズ等）では機能を無効化。
+        // 想定外のバグと区別できるようconsole.warnには残す（本番ビルドでもwarnは除去されない）
+        console.warn('mirrorBackup: saveSnapshot failed:', error);
     }
 }
 
@@ -103,7 +105,8 @@ export async function getAllSnapshots(): Promise<MirrorSnapshot[]> {
         });
         db.close();
         return snapshots;
-    } catch {
+    } catch (error) {
+        console.warn('mirrorBackup: getAllSnapshots failed:', error);
         return [];
     }
 }
