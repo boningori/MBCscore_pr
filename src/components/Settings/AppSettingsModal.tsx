@@ -61,13 +61,12 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
         }
     }
 
-    // importTextが空になったらバリデーション表示をクリア（レンダー中の状態調整）
+    // importTextが変化したらバリデーション表示を一旦クリアする（レンダー中の状態調整）
+    // デバウンス済みの再検証はuseEffect側で行われる
     const [prevImportText, setPrevImportText] = useState(importText);
     if (importText !== prevImportText) {
         setPrevImportText(importText);
-        if (!importText.trim()) {
-            setTextValidation(null);
-        }
+        setTextValidation(null);
     }
 
     // リアルタイムJSONバリデーション（500msデバウンス）
