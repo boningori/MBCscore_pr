@@ -20,6 +20,19 @@ import {
     createInitialGameInfo,
     MAX_PERSONAL_FOULS,
 } from '../types/game';
+import {
+    handleAddScore,
+    handleRemoveScore,
+    handleEditScore,
+    handleConvertScoreToMiss,
+    handleConvertMissToScore,
+    handleToggleOwnGoal,
+} from './reducers/scoreHandlers';
+import {
+    handleAddStat,
+    handleRemoveStat,
+    handleEditStat,
+} from './reducers/statHandlers';
 
 // Context
 interface GameContextType {
@@ -34,27 +47,6 @@ interface GameContextType {
 }
 
 const GameContext = createContext<GameContextType | null>(null);
-
-// ヘルパー関数: ランニングスコアを再計算
-function recalculateRunningScores(
-    scoreHistory: ScoreEntry[]
-): ScoreEntry[] {
-    // タイムスタンプ順にソート
-    const sorted = [...scoreHistory].sort((a, b) => a.timestamp - b.timestamp);
-
-    let runningA = 0;
-    let runningB = 0;
-
-    return sorted.map(entry => {
-        runningA += entry.teamId === 'teamA' ? entry.points : 0;
-        runningB += entry.teamId === 'teamB' ? entry.points : 0;
-        return {
-            ...entry,
-            runningScoreA: runningA,
-            runningScoreB: runningB,
-        };
-    });
-}
 
 // Reducer
 export function gameReducer(state: Game, action: GameAction): Game {
@@ -129,117 +121,11 @@ export function gameReducer(state: Game, action: GameAction): Game {
 
 
 
-        case 'ADD_SCORE': {
-            const { teamId, playerId, scoreType } = action.payload as {
-                teamId: string;
-                playerId: string;
-                scoreType: '2P' | '3P' | 'FT'
-            };
-            const points = scoreType === '3P' ? 3 : scoreType === '2P' ? 2 : 1;
+        case 'ADD_SCORE':
+            return handleAddScore(state, action.payload);
 
-            const updateTeamScore = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== playerId) return p;
-                        const stats = { ...p.stats, points: p.stats.points + points };
-                        if (scoreType === '2P') {
-                            stats.twoPointMade++;
-                            stats.twoPointAttempt++;
-                        } else if (scoreType === '3P') {
-                            stats.threePointMade++;
-                            stats.threePointAttempt++;
-                        } else {
-                            stats.freeThrowMade++;
-                            stats.freeThrowAttempt++;
-                        }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            const newTeamA = updateTeamScore(state.teamA, teamId === 'teamA');
-            const newTeamB = updateTeamScore(state.teamB, teamId === 'teamB');
-
-            const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
-            const scoreEntry: ScoreEntry = {
-                id: crypto.randomUUID(),
-                teamId,
-                playerId,
-                playerNumber: player?.number || 0,
-                scoreType,
-                points,
-                quarter: state.currentQuarter,
-                timestamp: Date.now(),
-                runningScoreA: newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0),
-                runningScoreB: newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0),
-            };
-
-            return {
-                ...state,
-                teamA: newTeamA,
-                teamB: newTeamB,
-                scoreHistory: [...state.scoreHistory, scoreEntry],
-                selectedPlayerId: null,
-                selectedTeamId: null,
-            };
-        }
-
-        case 'ADD_STAT': {
-            const { teamId, playerId, statType } = action.payload as {
-                teamId: string;
-                playerId: string;
-                statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA';
-            };
-
-            const updatePlayerStat = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== playerId) return p;
-                        const stats = { ...p.stats };
-                        switch (statType) {
-                            case 'OREB': stats.offensiveRebounds++; break;
-                            case 'DREB': stats.defensiveRebounds++; break;
-                            case 'AST': stats.assists++; break;
-                            case 'STL': stats.steals++; break;
-                            case 'BLK': stats.blocks++; break;
-                            case 'TO': stats.turnovers++; break;
-                            case 'TO:DD': stats.turnovers++; stats.turnoverDD++; break;
-                            case 'TO:TR': stats.turnovers++; stats.turnoverTR++; break;
-                            case 'TO:PM': stats.turnovers++; stats.turnoverPM++; break;
-                            case 'TO:CM': stats.turnovers++; stats.turnoverCM++; break;
-                            case '2PA': stats.twoPointAttempt++; break;
-                            case '3PA': stats.threePointAttempt++; break;
-                            case 'FTA': stats.freeThrowAttempt++; break;
-                        }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
-            const statEntry: StatEntry = {
-                id: crypto.randomUUID(),
-                teamId,
-                playerId,
-                playerNumber: player?.number || 0,
-                statType,
-                quarter: state.currentQuarter,
-                timestamp: Date.now(),
-            };
-
-            return {
-                ...state,
-                teamA: updatePlayerStat(state.teamA, teamId === 'teamA'),
-                teamB: updatePlayerStat(state.teamB, teamId === 'teamB'),
-                statHistory: [...state.statHistory, statEntry],
-                selectedPlayerId: null,
-                selectedTeamId: null,
-            };
-        }
+        case 'ADD_STAT':
+            return handleAddStat(state, action.payload);
 
         case 'ADD_FOUL': {
             const { teamId, playerId, foulType } = action.payload as {
@@ -684,81 +570,11 @@ export function gameReducer(state: Game, action: GameAction): Game {
         case 'RESET_GAME':
             return createInitialGame();
 
-        case 'REMOVE_SCORE': {
-            const { entryId } = action.payload as { entryId: string };
-            const entry = state.scoreHistory.find(s => s.id === entryId);
-            if (!entry) return state;
+        case 'REMOVE_SCORE':
+            return handleRemoveScore(state, action.payload);
 
-            const points = entry.points;
-            const updateTeam = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats, points: p.stats.points - points };
-                        if (entry.scoreType === '2P') {
-                            stats.twoPointMade--;
-                            stats.twoPointAttempt--;
-                        } else if (entry.scoreType === '3P') {
-                            stats.threePointMade--;
-                            stats.threePointAttempt--;
-                        } else {
-                            stats.freeThrowMade--;
-                            stats.freeThrowAttempt--;
-                        }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            return {
-                ...state,
-                teamA: updateTeam(state.teamA, entry.teamId === 'teamA'),
-                teamB: updateTeam(state.teamB, entry.teamId === 'teamB'),
-                scoreHistory: state.scoreHistory.filter(s => s.id !== entryId),
-            };
-        }
-
-        case 'REMOVE_STAT': {
-            const { entryId } = action.payload as { entryId: string };
-            const entry = state.statHistory.find(s => s.id === entryId);
-            if (!entry) return state;
-
-            const updateTeam = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats };
-                        switch (entry.statType) {
-                            case 'OREB': stats.offensiveRebounds--; break;
-                            case 'DREB': stats.defensiveRebounds--; break;
-                            case 'AST': stats.assists--; break;
-                            case 'STL': stats.steals--; break;
-                            case 'BLK': stats.blocks--; break;
-                            case 'TO': stats.turnovers--; break;
-                            case 'TO:DD': stats.turnovers--; stats.turnoverDD--; break;
-                            case 'TO:TR': stats.turnovers--; stats.turnoverTR--; break;
-                            case 'TO:PM': stats.turnovers--; stats.turnoverPM--; break;
-                            case 'TO:CM': stats.turnovers--; stats.turnoverCM--; break;
-                            case '2PA': stats.twoPointAttempt--; break;
-                            case '3PA': stats.threePointAttempt--; break;
-                            case 'FTA': stats.freeThrowAttempt--; break;
-                        }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            return {
-                ...state,
-                teamA: updateTeam(state.teamA, entry.teamId === 'teamA'),
-                teamB: updateTeam(state.teamB, entry.teamId === 'teamB'),
-                statHistory: state.statHistory.filter(s => s.id !== entryId),
-            };
-        }
+        case 'REMOVE_STAT':
+            return handleRemoveStat(state, action.payload);
 
         case 'REMOVE_FOUL': {
             const { entryId } = action.payload as { entryId: string };
@@ -911,310 +727,17 @@ export function gameReducer(state: Game, action: GameAction): Game {
             };
         }
 
-        case 'EDIT_SCORE': {
-            const { entryId, newPlayerId, newScoreType } = action.payload as {
-                entryId: string;
-                newPlayerId: string;
-                newScoreType: '2P' | '3P' | 'FT';
-            };
-            const entry = state.scoreHistory.find(s => s.id === entryId);
-            if (!entry) return state;
+        case 'EDIT_SCORE':
+            return handleEditScore(state, action.payload);
 
-            const oldPoints = entry.points;
-            const newPoints = newScoreType === '3P' ? 3 : newScoreType === '2P' ? 2 : 1;
+        case 'EDIT_STAT':
+            return handleEditStat(state, action.payload);
 
-            // 元の選手からスタッツを減算
-            const removeFromPlayer = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats, points: p.stats.points - oldPoints };
-                        if (entry.scoreType === '2P') { stats.twoPointMade--; stats.twoPointAttempt--; }
-                        else if (entry.scoreType === '3P') { stats.threePointMade--; stats.threePointAttempt--; }
-                        else { stats.freeThrowMade--; stats.freeThrowAttempt--; }
-                        return { ...p, stats };
-                    })
-                };
-            };
+        case 'CONVERT_SCORE_TO_MISS':
+            return handleConvertScoreToMiss(state, action.payload);
 
-            // 新しい選手にスタッツを加算
-            const addToPlayer = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== newPlayerId) return p;
-                        const stats = { ...p.stats, points: p.stats.points + newPoints };
-                        if (newScoreType === '2P') { stats.twoPointMade++; stats.twoPointAttempt++; }
-                        else if (newScoreType === '3P') { stats.threePointMade++; stats.threePointAttempt++; }
-                        else { stats.freeThrowMade++; stats.freeThrowAttempt++; }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            const newPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === newPlayerId);
-            const updatedEntry: ScoreEntry = {
-                ...entry,
-                playerId: newPlayerId,
-                playerNumber: newPlayer?.number || entry.playerNumber,
-                scoreType: newScoreType,
-                points: newPoints,
-            };
-
-            // まず元の選手から減算
-            let teamA = removeFromPlayer(state.teamA, entry.teamId === 'teamA');
-            let teamB = removeFromPlayer(state.teamB, entry.teamId === 'teamB');
-            // 次に新しい選手に加算
-            teamA = addToPlayer(teamA, entry.teamId === 'teamA');
-            teamB = addToPlayer(teamB, entry.teamId === 'teamB');
-
-            return {
-                ...state,
-                teamA,
-                teamB,
-                scoreHistory: state.scoreHistory.map(s => s.id === entryId ? updatedEntry : s),
-            };
-        }
-
-        case 'EDIT_STAT': {
-            const { entryId, newPlayerId, newStatType } = action.payload as {
-                entryId: string;
-                newPlayerId: string;
-                newStatType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | '2PA' | '3PA' | 'FTA';
-            };
-            const entry = state.statHistory.find(s => s.id === entryId);
-            if (!entry) return state;
-
-            // 元の選手からスタッツを減算
-            const removeFromPlayer = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats };
-                        switch (entry.statType) {
-                            case 'OREB': stats.offensiveRebounds--; break;
-                            case 'DREB': stats.defensiveRebounds--; break;
-                            case 'AST': stats.assists--; break;
-                            case 'STL': stats.steals--; break;
-                            case 'BLK': stats.blocks--; break;
-                            case 'TO': stats.turnovers--; break;
-                            case '2PA': stats.twoPointAttempt--; break;
-                            case '3PA': stats.threePointAttempt--; break;
-                            case 'FTA': stats.freeThrowAttempt--; break;
-                        }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            // 新しい選手にスタッツを加算
-            const addToPlayer = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== newPlayerId) return p;
-                        const stats = { ...p.stats };
-                        switch (newStatType) {
-                            case 'OREB': stats.offensiveRebounds++; break;
-                            case 'DREB': stats.defensiveRebounds++; break;
-                            case 'AST': stats.assists++; break;
-                            case 'STL': stats.steals++; break;
-                            case 'BLK': stats.blocks++; break;
-                            case 'TO': stats.turnovers++; break;
-                            case '2PA': stats.twoPointAttempt++; break;
-                            case '3PA': stats.threePointAttempt++; break;
-                            case 'FTA': stats.freeThrowAttempt++; break;
-                        }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            const newPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === newPlayerId);
-            const updatedEntry: StatEntry = {
-                ...entry,
-                playerId: newPlayerId,
-                playerNumber: newPlayer?.number || entry.playerNumber,
-                statType: newStatType,
-            };
-
-            // まず元の選手から減算
-            let teamA = removeFromPlayer(state.teamA, entry.teamId === 'teamA');
-            let teamB = removeFromPlayer(state.teamB, entry.teamId === 'teamB');
-            // 次に新しい選手に加算
-            teamA = addToPlayer(teamA, entry.teamId === 'teamA');
-            teamB = addToPlayer(teamB, entry.teamId === 'teamB');
-
-            return {
-                ...state,
-                teamA,
-                teamB,
-                statHistory: state.statHistory.map(s => s.id === entryId ? updatedEntry : s),
-            };
-        }
-
-        // ヘルパー関数: ランニングスコアを再計算
-        case 'CONVERT_SCORE_TO_MISS': {
-            // 成功 → ミスへの変換
-            const { entryId, newMissType } = action.payload as {
-                entryId: string;
-                newMissType: '2PA' | '3PA' | 'FTA';
-            };
-            const entry = state.scoreHistory.find(s => s.id === entryId);
-            if (!entry) return state;
-
-            const oldPoints = entry.points;
-
-            // 元の選手からスコア分を減算
-            const removeScore = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats, points: p.stats.points - oldPoints };
-                        if (entry.scoreType === '2P') { stats.twoPointMade--; stats.twoPointAttempt--; }
-                        else if (entry.scoreType === '3P') { stats.threePointMade--; stats.threePointAttempt--; }
-                        else { stats.freeThrowMade--; stats.freeThrowAttempt--; }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            // ミスのアテンプトを加算
-            const addMiss = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats };
-                        if (newMissType === '2PA') { stats.twoPointAttempt++; }
-                        else if (newMissType === '3PA') { stats.threePointAttempt++; }
-                        else { stats.freeThrowAttempt++; }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            let teamA = removeScore(state.teamA, entry.teamId === 'teamA');
-            let teamB = removeScore(state.teamB, entry.teamId === 'teamB');
-            teamA = addMiss(teamA, entry.teamId === 'teamA');
-            teamB = addMiss(teamB, entry.teamId === 'teamB');
-
-            // 新しいStatEntryを作成
-            const newStatEntry: StatEntry = {
-                id: crypto.randomUUID(),
-                teamId: entry.teamId,
-                playerId: entry.playerId,
-                playerNumber: entry.playerNumber,
-                statType: newMissType,
-                quarter: entry.quarter,
-                timestamp: entry.timestamp, // 元のタイムスタンプを維持
-            };
-
-            // scoreHistoryから削除し、statHistoryに追加
-            const newScoreHistory = state.scoreHistory.filter(s => s.id !== entryId);
-            const newStatHistory = [...state.statHistory, newStatEntry];
-
-            // ランニングスコアを再計算
-            const recalculatedScoreHistory = recalculateRunningScores(newScoreHistory);
-
-            return {
-                ...state,
-                teamA,
-                teamB,
-                scoreHistory: recalculatedScoreHistory,
-                statHistory: newStatHistory,
-            };
-        }
-
-        case 'CONVERT_MISS_TO_SCORE': {
-            // ミス → 成功への変換
-            const { entryId, newScoreType } = action.payload as {
-                entryId: string;
-                newScoreType: '2P' | '3P' | 'FT';
-            };
-            const entry = state.statHistory.find(s => s.id === entryId);
-            if (!entry) return state;
-
-            // 2PA, 3PA, FTA のみ変換可能
-            if (!['2PA', '3PA', 'FTA'].includes(entry.statType)) return state;
-
-            const newPoints = newScoreType === '3P' ? 3 : newScoreType === '2P' ? 2 : 1;
-
-            // 元の選手からミスのアテンプトを減算
-            const removeMiss = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats };
-                        if (entry.statType === '2PA') { stats.twoPointAttempt--; }
-                        else if (entry.statType === '3PA') { stats.threePointAttempt--; }
-                        else if (entry.statType === 'FTA') { stats.freeThrowAttempt--; }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            // 得点を加算
-            const addScore = (team: typeof state.teamA, isTarget: boolean) => {
-                if (!isTarget) return team;
-                return {
-                    ...team,
-                    players: team.players.map(p => {
-                        if (p.id !== entry.playerId) return p;
-                        const stats = { ...p.stats, points: p.stats.points + newPoints };
-                        if (newScoreType === '2P') { stats.twoPointMade++; stats.twoPointAttempt++; }
-                        else if (newScoreType === '3P') { stats.threePointMade++; stats.threePointAttempt++; }
-                        else { stats.freeThrowMade++; stats.freeThrowAttempt++; }
-                        return { ...p, stats };
-                    })
-                };
-            };
-
-            let teamA = removeMiss(state.teamA, entry.teamId === 'teamA');
-            let teamB = removeMiss(state.teamB, entry.teamId === 'teamB');
-            teamA = addScore(teamA, entry.teamId === 'teamA');
-            teamB = addScore(teamB, entry.teamId === 'teamB');
-
-            // 新しいScoreEntryを作成（ランニングスコアは後で再計算）
-            const newScoreEntry: ScoreEntry = {
-                id: crypto.randomUUID(),
-                teamId: entry.teamId,
-                playerId: entry.playerId,
-                playerNumber: entry.playerNumber,
-                scoreType: newScoreType,
-                points: newPoints,
-                quarter: entry.quarter,
-                timestamp: entry.timestamp, // 元のタイムスタンプを維持
-                runningScoreA: 0, // 後で再計算
-                runningScoreB: 0, // 後で再計算
-            };
-
-            // statHistoryから削除し、scoreHistoryに追加
-            const newStatHistory = state.statHistory.filter(s => s.id !== entryId);
-            const newScoreHistory = [...state.scoreHistory, newScoreEntry];
-
-            // ランニングスコアを再計算
-            const recalculatedScoreHistory = recalculateRunningScores(newScoreHistory);
-
-            return {
-                ...state,
-                teamA,
-                teamB,
-                scoreHistory: recalculatedScoreHistory,
-                statHistory: newStatHistory,
-            };
-        }
+        case 'CONVERT_MISS_TO_SCORE':
+            return handleConvertMissToScore(state, action.payload);
 
         case 'ADD_PENDING_ACTION': {
             const pendingAction = action.payload as PendingAction;
@@ -1667,17 +1190,8 @@ export function gameReducer(state: Game, action: GameAction): Game {
             };
         }
 
-        case 'TOGGLE_OWN_GOAL': {
-            const { entryId } = action.payload as { entryId: string };
-            return {
-                ...state,
-                scoreHistory: state.scoreHistory.map(entry =>
-                    entry.id === entryId
-                        ? { ...entry, isOwnGoal: !entry.isOwnGoal }
-                        : entry
-                ),
-            };
-        }
+        case 'TOGGLE_OWN_GOAL':
+            return handleToggleOwnGoal(state, action.payload);
 
         case 'SET_END_TIME': {
             const { endTime } = action.payload as { endTime: Date | null };
