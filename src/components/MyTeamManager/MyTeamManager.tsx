@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { showToast } from '../Toast/Toast';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
@@ -13,11 +13,8 @@ import {
     downloadJSON,
     shareFile,
     generateTeamFilename,
-    parseImportFile,
-    parseImportJSON,
-    executeImport,
 } from '../../utils/dataBackup';
-import type { ParsedImportData } from '../../utils/dataBackup';
+import { useTeamImportExport, TextImportPanel, ImportConfirmPanel, DeleteConfirmModal } from '../TeamShared';
 import './MyTeamManager.css';
 
 interface MyTeamManagerProps {
@@ -31,38 +28,18 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-    const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
-    const [importTarget, setImportTarget] = useState<'myTeam' | 'opponent'>('myTeam');
-    const [showTextImport, setShowTextImport] = useState(false);
-    const [importText, setImportText] = useState('');
-    const [textValidation, setTextValidation] = useState<{ valid: boolean; message: string } | null>(null);
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
-
-    // リアルタイムJSONバリデーション（500msデバウンス）
-    useEffect(() => {
-        if (!importText.trim()) {
-            setTextValidation(null);
-            return;
-        }
-        const timer = setTimeout(() => {
-            try {
-                const parsed = parseImportJSON(importText.trim());
-                if (parsed.type === 'unknown') {
-                    setTextValidation({ valid: false, message: '有効なJSONデータを入力してください' });
-                } else {
-                    const typeLabel = parsed.type === 'team' ? 'チームデータ' : parsed.type === 'backup' ? '全データバックアップ' : parsed.type === 'game' ? '試合データ' : 'データ';
-                    setTextValidation({ valid: true, message: `✓ ${typeLabel}が検出されました` });
-                }
-            } catch {
-                setTextValidation({ valid: false, message: '有効なJSONデータを入力してください' });
-            }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [importText]);
 
     const refreshTeams = () => {
         setTeams(loadMyTeams());
     };
+
+    const {
+        pendingImport, importTarget, setImportTarget,
+        showTextImport, setShowTextImport,
+        importText, updateImportText, textValidation,
+        handleJsonImport, handleConfirmImport, handleCancelImport, handleImportTextSubmit,
+    } = useTeamImportExport({ onImported: refreshTeams, defaultImportTarget: 'myTeam' });
 
     const handleCreateNew = () => {
         setEditingTeam(createEmptySavedTeam());
@@ -125,55 +102,6 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
         jsonImportInputRef.current?.click();
     };
 
-    const handleJsonImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        try {
-            const parsed = await parseImportFile(file);
-            if (parsed.type === 'unknown') {
-                showStatus(`インポート失敗: ${parsed.summary}`, 'error');
-            } else {
-                // すべてのインポートタイプで確認画面を表示（データ損失防止）
-                setPendingImport(parsed);
-            }
-        } catch (error) {
-            showStatus('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'), 'error');
-        }
-
-        e.target.value = '';
-    };
-
-    const handleConfirmImport = () => {
-        if (!pendingImport) return;
-        const options = pendingImport.type === 'team' ? { teamTarget: importTarget } : undefined;
-        const result = executeImport(pendingImport, options);
-        if (result.success) {
-            showStatus(`✓ ${result.message}`, 'success');
-            refreshTeams();
-        } else {
-            showStatus(`インポート失敗: ${result.message}`, 'error');
-        }
-        setPendingImport(null);
-    };
-
-    const handleCancelImport = () => {
-        setPendingImport(null);
-    };
-
-    const handleImportTextSubmit = () => {
-        if (!importText.trim()) return;
-        const parsed = parseImportJSON(importText.trim());
-        if (parsed.type === 'unknown') {
-            showStatus(`インポート失敗: ${parsed.summary}`, 'error');
-        } else {
-            // すべてのインポートタイプで確認画面を表示（データ損失防止）
-            setPendingImport(parsed);
-            setShowTextImport(false);
-            setImportText('');
-        }
-    };
-
     if (editingTeam) {
         return (
             <MyTeamEditor
@@ -215,92 +143,24 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
 
 
 
-            {/* テキスト貼り付けUI */}
             {showTextImport && (
-                <div className="text-import-panel">
-                    <h4>📝 JSONデータの貼り付け</h4>
-                    <p className="text-import-hint">MBCscoreの「エクスポート」や「クリップボードにコピー」で取得したJSONデータを貼り付けてください。</p>
-                    <textarea
-                        className="text-import-textarea"
-                        value={importText}
-                        onChange={e => setImportText(e.target.value)}
-                        placeholder='ここにコピーしたデータを貼り付けてください'
-                        rows={10}
-                        style={{ minHeight: '200px' }}
-                    />
-                    {textValidation && (
-                        <p className={`text-validation ${textValidation.valid ? 'valid' : 'invalid'}`}>
-                            {textValidation.message}
-                        </p>
-                    )}
-                    <div className="text-import-actions">
-                        <button className="btn btn-secondary" onClick={() => { setShowTextImport(false); setImportText(''); }}>キャンセル</button>
-                        <button className="btn btn-primary" onClick={handleImportTextSubmit} disabled={!importText.trim()}>読み込む</button>
-                    </div>
-                </div>
+                <TextImportPanel
+                    importText={importText}
+                    updateImportText={updateImportText}
+                    textValidation={textValidation}
+                    onSubmit={handleImportTextSubmit}
+                    onCancel={() => { setShowTextImport(false); updateImportText(''); }}
+                />
             )}
 
             {pendingImport && (
-                <div className={`import-confirm-panel ${pendingImport.hasDuplicates ? 'has-duplicates' : ''}`}>
-                    <h4>📋 インポート内容の確認</h4>
-                    <p className="import-summary">{pendingImport.summary}</p>
-                    {pendingImport.type === 'backup' && (
-                        <div className="import-danger-warning">
-                            <p className="import-warning-title">⚠️ 重要な警告</p>
-                            <p className="import-warning-text">
-                                これは全データバックアップファイルです。<br />
-                                インポートすると、<strong>試合履歴・マイチーム・対戦チーム・設定</strong>が上書きされます。
-                            </p>
-                        </div>
-                    )}
-                    {pendingImport.type === 'backup' && (
-                        <div className="import-merge-info">
-                            <p className="import-info">
-                                📌 復元ルール:<br />
-                                • 同じデータがあれば新しい方に更新されます<br />
-                                • 新しいデータは追加されます<br />
-                                • 既存データが削除されることはありません
-                            </p>
-                        </div>
-                    )}
-                    {pendingImport.type === 'game' && (
-                        <p className="import-info">ℹ️ 試合データをインポートします。同じIDの試合がある場合は上書きされます。</p>
-                    )}
-                    {pendingImport.type === 'team' && (
-                        <>
-                            <p className="import-info">📌 同じIDのチームが既にある場合、インポートしたデータで上書きされます。</p>
-                            <div className="import-target-selector">
-                                <label>インポート先：</label>
-                                <select value={importTarget} onChange={e => setImportTarget(e.target.value as 'myTeam' | 'opponent')}>
-                                    <option value="myTeam">マイチーム</option>
-                                    <option value="opponent">対戦チーム</option>
-                                </select>
-                            </div>
-                        </>
-                    )}
-                    {pendingImport.preview && pendingImport.preview.length > 0 && (
-                        <div className="import-preview">
-                            {pendingImport.preview.map((line, i) => (
-                                <p key={i} className="import-preview-line">{line}</p>
-                            ))}
-                        </div>
-                    )}
-                    {pendingImport.hasDuplicates && (
-                        <p className="import-warning">⚠️ {pendingImport.duplicateDetails}</p>
-                    )}
-                    <div className="import-confirm-actions">
-                        <button className="btn btn-secondary" onClick={handleCancelImport}>キャンセル</button>
-                        {pendingImport.type === 'backup' ? (
-                            <button className="btn btn-danger" onClick={handleConfirmImport}>全データをインポート（上書き）</button>
-                        ) : (
-                            <button className="btn btn-primary" onClick={handleConfirmImport}>
-                                {pendingImport.type === 'team'
-                                    ? (importTarget === 'myTeam' ? 'マイチームにインポート' : '対戦チームにインポート')
-                                    : 'インポート実行'}
-                            </button>
-                        )}
-                    </div>
-                </div>
+                <ImportConfirmPanel
+                    pendingImport={pendingImport}
+                    importTarget={importTarget}
+                    onChangeImportTarget={setImportTarget}
+                    onConfirm={handleConfirmImport}
+                    onCancel={handleCancelImport}
+                />
             )}
 
             <div className="team-list">
@@ -360,23 +220,14 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                 )}
             </div>
 
-            {/* 削除確認モーダル */}
             {deleteTargetId && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h3>チーム削除の確認</h3>
-                        <p>このチームを削除してもよろしいですか？</p>
-                        <p className="text-muted text-sm my-2">※この操作は取り消せません</p>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={cancelDelete}>
-                                キャンセル
-                            </button>
-                            <button className="btn btn-danger" onClick={confirmDelete}>
-                                削除する
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <DeleteConfirmModal
+                    title="チーム削除の確認"
+                    message="このチームを削除してもよろしいですか？"
+                    note="※この操作は取り消せません"
+                    onConfirm={confirmDelete}
+                    onCancel={cancelDelete}
+                />
             )}
         </div>
     );
