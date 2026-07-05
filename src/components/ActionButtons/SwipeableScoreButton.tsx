@@ -63,7 +63,7 @@ export function SwipeableScoreButton({
         <div className="swipeable-score-wrapper">
             <button
                 className={`action-btn swipeable-score-btn btn-${scoreType.toLowerCase()}
-                    ${isActiveScore ? 'active-score' : ''}
+                    ${isActiveScore ? 'active-score' : ''} 
                     ${isActiveMiss ? 'active-miss' : ''}
                     ${swipeDirection === 'up' ? 'swiping-up' : ''}
                     ${swipeDirection === 'down' ? 'swiping-down' : ''}`}
