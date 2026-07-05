@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { showToast } from '../Toast/Toast';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
@@ -20,11 +20,8 @@ import {
     downloadJSON,
     shareFile,
     generateTeamFilename,
-    parseImportFile,
-    parseImportJSON,
-    executeImport,
 } from '../../utils/dataBackup';
-import type { ParsedImportData } from '../../utils/dataBackup';
+import { useTeamImportExport, TextImportPanel, DeleteConfirmModal } from '../TeamShared';
 import '../../styles/number-grid.css';
 import './OpponentManager.css';
 
@@ -33,16 +30,10 @@ interface OpponentManagerProps {
 }
 
 export function OpponentManager({ onBack }: OpponentManagerProps) {
-    const [teams, setTeams] = useState<SavedTeam[]>([]);
+    const [teams, setTeams] = useState<SavedTeam[]>(loadOpponents);
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-
-    const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
-    const [importTarget, setImportTarget] = useState<'myTeam' | 'opponent'>('opponent');
-    const [showTextImport, setShowTextImport] = useState(false);
-    const [importText, setImportText] = useState('');
-    const [textValidation, setTextValidation] = useState<{ valid: boolean; message: string } | null>(null);
 
     // OCR related state
     const [isLoading, setIsLoading] = useState(false);
@@ -51,31 +42,16 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
 
-    useEffect(() => {
+    const refreshTeams = () => {
         setTeams(loadOpponents());
-    }, []);
+    };
 
-    // リアルタイムJSONバリデーション（500msデバウンス）
-    useEffect(() => {
-        if (!importText.trim()) {
-            setTextValidation(null);
-            return;
-        }
-        const timer = setTimeout(() => {
-            try {
-                const parsed = parseImportJSON(importText.trim());
-                if (parsed.type === 'unknown') {
-                    setTextValidation({ valid: false, message: '有効なJSONデータを入力してください' });
-                } else {
-                    const typeLabel = parsed.type === 'team' ? 'チームデータ' : parsed.type === 'backup' ? '全データバックアップ' : parsed.type === 'game' ? '試合データ' : 'データ';
-                    setTextValidation({ valid: true, message: `✓ ${typeLabel}が検出されました` });
-                }
-            } catch {
-                setTextValidation({ valid: false, message: '有効なJSONデータを入力してください' });
-            }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [importText]);
+    const {
+        pendingImport, importTarget, setImportTarget,
+        showTextImport, setShowTextImport,
+        importText, updateImportText, textValidation,
+        handleJsonImport, handleConfirmImport, handleCancelImport, handleImportTextSubmit,
+    } = useTeamImportExport({ onImported: refreshTeams, defaultImportTarget: 'opponent' });
 
     const handleCreateNew = () => {
         setEditingTeam(createEmptySavedTeam());
@@ -96,7 +72,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const confirmDelete = () => {
         if (deleteTargetId) {
             deleteOpponent(deleteTargetId);
-            setTeams(loadOpponents());
+            refreshTeams();
             setDeleteTargetId(null);
         }
     };
@@ -125,7 +101,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         }
 
         saveOpponent(editingTeam);
-        setTeams(loadOpponents());
+        refreshTeams();
         setEditingTeam(null);
         setIsCreating(false);
     };
@@ -159,55 +135,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
     const handleImportTeam = () => {
         jsonImportInputRef.current?.click();
-    };
-
-    const handleJsonImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        try {
-            const parsed = await parseImportFile(file);
-            if (parsed.type === 'unknown') {
-                showStatus(`インポート失敗: ${parsed.summary}`, 'error');
-            } else {
-                // すべてのインポートタイプで確認画面を表示（データ損失防止）
-                setPendingImport(parsed);
-            }
-        } catch (error) {
-            showStatus('インポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'), 'error');
-        }
-
-        e.target.value = '';
-    };
-
-    const handleConfirmImport = () => {
-        if (!pendingImport) return;
-        const options = pendingImport.type === 'team' ? { teamTarget: importTarget } : undefined;
-        const result = executeImport(pendingImport, options);
-        if (result.success) {
-            showStatus(`✓ ${result.message}`, 'success');
-            setTeams(loadOpponents());
-        } else {
-            showStatus(`インポート失敗: ${result.message}`, 'error');
-        }
-        setPendingImport(null);
-    };
-
-    const handleCancelImport = () => {
-        setPendingImport(null);
-    };
-
-    const handleImportTextSubmit = () => {
-        if (!importText.trim()) return;
-        const parsed = parseImportJSON(importText.trim());
-        if (parsed.type === 'unknown') {
-            showStatus(`インポート失敗: ${parsed.summary}`, 'error');
-        } else {
-            // すべてのインポートタイプで確認画面を表示（データ損失防止）
-            setPendingImport(parsed);
-            setShowTextImport(false);
-            setImportText('');
-        }
     };
 
     const handleTeamNameChange = (name: string) => {
@@ -744,32 +671,20 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
 
 
-            {/* テキスト貼り付けUI */}
             {showTextImport && (
-                <div className="text-import-panel">
-                    <h4>📝 JSONデータの貼り付け</h4>
-                    <p className="text-import-hint">MBCscoreの「エクスポート」や「クリップボードにコピー」で取得したJSONデータを貼り付けてください。</p>
-                    <textarea
-                        className="text-import-textarea"
-                        value={importText}
-                        onChange={e => setImportText(e.target.value)}
-                        placeholder='ここにコピーしたデータを貼り付けてください'
-                        rows={10}
-                        style={{ minHeight: '200px' }}
-                    />
-                    {textValidation && (
-                        <p className={`text-validation ${textValidation.valid ? 'valid' : 'invalid'}`}>
-                            {textValidation.message}
-                        </p>
-                    )}
-                    <div className="text-import-actions">
-                        <button className="btn btn-secondary" onClick={() => { setShowTextImport(false); setImportText(''); }}>キャンセル</button>
-                        <button className="btn btn-primary" onClick={handleImportTextSubmit} disabled={!importText.trim()}>読み込む</button>
-                    </div>
-                </div>
+                <TextImportPanel
+                    importText={importText}
+                    updateImportText={updateImportText}
+                    textValidation={textValidation}
+                    onSubmit={handleImportTextSubmit}
+                    onCancel={() => { setShowTextImport(false); updateImportText(''); }}
+                />
             )}
 
             {pendingImport && (
+                // NOTE: MyTeamManager版のImportConfirmPanelと異なり、team種別でも
+                // ボタン文言は常に「インポート実行」（マイチーム/対戦チームで文言を変えない）。
+                // 元のOpponentManager実装の挙動を維持するためインラインのまま残す。
                 <div className={`import-confirm-panel ${pendingImport.hasDuplicates ? 'has-duplicates' : ''}`}>
                     <h4>📋 インポート内容の確認</h4>
                     <p className="import-summary">{pendingImport.summary}</p>
@@ -863,26 +778,15 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
             )}
 
 
-            {/* 削除確認モーダル */}
-            {
-                deleteTargetId && (
-                    <div className="modal-overlay">
-                        <div className="modal-content">
-                            <h3>チーム削除の確認</h3>
-                            <p>このチームを削除してもよろしいですか？</p>
-                            <p className="text-muted text-sm my-2">※この操作は取り消せません</p>
-                            <div className="modal-actions">
-                                <button className="btn btn-secondary" onClick={cancelDelete}>
-                                    キャンセル
-                                </button>
-                                <button className="btn btn-danger" onClick={confirmDelete}>
-                                    削除する
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-        </div >
+            {deleteTargetId && (
+                <DeleteConfirmModal
+                    title="チーム削除の確認"
+                    message="このチームを削除してもよろしいですか？"
+                    note="※この操作は取り消せません"
+                    onConfirm={confirmDelete}
+                    onCancel={cancelDelete}
+                />
+            )}
+        </div>
     );
 }
