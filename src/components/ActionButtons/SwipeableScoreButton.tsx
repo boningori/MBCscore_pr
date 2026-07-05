@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useSwipe } from '../../hooks/useSwipe';
 import './SwipeableScoreButton.css';
 
 type ScoreType = '2P' | '3P' | 'FT';
@@ -30,57 +31,19 @@ export function SwipeableScoreButton({
     isActiveMiss = false,
 }: SwipeableScoreButtonProps) {
     const [showSelector, setShowSelector] = useState(false);
-    const [swipeDirection, setSwipeDirection] = useState<'up' | 'down' | null>(null);
-    const touchStartY = useRef<number | null>(null);
-    const hasSwiped = useRef(false);
-
     const info = SCORE_INFO[scoreType];
 
-    const handleTouchStart = useCallback((e: React.TouchEvent) => {
-        touchStartY.current = e.touches[0].clientY;
-        hasSwiped.current = false;
-        setSwipeDirection(null);
-    }, []);
-
-    const handleTouchMove = useCallback((e: React.TouchEvent) => {
-        if (touchStartY.current === null) return;
-
-        const currentY = e.touches[0].clientY;
-        const deltaY = touchStartY.current - currentY;
-
-        // スワイプ閾値を超えたらポップアップを表示
-        if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
-            hasSwiped.current = true;
-            setSwipeDirection(deltaY > 0 ? 'up' : 'down');
-        } else {
-            setSwipeDirection(null);
-        }
-    }, []);
-
-    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-        // スワイプ中なら指を離した時点で確定
-        if (swipeDirection === 'up') {
-            e.preventDefault();
-            e.stopPropagation();
-            onScore(scoreType);
-        } else if (swipeDirection === 'down') {
-            e.preventDefault();
-            e.stopPropagation();
-            onMiss(info.missType);
-        }
-
-        touchStartY.current = null;
-        setSwipeDirection(null);
-    }, [swipeDirection, scoreType, onScore, onMiss, info.missType]);
+    const { swipeDirection, onTouchStart, onTouchMove, onTouchEnd, consumeSwipeFlag } = useSwipe(
+        useCallback(() => onScore(scoreType), [onScore, scoreType]),
+        useCallback(() => onMiss(info.missType), [onMiss, info.missType]),
+        SWIPE_THRESHOLD,
+    );
 
     const handleClick = useCallback(() => {
         // スワイプ後はクリックをスキップ
-        if (hasSwiped.current) {
-            hasSwiped.current = false;
-            return;
-        }
+        if (consumeSwipeFlag()) return;
         setShowSelector(true);
-    }, []);
+    }, [consumeSwipeFlag]);
 
     const handleSelectScore = () => {
         setShowSelector(false);
@@ -100,14 +63,14 @@ export function SwipeableScoreButton({
         <div className="swipeable-score-wrapper">
             <button
                 className={`action-btn swipeable-score-btn btn-${scoreType.toLowerCase()}
-                    ${isActiveScore ? 'active-score' : ''} 
+                    ${isActiveScore ? 'active-score' : ''}
                     ${isActiveMiss ? 'active-miss' : ''}
                     ${swipeDirection === 'up' ? 'swiping-up' : ''}
                     ${swipeDirection === 'down' ? 'swiping-down' : ''}`}
                 onClick={handleClick}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
                 disabled={disabled}
             >
                 <div className="score-content">
