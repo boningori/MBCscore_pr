@@ -2,7 +2,7 @@
 // 試合中は連続的に保存し、画面遷移しても再開可能にする
 
 import type { Game } from '../types/game';
-import { notifyStorageError } from './storageError';
+import { createJsonStorage } from './createStorage';
 
 const GAME_SESSION_KEY = 'minibasket-game-session';
 
@@ -13,40 +13,26 @@ export interface GameSession {
     savedAt: string;
 }
 
+const sessionStorage_ = createJsonStorage<GameSession | null>(GAME_SESSION_KEY, null, 'game session');
+
 // 試合セッションを保存
 export function saveGameSession(game: Game, gameName: string, date: string): void {
-    try {
-        const session: GameSession = {
-            game,
-            gameName,
-            date,
-            savedAt: new Date().toISOString(),
-        };
-        localStorage.setItem(GAME_SESSION_KEY, JSON.stringify(session));
-    } catch (error) {
-        notifyStorageError('game session', error);
-    }
+    sessionStorage_.save({
+        game,
+        gameName,
+        date,
+        savedAt: new Date().toISOString(),
+    });
 }
 
 // 試合セッションを読み込み
 export function loadGameSession(): GameSession | null {
-    try {
-        const data = localStorage.getItem(GAME_SESSION_KEY);
-        if (!data) return null;
-        return JSON.parse(data) as GameSession;
-    } catch (error) {
-        console.error('Failed to load game session:', error);
-        return null;
-    }
+    return sessionStorage_.load();
 }
 
 // 試合セッションをクリア
 export function clearGameSession(): void {
-    try {
-        localStorage.removeItem(GAME_SESSION_KEY);
-    } catch (error) {
-        console.error('Failed to clear game session:', error);
-    }
+    sessionStorage_.clear();
 }
 
 // 試合セッションが存在するか確認

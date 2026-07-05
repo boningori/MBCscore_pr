@@ -4,41 +4,27 @@ import type { PlayerStats } from '../types/game';
 import type { GameRecord } from './gameHistoryStorage';
 import { loadGameHistory } from './gameHistoryStorage';
 import { loadMyTeams, type SavedTeam } from './teamStorage';
+import { createJsonStorage } from './createStorage';
 
 // 非表示選手ストレージ
-const HIDDEN_PLAYERS_KEY = 'minibasket-hidden-players';
+const hiddenStorage = createJsonStorage<Record<string, string[]>>('minibasket-hidden-players', {}, 'hidden players');
 
 // チームごとの非表示選手キーを保存
 export function saveHiddenPlayers(teamId: string, playerKeys: string[]): void {
-    try {
-        const all = loadAllHiddenPlayers();
-        all[teamId] = playerKeys;
-        localStorage.setItem(HIDDEN_PLAYERS_KEY, JSON.stringify(all));
-    } catch (error) {
-        console.error('Failed to save hidden players:', error);
-    }
+    const all = loadAllHiddenPlayers();
+    all[teamId] = playerKeys;
+    hiddenStorage.save(all);
 }
 
 // チームの非表示選手キーを取得
 export function loadHiddenPlayers(teamId: string): string[] {
-    try {
-        const all = loadAllHiddenPlayers();
-        return all[teamId] || [];
-    } catch (error) {
-        console.error('Failed to load hidden players:', error);
-        return [];
-    }
+    const all = loadAllHiddenPlayers();
+    return all[teamId] || [];
 }
 
 // 全チームの非表示選手を取得
 function loadAllHiddenPlayers(): Record<string, string[]> {
-    try {
-        const data = localStorage.getItem(HIDDEN_PLAYERS_KEY);
-        if (!data) return {};
-        return JSON.parse(data);
-    } catch {
-        return {};
-    }
+    return hiddenStorage.load();
 }
 
 // 選手の非表示状態をトグル

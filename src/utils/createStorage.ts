@@ -15,11 +15,11 @@ export function createJsonStorage<T>(key: string, fallback: T, errorContext?: st
         load(): T {
             try {
                 const data = localStorage.getItem(key);
-                if (!data) return fallback;
+                if (!data) return structuredClone(fallback);
                 return JSON.parse(data) as T;
             } catch (error) {
                 console.error(`Failed to load ${context}:`, error);
-                return fallback;
+                return structuredClone(fallback);
             }
         },
         save(value: T): void {

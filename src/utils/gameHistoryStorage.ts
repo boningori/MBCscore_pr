@@ -1,7 +1,10 @@
 import type { Team, ScoreEntry, StatEntry, FoulEntry, GameInfo } from '../types/game';
-import { notifyStorageError } from './storageError';
+import { createJsonStorage } from './createStorage';
 
 const GAME_HISTORY_KEY = 'minibasket-game-history';
+
+const historyStorage = createJsonStorage<GameRecord[]>(GAME_HISTORY_KEY, [], 'game result');
+const recordStorage = createJsonStorage<GameRecord[]>(GAME_HISTORY_KEY, [], 'game record');
 
 export interface GameRecord {
     id: string;
@@ -49,27 +52,16 @@ export function saveGameResult(
         createdAt: new Date().toISOString(),
     };
 
-    try {
-        const history = loadGameHistory();
-        history.unshift(record); // 新しい順
-        localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(history));
-    } catch (error) {
-        notifyStorageError('game result', error);
-    }
+    const history = loadGameHistory();
+    history.unshift(record); // 新しい順
+    historyStorage.save(history);
 
     return record;
 }
 
 // 試合履歴一覧取得
 export function loadGameHistory(): GameRecord[] {
-    try {
-        const data = localStorage.getItem(GAME_HISTORY_KEY);
-        if (!data) return [];
-        return JSON.parse(data) as GameRecord[];
-    } catch (error) {
-        console.error('Failed to load game history:', error);
-        return [];
-    }
+    return historyStorage.load();
 }
 
 // 試合詳細取得
@@ -80,26 +72,18 @@ export function loadGameRecord(infoId: string): GameRecord | null {
 
 // 試合記録のgameInfoを更新
 export function updateGameRecordGameInfo(id: string, gameInfo: GameInfo): void {
-    try {
-        const history = loadGameHistory();
-        const index = history.findIndex(r => r.id === id);
-        if (index !== -1) {
-            history[index].gameInfo = gameInfo;
-            localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(history));
-        }
-    } catch (error) {
-        notifyStorageError('game record', error);
+    const history = loadGameHistory();
+    const index = history.findIndex(r => r.id === id);
+    if (index !== -1) {
+        history[index].gameInfo = gameInfo;
+        recordStorage.save(history);
     }
 }
 
 // 履歴削除
 export function deleteGameRecord(id: string): void {
-    try {
-        const history = loadGameHistory().filter(r => r.id !== id);
-        localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(history));
-    } catch (error) {
-        console.error('Failed to delete game record:', error);
-    }
+    const history = loadGameHistory().filter(r => r.id !== id);
+    historyStorage.save(history);
 }
 
 // 試合名の候補を取得（同日優先、最近の試合名も含む）

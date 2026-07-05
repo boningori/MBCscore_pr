@@ -1,6 +1,6 @@
 // アプリ設定の保存・読み込み
 
-import { notifyStorageError } from './storageError';
+import { createJsonStorage } from './createStorage';
 
 const APP_SETTINGS_KEY = 'minibasket-app-settings';
 
@@ -14,27 +14,16 @@ const DEFAULT_SETTINGS: AppSettings = {
     defaultGameMode: 'full',
 };
 
+const settingsStorage = createJsonStorage<Partial<AppSettings>>(APP_SETTINGS_KEY, {}, 'app settings');
+
 // アプリ設定を保存
 export function saveAppSettings(settings: Partial<AppSettings>): void {
-    try {
-        const current = loadAppSettings();
-        const updated = { ...current, ...settings };
-        localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(updated));
-    } catch (error) {
-        notifyStorageError('app settings', error);
-    }
+    settingsStorage.save({ ...loadAppSettings(), ...settings });
 }
 
 // アプリ設定を読み込み
 export function loadAppSettings(): AppSettings {
-    try {
-        const data = localStorage.getItem(APP_SETTINGS_KEY);
-        if (!data) return DEFAULT_SETTINGS;
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
-    } catch (error) {
-        console.error('Failed to load app settings:', error);
-        return DEFAULT_SETTINGS;
-    }
+    return { ...DEFAULT_SETTINGS, ...settingsStorage.load() };
 }
 
 // デフォルトゲームモードを取得
