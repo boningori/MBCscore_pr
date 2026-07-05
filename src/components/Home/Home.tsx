@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { SavedTeam } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { hasGameSession } from '../../utils/gameSessionStorage';
@@ -20,11 +20,8 @@ interface HomeProps {
 
 export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onViewPlayerStats, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen }: HomeProps) {
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
-    const [canResume, setCanResume] = useState(false);
-
-    useEffect(() => {
-        setCanResume(hasGameSession());
-    }, []);
+    // 初回マウント時のみ判定（遅延初期化）
+    const [canResume] = useState(() => hasGameSession());
 
     const hasMyTeams = myTeams.length > 0;
 

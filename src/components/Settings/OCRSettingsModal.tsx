@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/imageOCR';
 import './OCRSettingsModal.css';
 
@@ -12,12 +12,16 @@ export const OCRSettingsModal: React.FC<OCRSettingsModalProps> = ({ isOpen, onCl
     const [showKey, setShowKey] = useState(false);
     const [testStatus, setTestStatus] = useState<{ loading: boolean; message: string; success?: boolean } | null>(null);
 
-    useEffect(() => {
+    // isOpenがfalse→trueに変化した際にフォーム状態をリセットする
+    // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
+    const [prevIsOpen, setPrevIsOpen] = useState(false);
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen);
         if (isOpen) {
             setApiKey(getStoredApiKey());
             setTestStatus(null);
         }
-    }, [isOpen]);
+    }
 
     const handleSave = () => {
         saveApiKey(apiKey.trim());

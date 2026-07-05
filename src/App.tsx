@@ -69,6 +69,7 @@ function AppContent() {
   const [showFoulSelector, setShowFoulSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; value?: string } | null>(null);
   const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示
+  const [prevShouldShowTeamSelector, setPrevShouldShowTeamSelector] = useState(false); // showTeamSelector自動表示の直前条件値
   const [resolvingPendingAction, setResolvingPendingAction] = useState<PendingAction | null>(null); // 解決中の保留アクション
   const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
   const [showAppSettings, setShowAppSettings] = useState(false);
@@ -530,11 +531,14 @@ function AppContent() {
   };
 
   // pendingActionが設定されたらチーム選択モーダルを表示
-  useEffect(() => {
-    if (pendingAction && !selectedPlayerId && !selectedTeamId) {
-      setShowTeamSelector(true);
-    }
-  }, [pendingAction, selectedPlayerId, selectedTeamId]);
+  // （レンダー中の状態調整。条件がfalse→trueに変化した瞬間のみ表示する）
+  const shouldShowTeamSelector = !!pendingAction && !selectedPlayerId && !selectedTeamId;
+  if (shouldShowTeamSelector && shouldShowTeamSelector !== prevShouldShowTeamSelector) {
+    setPrevShouldShowTeamSelector(shouldShowTeamSelector);
+    setShowTeamSelector(true);
+  } else if (shouldShowTeamSelector !== prevShouldShowTeamSelector) {
+    setPrevShouldShowTeamSelector(shouldShowTeamSelector);
+  }
 
 
   // タイムアウト

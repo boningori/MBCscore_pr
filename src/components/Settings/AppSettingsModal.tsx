@@ -43,7 +43,11 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [showErrorDetail, setShowErrorDetail] = useState(false);
     const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
 
-    useEffect(() => {
+    // isOpenがfalse→trueに変化した際にフォーム状態をリセットする
+    // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
+    const [prevIsOpen, setPrevIsOpen] = useState(false);
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen);
         if (isOpen) {
             setApiKey(getStoredApiKey());
             setTestStatus(null);
@@ -55,12 +59,20 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setErrorLog(getErrorLog());
             setShowErrorDetail(false);
         }
-    }, [isOpen]);
+    }
+
+    // importTextが空になったらバリデーション表示をクリア（レンダー中の状態調整）
+    const [prevImportText, setPrevImportText] = useState(importText);
+    if (importText !== prevImportText) {
+        setPrevImportText(importText);
+        if (!importText.trim()) {
+            setTextValidation(null);
+        }
+    }
 
     // リアルタイムJSONバリデーション（500msデバウンス）
     useEffect(() => {
         if (!importText.trim()) {
-            setTextValidation(null);
             return;
         }
         const timer = setTimeout(() => {

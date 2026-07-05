@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import './TimeoutInputModal.css';
 
 interface TimeoutInputModalProps {
@@ -25,13 +25,16 @@ export function TimeoutInputModal({
     const [remainingMin, setRemainingMin] = useState(quarterDuration);
     const [remainingSec, setRemainingSec] = useState(0);
 
-    // モーダルが開くたびに初期値をリセット
-    useEffect(() => {
-        if (isOpen) {
-            setRemainingMin(quarterDuration);
-            setRemainingSec(0);
-        }
-    }, [isOpen, quarterDuration]);
+    // モーダルが開くたび（またはopen中にクォーター長が変わった際）に初期値をリセット
+    // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
+    const [prevOpenState, setPrevOpenState] = useState({ isOpen: false, quarterDuration });
+    if (isOpen && (isOpen !== prevOpenState.isOpen || quarterDuration !== prevOpenState.quarterDuration)) {
+        setPrevOpenState({ isOpen, quarterDuration });
+        setRemainingMin(quarterDuration);
+        setRemainingSec(0);
+    } else if (isOpen !== prevOpenState.isOpen) {
+        setPrevOpenState({ isOpen, quarterDuration });
+    }
 
     // 経過時間を計算（分単位・切り上げ）
     const elapsedMinutes = useMemo(() => {

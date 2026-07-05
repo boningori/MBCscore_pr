@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { GameInfo } from '../../types/game';
 import './GameInfoModal.css';
 
@@ -10,22 +10,16 @@ interface GameInfoModalProps {
     onClose: () => void;
 }
 
+function formatEndTimeStr(endTime: Date | null): string {
+    if (!endTime) return '';
+    const d = new Date(endTime);
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
 export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onClose }: GameInfoModalProps) {
-    const [formData, setFormData] = useState<GameInfo>({ ...gameInfo });
-    const [endTimeStr, setEndTimeStr] = useState('');
-
-    useEffect(() => {
-        setFormData({ ...gameInfo });
-    }, [gameInfo]);
-
-    useEffect(() => {
-        if (endTime) {
-            const d = new Date(endTime);
-            setEndTimeStr(`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`);
-        } else {
-            setEndTimeStr('');
-        }
-    }, [endTime]);
+    // 本モーダルはopenのたびに条件付きマウントされるため、マウント時の遅延初期化で初回同期を行う
+    const [formData, setFormData] = useState<GameInfo>(() => ({ ...gameInfo }));
+    const [endTimeStr, setEndTimeStr] = useState(() => formatEndTimeStr(endTime));
 
     const handleChange = (field: keyof GameInfo, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));

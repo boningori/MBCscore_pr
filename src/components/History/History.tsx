@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { GameRecord } from '../../utils/gameHistoryStorage';
 import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
@@ -18,14 +18,11 @@ interface HistoryProps {
 }
 
 export function History({ onBack }: HistoryProps) {
-    const [records, setRecords] = useState<GameRecord[]>([]);
+    // 初回マウント時のみ履歴を読み込む（遅延初期化）
+    const [records, setRecords] = useState<GameRecord[]>(() => loadGameHistory());
     const [selectedRecord, setSelectedRecord] = useState<GameRecord | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'stats' | 'scoresheet'>('stats');
-
-    useEffect(() => {
-        setRecords(loadGameHistory());
-    }, []);
 
     const handleDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();

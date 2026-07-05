@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Player } from '../../types/game';
 import { PLAYERS_ON_COURT } from '../../types/game';
 import './QuarterLineup.css';
@@ -18,15 +18,20 @@ export function QuarterLineup({
     onConfirm,
     onBack,
 }: QuarterLineupProps) {
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-    // チームまたはクォーターが変わったら選択をリセット
-    useEffect(() => {
-        const initialSelected = players
+    const computeInitialSelected = () =>
+        players
             .filter(p => p.isOnCourt && p.fouls.length < 5)
             .map(p => p.id);
-        setSelectedIds(initialSelected);
-    }, [teamName, quarter]);
+
+    const [selectedIds, setSelectedIds] = useState<string[]>(computeInitialSelected);
+
+    // チームまたはクォーターが変わったら選択をリセット
+    // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
+    const [prevLineupKey, setPrevLineupKey] = useState({ teamName, quarter });
+    if (teamName !== prevLineupKey.teamName || quarter !== prevLineupKey.quarter) {
+        setPrevLineupKey({ teamName, quarter });
+        setSelectedIds(computeInitialSelected());
+    }
 
     // 出場可能な選手（5ファウル退場していない）
     const availablePlayers = players.filter(p => p.fouls.length < 5);

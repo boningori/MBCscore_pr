@@ -1,6 +1,6 @@
 // 選手スタッツ分析 メインコンポーネント
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { SavedTeam } from '../../utils/teamStorage';
 import {
     aggregatePlayerStats,
@@ -23,29 +23,27 @@ interface PlayerStatsAnalysisProps {
 }
 
 export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
-    const [myTeams, setMyTeams] = useState<SavedTeam[]>([]);
-    const [selectedTeam, setSelectedTeam] = useState<SavedTeam | null>(null);
+    // 初回マウント時のみチーム一覧を読み込む（遅延初期化）
+    const [myTeams] = useState<SavedTeam[]>(() => getAvailableMyTeams());
+    const [selectedTeam, setSelectedTeam] = useState<SavedTeam | null>(() => myTeams[0] ?? null);
     const [viewMode, setViewMode] = useState<ViewMode>('summary');
     const [selectedPlayer, setSelectedPlayer] = useState<AggregatedPlayerStats | null>(null);
     const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
     const [showHiddenPlayers, setShowHiddenPlayers] = useState(false);
-    const [hiddenPlayerCount, setHiddenPlayerCount] = useState(0);
+    const [hiddenPlayerCount, setHiddenPlayerCount] = useState(() =>
+        myTeams[0] ? loadHiddenPlayers(myTeams[0].id).length : 0
+    );
     const [hiddenToggleKey, setHiddenToggleKey] = useState(0);
 
-    useEffect(() => {
-        const teams = getAvailableMyTeams();
-        setMyTeams(teams);
-        if (teams.length > 0) {
-            setSelectedTeam(teams[0]);
-        }
-    }, []);
-
-    // 非表示選手数を更新
-    useEffect(() => {
+    // 非表示選手数を更新（selectedTeam/viewModeの変化に応じたレンダー中の状態調整。
+    // useEffectでのcascading render警告を避けるため）
+    const [prevHiddenDeps, setPrevHiddenDeps] = useState<{ team: SavedTeam | null; view: ViewMode }>({ team: selectedTeam, view: viewMode });
+    if (selectedTeam !== prevHiddenDeps.team || viewMode !== prevHiddenDeps.view) {
+        setPrevHiddenDeps({ team: selectedTeam, view: viewMode });
         if (selectedTeam) {
             setHiddenPlayerCount(loadHiddenPlayers(selectedTeam.id).length);
         }
-    }, [selectedTeam, viewMode]);
+    }
 
     const startDate = dateRange.start ? new Date(dateRange.start) : undefined;
     const endDate = dateRange.end ? new Date(dateRange.end + 'T23:59:59') : undefined;
