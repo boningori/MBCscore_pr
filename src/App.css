@@ -770,7 +770,7 @@
     bottom: auto;
     /* bottom指定を解除 */
     left: var(--spacing-sm);
-    right: reset;
+    right: auto;
     max-width: none;
     width: 48%;
     /* スマホでは横並びにするか、スタックするか要調整 */

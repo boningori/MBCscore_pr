@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Modal } from '../Modal';
 import type { Player } from '../../types/game';
 import {
     formatPlayerNumber,
@@ -76,11 +77,14 @@ export function SubstitutionModal({
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content substitution-modal" onClick={e => e.stopPropagation()}>
+        <Modal
+            onClose={onClose}
+            contentClassName="modal-content substitution-modal"
+            labelledBy="substitution-modal-title"
+        >
                 <div className="modal-header">
-                    <h2 className="modal-title">選手交代 - {teamName}</h2>
-                    <button className="modal-close" onClick={onClose}>✕</button>
+                    <h2 className="modal-title" id="substitution-modal-title">選手交代 - {teamName}</h2>
+                    <button className="modal-close" onClick={onClose} aria-label="閉じる">✕</button>
                 </div>
 
                 <div className="substitution-grid">
@@ -88,15 +92,17 @@ export function SubstitutionModal({
                         <h3 className="sub-column-title">コート (OUT)</h3>
                         <div className="sub-player-list">
                             {onCourtPlayers.map(player => (
-                                <div
+                                <button
+                                    type="button"
                                     key={player.id}
                                     className={`sub-player-card ${playerOut === player.id ? 'selected out' : ''}`}
                                     onClick={() => setPlayerOut(player.id)}
+                                    aria-pressed={playerOut === player.id}
                                 >
                                     <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
                                     <span className="sub-player-name">{player.name}</span>
                                     <span className="sub-player-stats">{player.stats.points}pts</span>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -109,17 +115,19 @@ export function SubstitutionModal({
                         <h3 className="sub-column-title">ベンチ (IN)</h3>
                         <div className="sub-player-list">
                             {benchPlayers.map(player => (
-                                <div
+                                <button
+                                    type="button"
                                     key={player.id}
                                     className={`sub-player-card ${playerIn === player.id ? 'selected in' : ''}`}
                                     onClick={() => setPlayerIn(player.id)}
+                                    aria-pressed={playerIn === player.id}
                                 >
                                     <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
                                     <span className="sub-player-name">{player.name}</span>
                                     <span className="sub-player-quarters">
                                         Q: {player.quartersPlayed.map((q, i) => q ? i + 1 : '').filter(Boolean).join(',') || '-'}
                                     </span>
-                                </div>
+                                </button>
                             ))}
                             {benchPlayers.length === 0 && (
                                 <div className="sub-empty">ベンチに選手がいません</div>
@@ -201,7 +209,6 @@ export function SubstitutionModal({
                         交代実行
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

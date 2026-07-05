@@ -35,7 +35,7 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                 </div>
                 <div className="home-brand">
                     <h1 className="home-title">MBC<span className="title-accent">score</span></h1>
-                    <p className="home-tagline">ミニバス用スコアシートアプリ ベータ版</p>
+                    <p className="home-tagline">ミニバス用スコアシートアプリ</p>
                 </div>
                 <div className="header-right">
                     <button className="btn btn-secondary btn-icon" onClick={onOpenSettings} title="設定">

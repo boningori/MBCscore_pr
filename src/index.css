@@ -131,6 +131,45 @@ body {
   min-height: 100vh;
 }
 
+/* キーボードフォーカス表示（マウス/タッチ操作では非表示） */
+:focus-visible {
+  outline: 3px solid var(--primary-light);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* マウスクリック時のフォーカスリングは抑制（キーボード時のみ表示） */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* モーション低減設定を尊重（無限アニメーション等を停止） */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* div→button化した選択カードのネイティブボタン装飾をリセット
+   （.mini-player-card / .sub-player-card / .player-card は各所でレイアウト定義済み） */
+button.mini-player-card,
+button.sub-player-card,
+button.player-card {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* 共通コンポーネント */
 .btn {
   display: inline-flex;

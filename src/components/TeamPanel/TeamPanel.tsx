@@ -55,26 +55,32 @@ export function TeamPanel({
         <span className="team-name">{teamName}</span>
       </div>
       <div className="team-players">
-        {players.filter(p => p.isOnCourt).map(player => (
-          <div
-            key={player.id}
-            className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
-            onClick={() => onPlayerSelect(player.id, teamId)}
-          >
-            <span className="player-num">
-              #{player.number}
-              {gameMode === 'full' && isMyTeam
-                ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
-                : ''}
-            </span>
-            <span className="player-pts">{player.stats.points}</span>
-            {player.fouls.length > 0 && (
-              <span className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
-                F{player.fouls.length}
+        {players.filter(p => p.isOnCourt).map(player => {
+          const displayName = player.courtName || player.name;
+          return (
+            <button
+              type="button"
+              key={player.id}
+              className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
+              onClick={() => onPlayerSelect(player.id, teamId)}
+              aria-pressed={selectedPlayerId === player.id}
+              aria-label={`#${player.number} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}`}
+            >
+              <span className="player-num">
+                #{player.number}
+                {gameMode === 'full' && isMyTeam
+                  ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
+                  : ''}
               </span>
-            )}
-          </div>
-        ))}
+              <span className="player-pts">{player.stats.points}</span>
+              {player.fouls.length > 0 && (
+                <span className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
+                  F{player.fouls.length}
+                </span>
+              )}
+            </button>
+          );
+        })}
         {gameMode === 'simple' && (
           <button className="simple-sub-btn" onClick={onSubstitute}>
             🔄 交代

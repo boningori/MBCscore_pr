@@ -13,7 +13,8 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                     : '-';
 
                 return (
-                    <div
+                    <button
+                        type="button"
                         key={player.playerKey}
                         className="player-card"
                         onClick={() => onPlayerClick(player)}
@@ -42,7 +43,7 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                             </div>
                         </div>
                         <div className="card-arrow">›</div>
-                    </div>
+                    </button>
                 );
             })}
         </div>

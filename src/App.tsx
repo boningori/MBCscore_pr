@@ -30,6 +30,7 @@ import { RunningScoresheet } from './components/RunningScoresheet';
 import { AppSettingsModal } from './components/Settings/AppSettingsModal';
 import { ToastContainer } from './components/Toast/Toast';
 import { showToast } from './components/Toast/toastApi';
+import { Modal } from './components/Modal';
 import { RestorePrompt } from './components/RestorePrompt';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, maybeSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
@@ -74,6 +75,7 @@ function AppContent() {
   const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [endGameConfirmType, setEndGameConfirmType] = useState<'tied' | 'notTied' | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false); // 保存せず破棄の確認
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
@@ -767,7 +769,7 @@ function AppContent() {
       }
     } catch (err) {
       console.error('フルスクリーン切り替えエラー:', err);
-      alert('全画面表示に切り替えられませんでした。ブラウザの設定を確認してください。');
+      showToast('全画面表示に切り替えられませんでした。ブラウザの設定を確認してください', 'error');
     }
   };
 
@@ -1104,9 +1106,13 @@ function AppContent() {
 
       {/* チーム選択モーダル（保留アクション作成用） */}
       {showTeamSelector && pendingAction && (
-        <div className="team-selector-overlay" onClick={() => { setShowTeamSelector(false); setPendingAction(null); }}>
-          <div className="team-selector-modal" onClick={e => e.stopPropagation()}>
-            <h3>チームを選択</h3>
+        <Modal
+          onClose={() => { setShowTeamSelector(false); setPendingAction(null); }}
+          overlayClassName="team-selector-overlay"
+          contentClassName="team-selector-modal"
+          labelledBy="team-selector-title"
+        >
+          <h3 id="team-selector-title">チームを選択</h3>
             <p className="team-selector-action">
               {pendingAction.type === 'SCORE' ? `${pendingAction.value}成功` :
                 pendingAction.type === 'STAT' ? pendingAction.value :
@@ -1129,14 +1135,13 @@ function AppContent() {
                 <span className="team-color">{state.teamB.color === 'white' ? '白' : '青'}</span>
               </button>
             </div>
-            <button
-              className="btn btn-secondary"
-              onClick={() => { setShowTeamSelector(false); setPendingAction(null); }}
-            >
-              キャンセル
-            </button>
-          </div>
-        </div>
+          <button
+            className="btn btn-secondary"
+            onClick={() => { setShowTeamSelector(false); setPendingAction(null); }}
+          >
+            キャンセル
+          </button>
+        </Modal>
       )}
 
       {/* Team A 保留アクション (左下) */}
@@ -1179,28 +1184,31 @@ function AppContent() {
 
       {/* 試合終了確認モーダル */}
       {endGameConfirmType && (
-        <div className="modal-overlay">
-          <div className="modal-content end-game-confirm-modal">
-            <h3>試合終了の確認</h3>
-            <p className="end-game-confirm-message">
-              試合を終了するとデータの編集ができません。<br />
-              試合を終了しますか？
-            </p>
-            <div className="modal-actions-column">
-              {endGameConfirmType === 'tied' && (
-                <button className="btn btn-primary btn-large" onClick={handleEndGameToOT}>
-                  延長戦へ
-                </button>
-              )}
-              <button className="btn btn-danger btn-large" onClick={handleEndGameConfirm}>
-                試合を終了する
+        <Modal
+          onClose={() => setEndGameConfirmType(null)}
+          contentClassName="modal-content end-game-confirm-modal"
+          closeOnOverlayClick={false}
+          labelledBy="end-game-confirm-title"
+        >
+          <h3 id="end-game-confirm-title">試合終了の確認</h3>
+          <p className="end-game-confirm-message">
+            試合を終了するとデータの編集ができません。<br />
+            試合を終了しますか？
+          </p>
+          <div className="modal-actions-column">
+            {endGameConfirmType === 'tied' && (
+              <button className="btn btn-primary btn-large" onClick={handleEndGameToOT}>
+                延長戦へ
               </button>
-              <button className="btn btn-secondary btn-large" onClick={() => setEndGameConfirmType(null)}>
-                戻る
-              </button>
-            </div>
+            )}
+            <button className="btn btn-danger btn-large" onClick={handleEndGameConfirm}>
+              試合を終了する
+            </button>
+            <button className="btn btn-secondary btn-large" onClick={() => setEndGameConfirmType(null)}>
+              戻る
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* 試合終了表示 */}
@@ -1225,11 +1233,7 @@ function AppContent() {
               </button>
               <button
                 className="btn btn-danger btn-large game-finished-btn"
-                onClick={() => {
-                  if (confirm('試合データを保存せずにホームへ戻りますか？\n※この操作は取り消せません')) {
-                    handleBackToHome();
-                  }
-                }}
+                onClick={() => setShowDiscardConfirm(true)}
               >
                 保存せずにホームへ
               </button>
@@ -1237,34 +1241,63 @@ function AppContent() {
           </div>
         </div>
       )}
-      {/* ベンチファウル選択モーダル - Step 1: 種類選択 */}
-      {coachFoulState && coachFoulState.step === 'type' && (
-        <div className="modal-overlay" onClick={handleCoachFoulCancel}>
-          <div className="modal-content coach-foul-modal" onClick={e => e.stopPropagation()}>
-            <h3>ベンチファウル種類</h3>
-            <div className="modal-actions-column">
-              <button className="btn btn-danger btn-large" onClick={() => handleCoachFoulTypeSelect('HC')}>
-                コーチ (C)
-                <span className="btn-desc">監督本人のテクニカル</span>
-              </button>
-              <button className="btn btn-danger btn-large" onClick={() => handleCoachFoulTypeSelect('AC')}>
-                A.コーチ (C)
-                <span className="btn-desc">A.コーチのテクニカル → コーチにもB</span>
-              </button>
-              <button className="btn btn-warning btn-large" onClick={() => handleCoachFoulTypeSelect('Sub')}>
-                交代要員 (T)
-                <span className="btn-desc">ベンチ選手のテクニカル → コーチにもB</span>
-              </button>
-              <button className="btn btn-warning btn-large" onClick={() => handleCoachFoulTypeSelect('Bench')}>
-                ベンチ関係者 (B)
-                <span className="btn-desc">引率者等のテクニカル → コーチにB</span>
-              </button>
-            </div>
-            <button className="btn btn-secondary" onClick={handleCoachFoulCancel}>
+
+      {/* 保存せず破棄の確認モーダル */}
+      {showDiscardConfirm && (
+        <Modal
+          onClose={() => setShowDiscardConfirm(false)}
+          contentClassName="modal-content end-game-confirm-modal"
+          closeOnOverlayClick={false}
+          labelledBy="discard-confirm-title"
+        >
+          <h3 id="discard-confirm-title">確認</h3>
+          <p className="end-game-confirm-message">
+            試合データを保存せずにホームへ戻りますか？<br />
+            ※この操作は取り消せません
+          </p>
+          <div className="modal-actions-column">
+            <button
+              className="btn btn-danger btn-large"
+              onClick={() => { setShowDiscardConfirm(false); handleBackToHome(); }}
+            >
+              保存せずに戻る
+            </button>
+            <button className="btn btn-secondary btn-large" onClick={() => setShowDiscardConfirm(false)}>
               キャンセル
             </button>
           </div>
-        </div>
+        </Modal>
+      )}
+      {/* ベンチファウル選択モーダル - Step 1: 種類選択 */}
+      {coachFoulState && coachFoulState.step === 'type' && (
+        <Modal
+          onClose={handleCoachFoulCancel}
+          contentClassName="modal-content coach-foul-modal"
+          labelledBy="coach-foul-type-title"
+        >
+          <h3 id="coach-foul-type-title">ベンチファウル種類</h3>
+          <div className="modal-actions-column">
+            <button className="btn btn-danger btn-large" onClick={() => handleCoachFoulTypeSelect('HC')}>
+              コーチ (C)
+              <span className="btn-desc">監督本人のテクニカル</span>
+            </button>
+            <button className="btn btn-danger btn-large" onClick={() => handleCoachFoulTypeSelect('AC')}>
+              A.コーチ (C)
+              <span className="btn-desc">A.コーチのテクニカル → コーチにもB</span>
+            </button>
+            <button className="btn btn-warning btn-large" onClick={() => handleCoachFoulTypeSelect('Sub')}>
+              交代要員 (T)
+              <span className="btn-desc">ベンチ選手のテクニカル → コーチにもB</span>
+            </button>
+            <button className="btn btn-warning btn-large" onClick={() => handleCoachFoulTypeSelect('Bench')}>
+              ベンチ関係者 (B)
+              <span className="btn-desc">引率者等のテクニカル → コーチにB</span>
+            </button>
+          </div>
+          <button className="btn btn-secondary" onClick={handleCoachFoulCancel}>
+            キャンセル
+          </button>
+        </Modal>
       )}
 
       {/* ベンチファウル - Step 1.5: 交代要員（ベンチ選手）選択 */}
@@ -1272,39 +1305,42 @@ function AppContent() {
         const team = coachFoulState.teamId === 'teamA' ? state.teamA : state.teamB;
         const benchPlayers = team.players.filter(p => !p.isOnCourt);
         return (
-          <div className="modal-overlay" onClick={handleCoachFoulCancel}>
-            <div className="modal-content substitution-modal" onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2 className="modal-title">交代要員を選択 - {team.name}</h2>
-                <button className="modal-close" onClick={handleCoachFoulCancel}>✕</button>
-              </div>
-              <p className="modal-note" style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
-                選手行に「T」、コーチ行に「B」が記録されます
-              </p>
-              <div className="sub-player-list" style={{ maxHeight: '320px' }}>
-                {benchPlayers.length > 0 ? (
-                  benchPlayers.map(player => (
-                    <div
-                      key={player.id}
-                      className="sub-player-card"
-                      onClick={() => handleBenchPlayerSelect(player.id)}
-                    >
-                      <span className="sub-player-number">#{player.number}</span>
-                      <span className="sub-player-name">{player.courtName || player.name}</span>
-                      <span className="sub-player-stats">F:{player.fouls.length}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="sub-empty">ベンチに選手がいません</div>
-                )}
-              </div>
-              <div className="substitution-actions">
-                <button className="btn btn-secondary btn-large" onClick={() => setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' })}>
-                  戻る
-                </button>
-              </div>
+          <Modal
+            onClose={handleCoachFoulCancel}
+            contentClassName="modal-content substitution-modal"
+            labelledBy="coach-foul-select-title"
+          >
+            <div className="modal-header">
+              <h2 className="modal-title" id="coach-foul-select-title">交代要員を選択 - {team.name}</h2>
+              <button className="modal-close" onClick={handleCoachFoulCancel} aria-label="閉じる">✕</button>
             </div>
-          </div>
+            <p className="modal-note" style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+              選手行に「T」、コーチ行に「B」が記録されます
+            </p>
+            <div className="sub-player-list" style={{ maxHeight: '320px' }}>
+              {benchPlayers.length > 0 ? (
+                benchPlayers.map(player => (
+                  <button
+                    type="button"
+                    key={player.id}
+                    className="sub-player-card"
+                    onClick={() => handleBenchPlayerSelect(player.id)}
+                  >
+                    <span className="sub-player-number">#{player.number}</span>
+                    <span className="sub-player-name">{player.courtName || player.name}</span>
+                    <span className="sub-player-stats">F:{player.fouls.length}</span>
+                  </button>
+                ))
+              ) : (
+                <div className="sub-empty">ベンチに選手がいません</div>
+              )}
+            </div>
+            <div className="substitution-actions">
+              <button className="btn btn-secondary btn-large" onClick={() => setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' })}>
+                戻る
+              </button>
+            </div>
+          </Modal>
         );
       })()}
 
@@ -1330,35 +1366,38 @@ function AppContent() {
 
       {/* 履歴ポップアップ（両モード共通） */}
       {showHistoryPopup && (
-        <div className="history-popup-overlay" onClick={() => setShowHistoryPopup(false)}>
-          <div className="history-popup-content" onClick={e => e.stopPropagation()}>
-            <div className="history-popup-header">
-              <h3>アクション履歴</h3>
-              <button className="btn btn-secondary btn-small" onClick={() => setShowHistoryPopup(false)}>
-                ✕
-              </button>
-            </div>
-            <div className="history-popup-body">
-              {(['teamA', 'teamB'] as const).map(tid => {
-                const team = tid === 'teamA' ? state.teamA : state.teamB;
-                return (
-                  <div key={tid} className={`history-popup-team color-${team.color}`}>
-                    <h4>{team.name}</h4>
-                    <ActionHistory
-                      teamId={tid}
-                      teamName={team.name}
-                      scoreHistory={state.scoreHistory}
-                      statHistory={state.statHistory}
-                      foulHistory={state.foulHistory}
-                      players={team.players}
-                      {...actionHistoryHandlers}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+        <Modal
+          onClose={() => setShowHistoryPopup(false)}
+          overlayClassName="history-popup-overlay"
+          contentClassName="history-popup-content"
+          labelledBy="history-popup-title"
+        >
+          <div className="history-popup-header">
+            <h3 id="history-popup-title">アクション履歴</h3>
+            <button className="btn btn-secondary btn-small" onClick={() => setShowHistoryPopup(false)} aria-label="閉じる">
+              ✕
+            </button>
           </div>
-        </div>
+          <div className="history-popup-body">
+            {(['teamA', 'teamB'] as const).map(tid => {
+              const team = tid === 'teamA' ? state.teamA : state.teamB;
+              return (
+                <div key={tid} className={`history-popup-team color-${team.color}`}>
+                  <h4>{team.name}</h4>
+                  <ActionHistory
+                    teamId={tid}
+                    teamName={team.name}
+                    scoreHistory={state.scoreHistory}
+                    statHistory={state.statHistory}
+                    foulHistory={state.foulHistory}
+                    players={team.players}
+                    {...actionHistoryHandlers}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </Modal>
       )}
     </div>
   );
