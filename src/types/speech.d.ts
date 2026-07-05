@@ -59,6 +59,6 @@ interface Window {
     webkitSpeechRecognition: SpeechRecognitionConstructor;
 }
 
-declare var SpeechRecognition: SpeechRecognitionConstructor;
-declare var webkitSpeechRecognition: SpeechRecognitionConstructor;
+declare const SpeechRecognition: SpeechRecognitionConstructor;
+declare const webkitSpeechRecognition: SpeechRecognitionConstructor;
 

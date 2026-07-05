@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { gameReducer } from './GameContext';
+import { gameReducer } from './reducers';
 import type { Game } from '../types/game';
 import { createInitialGame, createTeam, createPlayer } from '../types/game';
 

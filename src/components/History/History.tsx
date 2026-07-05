@@ -3,7 +3,7 @@ import type { GameRecord } from '../../utils/gameHistoryStorage';
 import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
 import { StatsPanel } from '../StatsPanel';
-import type { Game } from '../../types/game';
+import type { Game, GameInfo } from '../../types/game';
 import { createInitialGameInfo } from '../../types/game';
 import {
     exportGame,
@@ -85,7 +85,7 @@ export function History({ onBack }: HistoryProps) {
         startTime: record.date ? new Date(record.date) : null,
         endTime: new Date(record.createdAt),
         pendingActions: [],
-        gameInfo: (record as any).gameInfo || createInitialGameInfo(),
+        gameInfo: (record as { gameInfo?: GameInfo }).gameInfo || createInitialGameInfo(),
     });
 
     if (selectedRecord) {

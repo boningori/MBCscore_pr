@@ -58,7 +58,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             if (continuous && recognitionRef.current) {
                 try {
                     recognition.start();
-                } catch (e) {
+                } catch {
                     // 既に開始している場合は無視
                 }
             }
@@ -108,7 +108,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         if (recognitionRef.current && !isListening) {
             try {
                 recognitionRef.current.start();
-            } catch (e) {
+            } catch {
                 // 既に開始している場合は無視
             }
         }

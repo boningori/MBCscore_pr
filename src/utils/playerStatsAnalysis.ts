@@ -315,9 +315,10 @@ function getPeriodKey(date: Date, periodType: PeriodType): string {
     switch (periodType) {
         case 'month':
             return `${year}-${month.toString().padStart(2, '0')}`;
-        case 'quarter':
+        case 'quarter': {
             const quarter = Math.ceil(month / 3);
             return `${year}-Q${quarter}`;
+        }
         case 'year':
             return `${year}`;
         default:
@@ -328,12 +329,14 @@ function getPeriodKey(date: Date, periodType: PeriodType): string {
 // 期間ラベルを生成
 function getPeriodLabel(periodKey: string, periodType: PeriodType): string {
     switch (periodType) {
-        case 'month':
+        case 'month': {
             const [year, month] = periodKey.split('-');
             return `${year}年${parseInt(month)}月`;
-        case 'quarter':
+        }
+        case 'quarter': {
             const [y, q] = periodKey.split('-');
             return `${y}年${q}`;
+        }
         case 'year':
             return `${periodKey}年`;
         default:

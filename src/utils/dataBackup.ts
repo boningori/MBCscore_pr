@@ -1,6 +1,7 @@
 // データバックアップ・復元ユーティリティ
 
 import type { GameRecord } from './gameHistoryStorage';
+import type { QuarterPlayType } from '../types/game';
 import { loadGameHistory } from './gameHistoryStorage';
 import type { SavedTeam } from './teamStorage';
 import { loadMyTeams, loadOpponents } from './teamStorage';
@@ -63,7 +64,7 @@ export interface ImportResult {
 // インポートデータの解析結果
 export interface ParsedImportData {
     type: 'game' | 'team' | 'backup' | 'unknown';
-    data: any;
+    data: GameExportData | TeamExportData | BackupData | null;
     summary: string;
     hasDuplicates?: boolean;
     duplicateDetails?: string;
@@ -257,7 +258,7 @@ export function exportGameHistoryDetailCSV(): string {
             const fgAttempt = stats.twoPointAttempt + stats.threePointAttempt;
             const fgPercent = fgAttempt > 0 ? (fgMade / fgAttempt * 100).toFixed(1) : '-';
 
-            const formatQuarterPlay = (qp: any) => {
+            const formatQuarterPlay = (qp: QuarterPlayType) => {
                 if (qp === 'starter') return 'スタメン';
                 if (qp === 'sub') return '途中出場';
                 if (qp === 'both') return 'スタメン+再出場';
@@ -322,7 +323,7 @@ export function exportGameHistoryDetailCSV(): string {
             const fgAttempt = stats.twoPointAttempt + stats.threePointAttempt;
             const fgPercent = fgAttempt > 0 ? (fgMade / fgAttempt * 100).toFixed(1) : '-';
 
-            const formatQuarterPlay = (qp: any) => {
+            const formatQuarterPlay = (qp: QuarterPlayType) => {
                 if (qp === 'starter') return 'スタメン';
                 if (qp === 'sub') return '途中出場';
                 if (qp === 'both') return 'スタメン+再出場';
@@ -390,7 +391,7 @@ export function exportGameHistoryDetailCSV(): string {
 /**
  * データをJSONファイルとしてダウンロード
  */
-export function downloadJSON(data: any, filename: string): void {
+export function downloadJSON(data: unknown, filename: string): void {
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     downloadBlob(blob, filename);
@@ -421,7 +422,7 @@ function downloadBlob(blob: Blob, filename: string): void {
 /**
  * Web Share APIを使用してファイルを共有（モバイル向け）
  */
-export async function shareFile(data: any, filename: string, title: string = 'MBCscore データ'): Promise<boolean> {
+export async function shareFile(data: unknown, filename: string, title: string = 'MBCscore データ'): Promise<boolean> {
     if (!navigator.share) {
         return false;
     }
@@ -447,7 +448,7 @@ export async function shareFile(data: any, filename: string, title: string = 'MB
 /**
  * JSONデータをクリップボードにコピー
  */
-export async function copyToClipboard(data: any): Promise<boolean> {
+export async function copyToClipboard(data: unknown): Promise<boolean> {
     try {
         const json = JSON.stringify(data, null, 2);
         await navigator.clipboard.writeText(json);
@@ -491,7 +492,7 @@ export function parseImportJSON(jsonText: string): ParsedImportData {
 /**
  * インポートデータを分類・検証する
  */
-function classifyImportData(data: any): ParsedImportData {
+function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportData> & Partial<BackupData>): ParsedImportData {
     if (!data.version) {
         return {
             type: 'unknown',

@@ -7,7 +7,7 @@ import type {
 import { createInitialGameInfo } from '../../types/game';
 
 export function handleSetTeams(state: Game, payload: GameAction['payload']): Game {
-    const { teamA, teamB } = payload;
+    const { teamA, teamB } = payload as { teamA: Game['teamA']; teamB: Game['teamB'] };
     // デフォルトカラー設定（setupデータから来る場合は上書きされる可能性があるが、ここで保証する）
     const teamAWithColor = { ...teamA, color: teamA.color || 'white' };
     const teamBWithColor = { ...teamB, color: teamB.color || 'blue' };
@@ -184,7 +184,7 @@ export function handleAddPlayerToTeam(state: Game, payload: GameAction['payload'
 }
 
 export function handleSelectPlayer(state: Game, payload: GameAction['payload']): Game {
-    const { playerId, teamId } = payload;
+    const { playerId, teamId } = payload as { playerId: Game['selectedPlayerId']; teamId: Game['selectedTeamId'] };
     return { ...state, selectedPlayerId: playerId, selectedTeamId: teamId };
 }
 

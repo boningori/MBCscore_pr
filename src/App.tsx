@@ -28,13 +28,30 @@ import { PendingActionResolver } from './components/PendingActionResolver';
 import { FoulInputFlow } from './components/FoulInputFlow';
 import { RunningScoresheet } from './components/RunningScoresheet';
 import { AppSettingsModal } from './components/Settings/AppSettingsModal';
-import { ToastContainer, showToast } from './components/Toast/Toast';
+import { ToastContainer } from './components/Toast/Toast';
+import { showToast } from './components/Toast/toastApi';
 import { RestorePrompt } from './components/RestorePrompt';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, maybeSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import './App.css';
+
+// ベンダープレフィックス付きフルスクリーンAPI（ブラウザ互換のため）
+interface VendorPrefixedDocument extends Document {
+  mozFullScreenElement?: Element;
+  webkitFullscreenElement?: Element;
+  msFullscreenElement?: Element;
+  webkitExitFullscreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+  mozCancelFullScreen?: () => Promise<void>;
+}
+
+interface VendorPrefixedElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
+  mozRequestFullScreen?: () => Promise<void>;
+}
 
 // アプリの画面状態
 type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet' | 'playerStats';
@@ -168,17 +185,17 @@ function AppContent() {
       if (pendingAction.type === 'SCORE') {
         dispatch({
           type: 'ADD_SCORE',
-          payload: { teamId, playerId, scoreType: pendingAction.value as any },
+          payload: { teamId, playerId, scoreType: pendingAction.value as '2P' | '3P' | 'FT' },
         });
       } else if (pendingAction.type === 'STAT') {
         dispatch({
           type: 'ADD_STAT',
-          payload: { teamId, playerId, statType: pendingAction.value as any },
+          payload: { teamId, playerId, statType: pendingAction.value as 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA' },
         });
       } else if (pendingAction.type === 'MISS') {
         dispatch({
           type: 'ADD_STAT',
-          payload: { teamId, playerId, statType: pendingAction.value as any },
+          payload: { teamId, playerId, statType: pendingAction.value as 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA' },
         });
       } else if (pendingAction.type === 'FOUL') {
         // ファウルタイプセレクター表示のために選択状態にする
@@ -718,8 +735,8 @@ function AppContent() {
 
   const toggleFullScreen = async () => {
     try {
-      const doc = document as any;
-      const elem = document.documentElement as any;
+      const doc = document as VendorPrefixedDocument;
+      const elem = document.documentElement as VendorPrefixedElement;
 
       const isFs = doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement;
 
@@ -753,7 +770,7 @@ function AppContent() {
   // フルスクリーン状態の監視（ESCキーなどで解除された場合に対応）
   useEffect(() => {
     const handleFullScreenChange = () => {
-      const doc = document as any;
+      const doc = document as VendorPrefixedDocument;
       const isFs = !!(doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement);
       setIsFullScreen(isFs);
     };

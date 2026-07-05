@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { setGlobalShowToast } from './toastApi';
 import './Toast.css';
 
 interface ToastMessage {
@@ -8,15 +9,6 @@ interface ToastMessage {
 }
 
 let toastId = 0;
-
-// グローバルなトースト表示関数
-let globalShowToast: ((text: string, type: 'success' | 'error') => void) | null = null;
-
-export function showToast(text: string, type: 'success' | 'error') {
-    if (globalShowToast) {
-        globalShowToast(text, type);
-    }
-}
 
 export function ToastContainer() {
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -38,9 +30,9 @@ export function ToastContainer() {
 
     // グローバル関数として登録
     useEffect(() => {
-        globalShowToast = addToast;
+        setGlobalShowToast(addToast);
         return () => {
-            globalShowToast = null;
+            setGlobalShowToast(null);
         };
     }, [addToast]);
 

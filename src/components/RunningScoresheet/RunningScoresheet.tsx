@@ -249,7 +249,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                         <span className="rs-ts-score-val">{finalScoreA}</span>
                                     </div>
                                 </div>
-                                <div className="rs-brace">{'\{'}</div>
+                                <div className="rs-brace">{'{'}</div>
                                 {/* Center Breakdown: Q1-Q4, OT */}
                                 <div className="rs-score-breakdown">
                                     <div className="rs-sb-row"><span className="val">{scoresByPeriod['1Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['1Q'].B}</span></div>
@@ -258,7 +258,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                     <div className="rs-sb-row"><span className="val">{scoresByPeriod['4Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['4Q'].B}</span></div>
                                     <div className="rs-sb-row"><span className="val">{scoresByPeriod['OT'].A}</span><span className="sep ot-label">(延長)</span><span className="val">{scoresByPeriod['OT'].B}</span></div>
                                 </div>
-                                <div className="rs-brace">{'\}'}</div>
+                                <div className="rs-brace">{'}'}</div>
                                 <div className="rs-team-score-box">
                                     <span className="rs-ts-team-name">チームB</span>
                                     <div className="rs-ts-box">

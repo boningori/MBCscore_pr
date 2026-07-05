@@ -98,7 +98,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
             } else {
                 setOcrError(result.error || '選手情報を認識できませんでした');
             }
-        } catch (error) {
+        } catch {
             setOcrError('画像の処理に失敗しました');
         } finally {
             setIsLoading(false);

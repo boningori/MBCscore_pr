@@ -39,23 +39,27 @@ function formatTick(value: number): string {
 // X軸ラベルの短縮フォーマット
 function formatXLabel(label: string, periodType: PeriodType): string {
     switch (periodType) {
-        case 'game':
+        case 'game': {
             // "2026/01/15" → "1/15"
             const parts = label.split('/');
             if (parts.length === 3) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
             return label;
-        case 'month':
+        }
+        case 'month': {
             // "2026年1月" → "1月"
             const monthMatch = label.match(/(\d+)月/);
             return monthMatch ? `${monthMatch[1]}月` : label;
-        case 'quarter':
+        }
+        case 'quarter': {
             // "2026年Q1" → "Q1"
             const qMatch = label.match(/(Q\d)/);
             return qMatch ? qMatch[1] : label;
-        case 'year':
+        }
+        case 'year': {
             // "2026年" → "'26"
             const yearMatch = label.match(/(\d{4})年/);
             return yearMatch ? `'${yearMatch[1].slice(2)}` : label;
+        }
         default:
             return label;
     }

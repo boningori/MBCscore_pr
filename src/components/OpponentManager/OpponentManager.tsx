@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { showToast } from '../Toast/Toast';
+import { showToast } from '../Toast/toastApi';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
     loadOpponents,
@@ -345,7 +345,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
             } else {
                 setOcrError(result.error || '選手情報を認識できませんでした');
             }
-        } catch (error) {
+        } catch {
             setOcrError('画像の処理に失敗しました');
         } finally {
             setIsLoading(false);

@@ -41,7 +41,6 @@ interface HistoryItem {
 
 export function ActionHistory({
     teamId,
-    teamName: _teamName,
     scoreHistory,
     statHistory,
     foulHistory,

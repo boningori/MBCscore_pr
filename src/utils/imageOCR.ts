@@ -130,7 +130,7 @@ function parseOcrText(text: string): SavedPlayer[] {
 
     // 一般的なパターン: "4 田中 太郎", "No.4 TANAKA", "4. 佐藤" など
     // 数字の後に何らかの文字列が続くパターンを探す
-    const lineRegex = /^\s*([0-9]{1,3})[\s\.:,]+(.+)/;
+    const lineRegex = /^\s*([0-9]{1,3})[\s.:,]+(.+)/;
 
     // 複数列レイアウトの場合もあるので、単純な行処理だけでなく、
     // 全文から「数字＋名前」っぽいパターンを拾うアプローチも考えられるが、
@@ -152,7 +152,7 @@ function parseOcrText(text: string): SavedPlayer[] {
             if (nameStr.length < 1) continue;
 
             // ゴミ文字除去（末尾の記号など）
-            nameStr = nameStr.replace(/[|\[\]{};:]/g, '');
+            nameStr = nameStr.replace(/[|[\]{};:]/g, '');
 
             players.push({
                 number,

@@ -218,7 +218,7 @@ export type GameActionType =
 // ゲームアクション
 export interface GameAction {
     type: GameActionType;
-    payload?: any;
+    payload?: unknown;
 }
 
 // 初期選手統計

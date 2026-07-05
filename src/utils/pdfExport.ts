@@ -204,6 +204,6 @@ export function generateScoresheetFilename(
     teamAName: string,
     teamBName: string
 ): string {
-    const sanitize = (s: string) => s.replace(/[\/\\:*?"<>|]/g, '_');
+    const sanitize = (s: string) => s.replace(/[/\\:*?"<>|]/g, '_');
     return `${sanitize(gameName)}_${date}_${sanitize(teamAName)}_vs_${sanitize(teamBName)}`;
 }

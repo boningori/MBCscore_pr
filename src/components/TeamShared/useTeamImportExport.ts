@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { parseImportFile, parseImportJSON, executeImport } from '../../utils/dataBackup';
 import type { ParsedImportData } from '../../utils/dataBackup';
-import { showToast } from '../Toast/Toast';
+import { showToast } from '../Toast/toastApi';
 
 export type ImportTarget = 'myTeam' | 'opponent';
 

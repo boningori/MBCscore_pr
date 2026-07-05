@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { showToast } from '../Toast/Toast';
+import { showToast } from '../Toast/toastApi';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
     loadMyTeams,
