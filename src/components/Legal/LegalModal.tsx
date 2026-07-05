@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Modal } from '../Modal';
 import './LegalModal.css';
 
 export type LegalTab = 'terms' | 'privacy' | 'licenses';
@@ -34,8 +35,12 @@ export function LegalModal({ isOpen, initialTab = 'terms', onClose }: LegalModal
     if (!isOpen) return null;
 
     return (
-        <div className="legal-modal-overlay" onClick={onClose}>
-            <div className="legal-modal" onClick={e => e.stopPropagation()}>
+        <Modal
+            onClose={onClose}
+            overlayClassName="legal-modal-overlay"
+            contentClassName="legal-modal"
+            ariaLabel="法的情報（利用規約・プライバシー・ライセンス）"
+        >
                 <div className="legal-modal-header">
                     <div className="legal-tabs">
                         <button className={tab === 'terms' ? 'active' : ''} onClick={() => setTab('terms')}>利用規約</button>
@@ -156,7 +161,6 @@ export function LegalModal({ isOpen, initialTab = 'terms', onClose }: LegalModal
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

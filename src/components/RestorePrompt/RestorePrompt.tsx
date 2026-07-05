@@ -1,5 +1,6 @@
 import type { MirrorSnapshot } from '../../utils/mirrorBackup';
 import { restoreSnapshot } from '../../utils/mirrorBackup';
+import { Modal } from '../Modal';
 import './RestorePrompt.css';
 
 interface RestorePromptProps {
@@ -17,9 +18,15 @@ export function RestorePrompt({ snapshot, onDismiss }: RestorePromptProps) {
     };
 
     return (
-        <div className="restore-prompt-overlay">
-            <div className="restore-prompt">
-                <h2>💾 以前のデータが見つかりました</h2>
+        <Modal
+            onClose={onDismiss}
+            overlayClassName="restore-prompt-overlay"
+            contentClassName="restore-prompt"
+            closeOnOverlayClick={false}
+            closeOnEsc={false}
+            labelledBy="restore-prompt-title"
+        >
+                <h2 id="restore-prompt-title">💾 以前のデータが見つかりました</h2>
                 <p>
                     端末内のバックアップ（{savedAt} 保存・{keyCount}項目）から
                     チーム・試合データを復元できます。
@@ -35,7 +42,6 @@ export function RestorePrompt({ snapshot, onDismiss }: RestorePromptProps) {
                         復元せずに始める
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

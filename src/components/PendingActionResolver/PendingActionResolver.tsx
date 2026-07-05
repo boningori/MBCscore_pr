@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
+import { Modal } from '../Modal';
 import './PendingActionResolver.css';
 
 interface PendingActionResolverProps {
@@ -68,10 +69,14 @@ export function PendingActionResolver({
     };
 
     return (
-        <div className="pending-resolver-overlay" onClick={onCancel}>
-            <div className="pending-resolver-modal" onClick={e => e.stopPropagation()}>
+        <Modal
+            onClose={onCancel}
+            overlayClassName="pending-resolver-overlay"
+            contentClassName="pending-resolver-modal"
+            labelledBy="pending-resolver-title"
+        >
                 <div className="resolver-header">
-                    <h3>保留アクションの解決</h3>
+                    <h3 id="pending-resolver-title">保留アクションの解決</h3>
                 </div>
 
                 <div className="resolver-info">
@@ -129,7 +134,6 @@ export function PendingActionResolver({
                         キャンセル
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

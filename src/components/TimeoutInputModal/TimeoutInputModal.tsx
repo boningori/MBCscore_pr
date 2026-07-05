@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Modal } from '../Modal';
 import './TimeoutInputModal.css';
 
 interface TimeoutInputModalProps {
@@ -56,10 +57,14 @@ export function TimeoutInputModal({
     if (!isOpen) return null;
 
     return (
-        <div className="timeout-modal-overlay" onClick={onCancel}>
-            <div className="timeout-modal-content" onClick={e => e.stopPropagation()}>
+        <Modal
+            onClose={onCancel}
+            overlayClassName="timeout-modal-overlay"
+            contentClassName="timeout-modal-content"
+            labelledBy="timeout-modal-title"
+        >
                 <div className="timeout-modal-header">
-                    <span className="timeout-modal-title">タイムアウト</span>
+                    <span className="timeout-modal-title" id="timeout-modal-title">タイムアウト</span>
                     <span className={`timeout-modal-team ${teamColor}`}>
                         {teamName}（{teamColor === 'white' ? '白' : '青'}）
                     </span>
@@ -108,7 +113,6 @@ export function TimeoutInputModal({
                         確定
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

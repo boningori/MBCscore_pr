@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Player } from '../../types/game';
+import { Modal } from '../Modal';
 import './EditActionModal.css';
 
 interface EditActionModalProps {
@@ -118,9 +119,13 @@ export function EditActionModal({
     };
 
     return (
-        <div className="edit-action-modal-overlay" onClick={onCancel}>
-            <div className="edit-action-modal" onClick={e => e.stopPropagation()}>
-                <h3>記録を編集</h3>
+        <Modal
+            onClose={onCancel}
+            overlayClassName="edit-action-modal-overlay"
+            contentClassName="edit-action-modal"
+            labelledBy="edit-action-modal-title"
+        >
+                <h3 id="edit-action-modal-title">記録を編集</h3>
 
                 <div className="edit-form">
                     <div className="form-group">
@@ -180,7 +185,6 @@ export function EditActionModal({
                         {isConversion() ? '変換' : '保存'}
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

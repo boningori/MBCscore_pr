@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { GameInfo } from '../../types/game';
+import { Modal } from '../Modal';
 import './GameInfoModal.css';
 
 interface GameInfoModalProps {
@@ -37,9 +38,13 @@ export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onCl
     };
 
     return (
-        <div className="game-info-modal-overlay" onClick={onClose}>
-            <div className="game-info-modal" onClick={e => e.stopPropagation()}>
-                <h3>試合情報</h3>
+        <Modal
+            onClose={onClose}
+            overlayClassName="game-info-modal-overlay"
+            contentClassName="game-info-modal"
+            labelledBy="game-info-modal-title"
+        >
+                <h3 id="game-info-modal-title">試合情報</h3>
 
                 <div className="game-info-form">
                     <div className="form-section">
@@ -161,7 +166,6 @@ export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onCl
                         保存
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

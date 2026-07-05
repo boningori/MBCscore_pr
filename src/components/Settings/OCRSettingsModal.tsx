@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/imageOCR';
+import { Modal } from '../Modal';
 import './OCRSettingsModal.css';
 
 interface OCRSettingsModalProps {
@@ -54,9 +55,14 @@ export const OCRSettingsModal: React.FC<OCRSettingsModalProps> = ({ isOpen, onCl
     if (!isOpen) return null;
 
     return (
-        <div className="ocr-settings-overlay">
-            <div className="ocr-settings-modal">
-                <h3>OCR設定 (Google Gemini API)</h3>
+        <Modal
+            onClose={onClose}
+            overlayClassName="ocr-settings-overlay"
+            contentClassName="ocr-settings-modal"
+            closeOnOverlayClick={false}
+            labelledBy="ocr-settings-title"
+        >
+                <h3 id="ocr-settings-title">OCR設定 (Google Gemini API)</h3>
 
                 <p className="description">
                     Google AI StudioのAPIキーを設定すると、手書き文字や複雑なレイアウトの認識精度が大幅に向上します。
@@ -110,7 +116,6 @@ export const OCRSettingsModal: React.FC<OCRSettingsModalProps> = ({ isOpen, onCl
                     <button className="clear-btn" onClick={handleClear}>削除して戻す</button>
                     <button className="save-btn" onClick={handleSave}>保存して有効化</button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 };

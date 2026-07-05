@@ -1,5 +1,6 @@
 import type { FoulType } from '../../types/game';
 import { MAX_PERSONAL_FOULS } from '../../types/game';
+import { Modal } from '../Modal';
 import './FoulTypeSelector.css';
 
 interface FoulTypeSelectorProps {
@@ -32,9 +33,13 @@ export function FoulTypeSelector({ onSelect, onCancel, hasSelectedPlayer, curren
     };
 
     return (
-        <div className="foul-type-selector-overlay" onClick={onCancel}>
-            <div className="foul-type-selector" onClick={e => e.stopPropagation()}>
-                <h3>ファウル種類を選択</h3>
+        <Modal
+            onClose={onCancel}
+            overlayClassName="foul-type-selector-overlay"
+            contentClassName="foul-type-selector"
+            labelledBy="foul-type-selector-title"
+        >
+                <h3 id="foul-type-selector-title">ファウル種類を選択</h3>
 
                 {/* ファウルアウト警告 */}
                 {hasSelectedPlayer && isFouledOut && (
@@ -72,7 +77,6 @@ export function FoulTypeSelector({ onSelect, onCancel, hasSelectedPlayer, curren
                         キャンセル
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

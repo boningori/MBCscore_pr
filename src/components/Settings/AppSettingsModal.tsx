@@ -20,6 +20,7 @@ import { getErrorLog, clearErrorLog, formatErrorLog } from '../../utils/errorLog
 import type { ErrorLogEntry } from '../../utils/errorLog';
 import { LegalModal } from '../Legal';
 import type { LegalTab } from '../Legal';
+import { Modal } from '../Modal';
 import './AppSettingsModal.css';
 
 interface AppSettingsModalProps {
@@ -257,11 +258,15 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const hasApiKey = !!apiKey.trim();
 
     return (
-        <div className="app-settings-overlay" onClick={onClose}>
-            <div className="app-settings-modal" onClick={e => e.stopPropagation()}>
+        <Modal
+            onClose={onClose}
+            overlayClassName="app-settings-overlay"
+            contentClassName="app-settings-modal"
+            labelledBy="app-settings-title"
+        >
                 <div className="settings-header">
-                    <h2>アプリ設定</h2>
-                    <button className="close-btn" onClick={onClose}>×</button>
+                    <h2 id="app-settings-title">アプリ設定</h2>
+                    <button className="close-btn" onClick={onClose} aria-label="閉じる">×</button>
                 </div>
 
                 <div className="settings-content">
@@ -629,7 +634,6 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                     initialTab={legalTab ?? 'terms'}
                     onClose={() => setLegalTab(null)}
                 />
-            </div>
-        </div>
+        </Modal>
     );
 };
