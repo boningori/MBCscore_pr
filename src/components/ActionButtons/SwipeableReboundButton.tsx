@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useSwipe } from '../../hooks/useSwipe';
 import './SwipeableReboundButton.css';
 
 interface SwipeableReboundButtonProps {
@@ -17,51 +18,20 @@ export function SwipeableReboundButton({
     activeType = null,
 }: SwipeableReboundButtonProps) {
     const [showSelector, setShowSelector] = useState(false);
-    const [swipeType, setSwipeType] = useState<'OREB' | 'DREB' | null>(null);
-    const touchStartY = useRef<number | null>(null);
-    const hasSwiped = useRef(false);
 
-    const handleTouchStart = useCallback((e: React.TouchEvent) => {
-        touchStartY.current = e.touches[0].clientY;
-        hasSwiped.current = false;
-        setSwipeType(null);
-    }, []);
+    const { swipeDirection, onTouchStart, onTouchMove, onTouchEnd, consumeSwipeFlag } = useSwipe(
+        useCallback(() => onRebound('OREB'), [onRebound]),
+        useCallback(() => onRebound('DREB'), [onRebound]),
+        SWIPE_THRESHOLD,
+    );
 
-    const handleTouchMove = useCallback((e: React.TouchEvent) => {
-        if (touchStartY.current === null) return;
-
-        const currentY = e.touches[0].clientY;
-        const deltaY = touchStartY.current - currentY;
-
-        // スワイプ閾値を超えたらポップアップを表示
-        if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
-            hasSwiped.current = true;
-            setSwipeType(deltaY > 0 ? 'OREB' : 'DREB');
-        } else {
-            setSwipeType(null);
-        }
-    }, []);
-
-    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-        // スワイプ中なら指を離した時点で確定
-        if (swipeType) {
-            e.preventDefault();
-            e.stopPropagation();
-            onRebound(swipeType);
-        }
-
-        touchStartY.current = null;
-        setSwipeType(null);
-    }, [swipeType, onRebound]);
+    const swipeType = swipeDirection === 'up' ? 'OREB' : swipeDirection === 'down' ? 'DREB' : null;
 
     const handleClick = useCallback(() => {
         // スワイプ後はクリックをスキップ
-        if (hasSwiped.current) {
-            hasSwiped.current = false;
-            return;
-        }
+        if (consumeSwipeFlag()) return;
         setShowSelector(true);
-    }, []);
+    }, [consumeSwipeFlag]);
 
     const handleSelect = (type: 'OREB' | 'DREB') => {
         setShowSelector(false);
@@ -82,9 +52,9 @@ export function SwipeableReboundButton({
                     ${swipeType === 'OREB' ? 'swiping-up' : ''}
                     ${swipeType === 'DREB' ? 'swiping-down' : ''}`}
                 onClick={handleClick}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
                 disabled={disabled}
             >
                 <div className="rebound-content">
