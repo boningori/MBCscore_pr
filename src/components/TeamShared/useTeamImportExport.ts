@@ -92,7 +92,7 @@ export function useTeamImportExport({ onImported, defaultImportTarget = 'myTeam'
             // すべてのインポートタイプで確認画面を表示（データ損失防止）
             setPendingImport(parsed);
             setShowTextImport(false);
-            setImportText('');
+            updateImportText('');
         }
     };
 
