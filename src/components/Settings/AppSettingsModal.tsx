@@ -303,7 +303,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                             Gemini APIキーを設定すると、写真読み込みの精度が向上します。
                         </p>
                         <p className="security-notice">
-                            🔒 APIキーはこのデバイスのみに保存され、外部サーバーには送信されません。
+                            🔒 APIキーはこのデバイス内にのみ保存されます。OCR実行時にGoogleのAPIへ送信されますが、当アプリの運営者や第三者のサーバーには送信されません。
                         </p>
 
                         <div className="api-status">

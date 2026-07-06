@@ -10,6 +10,7 @@ import type {
     ShotSituation,
 } from '../../types/game';
 import type { PendingAction } from '../../types/pendingAction';
+import { recalculateRunningScores } from './shared';
 
 export function handleAddPendingAction(state: Game, payload: GameAction['payload']): Game {
     const pendingAction = payload as PendingAction;
@@ -70,15 +71,16 @@ export function handleResolvePendingAction(state: Game, payload: GameAction['pay
             points,
             quarter: pending.quarter,
             timestamp: pending.timestamp,
-            runningScoreA: newTeamA.players.reduce((sum, p) => sum + p.stats.points, 0),
-            runningScoreB: newTeamB.players.reduce((sum, p) => sum + p.stats.points, 0),
+            // 保留は作成時刻(pending.timestamp)を持つため、時系列で累計を再計算して整合させる
+            runningScoreA: 0,
+            runningScoreB: 0,
         };
 
         newState = {
             ...newState,
             teamA: newTeamA,
             teamB: newTeamB,
-            scoreHistory: [...newState.scoreHistory, scoreEntry],
+            scoreHistory: recalculateRunningScores([...newState.scoreHistory, scoreEntry]),
         };
     } else if (pending.actionType === 'STAT') {
         const statType = pending.value as 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA';
@@ -411,7 +413,8 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: G
         ...state,
         teamA: newTeamA,
         teamB: newTeamB,
-        scoreHistory: newScoreHistory,
+        // 保留は作成時刻を持つため、時系列で累計を再計算して整合させる
+        scoreHistory: recalculateRunningScores(newScoreHistory),
         foulHistory: [...state.foulHistory, foulEntry],
         pendingActions: state.pendingActions.filter(p => p.id !== pendingActionId),
     };

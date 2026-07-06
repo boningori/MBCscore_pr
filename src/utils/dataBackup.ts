@@ -71,6 +71,24 @@ export interface ParsedImportData {
     preview?: string[];
 }
 
+// ===== CSVユーティリティ =====
+
+/**
+ * CSVの1セルを安全にエスケープする。
+ * - 内部の二重引用符を二重化し、全体を二重引用符で囲む（カンマ・改行対策）
+ * - 先頭が = + - @ のセルは先頭にシングルクォートを付与し、
+ *   ExcelやSheetsでの数式インジェクションを無害化する（CSVインジェクション対策）
+ */
+export function escapeCsvCell(value: string): string {
+    let cell = value;
+    // 数式インジェクション対策: 危険な先頭文字を無害化
+    if (/^[=+\-@]/.test(cell)) {
+        cell = "'" + cell;
+    }
+    // 二重引用符の二重化 + 全体を引用符で囲む
+    return '"' + cell.replace(/"/g, '""') + '"';
+}
+
 // ===== エクスポート機能 =====
 
 /**
@@ -180,7 +198,7 @@ export function exportGameHistoryCSV(): string {
     // CSV文字列を生成
     const csvContent = [
         headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+        ...rows.map(row => row.map(escapeCsvCell).join(',')),
     ].join('\n');
 
     // BOM付きUTF-8（Excelで正しく開くため）
@@ -379,7 +397,7 @@ export function exportGameHistoryDetailCSV(): string {
     // CSV文字列を生成
     const csvContent = [
         headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+        ...rows.map(row => row.map(escapeCsvCell).join(',')),
     ].join('\n');
 
     // BOM付きUTF-8（Excelで正しく開くため）
@@ -457,6 +475,40 @@ export async function copyToClipboard(data: unknown): Promise<boolean> {
         console.error('Failed to copy to clipboard:', error);
         return false;
     }
+}
+
+// ===== インポートデータの検証・矯正 =====
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+    return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * インポートされたチームを検証・矯正する。
+ * - id を持たない（マージ・重複判定ができない）レコードは取り込み不可として null を返す
+ * - players が配列でない場合は空配列へ矯正し、レンダリング時の .map クラッシュを防ぐ
+ * - players 内の非オブジェクトエントリは除外する
+ */
+function sanitizeImportedTeam(raw: unknown): SavedTeam | null {
+    if (!isPlainObject(raw)) return null;
+    if (typeof raw.id !== 'string' || raw.id === '') return null;
+    const players = Array.isArray(raw.players) ? raw.players.filter(isPlainObject) : [];
+    return { ...raw, players } as unknown as SavedTeam;
+}
+
+/**
+ * インポートされた試合データを検証・矯正する。
+ * - id を持たないレコードは取り込み不可として null を返す
+ * - teamA / teamB が壊れていても players を安全な配列へ矯正する
+ */
+function sanitizeImportedGame(raw: unknown): GameRecord | null {
+    if (!isPlainObject(raw)) return null;
+    if (typeof raw.id !== 'string' || raw.id === '') return null;
+    const fixTeam = (t: unknown) => {
+        if (!isPlainObject(t)) return { players: [] };
+        return { ...t, players: Array.isArray(t.players) ? t.players.filter(isPlainObject) : [] };
+    };
+    return { ...raw, teamA: fixTeam(raw.teamA), teamB: fixTeam(raw.teamB) } as unknown as GameRecord;
 }
 
 // ===== インポート機能 =====
@@ -636,24 +688,25 @@ export function executeImport(parsed: ParsedImportData, options?: { teamTarget?:
  */
 function importSingleGame(data: GameExportData): ImportResult {
     try {
-        if (!data.game || !data.game.id) {
+        const game = sanitizeImportedGame(data.game);
+        if (!game) {
             return {
                 success: false,
                 message: '試合データが不正です',
-                errors: ['必須フィールドが不足しています'],
+                errors: ['必須フィールド（id）が不足しています'],
             };
         }
 
         const gameHistory = loadGameHistory();
 
         // 既存の試合と重複チェック
-        const existingIndex = gameHistory.findIndex(g => g.id === data.game.id);
+        const existingIndex = gameHistory.findIndex(g => g.id === game.id);
         const isUpdate = existingIndex >= 0;
 
         if (isUpdate) {
-            gameHistory[existingIndex] = data.game;
+            gameHistory[existingIndex] = game;
         } else {
-            gameHistory.unshift(data.game);
+            gameHistory.unshift(game);
         }
 
         localStorage.setItem('minibasket-game-history', JSON.stringify(gameHistory));
@@ -678,13 +731,14 @@ function importSingleGame(data: GameExportData): ImportResult {
 /**
  * マイチームとしてインポート
  */
-export function importTeamAsMyTeam(team: SavedTeam): ImportResult {
+export function importTeamAsMyTeam(rawTeam: SavedTeam): ImportResult {
     try {
-        if (!team || !team.id) {
+        const team = sanitizeImportedTeam(rawTeam);
+        if (!team) {
             return {
                 success: false,
                 message: 'チームデータが不正です',
-                errors: ['必須フィールドが不足しています'],
+                errors: ['必須フィールド（id）が不足しています'],
             };
         }
 
@@ -718,13 +772,14 @@ export function importTeamAsMyTeam(team: SavedTeam): ImportResult {
 /**
  * 対戦チームとしてインポート
  */
-export function importTeamAsOpponent(team: SavedTeam): ImportResult {
+export function importTeamAsOpponent(rawTeam: SavedTeam): ImportResult {
     try {
-        if (!team || !team.id) {
+        const team = sanitizeImportedTeam(rawTeam);
+        if (!team) {
             return {
                 success: false,
                 message: 'チームデータが不正です',
-                errors: ['必須フィールドが不足しています'],
+                errors: ['必須フィールド（id）が不足しています'],
             };
         }
 
@@ -766,41 +821,60 @@ function importFullBackup(data: BackupData): ImportResult {
             newTeams: 0, updatedTeams: 0,
             newOpponents: 0, updatedOpponents: 0,
         };
+        const errors: string[] = [];
 
         // 試合履歴のインポート
         if (data.data.gameHistory && Array.isArray(data.data.gameHistory)) {
-            const existingGames = loadGameHistory();
+            const games: GameRecord[] = [];
             for (const g of data.data.gameHistory) {
+                const clean = sanitizeImportedGame(g);
+                if (clean) games.push(clean);
+                else errors.push('不正な試合データを1件スキップしました（idが不足）');
+            }
+            const existingGames = loadGameHistory();
+            for (const g of games) {
                 if (existingGames.some(e => e.id === g.id)) details.updatedGames++;
                 else details.newGames++;
             }
-            const mergedGames = mergeArrayById(existingGames, data.data.gameHistory);
+            const mergedGames = mergeArrayById(existingGames, games);
             localStorage.setItem('minibasket-game-history', JSON.stringify(mergedGames));
-            imported.games = data.data.gameHistory.length;
+            imported.games = games.length;
         }
 
         // マイチームのインポート
         if (data.data.myTeams && Array.isArray(data.data.myTeams)) {
-            const existingTeams = loadMyTeams();
+            const teams: SavedTeam[] = [];
             for (const t of data.data.myTeams) {
+                const clean = sanitizeImportedTeam(t);
+                if (clean) teams.push(clean);
+                else errors.push('不正なマイチームデータを1件スキップしました（idが不足）');
+            }
+            const existingTeams = loadMyTeams();
+            for (const t of teams) {
                 if (existingTeams.some(e => e.id === t.id)) details.updatedTeams++;
                 else details.newTeams++;
             }
-            const mergedTeams = mergeArrayById(existingTeams, data.data.myTeams);
+            const mergedTeams = mergeArrayById(existingTeams, teams);
             localStorage.setItem('minibasket-my-teams', JSON.stringify(mergedTeams));
-            imported.teams = data.data.myTeams.length;
+            imported.teams = teams.length;
         }
 
         // 対戦チームのインポート
         if (data.data.opponents && Array.isArray(data.data.opponents)) {
-            const existingOpponents = loadOpponents();
+            const teams: SavedTeam[] = [];
             for (const t of data.data.opponents) {
+                const clean = sanitizeImportedTeam(t);
+                if (clean) teams.push(clean);
+                else errors.push('不正な対戦チームデータを1件スキップしました（idが不足）');
+            }
+            const existingOpponents = loadOpponents();
+            for (const t of teams) {
                 if (existingOpponents.some(e => e.id === t.id)) details.updatedOpponents++;
                 else details.newOpponents++;
             }
-            const mergedOpponents = mergeArrayById(existingOpponents, data.data.opponents);
+            const mergedOpponents = mergeArrayById(existingOpponents, teams);
             localStorage.setItem('minibasket-saved-opponents', JSON.stringify(mergedOpponents));
-            imported.opponents = data.data.opponents.length;
+            imported.opponents = teams.length;
         }
 
         // アプリ設定のインポート（既存設定とマージ）
@@ -838,6 +912,7 @@ function importFullBackup(data: BackupData): ImportResult {
             message: `データを復元しました（${msgParts.join('、')}）`,
             imported,
             details,
+            ...(errors.length > 0 ? { errors } : {}),
         };
     } catch (error) {
         return {

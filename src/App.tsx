@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import type { Team, FoulType, FreeThrowResult, ShotSituation } from './types/game';
 import type { SavedTeam, NumberType } from './utils/teamStorage';
@@ -6,7 +6,7 @@ import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
 import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
 import { saveGameResult } from './utils/gameHistoryStorage';
-import { saveGameSession, loadGameSession, clearGameSession } from './utils/gameSessionStorage';
+import { loadGameSession, clearGameSession } from './utils/gameSessionStorage';
 import { getDefaultGameMode } from './utils/appSettings';
 import { Home } from './components/Home';
 import { MyTeamManager } from './components/MyTeamManager';
@@ -33,26 +33,12 @@ import { showToast } from './components/Toast/toastApi';
 import { Modal } from './components/Modal';
 import { RestorePrompt } from './components/RestorePrompt';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
-import { hasAppData, getLatestSnapshot, saveSnapshot, maybeSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
+import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
+import { useFullscreen } from './hooks/useFullscreen';
+import { useGameAutoSave } from './hooks/useGameAutoSave';
 import './App.css';
-
-// ベンダープレフィックス付きフルスクリーンAPI（ブラウザ互換のため）
-interface VendorPrefixedDocument extends Document {
-  mozFullScreenElement?: Element;
-  webkitFullscreenElement?: Element;
-  msFullscreenElement?: Element;
-  webkitExitFullscreen?: () => Promise<void>;
-  msExitFullscreen?: () => Promise<void>;
-  mozCancelFullScreen?: () => Promise<void>;
-}
-
-interface VendorPrefixedElement extends HTMLElement {
-  webkitRequestFullscreen?: () => Promise<void>;
-  msRequestFullscreen?: () => Promise<void>;
-  mozRequestFullScreen?: () => Promise<void>;
-}
 
 // アプリの画面状態
 type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet' | 'playerStats';
@@ -113,25 +99,7 @@ function AppContent() {
   }, [phase]);
 
   // 試合状態が変更されたらセッション保存（デバウンス付き）
-  const saveTimeoutRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (screen === 'game' && phase !== 'setup') {
-      // 既存のタイマーをクリア
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      // 500ms後に保存（UIブロックを防止）
-      saveTimeoutRef.current = window.setTimeout(() => {
-        saveGameSession(state, gameName, date);
-        maybeSnapshot();
-      }, 500);
-    }
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [state, screen, gameName, date, phase]);
+  useGameAutoSave(state, screen, gameName, date, phase);
 
   // 試合設定完了
   const handleGameSetupComplete = (setupData: {
@@ -731,68 +699,13 @@ function AppContent() {
   };
 
   // フルスクリーン制御
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  const { isFullScreen, toggleFullScreen } = useFullscreen();
 
   // ゲームモード（フル/シンプル） - アプリ設定からデフォルト値を読み込み
   const [gameMode, setGameMode] = useState<'full' | 'simple'>(getDefaultGameMode);
 
   // 履歴ポップアップ（シンプルモード用）
   const [showHistoryPopup, setShowHistoryPopup] = useState(false);
-
-  const toggleFullScreen = async () => {
-    try {
-      const doc = document as VendorPrefixedDocument;
-      const elem = document.documentElement as VendorPrefixedElement;
-
-      const isFs = doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement;
-
-      if (!isFs) {
-        if (elem.requestFullscreen) {
-          await elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) {
-          await elem.webkitRequestFullscreen();
-        } else if (elem.msRequestFullscreen) {
-          await elem.msRequestFullscreen();
-        } else if (elem.mozRequestFullScreen) {
-          await elem.mozRequestFullScreen();
-        }
-      } else {
-        if (doc.exitFullscreen) {
-          await doc.exitFullscreen();
-        } else if (doc.webkitExitFullscreen) {
-          await doc.webkitExitFullscreen();
-        } else if (doc.msExitFullscreen) {
-          await doc.msExitFullscreen();
-        } else if (doc.mozCancelFullScreen) {
-          await doc.mozCancelFullScreen();
-        }
-      }
-    } catch (err) {
-      console.error('フルスクリーン切り替えエラー:', err);
-      showToast('全画面表示に切り替えられませんでした。ブラウザの設定を確認してください', 'error');
-    }
-  };
-
-  // フルスクリーン状態の監視（ESCキーなどで解除された場合に対応）
-  useEffect(() => {
-    const handleFullScreenChange = () => {
-      const doc = document as VendorPrefixedDocument;
-      const isFs = !!(doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement);
-      setIsFullScreen(isFs);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullScreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullScreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullScreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullScreenChange);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullScreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullScreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullScreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullScreenChange);
-    };
-  }, []);
 
   if (restoreCandidate) {
     return (

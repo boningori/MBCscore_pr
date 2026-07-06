@@ -2,7 +2,11 @@
 // Gemini API実装はコメントアウトして温存
 
 import type { SavedPlayer } from './teamStorage';
-import Tesseract from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
+
+// Tesseractアセットの自己ホストパス（オフライン動作のためCDNではなく同梱物を参照）
+// import.meta.env.BASE_URL はViteのbase（GitHub Pagesのサブパス）に追従する
+const TESSERACT_BASE = `${import.meta.env.BASE_URL}tesseract`;
 
 // API設定
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
@@ -123,21 +127,32 @@ export async function imageToBase64(file: File): Promise<string> {
  * テキストから選手情報を抽出する簡易的なパーサー
  * 番号と名前のペアを探す
  */
-function parseOcrText(text: string): SavedPlayer[] {
+// 全角英数字・全角スペースを半角へ正規化（日本語OCR出力対策）
+function normalizeOcrLine(line: string): string {
+    return line
+        // 全角数字 ０-９ → 半角
+        .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        // 全角スペース(U+3000) → 半角
+        .replace(/\u3000/g, ' ')
+        .trim();
+}
+
+export function parseOcrText(text: string): SavedPlayer[] {
     const players: SavedPlayer[] = [];
     // 行ごとに分割して処理
     const lines = text.split(/\r?\n/);
 
-    // 一般的なパターン: "4 田中 太郎", "No.4 TANAKA", "4. 佐藤" など
-    // 数字の後に何らかの文字列が続くパターンを探す
-    const lineRegex = /^\s*([0-9]{1,3})[\s.:,]+(.+)/;
+    // 対応パターン: "4 田中太郎", "No.4 TANAKA", "#12 山田", "4. 佐藤", "5田中"（区切りなし）
+    // - 先頭の "No." "#" "＃" "背番号" は任意接頭辞として除去
+    // - 背番号は1〜2桁（0〜99）。名前の先頭は数字以外（年号 "2024年度" などの誤検出を防止）
+    const lineRegex = /^(?:no\.?|[#＃]|背番号)?\s*([0-9]{1,2})\s*[.．:：,、]?\s*([^\d\s].*)$/i;
 
     // 複数列レイアウトの場合もあるので、単純な行処理だけでなく、
     // 全文から「数字＋名前」っぽいパターンを拾うアプローチも考えられるが、
     // まずは行単位で処理する
 
-    for (const line of lines) {
-        const trimmed = line.trim();
+    for (const rawLine of lines) {
+        const trimmed = normalizeOcrLine(rawLine);
         if (!trimmed) continue;
 
         const match = trimmed.match(lineRegex);
@@ -152,7 +167,8 @@ function parseOcrText(text: string): SavedPlayer[] {
             if (nameStr.length < 1) continue;
 
             // ゴミ文字除去（末尾の記号など）
-            nameStr = nameStr.replace(/[|[\]{};:]/g, '');
+            nameStr = nameStr.replace(/[|[\]{};:]/g, '').trim();
+            if (nameStr.length < 1) continue;
 
             players.push({
                 number,
@@ -169,16 +185,18 @@ function parseOcrText(text: string): SavedPlayer[] {
  * Tesseract.jsによるOCR処理
  */
 async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> {
+    let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
     try {
-        if (import.meta.env.DEV) console.log('Using OCR Engine: Tesseract.js');
-        const result = await Tesseract.recognize(
-            imageFile,
-            'jpn', // 日本語優先
-            {
-                logger: m => import.meta.env.DEV ? console.log(m) : null,
-            }
-        );
+        if (import.meta.env.DEV) console.log('Using OCR Engine: Tesseract.js (self-hosted)');
+        // worker・wasmコア・言語データすべてを同梱物から読み込む（第三者CDN依存なし＝完全オフライン対応）
+        worker = await createWorker('jpn', 1, {
+            workerPath: `${TESSERACT_BASE}/worker.min.js`,
+            corePath: `${TESSERACT_BASE}/`,
+            langPath: `${TESSERACT_BASE}/tessdata`,
+            logger: m => { if (import.meta.env.DEV) console.log(m); },
+        });
 
+        const result = await worker.recognize(imageFile);
         const text = result.data.text;
         if (import.meta.env.DEV) console.log('OCR Raw Text (Tesseract):', text);
 
@@ -203,6 +221,8 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
     } catch (error) {
         console.error('Tesseract Error:', error);
         throw error;
+    } finally {
+        if (worker) await worker.terminate();
     }
 }
 
