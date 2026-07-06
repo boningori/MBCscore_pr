@@ -193,10 +193,32 @@
 }
 
 .form-group label {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
     color: var(--text-secondary);
     font-weight: 600;
+}
+
+/* 「任意」バッジ */
+.label-optional {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+    line-height: 1.6;
+}
+
+/* 入力欄の補足ヒント */
+.field-hint {
+    margin: var(--spacing-sm) 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    line-height: 1.5;
 }
 
 /* カスタムサジェスションドロップダウン */
@@ -206,15 +228,15 @@
 
 .suggestion-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 6px);
     left: 0;
     right: 0;
     z-index: 50;
-    background: var(--bg-tertiary);
-    border: 2px solid var(--primary-light);
-    border-top: none;
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
-    max-height: 240px;
+    padding: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    max-height: 260px;
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
     animation: suggestionFadeIn 0.15s ease;
@@ -223,7 +245,7 @@
 @keyframes suggestionFadeIn {
     from {
         opacity: 0;
-        transform: translateY(-4px);
+        transform: translateY(-6px);
     }
     to {
         opacity: 1;
@@ -232,45 +254,74 @@
 }
 
 .suggestion-dropdown-header {
-    padding: var(--spacing-xs) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px 8px;
     font-size: var(--font-size-xs);
     color: var(--text-muted);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-secondary);
+    letter-spacing: 0.03em;
+}
+
+.suggestion-dropdown-header svg {
+    opacity: 0.7;
 }
 
 .suggestion-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
     width: 100%;
     text-align: left;
-    padding: var(--spacing-md) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     font-size: var(--font-size-md);
     color: var(--text-primary);
     background: none;
     border: none;
-    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius-sm, 8px);
     cursor: pointer;
-    transition: background 0.1s ease;
+    transition: background 0.12s ease, color 0.12s ease;
     min-height: var(--touch-target);
     -webkit-user-select: none;
     user-select: none;
 }
 
-.suggestion-item:last-child {
-    border-bottom: none;
+.suggestion-item-icon {
+    display: inline-flex;
+    color: var(--text-muted);
+    transition: color 0.12s ease;
+    flex-shrink: 0;
+}
+
+.suggestion-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .suggestion-item:hover,
 .suggestion-item.active {
-    background: var(--bg-hover);
+    background: rgba(59, 130, 246, 0.16);
     color: var(--primary-light);
 }
 
-.suggestion-item.active {
+.suggestion-item:hover .suggestion-item-icon,
+.suggestion-item.active .suggestion-item-icon {
+    color: var(--primary-light);
+}
+
+/* 確認画面: 自動命名バッジ */
+.confirm-auto-badge {
+    display: inline-block;
+    margin-left: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--primary-light);
     background: rgba(59, 130, 246, 0.15);
+    border-radius: 999px;
+    padding: 1px 8px;
+    vertical-align: middle;
 }
 
 .next-btn {

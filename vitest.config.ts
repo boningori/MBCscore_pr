@@ -4,6 +4,9 @@ export default defineConfig({
     define: {
         __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? 'dev'),
     },
+    esbuild: {
+        jsx: 'automatic',
+    },
     test: {
         environment: 'jsdom',
         include: ['src/**/*.test.{ts,tsx}'],

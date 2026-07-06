@@ -187,6 +187,43 @@
     padding: var(--spacing-lg) 0;
 }
 
+/* 出場ルールの目安（非強制の警告表示） */
+.lineup-player-card.rule-over-max {
+    border-color: var(--danger);
+}
+
+.lineup-rule-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+}
+
+.lineup-rule-chip {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    line-height: 1.5;
+}
+
+.lineup-rule-chip.over-max {
+    color: var(--danger);
+    background: rgba(220, 38, 38, 0.15);
+}
+
+.lineup-rule-chip.min-risk {
+    color: var(--warning);
+    background: rgba(217, 119, 6, 0.15);
+}
+
 .quarter-rule-hint {
     text-align: center;
+}
+
+.quarter-rule-hint .rule-warn {
+    color: var(--warning);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
 }
