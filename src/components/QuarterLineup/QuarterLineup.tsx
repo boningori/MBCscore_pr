@@ -41,6 +41,16 @@ export function QuarterLineup({
         p => !!p.quartersPlayed[quarter - 2] && quarter > 1
     );
 
+    // ミニバス出場ルールの「目安」（Q1〜Q4が対象・非強制）
+    const isRegularQuarter = quarter <= 4;
+    // 各選手がこれまでに出場した通常クォーター数（OTは除外）
+    const regularQuartersPlayed = (p: Player) =>
+        p.quartersPlayed.slice(0, 4).filter(Boolean).length;
+    // 全員出場の目安: まだ1度も出場していない選手（背番号）
+    const unplayedNumbers = players
+        .filter(p => regularQuartersPlayed(p) === 0)
+        .map(p => p.number);
+
     const handlePlayerToggle = (playerId: string) => {
         if (selectedIds.includes(playerId)) {
             setSelectedIds(selectedIds.filter(id => id !== playerId));
@@ -96,10 +106,19 @@ export function QuarterLineup({
                     const isSelected = selectedIds.includes(player.id);
                     const wasOnCourt = player.isOnCourt;
 
+                    // 出場ルールの目安（非強制の警告表示）
+                    const rq = regularQuartersPlayed(player);
+                    const projected = rq + (isSelected && isRegularQuarter ? 1 : 0);
+                    // このQに出すと4Q目になる（最大3Q超過）
+                    const overMax = isRegularQuarter && projected > 3;
+                    // 残りの通常クォーターを全て出ても2Qに届かない（最低2Q未達）
+                    const potentialMax = rq + (isRegularQuarter ? 5 - quarter : 0);
+                    const cannotReachMin = isRegularQuarter && potentialMax < 2;
+
                     return (
                         <div
                             key={player.id}
-                            className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''}`}
+                            className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''} ${overMax ? 'rule-over-max' : ''}`}
                             onClick={() => handlePlayerToggle(player.id)}
                         >
                             <div className="lineup-player-number">#{player.number}</div>
@@ -129,6 +148,12 @@ export function QuarterLineup({
                                     );
                                 })}
                             </div>
+                            {(overMax || cannotReachMin) && (
+                                <div className="lineup-rule-chips">
+                                    {overMax && <span className="lineup-rule-chip over-max">3Q超</span>}
+                                    {cannotReachMin && <span className="lineup-rule-chip min-risk">2Q未達</span>}
+                                </div>
+                            )}
                             {isSelected && <div className="selection-check">✓</div>}
                         </div>
                     );
@@ -146,8 +171,13 @@ export function QuarterLineup({
             </div>
 
             <div className="quarter-rule-hint">
+                {isRegularQuarter && quarter >= 2 && unplayedNumbers.length > 0 && (
+                    <p className="rule-warn">
+                        ⚠ 未出場（全員出場の目安）: {unplayedNumbers.map(n => `#${n}`).join(', ')}
+                    </p>
+                )}
                 <p className="text-muted text-sm">
-                    ※ ミニバスルール: 各選手は最低2Q、最大3Q出場
+                    ※ ミニバスの目安: 各選手 最低2Q・最大3Q・全員出場（強制ではありません）
                 </p>
             </div>
         </div>
