@@ -6,6 +6,21 @@ import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
 import './GameSetup.css';
 
+// 履歴（時計を巻き戻す）アイコン
+function HistoryIcon() {
+    return (
+        <svg
+            width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d="M3 3v5h5" />
+            <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+            <path d="M12 7v5l3 2" />
+        </svg>
+    );
+}
+
 interface GameSetupProps {
     onComplete: (setupData: {
         gameName: string;
@@ -102,7 +117,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     }, [showSuggestions, filteredSuggestions, suggestionIndex, handleSuggestionSelect]);
 
     const handleBasicSubmit = () => {
-        if (gameName && date) {
+        if (date) {
             setStep('myTeam');
         }
     };
@@ -138,6 +153,11 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
         setOpponentTeamColor(prev => prev === 'white' ? 'blue' : 'white');
     };
 
+    // 試合名が未入力なら「日付 vs 対戦相手」を自動生成
+    const effectiveGameName = gameName.trim() ||
+        (opponentTeam ? `${date} vs ${opponentTeam.name}` : date);
+    const isGameNameAuto = !gameName.trim();
+
     const handleConfirm = () => {
         if (myTeam && opponentTeam) {
             // 除外選手を除いたマイチームの選手
@@ -163,7 +183,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                 players: sortedPlayers,
             };
             onComplete({
-                gameName,
+                gameName: effectiveGameName,
                 date,
                 myTeam: filteredMyTeam,
                 opponentTeam,
@@ -248,7 +268,10 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                     <div className="setup-step basic-info">
                         <h3>基本情報</h3>
                         <div className="form-group">
-                            <label>試合名 / 大会名</label>
+                            <label>
+                                試合名 / 大会名
+                                <span className="label-optional">任意</span>
+                            </label>
                             <div className="suggestion-input-wrapper">
                                 <input
                                     ref={inputRef}
@@ -268,28 +291,39 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                     onKeyDown={handleGameNameKeyDown}
                                     placeholder="例: 冬季大会 第1回戦"
                                     autoFocus
-                                    autoComplete="one-time-code"
+                                    autoComplete="off"
                                     name="game-name-no-autofill"
                                 />
                                 {showSuggestions && filteredSuggestions.length > 0 && (
-                                    <div className="suggestion-dropdown" ref={suggestionRef}>
-                                        <div className="suggestion-dropdown-header">最近の試合名</div>
+                                    <div className="suggestion-dropdown" ref={suggestionRef} role="listbox">
+                                        <div className="suggestion-dropdown-header">
+                                            <HistoryIcon />
+                                            <span>最近の試合名</span>
+                                        </div>
                                         {filteredSuggestions.map((name, idx) => (
                                             <button
                                                 key={idx}
                                                 type="button"
+                                                role="option"
+                                                aria-selected={idx === suggestionIndex}
                                                 className={`suggestion-item ${idx === suggestionIndex ? 'active' : ''}`}
                                                 onMouseDown={(e) => {
                                                     e.preventDefault();
                                                     handleSuggestionSelect(name);
                                                 }}
                                             >
-                                                {name}
+                                                <span className="suggestion-item-icon" aria-hidden="true">
+                                                    <HistoryIcon />
+                                                </span>
+                                                <span className="suggestion-item-text">{name}</span>
                                             </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
+                            <p className="field-hint">
+                                空欄のままでもOK。「日付 vs 対戦相手」で自動的に名前が付きます。
+                            </p>
                         </div>
                         <div className="form-group">
                             <label>日付</label>
@@ -303,7 +337,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                         <button
                             className="btn btn-primary btn-large next-btn"
                             onClick={handleBasicSubmit}
-                            disabled={!gameName || !date}
+                            disabled={!date}
                         >
                             次へ
                         </button>
@@ -397,7 +431,10 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                         <div className="confirm-card">
                             <div className="confirm-row">
                                 <label>試合名</label>
-                                <span>{gameName}</span>
+                                <span>
+                                    {effectiveGameName}
+                                    {isGameNameAuto && <span className="confirm-auto-badge">自動</span>}
+                                </span>
                             </div>
                             <div className="confirm-row">
                                 <label>日付</label>
