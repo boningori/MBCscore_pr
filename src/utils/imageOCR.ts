@@ -127,21 +127,32 @@ export async function imageToBase64(file: File): Promise<string> {
  * テキストから選手情報を抽出する簡易的なパーサー
  * 番号と名前のペアを探す
  */
-function parseOcrText(text: string): SavedPlayer[] {
+// 全角英数字・全角スペースを半角へ正規化（日本語OCR出力対策）
+function normalizeOcrLine(line: string): string {
+    return line
+        // 全角数字 ０-９ → 半角
+        .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        // 全角スペース(U+3000) → 半角
+        .replace(/\u3000/g, ' ')
+        .trim();
+}
+
+export function parseOcrText(text: string): SavedPlayer[] {
     const players: SavedPlayer[] = [];
     // 行ごとに分割して処理
     const lines = text.split(/\r?\n/);
 
-    // 一般的なパターン: "4 田中 太郎", "No.4 TANAKA", "4. 佐藤" など
-    // 数字の後に何らかの文字列が続くパターンを探す
-    const lineRegex = /^\s*([0-9]{1,3})[\s.:,]+(.+)/;
+    // 対応パターン: "4 田中太郎", "No.4 TANAKA", "#12 山田", "4. 佐藤", "5田中"（区切りなし）
+    // - 先頭の "No." "#" "＃" "背番号" は任意接頭辞として除去
+    // - 背番号は1〜2桁（0〜99）。名前の先頭は数字以外（年号 "2024年度" などの誤検出を防止）
+    const lineRegex = /^(?:no\.?|[#＃]|背番号)?\s*([0-9]{1,2})\s*[.．:：,、]?\s*([^\d\s].*)$/i;
 
     // 複数列レイアウトの場合もあるので、単純な行処理だけでなく、
     // 全文から「数字＋名前」っぽいパターンを拾うアプローチも考えられるが、
     // まずは行単位で処理する
 
-    for (const line of lines) {
-        const trimmed = line.trim();
+    for (const rawLine of lines) {
+        const trimmed = normalizeOcrLine(rawLine);
         if (!trimmed) continue;
 
         const match = trimmed.match(lineRegex);
@@ -156,7 +167,8 @@ function parseOcrText(text: string): SavedPlayer[] {
             if (nameStr.length < 1) continue;
 
             // ゴミ文字除去（末尾の記号など）
-            nameStr = nameStr.replace(/[|[\]{};:]/g, '');
+            nameStr = nameStr.replace(/[|[\]{};:]/g, '').trim();
+            if (nameStr.length < 1) continue;
 
             players.push({
                 number,
