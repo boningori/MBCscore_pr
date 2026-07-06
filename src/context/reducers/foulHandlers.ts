@@ -9,6 +9,7 @@ import type {
     CoachFoulTarget,
     ScoreEntry,
 } from '../../types/game';
+import { recalculateRunningScores } from './shared';
 
 export function handleAddFoul(state: Game, payload: GameAction['payload']): Game {
     const { teamId, playerId, foulType } = payload as {
@@ -402,18 +403,36 @@ export function handleRemoveFoul(state: Game, payload: GameAction['payload']): G
         };
     };
 
-    // シューターのスタッツを戻す
+    // バスケットカウント(and-1)の得点（削除時に戻すため）
+    const basketPoints = entry.shotMade && entry.shotSituation && entry.shotSituation !== 'none'
+        ? (entry.shotSituation === '3P' ? 3 : 2)
+        : 0;
+
+    // シューターのスタッツを戻す（FT + バスケットカウント）
     const updateShooterTeam = (team: typeof state.teamA, isTarget: boolean) => {
-        if (!isTarget || ftAttempts === 0 || !entry.shooterPlayerId) return team;
+        if (!isTarget || !entry.shooterPlayerId) return team;
+        if (ftAttempts === 0 && basketPoints === 0) return team;
 
         return {
             ...team,
             players: team.players.map(p => {
                 if (p.id !== entry.shooterPlayerId) return p;
                 const stats = { ...p.stats };
+                // FTを戻す
                 stats.freeThrowAttempt -= ftAttempts;
                 stats.freeThrowMade -= ftMade;
                 stats.points -= ftMade;
+                // バスケットカウント分を戻す
+                if (basketPoints > 0) {
+                    if (entry.shotSituation === '3P') {
+                        stats.threePointMade -= 1;
+                        stats.threePointAttempt -= 1;
+                    } else {
+                        stats.twoPointMade -= 1;
+                        stats.twoPointAttempt -= 1;
+                    }
+                    stats.points -= basketPoints;
+                }
                 return { ...p, stats };
             })
         };
@@ -429,23 +448,28 @@ export function handleRemoveFoul(state: Game, payload: GameAction['payload']): G
         newTeamB = updateShooterTeam(newTeamB, entry.shooterTeamId === 'teamB');
     }
 
-    // FT関連のスコア履歴を削除（同じタイムスタンプ付近のFTエントリを削除）
+    // このファウルが生成したスコア履歴（FT成功分＋バスケットカウント）を削除
+    // タイムスタンプが近く、同じシューターのエントリを対象にする
     let newScoreHistory = state.scoreHistory;
-    if (ftMade > 0 && entry.shooterPlayerId) {
-        // このファウルに関連するFTスコアを削除
-        // タイムスタンプが近く、同じプレイヤーのFTエントリを削除
+    if (entry.shooterPlayerId && (ftMade > 0 || basketPoints > 0)) {
         const foulTimestamp = entry.timestamp;
-        let removedCount = 0;
+        const basketType = entry.shotSituation === '3P' ? '3P' : '2P';
+        let removedFt = 0;
+        let basketRemoved = basketPoints === 0; // バスケットが無ければ削除対象なし
         newScoreHistory = state.scoreHistory.filter(s => {
-            if (
-                s.scoreType === 'FT' &&
+            const sameShooter =
                 s.playerId === entry.shooterPlayerId &&
                 s.teamId === entry.shooterTeamId &&
-                Math.abs(s.timestamp - foulTimestamp) < 1000 && // 1秒以内
-                removedCount < ftMade
-            ) {
-                removedCount++;
-                return false;
+                Math.abs(s.timestamp - foulTimestamp) < 1000; // 1秒以内
+            if (sameShooter) {
+                if (s.scoreType === 'FT' && removedFt < ftMade) {
+                    removedFt++;
+                    return false;
+                }
+                if (!basketRemoved && s.scoreType === basketType && s.points === basketPoints) {
+                    basketRemoved = true;
+                    return false;
+                }
             }
             return true;
         });
@@ -455,7 +479,8 @@ export function handleRemoveFoul(state: Game, payload: GameAction['payload']): G
         ...state,
         teamA: newTeamA,
         teamB: newTeamB,
-        scoreHistory: newScoreHistory,
+        // 得点エントリを削除すると後続の累計がずれるため再計算（公式スコアシートの整合性維持）
+        scoreHistory: recalculateRunningScores(newScoreHistory),
         foulHistory: state.foulHistory.filter(f => f.id !== entryId),
     };
 }

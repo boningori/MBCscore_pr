@@ -99,7 +99,7 @@ export function handleEditStat(state: Game, payload: GameAction['payload']): Gam
     const { entryId, newPlayerId, newStatType } = payload as {
         entryId: string;
         newPlayerId: string;
-        newStatType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | '2PA' | '3PA' | 'FTA';
+        newStatType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA';
     };
     const entry = state.statHistory.find(s => s.id === entryId);
     if (!entry) return state;
@@ -119,6 +119,10 @@ export function handleEditStat(state: Game, payload: GameAction['payload']): Gam
                     case 'STL': stats.steals--; break;
                     case 'BLK': stats.blocks--; break;
                     case 'TO': stats.turnovers--; break;
+                    case 'TO:DD': stats.turnovers--; stats.turnoverDD--; break;
+                    case 'TO:TR': stats.turnovers--; stats.turnoverTR--; break;
+                    case 'TO:PM': stats.turnovers--; stats.turnoverPM--; break;
+                    case 'TO:CM': stats.turnovers--; stats.turnoverCM--; break;
                     case '2PA': stats.twoPointAttempt--; break;
                     case '3PA': stats.threePointAttempt--; break;
                     case 'FTA': stats.freeThrowAttempt--; break;
@@ -143,6 +147,10 @@ export function handleEditStat(state: Game, payload: GameAction['payload']): Gam
                     case 'STL': stats.steals++; break;
                     case 'BLK': stats.blocks++; break;
                     case 'TO': stats.turnovers++; break;
+                    case 'TO:DD': stats.turnovers++; stats.turnoverDD++; break;
+                    case 'TO:TR': stats.turnovers++; stats.turnoverTR++; break;
+                    case 'TO:PM': stats.turnovers++; stats.turnoverPM++; break;
+                    case 'TO:CM': stats.turnovers++; stats.turnoverCM++; break;
                     case '2PA': stats.twoPointAttempt++; break;
                     case '3PA': stats.threePointAttempt++; break;
                     case 'FTA': stats.freeThrowAttempt++; break;

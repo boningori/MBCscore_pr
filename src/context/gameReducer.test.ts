@@ -153,6 +153,77 @@ describe('gameReducer: ADD_FOUL', () => {
     });
 });
 
+describe('gameReducer: EDIT_STAT の複合ターンオーバー', () => {
+    it('TO:DDエントリの選手を編集すると、TO数も新しい選手へ移動する', () => {
+        let state = makeGame();
+        state = gameReducer(state, { type: 'ADD_STAT', payload: { teamId: 'teamA', playerId: 'a1', statType: 'TO:DD' } });
+        const entryId = state.statHistory[0].id;
+        // 種別は TO:DD のまま、選手を a1 → a2 に変更
+        state = gameReducer(state, { type: 'EDIT_STAT', payload: { entryId, newPlayerId: 'a2', newStatType: 'TO:DD' } });
+
+        const a1 = state.teamA.players.find(p => p.id === 'a1')!;
+        const a2 = state.teamA.players.find(p => p.id === 'a2')!;
+        // 旧選手a1からは減算、新選手a2へ加算されるべき
+        expect(a1.stats.turnovers).toBe(0);
+        expect(a1.stats.turnoverDD).toBe(0);
+        expect(a2.stats.turnovers).toBe(1);
+        expect(a2.stats.turnoverDD).toBe(1);
+    });
+});
+
+describe('gameReducer: REMOVE_FOUL の整合性', () => {
+    it('FT付きファウルを削除すると、残った得点のランニングスコアが再計算される', () => {
+        let state = makeGame();
+        // teamAのa1がファウル → teamBのb1に2FT（2本成功、累計rB=2）
+        state = gameReducer(state, {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P', shotSituation: 'none',
+                freeThrows: 2, freeThrowResults: ['made', 'made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1', shotMade: false,
+            },
+        });
+        const foulId = state.foulHistory[0].id;
+        // その後 teamB b2 が 2P（累計rB=4）
+        state = gameReducer(state, { type: 'ADD_SCORE', payload: { teamId: 'teamB', playerId: 'b2', scoreType: '2P' } });
+        // ファウルを削除（b1の2FTが消える）
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: foulId } });
+
+        // 残るのは b2 の2Pのみ。累計は2点であるべき
+        expect(state.scoreHistory).toHaveLength(1);
+        expect(state.scoreHistory[0].playerId).toBe('b2');
+        expect(state.scoreHistory[0].runningScoreB).toBe(2);
+    });
+
+    it('バスケットカウント(and-1)ファウルの削除でバスケット得点も戻る', () => {
+        let state = makeGame();
+        // teamA a1 がファウル、teamB b1 がゴール成功(2P)＋1FT成功 = 3点
+        state = gameReducer(state, {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P', shotSituation: '2P',
+                freeThrows: 1, freeThrowResults: ['made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1', shotMade: true,
+            },
+        });
+        const b1Before = state.teamB.players.find(p => p.id === 'b1')!;
+        expect(b1Before.stats.points).toBe(3);
+        expect(b1Before.stats.twoPointMade).toBe(1);
+
+        const foulId = state.foulHistory[0].id;
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: foulId } });
+
+        const b1 = state.teamB.players.find(p => p.id === 'b1')!;
+        // バスケット(2P)もFTも戻り、得点は0
+        expect(b1.stats.points).toBe(0);
+        expect(b1.stats.twoPointMade).toBe(0);
+        expect(b1.stats.twoPointAttempt).toBe(0);
+        expect(b1.stats.freeThrowMade).toBe(0);
+        // スコア履歴はバスケット・FTとも削除されて空
+        expect(state.scoreHistory).toHaveLength(0);
+    });
+});
+
 describe('gameReducer: END_QUARTER / END_GAME', () => {
     it('Q1終了でQ2・quarterEndフェーズになる', () => {
         const state = gameReducer(makeGame(), { type: 'END_QUARTER' });
