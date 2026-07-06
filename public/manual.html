@@ -66,6 +66,8 @@
     letter-spacing: -2px;
     margin-bottom: 8px;
   }
+  /* ワードマーク「score」はアプリ本体と同じ青に統一（本文アクセントのピンクとは別） */
+  .logo-score { color: #3b82f6; }
   .cover-logo .accent { color: var(--accent); }
   .cover-subtitle {
     font-size: 14pt;
@@ -374,10 +376,10 @@
 <!-- 表紙 -->
 <!-- =========================================================== -->
 <div class="cover">
-  <div class="cover-logo">MBC<span class="accent">score</span></div>
+  <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">Version 1.0 &mdash; ベータ版</div>
+  <div class="cover-version">Version 1.1.0</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -495,7 +497,7 @@
 <p>アプリ起動時に表示されるメイン画面です。すべての機能にここからアクセスします。</p>
 
 <div class="diagram">┌─────────────────────────────────────────────┐
-│  <span class="dim">⊞</span>      <span class="highlight">MBC</span><span class="accent">score</span>                    <span class="dim">⚙️</span>  │
+│  <span class="dim">⊞</span>      <span class="highlight">MBC</span><span class="logo-score">score</span>                    <span class="dim">⚙️</span>  │
 │        ミニバス用スコアシートアプリ              │
 ├─────────────────────────────────────────────┤
 │                                             │
@@ -1276,10 +1278,10 @@
 
 <div style="text-align: center; padding: 40px 0; color: var(--text-light);">
   <p style="font-size: 14pt; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
-    MBC<span style="color: var(--accent);">score</span>
+    MBC<span class="logo-score">score</span>
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
-  <p>使用説明書 Version 1.0</p>
+  <p>使用説明書 Version 1.1.0</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
