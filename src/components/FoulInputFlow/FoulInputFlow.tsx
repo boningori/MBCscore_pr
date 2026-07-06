@@ -192,7 +192,7 @@ export function FoulInputFlow({
             setFreeThrowResults(new Array(count).fill(null));
             setStep('shooter');  // シューター選択へ
         }
-    }, [foulType, shotSituation, onComplete]);
+    }, [foulType, shotSituation, shotMade, onComplete]);
 
     // FT結果入力
     const handleFtResult = useCallback((index: number, result: FreeThrowResult) => {

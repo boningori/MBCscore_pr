@@ -45,12 +45,14 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         }
     }
 
-    const startDate = dateRange.start ? new Date(dateRange.start) : undefined;
-    const endDate = dateRange.end ? new Date(dateRange.end + 'T23:59:59') : undefined;
+    // 日付範囲はレンダーごとに新しいDateを生成しないようメモ化（useMemoの依存を安定させる）
+    const startDate = useMemo(() => dateRange.start ? new Date(dateRange.start) : undefined, [dateRange.start]);
+    const endDate = useMemo(() => dateRange.end ? new Date(dateRange.end + 'T23:59:59') : undefined, [dateRange.end]);
 
     const playerStats = useMemo(() => {
         if (!selectedTeam) return [];
         return aggregatePlayerStats(selectedTeam, startDate, endDate, { includeHidden: showHiddenPlayers });
+        // hiddenToggleKey: 非表示選手の集合が変わった際に強制再計算するための意図的な依存
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedTeam, startDate, endDate, showHiddenPlayers, hiddenToggleKey]);
 
