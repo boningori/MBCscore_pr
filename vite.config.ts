@@ -17,7 +17,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom'],
-          'vendor-utils': ['html2canvas', 'jspdf', 'dompurify']
+          'vendor-utils': ['html2canvas', 'jspdf']
         }
       }
     },
@@ -52,7 +52,10 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Tesseractのwasmコア(.wasm.js)・言語データ(.gz)も含めてプリキャッシュし完全オフライン動作を保証
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,gz}'],
+        // wasmコア(.wasm.js)は約3.9MBあり、既定の2MB上限では除外されてしまうため引き上げる
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
