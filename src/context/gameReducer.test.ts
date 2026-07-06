@@ -240,6 +240,23 @@ describe('gameReducer: END_QUARTER / END_GAME', () => {
         expect(state.endTime).not.toBeNull();
     });
 
+    it('OT延長時、チームファウルはQ4から通算される（0リセットしない）', () => {
+        let state = makeGame();
+        state.currentQuarter = 4;
+        // Q4で teamA が3つのプレイヤーファウル
+        state = gameReducer(state, { type: 'ADD_FOUL', payload: { teamId: 'teamA', playerId: 'a1', foulType: 'P' } });
+        state = gameReducer(state, { type: 'ADD_FOUL', payload: { teamId: 'teamA', playerId: 'a2', foulType: 'P' } });
+        state = gameReducer(state, { type: 'ADD_FOUL', payload: { teamId: 'teamA', playerId: 'a1', foulType: 'P' } });
+        expect(state.teamA.teamFouls[3]).toBe(3);
+
+        // 同点(0-0)でOTへ
+        state = gameReducer(state, { type: 'END_QUARTER' });
+        expect(state.currentQuarter).toBe(5);
+        // OT枠(index4)はQ4の3ファウルを通算して引き継ぐ（0リセットしない）
+        expect(state.teamA.teamFouls[4]).toBe(3);
+        expect(state.teamB.teamFouls[4]).toBe(0);
+    });
+
     it('Q4終了時に同点ならオーバータイム(Q5)に入り、チームファウル枠が拡張される', () => {
         let state = makeGame();
         state.currentQuarter = 4;

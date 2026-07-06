@@ -40,9 +40,10 @@ export function handleEndQuarter(state: Game): Game {
         const scoreA = state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
         const scoreB = state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
         if (scoreA === scoreB) {
+            // OTは第4Qの延長とみなし、チームファウルはリセットせず直前ピリオドから通算する（FIBA/JBA）
             const extendForOT = (team: typeof state.teamA) => ({
                 ...team,
-                teamFouls: [...team.teamFouls, 0],
+                teamFouls: [...team.teamFouls, team.teamFouls[team.teamFouls.length - 1] ?? 0],
                 players: team.players.map(p => ({
                     ...p,
                     quartersPlayed: [...p.quartersPlayed, false as const],
