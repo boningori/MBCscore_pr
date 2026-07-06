@@ -74,6 +74,58 @@ describe('gameReducer: ADD_STAT / REMOVE_SCORE', () => {
         expect(p.stats.twoPointMade).toBe(0);
         expect(state.scoreHistory).toHaveLength(0);
     });
+
+    it('REMOVE_SCORE後、残った得点のランニングスコアが再計算される', () => {
+        let state = makeGame();
+        state = gameReducer(state, { type: 'ADD_SCORE', payload: { teamId: 'teamA', playerId: 'a1', scoreType: '2P' } });
+        const firstId = state.scoreHistory[0].id;
+        state = gameReducer(state, { type: 'ADD_SCORE', payload: { teamId: 'teamA', playerId: 'a2', scoreType: '2P' } });
+        // 最初の得点（累計2点だったマス）を削除
+        state = gameReducer(state, { type: 'REMOVE_SCORE', payload: { entryId: firstId } });
+
+        expect(state.scoreHistory).toHaveLength(1);
+        // 残った得点の累計は2点であるべき（4点のままはランニングスコアシートが壊れる）
+        expect(state.scoreHistory[0].runningScoreA).toBe(2);
+    });
+});
+
+describe('gameReducer: EDIT_SCORE', () => {
+    it('点数種別の編集後、全エントリのランニングスコアが再計算される', () => {
+        let state = makeGame();
+        state = gameReducer(state, { type: 'ADD_SCORE', payload: { teamId: 'teamA', playerId: 'a1', scoreType: '2P' } });
+        const firstId = state.scoreHistory[0].id;
+        state = gameReducer(state, { type: 'ADD_SCORE', payload: { teamId: 'teamA', playerId: 'a2', scoreType: '2P' } });
+        // 最初の2Pを3Pに編集（累計が 2,4 → 3,5 に変わるべき）
+        state = gameReducer(state, { type: 'EDIT_SCORE', payload: { entryId: firstId, newPlayerId: 'a1', newScoreType: '3P' } });
+
+        const sorted = [...state.scoreHistory].sort((a, b) => a.timestamp - b.timestamp);
+        expect(sorted[0].runningScoreA).toBe(3);
+        expect(sorted[1].runningScoreA).toBe(5);
+    });
+});
+
+describe('gameReducer: 保留アクション解決とランニングスコア整合', () => {
+    it('先の時刻に発生した保留得点を後で解決しても、時系列順の累計が付く', () => {
+        let state = makeGame();
+        // 早い時刻(1000)の保留SCORE(teamA, 2P)を登録
+        const pending = {
+            id: 'p1', actionType: 'SCORE' as const, value: '2P', teamId: 'teamA' as const,
+            quarter: 1, timestamp: 1000, playersOnCourt: [], candidatePlayerIds: [],
+        };
+        state = gameReducer(state, { type: 'ADD_PENDING_ACTION', payload: pending });
+        // その後、直接 teamA a2 が 2P（現在時刻＝大きいtimestamp）
+        state = gameReducer(state, { type: 'ADD_SCORE', payload: { teamId: 'teamA', playerId: 'a2', scoreType: '2P' } });
+        // 保留を a1 に解決
+        state = gameReducer(state, { type: 'RESOLVE_PENDING_ACTION', payload: { pendingActionId: 'p1', playerId: 'a1' } });
+
+        expect(state.scoreHistory).toHaveLength(2);
+        const sorted = [...state.scoreHistory].sort((a, b) => a.timestamp - b.timestamp);
+        // 早い時刻の保留(a1)が累計2、後の直接得点(a2)が累計4であるべき
+        expect(sorted[0].playerId).toBe('a1');
+        expect(sorted[0].runningScoreA).toBe(2);
+        expect(sorted[1].playerId).toBe('a2');
+        expect(sorted[1].runningScoreA).toBe(4);
+    });
 });
 
 describe('gameReducer: ADD_FOUL', () => {

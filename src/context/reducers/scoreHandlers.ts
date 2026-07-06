@@ -90,7 +90,8 @@ export function handleRemoveScore(state: Game, payload: GameAction['payload']): 
         ...state,
         teamA: updateTeam(state.teamA, entry.teamId === 'teamA'),
         teamB: updateTeam(state.teamB, entry.teamId === 'teamB'),
-        scoreHistory: state.scoreHistory.filter(s => s.id !== entryId),
+        // 得点を1件削除すると後続エントリの累計がずれるため再計算（公式スコアシートの整合性維持）
+        scoreHistory: recalculateRunningScores(state.scoreHistory.filter(s => s.id !== entryId)),
     };
 }
 
@@ -158,7 +159,8 @@ export function handleEditScore(state: Game, payload: GameAction['payload']): Ga
         ...state,
         teamA,
         teamB,
-        scoreHistory: state.scoreHistory.map(s => s.id === entryId ? updatedEntry : s),
+        // 点数種別の変更で累計が変わるため再計算（公式スコアシートの整合性維持）
+        scoreHistory: recalculateRunningScores(state.scoreHistory.map(s => s.id === entryId ? updatedEntry : s)),
     };
 }
 
