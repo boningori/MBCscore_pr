@@ -2,6 +2,15 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Content-Security-Policy（多層防御）。個人情報（選手名・JBA番号）を扱うため、
+      スクリプト・接続先・埋め込みを最小限に制限する。
+      - script-src に 'wasm-unsafe-eval': Tesseract OCRのWebAssembly実行に必要（'unsafe-eval'は不要）
+      - worker-src blob:: Tesseractワーカーの生成に必要
+      - connect-src の Gemini: 高精度OCR（任意設定）のAPI通信先
+      - style-src 'unsafe-inline': Reactのインラインstyle属性に必要
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: https://generativelanguage.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'" />
     <link rel="icon" type="image/png" href="/MBCscore_pr/icon-192.png" />
     <link rel="apple-touch-icon" href="/MBCscore_pr/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -11,9 +20,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MBCscore" />
     <title>MBCscore - ミニバス スコアシート</title>
-    <script type="module" crossorigin src="/MBCscore_pr/assets/index-D-v2WfMD.js"></script>
+    <script type="module" crossorigin src="/MBCscore_pr/assets/index-DmS0130L.js"></script>
     <link rel="modulepreload" crossorigin href="/MBCscore_pr/assets/vendor-react-CaS04JnI.js">
-    <link rel="modulepreload" crossorigin href="/MBCscore_pr/assets/vendor-utils-Butg7LQe.js">
+    <link rel="modulepreload" crossorigin href="/MBCscore_pr/assets/vendor-utils-DJGzVUA8.js">
     <link rel="stylesheet" crossorigin href="/MBCscore_pr/assets/index-Dy0vPzu-.css">
   <link rel="manifest" href="/MBCscore_pr/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/MBCscore_pr/registerSW.js"></script></head>
   <body>
