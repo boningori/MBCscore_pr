@@ -1,5 +1,6 @@
 import type { Player } from '../../types/game';
 import { MAX_PERSONAL_FOULS, formatFoulDisplay } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import './PlayerCard.css';
 
 interface PlayerCardProps {
@@ -18,7 +19,7 @@ export function PlayerCard({ player, isSelected, onClick, showStats = true }: Pl
             className={`player-card ${isSelected ? 'selected' : ''} ${player.isOnCourt ? 'on-court' : ''} ${isFouledOut ? 'fouled-out' : ''}`}
             onClick={onClick}
         >
-            <div className="player-number">{player.number}</div>
+            <div className="player-number">{formatPlayerNumber(player.number)}</div>
 
             <div className="player-info">
                 <span className={`player-name ${player.isCaptain ? 'captain' : ''}`}>

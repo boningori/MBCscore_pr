@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Game, GameInfo } from '../../types/game';
 import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
 import { GameInfoModal } from '../GameInfoModal';
 import './RunningScoresheet.css';
@@ -91,7 +92,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                     })()}
                 </td>
                 <td className="cell-name">{player.name}</td>
-                <td className="cell-number">{player.number}</td>
+                <td className="cell-number">{formatPlayerNumber(player.number)}</td>
                 {[1, 2, 3, 4].map(q => {
                     const playType = player.quartersPlayed[q - 1];
                     // 1Q/3Q=赤, 2Q/4Q=黒
@@ -610,7 +611,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 return (
                                                     <div key={scoreVal} className="rs-rs-row">
                                                         <div className={`rs-rs-cell a-no ${endClassA} ${quarterClassA} ${isThreePointA ? 'circled' : ''}`}>
-                                                            {entryA ? (entryA.isOwnGoal ? <span style={{ fontSize: '1.2em', lineHeight: 1 }}>▲</span> : (entryA.playerNumber === -1 ? '?' : entryA.playerNumber)) : ''}
+                                                            {entryA ? (entryA.isOwnGoal ? <span style={{ fontSize: '1.2em', lineHeight: 1 }}>▲</span> : (entryA.playerNumber === -1 ? '?' : formatPlayerNumber(entryA.playerNumber))) : ''}
                                                         </div>
                                                         <div className={`rs-rs-cell a-score ${entryA ? `${scoreStyleA} ${quarterClassA}` : ''} ${endClassA} ${quarterClassA}`}>
                                                             {scoreVal}
@@ -619,7 +620,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                             {scoreVal}
                                                         </div>
                                                         <div className={`rs-rs-cell b-no ${endClassB} ${quarterClassB} ${isThreePointB ? 'circled' : ''}`}>
-                                                            {entryB ? (entryB.isOwnGoal ? <span style={{ fontSize: '1.2em', lineHeight: 1 }}>▲</span> : (entryB.playerNumber === -1 ? '?' : entryB.playerNumber)) : ''}
+                                                            {entryB ? (entryB.isOwnGoal ? <span style={{ fontSize: '1.2em', lineHeight: 1 }}>▲</span> : (entryB.playerNumber === -1 ? '?' : formatPlayerNumber(entryB.playerNumber))) : ''}
                                                         </div>
                                                     </div>
                                                 );

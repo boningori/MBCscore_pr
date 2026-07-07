@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import type { Team, FoulType, FreeThrowResult, ShotSituation } from './types/game';
 import type { SavedTeam, NumberType } from './utils/teamStorage';
+import { formatPlayerNumber } from './utils/playerNumber';
 import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
 import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
@@ -340,7 +341,7 @@ function AppContent() {
       step: 'foulInput',
       foulType: 'T',
       playerId,
-      label: `#${player.number} ${player.courtName || player.name} (T)`,
+      label: `#${formatPlayerNumber(player.number)} ${player.courtName || player.name} (T)`,
       benchTechType: 'Sub',
     });
   };
@@ -1239,7 +1240,7 @@ function AppContent() {
                     className="sub-player-card"
                     onClick={() => handleBenchPlayerSelect(player.id)}
                   >
-                    <span className="sub-player-number">#{player.number}</span>
+                    <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
                     <span className="sub-player-name">{player.courtName || player.name}</span>
                     <span className="sub-player-stats">F:{player.fouls.length}</span>
                   </button>

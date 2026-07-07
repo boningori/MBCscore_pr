@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Player } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import { Modal } from '../Modal';
 import './EditActionModal.css';
 
@@ -136,7 +137,7 @@ export function EditActionModal({
                         >
                             {players.map(p => (
                                 <option key={p.id} value={p.id}>
-                                    #{p.number} {p.courtName || p.name}
+                                    #{formatPlayerNumber(p.number)} {p.courtName || p.name}
                                 </option>
                             ))}
                         </select>

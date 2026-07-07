@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { exportElement } from '../../utils/pdfExport';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import { GrowthComparison } from './GrowthComparison';
 import { formatDate, type DetailViewProps } from './types';
 
@@ -11,8 +12,8 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
     const avgRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
     const stdDevRebounds = player.stdDevStats.offensiveRebounds + player.stdDevStats.defensiveRebounds;
 
-    const playerName = player.name || `#${player.number}`;
-    const title = `#${player.number} ${player.name}（${player.gamesPlayed}試合）`;
+    const playerName = player.name || `#${formatPlayerNumber(player.number)}`;
+    const title = `#${formatPlayerNumber(player.number)} ${player.name}（${player.gamesPlayed}試合）`;
     const filename = `stats_${playerName}_${player.gamesPlayed}games`;
 
     const handleExportPDF = async () => {
@@ -52,7 +53,7 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
             </div>
 
             <h2 className="detail-player-title">
-                <span className="player-number">#{player.number}</span>
+                <span className="player-number">#{formatPlayerNumber(player.number)}</span>
                 {player.name}
             </h2>
 

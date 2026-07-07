@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import './PendingActionPanel.css';
 
 interface PendingActionPanelProps {
@@ -161,7 +162,7 @@ export function PendingActionPanel({
                                                     className={`candidate-player-btn ${selectedPlayerId === player.id ? 'selected' : ''}`}
                                                     onClick={() => handlePlayerSelect(pending.id, player.id)}
                                                 >
-                                                    #{player.number}
+                                                    #{formatPlayerNumber(player.number)}
                                                     {player.courtName && ` ${player.courtName}`}
                                                     {!player.courtName && player.name && ` ${player.name}`}
                                                 </button>

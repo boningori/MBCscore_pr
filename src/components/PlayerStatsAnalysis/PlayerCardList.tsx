@@ -1,6 +1,7 @@
 // 選手カードリストコンポーネント
 
 import type { PlayerCardListProps } from './types';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 
 export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) {
     return (
@@ -20,7 +21,7 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                         onClick={() => onPlayerClick(player)}
                     >
                         <div className="player-info">
-                            <span className="player-number">#{player.number}</span>
+                            <span className="player-number">#{formatPlayerNumber(player.number)}</span>
                             <span className="player-name">{player.name}</span>
                             <span className="player-games">{player.gamesPlayed}試合</span>
                         </div>
