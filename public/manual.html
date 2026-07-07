@@ -559,7 +559,7 @@
 
 <table>
   <tr><th>項目</th><th>必須</th><th>説明</th></tr>
-  <tr><td>ビブス番号</td><td>○</td><td>練習着（ビブス）の番号。0〜99および00が使用可能</td></tr>
+  <tr><td>ビブス番号</td><td>○</td><td>練習着（ビブス）の番号。0〜99および00が使用可能（「0」と「00」は別の番号として扱われます）</td></tr>
   <tr><td>ユニフォーム番号</td><td></td><td>公式ユニフォームの番号（ビブス番号と異なる場合に設定）</td></tr>
   <tr><td>選手名</td><td>○</td><td>フルネームまたはニックネーム</td></tr>
   <tr><td>キャプテン</td><td></td><td>キャプテンの場合はチェック（Cマーク表示）</td></tr>
@@ -817,39 +817,48 @@
   <span class="flow-arrow">→</span>
   <span class="flow-step warn">ファウル</span>
   <span class="flow-arrow">→</span>
-  <span class="flow-step">種類選択</span>
+  <span class="flow-step">種類選択（P/T/U/D）</span>
   <span class="flow-arrow">→</span>
-  <span class="flow-step">シュート状況</span>
+  <span class="flow-step">FT本数・シューター</span>
   <span class="flow-arrow">→</span>
   <span class="flow-step alt">FT結果</span>
 </div>
 
+<p>
+  <strong>ファウルした選手</strong>のカードをタップして選択し、
+  <span class="btn-sample btn-orange">⚠️ ファウル</span> をタップすると、ファウル種類の選択画面が表示されます。
+</p>
+
+<table>
+  <tr><th>記号</th><th>種類</th><th>説明</th></tr>
+  <tr><td><strong>P</strong></td><td>パーソナル</td><td>通常のファウル</td></tr>
+  <tr><td><strong>T</strong></td><td>テクニカル</td><td>テクニカルファウル</td></tr>
+  <tr><td><strong>U</strong></td><td>アンスポーツマンライク</td><td>アンスポーツマンライクファウル</td></tr>
+  <tr><td><strong>D</strong></td><td>ディスクォリファイイング</td><td>失格ファウル</td></tr>
+</table>
+
+<div class="info-box">
+  <div class="box-title">重要 &mdash; P（パーソナル）ボタンはタップと長押しで使い分けます</div>
+  <strong>タップ = 通常のファウル</strong>: そのまま記録されます（<strong>ファウルした側のチーム</strong>がペナルティ状態＝そのクォーターのチームファウルが4個に達している場合は、続けて<strong>相手チーム</strong>のフリースロー入力に進みます）。<br>
+  <strong>長押し = シュート中のファウル</strong>: シュートファウルとして扱われ、下記のシュート状況選択に進みます。
+</div>
+
+<h4>P（パーソナル）でシュート中のファウルを記録する場合</h4>
 <ol class="steps">
-  <li><strong>ファウルした選手</strong>のカードをタップして選択</li>
-  <li><span class="btn-sample btn-orange">⚠️ ファウル</span> をタップ</li>
-  <li>ファウル種類を選択:
-    <table>
-      <tr><th>記号</th><th>種類</th><th>説明</th></tr>
-      <tr><td><strong>P</strong></td><td>パーソナル</td><td>通常のファウル</td></tr>
-      <tr><td><strong>T</strong></td><td>テクニカル</td><td>テクニカルファウル</td></tr>
-      <tr><td><strong>U</strong></td><td>アンスポーツマンライク</td><td>アンスポーツマンライクファウル</td></tr>
-      <tr><td><strong>D</strong></td><td>ディスクォリファイイング</td><td>失格ファウル</td></tr>
-    </table>
-  </li>
-  <li>シュート中のファウルの場合:
-    <ul>
-      <li>「2Pシュート中」or「3Pシュート中」を選択</li>
-      <li>シュートが成功したか（バスケットカウント）を選択</li>
-    </ul>
-  </li>
-  <li>フリースロー（FT）がある場合:
-    <ul>
-      <li>FT本数の確認（自動提案あり）</li>
-      <li>シューターの選択（相手チームの選手一覧から）</li>
-      <li>各FTの成功 / 失敗をタップして記録</li>
-    </ul>
-  </li>
+  <li>Pボタンを<strong>長押し</strong>し、「2Pシュート中」「3Pシュート中」のいずれかを選択</li>
+  <li>シュートが<strong>成功</strong>したか（バスケットカウント &rarr; FT1本）／<strong>失敗</strong>か（2P=FT2本 / 3P=FT3本）を選択</li>
 </ol>
+
+<h4>T・U・D の場合</h4>
+<p>T / U / D はタップすると、そのままフリースロー本数の選択画面（自動提案あり）に進みます。</p>
+
+<h4>フリースロー（FT）の入力</h4>
+<p>FTが発生する場合は、以下の順で入力します:</p>
+<ul>
+  <li>FT本数の確認・選択（自動提案あり）</li>
+  <li>シューターの選択（相手チームの<strong>コート上</strong>の選手一覧から）</li>
+  <li>各FTの成功 / 失敗をタップして記録</li>
+</ul>
 
 <div class="warn-box">
   <div class="box-title">5ファウル退場</div>
@@ -913,7 +922,7 @@
 
 <h3>7.8 タイムアウト</h3>
 <p>
-  スコアボード上のタイムアウトボタン（<strong>TO</strong>）をタップすると、
+  スコアボード上の<strong>「タイムアウト」</strong>ボタンをタップすると、
   経過時間入力モーダルが表示されます。何分経過時点のタイムアウトかを記録します。
 </p>
 
@@ -937,6 +946,12 @@
 </div>
 
 <p>第4クォーター終了時に自動的に試合終了画面が表示されます。</p>
+
+<div class="info-box">
+  <div class="box-title">同点の場合は延長（オーバータイム）</div>
+  第4クォーター終了時に<strong>同点</strong>の場合、試合は終了せず<strong>延長</strong>に進みます（通常のクォーターと同様にスタメン選択画面が表示されます）。
+  延長は第4クォーターの延長として扱われるため、<strong>チームファウルはリセットされず通算</strong>されます。
+</div>
 
 <div class="page-break"></div>
 
@@ -963,7 +978,7 @@
 │                                                │
 │  ┌──────────────┐                              │
 │  │<span class="warn"> 保留アクション</span>│  ← 白チーム側に表示         │
-│  │ 2P成功        │                              │
+│  │ DRリバウンド  │                              │
 │  │ <span class="dim">コート上の候補:</span>│                              │
 │  │ [#4] [#5] [#7]│  ← タップで確定              │
 │  │ [#8] [#10]    │                              │
@@ -978,7 +993,8 @@
     <li>リバウンドの選手を確認する間に次のプレーが始まった場合</li>
     <li>複数のアクションが短時間に発生した場合</li>
   </ul>
-  保留アクションは「不明」として記録することもできます（統計には反映されますが個人成績には加算されません）。
+  リバウンド等の<strong>統計アクションのみ</strong>、「不明」のまま確定することもできます（チーム統計には反映されますが個人成績には加算されません）。
+  <strong>得点とファウルは「不明」にできません</strong>。選手を特定して確定するか、削除してください。
 </div>
 
 <div class="page-break"></div>
@@ -1037,10 +1053,9 @@
   以下の情報を追加・編集できます:
 </p>
 <ul>
-  <li>会場名、試合番号</li>
-  <li>主審・副審名</li>
-  <li>記録員名</li>
-  <li>その他備考</li>
+  <li><strong>試合基本情報</strong>: 会場、Game No.（試合番号）、開始時間、終了時間</li>
+  <li><strong>審判</strong>: クルーチーフ、アンパイア</li>
+  <li><strong>TO（テーブルオフィシャルズ）</strong>: スコアラー、A・スコアラー、タイマー、ショットクロックオペレーター</li>
 </ul>
 
 <h3>出力</h3>
@@ -1075,15 +1090,19 @@
   <tr><td>得点</td><td>PTS</td><td>合計得点</td></tr>
   <tr><td>2Pシュート</td><td>2P</td><td>成功数 / 試投数（成功率）</td></tr>
   <tr><td>3Pシュート</td><td>3P</td><td>成功数 / 試投数（成功率）</td></tr>
-  <tr><td>フリースロー</td><td>FT</td><td>成功数 / 試投数（成功率）</td></tr>
-  <tr><td>オフェンスリバウンド</td><td>OR</td><td>攻撃側リバウンド数</td></tr>
-  <tr><td>ディフェンスリバウンド</td><td>DR</td><td>守備側リバウンド数</td></tr>
+  <tr><td>フリースロー</td><td>FT</td><td>成功数 / 試投数</td></tr>
+  <tr><td>リバウンド</td><td>REB</td><td>オフェンス＋ディフェンスの合計</td></tr>
   <tr><td>アシスト</td><td>AST</td><td>アシスト数</td></tr>
   <tr><td>スティール</td><td>STL</td><td>スティール数</td></tr>
   <tr><td>ブロック</td><td>BLK</td><td>ブロック数</td></tr>
   <tr><td>ターンオーバー</td><td>TO</td><td>ターンオーバー数</td></tr>
-  <tr><td>ファウル</td><td>F</td><td>個人ファウル数</td></tr>
+  <tr><td>TO内訳</td><td>DD / TR / PM / CM</td><td>ダブルドリブル / トラベリング / パスミス / キャッチミスの内訳</td></tr>
 </table>
+
+<div class="info-box">
+  リバウンドはOR（オフェンス）とDR（ディフェンス）を分けて記録しますが、統計パネルでは合計値（REB）で表示されます。
+  各選手の<strong>個人ファウル数</strong>は、スコアシート画面で確認できます。
+</div>
 
 <div class="page-break"></div>
 
@@ -1180,9 +1199,11 @@
 <table>
   <tr><th>設定項目</th><th>説明</th></tr>
   <tr><td>デフォルトゲームモード</td><td>試合開始時の初期モード（フル / シンプル）を設定</td></tr>
-  <tr><td>OCR API キー</td><td>スコアシート画像読み取り用のGemini APIキー（オプション）</td></tr>
-  <tr><td>データバックアップ</td><td>全データのエクスポート / インポート</td></tr>
-  <tr><td>CSV出力</td><td>試合履歴をCSV形式でエクスポート（一覧 / 詳細）</td></tr>
+  <tr><td>AI機能（Gemini API）</td><td>写真読み取りの精度を上げるGemini APIキーの設定（任意）。未設定でも標準のオフラインOCRで動作します</td></tr>
+  <tr><td>データ管理</td><td>全データのバックアップ / 復元、試合履歴CSV（サマリー / 選手スタッツ詳細）の出力</td></tr>
+  <tr><td>ヘルプ</td><td>使い方（README）へのリンク、問い合わせ先の表示</td></tr>
+  <tr><td>エラーログ</td><td>アプリ内で発生したエラーの記録の表示・コピー・削除（端末内のみ保存）</td></tr>
+  <tr><td>アプリについて</td><td>バージョン表示、利用規約・プライバシーポリシー・OSSライセンスの確認</td></tr>
 </table>
 
 <div class="page-break"></div>
