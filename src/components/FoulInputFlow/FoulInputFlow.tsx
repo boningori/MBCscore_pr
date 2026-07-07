@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import type { FoulType, FreeThrowResult, ShotSituation, Player } from '../../types/game';
 import { MAX_PERSONAL_FOULS, suggestFreeThrowCount } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import './FoulInputFlow.css';
 
 type Step = 'foulType' | 'shotSituation' | 'shotResult' | 'ftCount' | 'shooter' | 'ftResult';
@@ -441,7 +442,7 @@ export function FoulInputFlow({
                                     className={`shooter-btn ${shooterPlayerId === player.id ? 'selected' : ''}`}
                                     onClick={() => handleShooterSelect(player.id)}
                                 >
-                                    <span className="shooter-number">#{player.number}</span>
+                                    <span className="shooter-number">#{formatPlayerNumber(player.number)}</span>
                                     <span className="shooter-name">{player.courtName || player.name}</span>
                                 </button>
                             ))}
@@ -459,9 +460,14 @@ export function FoulInputFlow({
                 {/* Step 5: FT結果入力 */}
                 {step === 'ftResult' && (
                     <div className="ft-result-section">
-                        <div className="shooter-info">
-                            シューター: #{availableShooters.find(p => p.id === shooterPlayerId)?.number} {availableShooters.find(p => p.id === shooterPlayerId)?.courtName || availableShooters.find(p => p.id === shooterPlayerId)?.name}
-                        </div>
+                        {(() => {
+                            const shooter = availableShooters.find(p => p.id === shooterPlayerId);
+                            return (
+                                <div className="shooter-info">
+                                    シューター: #{shooter ? formatPlayerNumber(shooter.number) : ''} {shooter?.courtName || shooter?.name}
+                                </div>
+                            );
+                        })()}
                         <div className="ft-result-list">
                             {Array.from({ length: freeThrows }).map((_, index) => (
                                 <div key={index} className="ft-result-row">

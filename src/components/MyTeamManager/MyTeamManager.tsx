@@ -14,6 +14,7 @@ import {
     shareFile,
     generateTeamFilename,
 } from '../../utils/dataBackup';
+import { parsePlayerNumber, formatPlayerNumber } from '../../utils/playerNumber';
 import { useTeamImportExport, TextImportPanel, ImportConfirmPanel, DeleteConfirmModal } from '../TeamShared';
 import './MyTeamManager.css';
 
@@ -271,26 +272,27 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
         // 少なくとも1つの番号と氏名が必要
         if ((!newBibNumber && !newUniformNumber) || !newName) return;
 
-        const bibNum = newBibNumber ? parseInt(newBibNumber, 10) : undefined;
-        const uniNum = newUniformNumber ? parseInt(newUniformNumber, 10) : undefined;
+        // 「00」は「0」と別の番号として内部値100で扱う（parsePlayerNumber）
+        const bibNum = newBibNumber ? parsePlayerNumber(newBibNumber) : undefined;
+        const uniNum = newUniformNumber ? parsePlayerNumber(newUniformNumber) : undefined;
 
         // 番号の範囲チェック
-        if (bibNum !== undefined && (isNaN(bibNum) || bibNum < 0 || bibNum > 99)) {
-            showStatus('ビブス番号は0〜99の範囲で入力してください', 'error');
+        if (bibNum === null) {
+            showStatus('ビブス番号は0〜99または00で入力してください', 'error');
             return;
         }
-        if (uniNum !== undefined && (isNaN(uniNum) || uniNum < 0 || uniNum > 99)) {
-            showStatus('ユニフォーム番号は0〜99の範囲で入力してください', 'error');
+        if (uniNum === null) {
+            showStatus('ユニフォーム番号は0〜99または00で入力してください', 'error');
             return;
         }
 
         // 重複チェック（それぞれの番号タイプで）
         if (bibNum !== undefined && players.some(p => p.bibNumber === bibNum)) {
-            showStatus(`ビブス番号 ${bibNum} は既に登録されています`, 'error');
+            showStatus(`ビブス番号 ${formatPlayerNumber(bibNum)} は既に登録されています`, 'error');
             return;
         }
         if (uniNum !== undefined && players.some(p => p.uniformNumber === uniNum)) {
-            showStatus(`ユニフォーム番号 ${uniNum} は既に登録されています`, 'error');
+            showStatus(`ユニフォーム番号 ${formatPlayerNumber(uniNum)} は既に登録されています`, 'error');
             return;
         }
 
@@ -334,8 +336,8 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
     const handleStartEdit = (index: number) => {
         const player = players[index];
         setEditingPlayerIndex(index);
-        setEditBibNumber(player.bibNumber !== undefined ? String(player.bibNumber) : '');
-        setEditUniformNumber(player.uniformNumber !== undefined ? String(player.uniformNumber) : '');
+        setEditBibNumber(player.bibNumber !== undefined ? formatPlayerNumber(player.bibNumber) : '');
+        setEditUniformNumber(player.uniformNumber !== undefined ? formatPlayerNumber(player.uniformNumber) : '');
         setEditName(player.name);
         setEditCourtName(player.courtName || '');
         setEditLicenseNo(player.licenseNo || '');
@@ -345,8 +347,9 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
     const handleSaveEdit = () => {
         if (editingPlayerIndex === null) return;
 
-        const bibNum = editBibNumber ? parseInt(editBibNumber, 10) : undefined;
-        const uniNum = editUniformNumber ? parseInt(editUniformNumber, 10) : undefined;
+        // 「00」は「0」と別の番号として内部値100で扱う（parsePlayerNumber）
+        const bibNum = editBibNumber ? parsePlayerNumber(editBibNumber) : undefined;
+        const uniNum = editUniformNumber ? parsePlayerNumber(editUniformNumber) : undefined;
 
         // 少なくとも1つの番号が必要
         if (bibNum === undefined && uniNum === undefined) {
@@ -355,12 +358,12 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
         }
 
         // 番号の範囲チェック
-        if (bibNum !== undefined && (isNaN(bibNum) || bibNum < 0 || bibNum > 99)) {
-            showStatus('ビブス番号は0〜99の範囲で入力してください', 'error');
+        if (bibNum === null) {
+            showStatus('ビブス番号は0〜99または00で入力してください', 'error');
             return;
         }
-        if (uniNum !== undefined && (isNaN(uniNum) || uniNum < 0 || uniNum > 99)) {
-            showStatus('ユニフォーム番号は0〜99の範囲で入力してください', 'error');
+        if (uniNum === null) {
+            showStatus('ユニフォーム番号は0〜99または00で入力してください', 'error');
             return;
         }
 
@@ -368,14 +371,14 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
         if (bibNum !== undefined) {
             const isDuplicateBib = players.some((p, i) => i !== editingPlayerIndex && p.bibNumber === bibNum);
             if (isDuplicateBib) {
-                showStatus(`ビブス番号 ${bibNum} は既に登録されています`, 'error');
+                showStatus(`ビブス番号 ${formatPlayerNumber(bibNum)} は既に登録されています`, 'error');
                 return;
             }
         }
         if (uniNum !== undefined) {
             const isDuplicateUni = players.some((p, i) => i !== editingPlayerIndex && p.uniformNumber === uniNum);
             if (isDuplicateUni) {
-                showStatus(`ユニフォーム番号 ${uniNum} は既に登録されています`, 'error');
+                showStatus(`ユニフォーム番号 ${formatPlayerNumber(uniNum)} は既に登録されています`, 'error');
                 return;
             }
         }
@@ -521,26 +524,24 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
 
                     <div className="add-player-row">
                         <input
-                            type="number"
+                            type="text"
                             className="input player-number-input"
                             value={newBibNumber}
-                            onChange={e => setNewBibNumber(e.target.value)}
+                            onChange={e => setNewBibNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
                             placeholder="ビブス"
-                            min="0"
-                            max="99"
+                            maxLength={2}
                             autoComplete="one-time-code"
                             inputMode="numeric"
                             data-form-type="other"
                             data-lpignore="true"
                         />
                         <input
-                            type="number"
+                            type="text"
                             className="input player-number-input"
                             value={newUniformNumber}
-                            onChange={e => setNewUniformNumber(e.target.value)}
+                            onChange={e => setNewUniformNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
                             placeholder="ユニ"
-                            min="0"
-                            max="99"
+                            maxLength={2}
                             autoComplete="one-time-code"
                             inputMode="numeric"
                             data-form-type="other"
@@ -597,13 +598,12 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                     // 編集モード
                                     <>
                                         <input
-                                            type="number"
+                                            type="text"
                                             className="input player-number-input"
                                             value={editBibNumber}
-                                            onChange={e => setEditBibNumber(e.target.value)}
+                                            onChange={e => setEditBibNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
                                             placeholder="ビブス"
-                                            min="0"
-                                            max="99"
+                                            maxLength={2}
                                             autoFocus
                                             autoComplete="one-time-code"
                                             inputMode="numeric"
@@ -611,13 +611,12 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                             data-lpignore="true"
                                         />
                                         <input
-                                            type="number"
+                                            type="text"
                                             className="input player-number-input"
                                             value={editUniformNumber}
-                                            onChange={e => setEditUniformNumber(e.target.value)}
+                                            onChange={e => setEditUniformNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
                                             placeholder="ユニ"
-                                            min="0"
-                                            max="99"
+                                            maxLength={2}
                                             autoComplete="one-time-code"
                                             inputMode="numeric"
                                             data-form-type="other"
@@ -681,10 +680,10 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                             onClick={() => handleStartEdit(index)}
                                         >
                                             {player.bibNumber !== undefined && player.uniformNumber !== undefined
-                                                ? `#${player.bibNumber}/#${player.uniformNumber}`
+                                                ? `#${formatPlayerNumber(player.bibNumber)}/#${formatPlayerNumber(player.uniformNumber)}`
                                                 : player.bibNumber !== undefined
-                                                    ? `ビ#${player.bibNumber}`
-                                                    : `ユ#${player.uniformNumber}`
+                                                    ? `ビ#${formatPlayerNumber(player.bibNumber)}`
+                                                    : `ユ#${formatPlayerNumber(player.uniformNumber ?? player.number)}`
                                             }
                                         </span>
                                         <span

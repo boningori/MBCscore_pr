@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ScoreEntry, StatEntry, FoulEntry, Player } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import { EditActionModal } from '../EditActionModal';
 import './ActionHistory.css';
 
@@ -66,7 +67,7 @@ export function ActionHistory({
     // 選手名を取得
     const getPlayerName = (playerId: string) => {
         const player = players.find(p => p.id === playerId);
-        return player?.courtName || player?.name || `#${player?.number || '?'}`;
+        return player?.courtName || player?.name || (player ? `#${formatPlayerNumber(player.number)}` : '#?');
     };
 
     // 選手IDを取得
@@ -331,7 +332,7 @@ export function ActionHistory({
                                 onMouseLeave={handleTouchEnd}
                                 onContextMenu={(e) => e.preventDefault()}
                             >
-                                <span className="player-number">#{item.playerNumber === -1 ? '?' : item.playerNumber}</span>
+                                <span className="player-number">#{item.playerNumber === -1 ? '?' : formatPlayerNumber(item.playerNumber)}</span>
                                 <span className="action-desc">{item.description}</span>
                                 {selectedItemId === item.id && (
                                     <div className="action-menu">

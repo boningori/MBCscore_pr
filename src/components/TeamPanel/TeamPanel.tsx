@@ -1,4 +1,5 @@
 import type { Player, ScoreEntry, StatEntry, FoulEntry } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import { ActionHistory } from '../ActionHistory';
 
 interface ActionHistoryHandlers {
@@ -64,10 +65,10 @@ export function TeamPanel({
               className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
               onClick={() => onPlayerSelect(player.id, teamId)}
               aria-pressed={selectedPlayerId === player.id}
-              aria-label={`#${player.number} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}`}
+              aria-label={`#${formatPlayerNumber(player.number)} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}`}
             >
               <span className="player-num">
-                #{player.number}
+                #{formatPlayerNumber(player.number)}
                 {gameMode === 'full' && isMyTeam
                   ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
                   : ''}

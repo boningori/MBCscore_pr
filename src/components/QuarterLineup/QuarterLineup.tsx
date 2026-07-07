@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Player } from '../../types/game';
 import { PLAYERS_ON_COURT } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import './QuarterLineup.css';
 
 interface QuarterLineupProps {
@@ -97,7 +98,7 @@ export function QuarterLineup({
             {quarter > 1 && previousQuarterPlayers.length > 0 && (
                 <div className="previous-quarter-info">
                     <span className="text-muted">前Q出場: </span>
-                    {previousQuarterPlayers.map(p => `#${p.number}`).join(', ')}
+                    {previousQuarterPlayers.map(p => `#${formatPlayerNumber(p.number)}`).join(', ')}
                 </div>
             )}
 
@@ -121,7 +122,7 @@ export function QuarterLineup({
                             className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''} ${overMax ? 'rule-over-max' : ''}`}
                             onClick={() => handlePlayerToggle(player.id)}
                         >
-                            <div className="lineup-player-number">#{player.number}</div>
+                            <div className="lineup-player-number">#{formatPlayerNumber(player.number)}</div>
                             <div className="lineup-player-name">
                                 {player.name}
                                 {player.isCaptain && <span className="captain-badge">C</span>}
@@ -173,7 +174,7 @@ export function QuarterLineup({
             <div className="quarter-rule-hint">
                 {isRegularQuarter && quarter >= 2 && unplayedNumbers.length > 0 && (
                     <p className="rule-warn">
-                        ⚠ 未出場（全員出場の目安）: {unplayedNumbers.map(n => `#${n}`).join(', ')}
+                        ⚠ 未出場（全員出場の目安）: {unplayedNumbers.map(n => `#${formatPlayerNumber(n)}`).join(', ')}
                     </p>
                 )}
                 <p className="text-muted text-sm">

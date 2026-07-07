@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import type { SavedTeam, NumberType } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { getGameNameSuggestions } from '../../utils/gameHistoryStorage';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
 import './GameSetup.css';
@@ -400,7 +401,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                             checked={!excluded}
                                             onChange={() => togglePlayerExclusion(index)}
                                         />
-                                        <span className="player-number">#{player.bibNumber ?? player.uniformNumber ?? player.number}</span>
+                                        <span className="player-number">#{formatPlayerNumber(player.bibNumber ?? player.uniformNumber ?? player.number)}</span>
                                         <span className="player-name-text">{player.name}</span>
                                         {player.isCaptain && <span className="captain-badge">C</span>}
                                     </label>

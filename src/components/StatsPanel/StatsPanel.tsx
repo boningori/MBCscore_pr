@@ -1,4 +1,5 @@
 import type { Player, PlayerStats } from '../../types/game';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import './StatsPanel.css';
 
 interface StatsPanelProps {
@@ -35,7 +36,7 @@ export function StatsPanel({ players, teamName, isHistoryView = false }: StatsPa
 
                 {sortedPlayers.map(player => (
                     <div key={player.id} className={`stats-row ${!isHistoryView && player.isOnCourt ? 'on-court' : ''}`}>
-                        <span className="stats-col-num">{player.number}</span>
+                        <span className="stats-col-num">{formatPlayerNumber(player.number)}</span>
                         <span className="stats-col-name">{player.name}</span>
                         <span className="stats-col stats-points">{player.stats.points}</span>
                         <span className="stats-col">{formatShot(player.stats.twoPointMade, player.stats.twoPointAttempt)}</span>

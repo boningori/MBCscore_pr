@@ -3,6 +3,7 @@
 import type { GameRecord } from './gameHistoryStorage';
 import type { QuarterPlayType } from '../types/game';
 import { loadGameHistory } from './gameHistoryStorage';
+import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
 import { loadMyTeams, loadOpponents } from './teamStorage';
 import type { AppSettings } from './appSettings';
@@ -292,7 +293,7 @@ export function exportGameHistoryDetailCSV(): string {
                 resultA,
                 game.finalScore.teamA.toString(),
                 game.finalScore.teamB.toString(),
-                player.number.toString(),
+                formatPlayerNumber(player.number),
                 player.name,
                 player.courtName || '',
                 player.isCaptain ? 'C' : '',
@@ -357,7 +358,7 @@ export function exportGameHistoryDetailCSV(): string {
                 resultB,
                 game.finalScore.teamB.toString(),
                 game.finalScore.teamA.toString(),
-                player.number.toString(),
+                formatPlayerNumber(player.number),
                 player.name,
                 player.courtName || '',
                 player.isCaptain ? 'C' : '',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import { Modal } from '../Modal';
 import './PendingActionResolver.css';
 
@@ -107,7 +108,7 @@ export function PendingActionResolver({
                                 } ${isCandidate(player.id) ? 'candidate' : ''}`}
                             onClick={() => setSelectedPlayerId(player.id)}
                         >
-                            <span className="player-number">#{player.number}</span>
+                            <span className="player-number">#{formatPlayerNumber(player.number)}</span>
                             {player.courtName && (
                                 <span className="player-name">{player.courtName}</span>
                             )}
