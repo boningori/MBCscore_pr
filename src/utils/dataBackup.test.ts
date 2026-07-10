@@ -218,4 +218,49 @@ describe('dataBackup 拡張範囲（recentOpponents / gameSession）', () => {
         expect(result.success).toBe(true);
         expect(loadMyTeams().some(t => t.id === 'team-legacy')).toBe(true);
     });
+
+    it('gameSession.game.teamA.players が配列でなくてもクラッシュせずに空配列へ矯正して取り込む', () => {
+        const game = createInitialGame();
+        const brokenSession = {
+            game: { ...game, teamA: { ...game.teamA, players: null }, teamB: { ...game.teamB, players: 'ゴミ' } },
+            gameName: '壊れセッション',
+            date: '2026-07-10T00:00:00.000Z',
+            savedAt: '2026-07-10T00:00:00.000Z',
+        };
+        const json = JSON.stringify({
+            version: '2.0',
+            exportDate: '2026-07-10T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { gameSession: brokenSession },
+        });
+
+        expect(() => executeImport(parseImportJSON(json))).not.toThrow();
+
+        const restored = loadGameSession();
+        expect(restored?.game.teamA.players).toEqual([]);
+        expect(restored?.game.teamB.players).toEqual([]);
+    });
+
+    it('recentOpponents は updatedAt の新しい順にマージされ、端末側・バックアップ側の両方が保持される', () => {
+        // saveRecentOpponent は保存時に updatedAt を現在時刻へ上書きするため、
+        // updatedAt を明示的に制御するには localStorage へ直接書き込む
+        const older = { ...makeSavedTeam('opp-old', '端末側の相手'), updatedAt: '2026-07-01T00:00:00.000Z' };
+        localStorage.setItem('minibasket-opponent-teams', JSON.stringify([older]));
+
+        const newer = { ...makeSavedTeam('opp-new', 'バックアップ側の相手'), updatedAt: '2099-01-01T00:00:00.000Z' };
+        const json = JSON.stringify({
+            version: '2.0',
+            exportDate: '2026-07-10T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { recentOpponents: [newer] },
+        });
+
+        executeImport(parseImportJSON(json));
+
+        const recent = loadRecentOpponents();
+        const ids = recent.map(t => t.id);
+        expect(ids).toContain('opp-old');
+        expect(ids).toContain('opp-new');
+        expect(ids.indexOf('opp-new')).toBeLessThan(ids.indexOf('opp-old'));
+    });
 });

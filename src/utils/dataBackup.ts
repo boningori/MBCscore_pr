@@ -520,6 +520,26 @@ function sanitizeImportedGame(raw: unknown): GameRecord | null {
     return { ...raw, teamA: fixTeam(raw.teamA), teamB: fixTeam(raw.teamB) } as unknown as GameRecord;
 }
 
+/**
+ * インポートされた進行中試合セッションを検証・矯正する。
+ * - game を持たない、あるいは game がオブジェクトでないレコードは取り込み不可として null を返す
+ * - game.id は必須ではない（GameSession の Game は保存済み試合と異なり id を持たない場合がある）
+ * - teamA / teamB が壊れていても players を安全な配列へ矯正する
+ */
+function sanitizeImportedGameSession(raw: unknown): GameSession | null {
+    if (!isPlainObject(raw)) return null;
+    if (!isPlainObject(raw.game)) return null;
+    const g = raw.game;
+    const fixTeam = (t: unknown) => {
+        if (!isPlainObject(t)) return { players: [] };
+        return { ...t, players: Array.isArray(t.players) ? t.players.filter(isPlainObject) : [] };
+    };
+    return {
+        ...raw,
+        game: { ...g, teamA: fixTeam(g.teamA), teamB: fixTeam(g.teamB) },
+    } as unknown as GameSession;
+}
+
 // ===== インポート機能 =====
 
 /**
@@ -886,21 +906,32 @@ function importFullBackup(data: BackupData): ImportResult {
             imported.opponents = teams.length;
         }
 
-        // 最近の対戦相手のインポート（ID単位でマージ・最大10件）
+        // 最近の対戦相手のインポート（updatedAt の新しい順にマージ・最大10件）
         if (data.data.recentOpponents && Array.isArray(data.data.recentOpponents)) {
             const teams: SavedTeam[] = [];
             for (const t of data.data.recentOpponents) {
                 const clean = sanitizeImportedTeam(t);
                 if (clean) teams.push(clean);
+                else errors.push('不正な最近の対戦相手データを1件スキップしました（idが不足）');
             }
             const existingRecent = loadRecentOpponents();
-            const mergedRecent = mergeArrayById(existingRecent, teams).slice(0, 10);
+            const byId = new Map<string, SavedTeam>();
+            for (const t of [...existingRecent, ...teams]) {
+                const prev = byId.get(t.id);
+                if (!prev || (t.updatedAt ?? '') > (prev.updatedAt ?? '')) byId.set(t.id, t);
+            }
+            const mergedRecent = [...byId.values()]
+                .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
+                .slice(0, 10);
             localStorage.setItem('minibasket-opponent-teams', JSON.stringify(mergedRecent));
         }
 
         // 進行中の試合セッションのインポート（端末に進行中セッションが無い場合のみ復元）
         if (data.data.gameSession && !hasGameSession()) {
-            localStorage.setItem('minibasket-game-session', JSON.stringify(data.data.gameSession));
+            const cleanSession = sanitizeImportedGameSession(data.data.gameSession);
+            if (cleanSession) {
+                localStorage.setItem('minibasket-game-session', JSON.stringify(cleanSession));
+            }
         }
 
         // アプリ設定のインポート（既存設定とマージ）
