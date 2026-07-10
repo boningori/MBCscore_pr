@@ -242,6 +242,24 @@ describe('dataBackup 拡張範囲（recentOpponents / gameSession）', () => {
         expect(restored?.game.teamB.players).toEqual([]);
     });
 
+    it('バックアップに gameSession が含まれる場合、プレビューに進行中の試合が復元される旨を表示する', () => {
+        const session = {
+            game: createInitialGame(),
+            gameName: 'X',
+            date: '2026-07-10T00:00:00.000Z',
+            savedAt: '2026-07-10T00:00:00.000Z',
+        };
+        const json = JSON.stringify({
+            version: '2.0',
+            exportDate: '2026-07-10T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { gameSession: session },
+        });
+
+        const parsed = parseImportJSON(json);
+        expect(parsed.preview?.some(l => l.includes('進行中の試合'))).toBe(true);
+    });
+
     it('recentOpponents は updatedAt の新しい順にマージされ、端末側・バックアップ側の両方が保持される', () => {
         // saveRecentOpponent は保存時に updatedAt を現在時刻へ上書きするため、
         // updatedAt を明示的に制御するには localStorage へ直接書き込む

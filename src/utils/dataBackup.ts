@@ -675,6 +675,7 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
         if (bd.data.gameHistory?.length) parts.push(`試合${bd.data.gameHistory.length}件`);
         if (bd.data.myTeams?.length) parts.push(`マイチーム${bd.data.myTeams.length}件`);
         if (bd.data.opponents?.length) parts.push(`対戦チーム${bd.data.opponents.length}件`);
+        if (bd.data.recentOpponents?.length) parts.push(`最近の対戦相手${bd.data.recentOpponents.length}件`);
         if (bd.data.settings) parts.push('設定');
 
         // 既存データとの比較で新規/上書きの内訳を計算
@@ -702,6 +703,7 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
             if (updateCount > 0) hasDuplicates = true;
         }
         if (bd.data.settings) preview.push('設定: 上書き');
+        if (bd.data.gameSession) preview.push('🏀 進行中の試合: 端末に進行中の試合が無い場合に復元されます');
 
         return {
             type: 'backup',
@@ -937,6 +939,7 @@ function importFullBackup(data: BackupData): ImportResult {
         }
 
         // 最近の対戦相手のインポート（updatedAt の新しい順にマージ・最大10件）
+        let importedRecent = 0;
         if (data.data.recentOpponents && Array.isArray(data.data.recentOpponents)) {
             const teams: SavedTeam[] = [];
             for (const t of data.data.recentOpponents) {
@@ -954,13 +957,16 @@ function importFullBackup(data: BackupData): ImportResult {
                 .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
                 .slice(0, 10);
             localStorage.setItem('minibasket-opponent-teams', JSON.stringify(mergedRecent));
+            importedRecent = teams.length;
         }
 
         // 進行中の試合セッションのインポート（端末に進行中セッションが無い場合のみ復元）
+        let sessionRestored = false;
         if (data.data.gameSession && !hasGameSession()) {
             const cleanSession = sanitizeImportedGameSession(data.data.gameSession);
             if (cleanSession) {
                 localStorage.setItem('minibasket-game-session', JSON.stringify(cleanSession));
+                sessionRestored = true;
             }
         }
 
@@ -992,6 +998,12 @@ function importFullBackup(data: BackupData): ImportResult {
         }
         if (imported.opponents > 0) {
             msgParts.push(`対戦相手: 新規${details.newOpponents}件${details.updatedOpponents > 0 ? `・更新${details.updatedOpponents}件` : ''}`);
+        }
+        if (importedRecent > 0) {
+            msgParts.push(`最近の対戦相手: ${importedRecent}件`);
+        }
+        if (sessionRestored) {
+            msgParts.push('進行中の試合: 復元');
         }
 
         return {
