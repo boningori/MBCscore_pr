@@ -1,0 +1,20 @@
+.backup-prompt-modal {
+    max-width: 420px;
+    padding: 1.25rem;
+}
+
+.backup-prompt-body h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.15rem;
+}
+
+.backup-prompt-body p {
+    margin: 0 0 1.25rem;
+    line-height: 1.6;
+}
+
+.backup-prompt-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
