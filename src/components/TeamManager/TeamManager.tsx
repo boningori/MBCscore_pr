@@ -251,7 +251,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
                 <input
                     ref={jsonImportInputRef}
                     type="file"
-                    accept=".json"
+                    accept=".json,.txt"
                     onChange={handleJsonImport}
                     style={{ display: 'none' }}
                 />

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup } from './dataBackup';
+import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup, shareFile } from './dataBackup';
 import { saveMyTeam, loadMyTeams } from './teamStorage';
 import type { SavedTeam } from './teamStorage';
 import { saveGameResult, loadGameHistory } from './gameHistoryStorage';
@@ -331,5 +331,48 @@ describe('shareBackup', () => {
         expect(ok).toBe(true);
         expect(loadLastBackup()?.gameCount).toBe(1);
         expect(downloadSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('shareFile モバイル共有（.json共有不可対策）', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+        // @ts-expect-error テスト用クリーンアップ
+        delete (navigator as unknown as { share?: unknown }).share;
+        // @ts-expect-error テスト用クリーンアップ
+        delete (navigator as unknown as { canShare?: unknown }).canShare;
+    });
+
+    it('.jsonファイル名でも共有時は.txt(text/plain)として共有する', async () => {
+        let sharedFile: File | undefined;
+        // @ts-expect-error テスト用に注入
+        navigator.canShare = () => true;
+        // @ts-expect-error テスト用に注入
+        navigator.share = vi.fn(async (payload: { files: File[] }) => { sharedFile = payload.files[0]; });
+
+        const ok = await shareFile({ a: 1 }, 'MBCscore_backup_2026-07-10_10-30.json', 'タイトル');
+
+        expect(ok).toBe(true);
+        expect(sharedFile).toBeInstanceOf(File);
+        expect(sharedFile!.name).toBe('MBCscore_backup_2026-07-10_10-30.txt');
+        expect(sharedFile!.type).toBe('text/plain');
+        // 共有した中身は元のJSONのまま
+        expect(await sharedFile!.text()).toBe(JSON.stringify({ a: 1 }, null, 2));
+    });
+
+    it('canShareがfalseを返す場合は共有せずfalseを返す（呼び出し側がダウンロードにフォールバック）', async () => {
+        // @ts-expect-error テスト用に注入
+        navigator.canShare = () => false;
+        const shareSpy = vi.fn();
+        // @ts-expect-error テスト用に注入
+        navigator.share = shareSpy;
+
+        const ok = await shareFile({ a: 1 }, 'x.json', 'タイトル');
+
+        expect(ok).toBe(false);
+        expect(shareSpy).not.toHaveBeenCalled();
     });
 });

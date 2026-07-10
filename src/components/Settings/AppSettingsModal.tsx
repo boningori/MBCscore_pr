@@ -520,7 +520,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept=".json"
+                                accept=".json,.txt"
                                 onChange={handleFileChange}
                                 style={{ display: 'none' }}
                             />

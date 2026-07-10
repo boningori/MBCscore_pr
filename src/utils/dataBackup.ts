@@ -448,7 +448,14 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /**
- * Web Share APIを使用してファイルを共有（モバイル向け）
+ * Web Share APIを使用してファイルを共有（モバイル向け）。
+ *
+ * 注意: ChromiumのWeb Shareは共有可能なファイル拡張子をホワイトリスト制限しており、
+ * `.json` は許可されていない。そのままだとAndroid Chrome等で共有が拒否され、共有シートが
+ * 開かないまま失敗する。中身はJSONのまま、共有ファイルは許可リストにある `.txt`(text/plain)
+ * として渡すことで共有シートを開けるようにする（インポートは中身をJSON解析するため拡張子非依存）。
+ * 対応可否は `navigator.canShare` で事前判定し、不可のときは false を返して呼び出し側の
+ * ダウンロードにフォールバックさせる。
  */
 export async function shareFile(data: unknown, filename: string, title: string = 'MBCscore データ'): Promise<boolean> {
     if (!navigator.share) {
@@ -457,12 +464,19 @@ export async function shareFile(data: unknown, filename: string, title: string =
 
     try {
         const json = JSON.stringify(data, null, 2);
-        const file = new File([json], filename, { type: 'application/json' });
+        // .json は共有許可リスト外のため .txt として共有する
+        const shareName = filename.replace(/\.json$/i, '') + '.txt';
+        const file = new File([json], shareName, { type: 'text/plain' });
 
+        // canShareが使える場合はファイル共有可否を事前確認（不可ならダウンロードへフォールバック）
+        if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) {
+            return false;
+        }
+
+        // filesと同時にtextを渡すと一部iOSで共有が失敗するため、filesとtitleのみ渡す
         await navigator.share({
             files: [file],
             title: title,
-            text: 'MBCscoreのバックアップデータです',
         });
 
         return true;
