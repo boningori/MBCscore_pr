@@ -10,6 +10,7 @@ import type { AppSettings } from './appSettings';
 import { loadAppSettings } from './appSettings';
 import type { GameSession } from './gameSessionStorage';
 import { loadGameSession, hasGameSession } from './gameSessionStorage';
+import { recordBackup } from './lastBackupStorage';
 
 // バックアップデータのバージョン
 export const BACKUP_VERSION = '2.0';
@@ -468,6 +469,35 @@ export async function shareFile(data: unknown, filename: string, title: string =
     } catch (error) {
         // ユーザーがキャンセルした場合もここに来る
         if (import.meta.env.DEV) console.log('Share cancelled or failed:', error);
+        return false;
+    }
+}
+
+/**
+ * 全データバックアップを共有シート（対応時）またはダウンロードで保存する。
+ * どちらかでファイルを生成できたら最終バックアップとして記録し true を返す。
+ * データ保全のため、共有がキャンセル/失敗してもダウンロードにフォールバックする。
+ */
+export async function shareBackup(): Promise<boolean> {
+    try {
+        const data = exportAllData();
+        const filename = generateBackupFilename();
+
+        // モバイル等でWeb Shareが使えるならまず共有シートを試す
+        if ('share' in navigator) {
+            const shared = await shareFile(data, filename, 'MBCscore 全データバックアップ');
+            if (shared) {
+                recordBackup();
+                return true;
+            }
+        }
+
+        // 非対応・共有キャンセル時はダウンロードにフォールバック
+        downloadJSON(data, filename);
+        recordBackup();
+        return true;
+    } catch (error) {
+        console.error('shareBackup failed:', error);
         return false;
     }
 }

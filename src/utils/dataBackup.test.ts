@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { exportAllData, parseImportJSON, executeImport, escapeCsvCell } from './dataBackup';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup } from './dataBackup';
 import { saveMyTeam, loadMyTeams } from './teamStorage';
 import type { SavedTeam } from './teamStorage';
 import { saveGameResult, loadGameHistory } from './gameHistoryStorage';
@@ -7,6 +7,7 @@ import { createTeam, createPlayer } from '../types/game';
 import { saveRecentOpponent, loadRecentOpponents } from './teamStorage';
 import { saveGameSession, loadGameSession, hasGameSession } from './gameSessionStorage';
 import { createInitialGame } from '../types/game';
+import { loadLastBackup } from './lastBackupStorage';
 
 function makeSavedTeam(id: string, name: string): SavedTeam {
     return {
@@ -262,5 +263,55 @@ describe('dataBackup 拡張範囲（recentOpponents / gameSession）', () => {
         expect(ids).toContain('opp-old');
         expect(ids).toContain('opp-new');
         expect(ids.indexOf('opp-new')).toBeLessThan(ids.indexOf('opp-old'));
+    });
+});
+
+describe('shareBackup', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+        // テストで差し込んだ navigator.share を除去
+        // @ts-expect-error テスト用クリーンアップ
+        delete (navigator as unknown as { share?: unknown }).share;
+    });
+
+    it('Web Share非対応時はダウンロードで保存し、最終バックアップを記録する', async () => {
+        const teamA = createTeam('teamA', 'A', 'コーチ');
+        const teamB = createTeam('teamB', 'B', 'コーチ');
+        saveGameResult('第1試合', teamA, teamB, [], [], []);
+
+        // jsdomにはURL.createObjectURL等が無いためダウンロード経路をスタブ
+        const createEl = document.createElement.bind(document);
+        vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+            const el = createEl(tag);
+            if (tag === 'a') el.click = () => {};
+            return el as HTMLElement;
+        });
+        // @ts-expect-error jsdom未実装APIのスタブ
+        URL.createObjectURL = () => 'blob:mock';
+        // @ts-expect-error jsdom未実装APIのスタブ
+        URL.revokeObjectURL = () => {};
+
+        const ok = await shareBackup();
+        expect(ok).toBe(true);
+        expect(loadLastBackup()?.gameCount).toBe(1);
+    });
+
+    it('Web Share成功時はダウンロードせず記録する', async () => {
+        const teamA = createTeam('teamA', 'A', 'コーチ');
+        const teamB = createTeam('teamB', 'B', 'コーチ');
+        saveGameResult('第1試合', teamA, teamB, [], [], []);
+
+        // navigator.share を成功するモックに
+        // @ts-expect-error テスト用に share を注入
+        navigator.share = vi.fn().mockResolvedValue(undefined);
+        const downloadSpy = vi.spyOn(URL, 'createObjectURL');
+
+        const ok = await shareBackup();
+        expect(ok).toBe(true);
+        expect(loadLastBackup()?.gameCount).toBe(1);
+        expect(downloadSpy).not.toHaveBeenCalled();
     });
 });
