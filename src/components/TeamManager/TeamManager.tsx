@@ -123,7 +123,7 @@ export function TeamManager({ onSelectTeam, onBack, mode }: TeamManagerProps) {
 
         // モバイルデバイスの場合はWeb Share APIを試す
         if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
-            const shared = await shareFile(data, filename, `${team.name} - チームデータ`);
+            const shared = await shareFile(data, filename);
             if (shared) return;
         }
 

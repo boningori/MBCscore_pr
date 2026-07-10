@@ -346,21 +346,24 @@ describe('shareFile モバイル共有（.json共有不可対策）', () => {
         delete (navigator as unknown as { canShare?: unknown }).canShare;
     });
 
-    it('.jsonファイル名でも共有時は.txt(text/plain)として共有する', async () => {
-        let sharedFile: File | undefined;
+    it('.jsonファイル名でも共有時は.txt(text/plain)として共有し、titleに日付入りファイル名を使う', async () => {
+        let payload: { files: File[]; title?: string } | undefined;
         // @ts-expect-error テスト用に注入
         navigator.canShare = () => true;
         // @ts-expect-error テスト用に注入
-        navigator.share = vi.fn(async (payload: { files: File[] }) => { sharedFile = payload.files[0]; });
+        navigator.share = vi.fn(async (p: { files: File[]; title?: string }) => { payload = p; });
 
-        const ok = await shareFile({ a: 1 }, 'MBCscore_backup_2026-07-10_10-30.json', 'タイトル');
+        const ok = await shareFile({ a: 1 }, 'MBCscore_backup_2026-07-10_10-30.json');
 
         expect(ok).toBe(true);
+        const sharedFile = payload!.files[0];
         expect(sharedFile).toBeInstanceOf(File);
-        expect(sharedFile!.name).toBe('MBCscore_backup_2026-07-10_10-30.txt');
-        expect(sharedFile!.type).toBe('text/plain');
+        expect(sharedFile.name).toBe('MBCscore_backup_2026-07-10_10-30.txt');
+        expect(sharedFile.type).toBe('text/plain');
+        // 共有先(Drive等)がファイル名に使うtitleも日付入りの.txt名にする
+        expect(payload!.title).toBe('MBCscore_backup_2026-07-10_10-30.txt');
         // 共有した中身は元のJSONのまま
-        expect(await sharedFile!.text()).toBe(JSON.stringify({ a: 1 }, null, 2));
+        expect(await sharedFile.text()).toBe(JSON.stringify({ a: 1 }, null, 2));
     });
 
     it('canShareがfalseを返す場合は共有せずfalseを返す（呼び出し側がダウンロードにフォールバック）', async () => {
@@ -370,7 +373,7 @@ describe('shareFile モバイル共有（.json共有不可対策）', () => {
         // @ts-expect-error テスト用に注入
         navigator.share = shareSpy;
 
-        const ok = await shareFile({ a: 1 }, 'x.json', 'タイトル');
+        const ok = await shareFile({ a: 1 }, 'x.json');
 
         expect(ok).toBe(false);
         expect(shareSpy).not.toHaveBeenCalled();

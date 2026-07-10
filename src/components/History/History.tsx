@@ -57,7 +57,7 @@ export function History({ onBack }: HistoryProps) {
 
         // モバイルデバイスの場合はWeb Share APIを試す
         if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
-            const shared = await shareFile(data, filename, `${record.gameName} - 試合データ`);
+            const shared = await shareFile(data, filename);
             if (shared) {
                 return;
             }
