@@ -6,16 +6,15 @@ import {
     exportAllData,
     exportGameHistoryCSV,
     exportGameHistoryDetailCSV,
-    downloadJSON,
     downloadCSV,
-    shareFile,
     copyToClipboard,
     parseImportFile,
     parseImportJSON,
     executeImport,
-    generateBackupFilename,
+    shareBackup,
 } from '../../utils/dataBackup';
 import type { ParsedImportData } from '../../utils/dataBackup';
+import { loadLastBackup } from '../../utils/lastBackupStorage';
 import { getErrorLog, clearErrorLog, formatErrorLog } from '../../utils/errorLog';
 import type { ErrorLogEntry } from '../../utils/errorLog';
 import { LegalModal } from '../Legal';
@@ -43,6 +42,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [errorLog, setErrorLog] = useState<ErrorLogEntry[]>([]);
     const [showErrorDetail, setShowErrorDetail] = useState(false);
     const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
+    const [lastBackupText, setLastBackupText] = useState<string>('未バックアップ');
 
     // isOpenがfalse→trueに変化した際にフォーム状態をリセットする
     // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
@@ -59,6 +59,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setImportText('');
             setErrorLog(getErrorLog());
             setShowErrorDetail(false);
+            const lb = loadLastBackup();
+            setLastBackupText(lb ? new Date(lb.timestamp).toLocaleString('ja-JP') : '未バックアップ');
         }
     }
 
@@ -140,24 +142,13 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
     // データ管理ハンドラー
     const handleExportAll = async () => {
-        try {
-            const data = exportAllData();
-            const filename = generateBackupFilename();
-
-            // モバイルデバイスの場合はWeb Share APIを試す
-            if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
-                const shared = await shareFile(data, filename, 'MBCscore 全データバックアップ');
-                if (shared) {
-                    showStatus('✓ データを共有しました', 'success');
-                    return;
-                }
-            }
-
-            // ダウンロード
-            downloadJSON(data, filename);
-            showStatus('✓ バックアップファイルをダウンロードしました', 'success');
-        } catch (error) {
-            showStatus('エクスポートに失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'), 'error');
+        const ok = await shareBackup();
+        if (ok) {
+            const lb = loadLastBackup();
+            setLastBackupText(lb ? new Date(lb.timestamp).toLocaleString('ja-JP') : '未バックアップ');
+            showStatus('✓ バックアップを保存しました', 'success');
+        } else {
+            showStatus('バックアップに失敗しました', 'error');
         }
     };
 
@@ -464,12 +455,15 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <div className="data-management-buttons">
                             <div className="data-section-card">
                                 <h4 className="subsection-title">📤 バックアップ</h4>
+                                <p className="section-description last-backup-label">
+                                    最終バックアップ: {lastBackupText}
+                                </p>
                                 <button
                                     className="btn btn-primary btn-block"
                                     onClick={handleExportAll}
-                                    aria-label="全データをJSONファイルとしてエクスポート"
+                                    aria-label="全データをクラウドまたはファイルに保存"
                                 >
-                                    💾 全データをエクスポート
+                                    💾 今すぐクラウド/ファイルに保存
                                 </button>
                                 <button
                                     className="btn btn-secondary btn-block"

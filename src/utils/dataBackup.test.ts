@@ -1,9 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { exportAllData, parseImportJSON, executeImport, escapeCsvCell } from './dataBackup';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup } from './dataBackup';
 import { saveMyTeam, loadMyTeams } from './teamStorage';
 import type { SavedTeam } from './teamStorage';
 import { saveGameResult, loadGameHistory } from './gameHistoryStorage';
 import { createTeam, createPlayer } from '../types/game';
+import { saveRecentOpponent, loadRecentOpponents } from './teamStorage';
+import { saveGameSession, loadGameSession, hasGameSession } from './gameSessionStorage';
+import { createInitialGame } from '../types/game';
+import { loadLastBackup } from './lastBackupStorage';
 
 function makeSavedTeam(id: string, name: string): SavedTeam {
     return {
@@ -160,5 +164,172 @@ describe('escapeCsvCell', () => {
     it('数値や空文字はそのまま引用符で囲む', () => {
         expect(escapeCsvCell('42')).toBe('"42"');
         expect(escapeCsvCell('')).toBe('""');
+    });
+});
+
+describe('dataBackup 拡張範囲（recentOpponents / gameSession）', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('recentOpponents をエクスポート→全消去→インポートで復元できる', () => {
+        saveRecentOpponent(makeSavedTeam('opp-1', '最近の相手'));
+
+        const json = JSON.stringify(exportAllData());
+        localStorage.clear();
+        expect(loadRecentOpponents()).toHaveLength(0);
+
+        const result = executeImport(parseImportJSON(json));
+        expect(result.success).toBe(true);
+        expect(loadRecentOpponents().some(t => t.id === 'opp-1')).toBe(true);
+    });
+
+    it('gameSession をエクスポート→全消去→インポートで復元できる', () => {
+        const game = createInitialGame();
+        saveGameSession(game, 'テスト大会', '2026-07-10T00:00:00.000Z');
+
+        const json = JSON.stringify(exportAllData());
+        localStorage.clear();
+        expect(hasGameSession()).toBe(false);
+
+        executeImport(parseImportJSON(json));
+        const restored = loadGameSession();
+        expect(restored?.gameName).toBe('テスト大会');
+    });
+
+    it('進行中セッションがある場合は gameSession を上書きしない', () => {
+        saveGameSession(createInitialGame(), 'バックアップ側', '2026-07-10T00:00:00.000Z');
+        const json = JSON.stringify(exportAllData());
+
+        // 端末側に別の進行中セッションがある状態で復元
+        saveGameSession(createInitialGame(), '端末側の進行中', '2026-07-11T00:00:00.000Z');
+        executeImport(parseImportJSON(json));
+
+        expect(loadGameSession()?.gameName).toBe('端末側の進行中');
+    });
+
+    it('version 1.0 の（新フィールドを持たない）バックアップもインポートできる', () => {
+        const legacy = {
+            version: '1.0',
+            exportDate: '2026-07-01T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { myTeams: [makeSavedTeam('team-legacy', '旧チーム')] },
+        };
+        const result = executeImport(parseImportJSON(JSON.stringify(legacy)));
+        expect(result.success).toBe(true);
+        expect(loadMyTeams().some(t => t.id === 'team-legacy')).toBe(true);
+    });
+
+    it('gameSession.game.teamA.players が配列でなくてもクラッシュせずに空配列へ矯正して取り込む', () => {
+        const game = createInitialGame();
+        const brokenSession = {
+            game: { ...game, teamA: { ...game.teamA, players: null }, teamB: { ...game.teamB, players: 'ゴミ' } },
+            gameName: '壊れセッション',
+            date: '2026-07-10T00:00:00.000Z',
+            savedAt: '2026-07-10T00:00:00.000Z',
+        };
+        const json = JSON.stringify({
+            version: '2.0',
+            exportDate: '2026-07-10T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { gameSession: brokenSession },
+        });
+
+        expect(() => executeImport(parseImportJSON(json))).not.toThrow();
+
+        const restored = loadGameSession();
+        expect(restored?.game.teamA.players).toEqual([]);
+        expect(restored?.game.teamB.players).toEqual([]);
+    });
+
+    it('バックアップに gameSession が含まれる場合、プレビューに進行中の試合が復元される旨を表示する', () => {
+        const session = {
+            game: createInitialGame(),
+            gameName: 'X',
+            date: '2026-07-10T00:00:00.000Z',
+            savedAt: '2026-07-10T00:00:00.000Z',
+        };
+        const json = JSON.stringify({
+            version: '2.0',
+            exportDate: '2026-07-10T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { gameSession: session },
+        });
+
+        const parsed = parseImportJSON(json);
+        expect(parsed.preview?.some(l => l.includes('進行中の試合'))).toBe(true);
+    });
+
+    it('recentOpponents は updatedAt の新しい順にマージされ、端末側・バックアップ側の両方が保持される', () => {
+        // saveRecentOpponent は保存時に updatedAt を現在時刻へ上書きするため、
+        // updatedAt を明示的に制御するには localStorage へ直接書き込む
+        const older = { ...makeSavedTeam('opp-old', '端末側の相手'), updatedAt: '2026-07-01T00:00:00.000Z' };
+        localStorage.setItem('minibasket-opponent-teams', JSON.stringify([older]));
+
+        const newer = { ...makeSavedTeam('opp-new', 'バックアップ側の相手'), updatedAt: '2099-01-01T00:00:00.000Z' };
+        const json = JSON.stringify({
+            version: '2.0',
+            exportDate: '2026-07-10T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { recentOpponents: [newer] },
+        });
+
+        executeImport(parseImportJSON(json));
+
+        const recent = loadRecentOpponents();
+        const ids = recent.map(t => t.id);
+        expect(ids).toContain('opp-old');
+        expect(ids).toContain('opp-new');
+        expect(ids.indexOf('opp-new')).toBeLessThan(ids.indexOf('opp-old'));
+    });
+});
+
+describe('shareBackup', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+        // テストで差し込んだ navigator.share を除去
+        // @ts-expect-error テスト用クリーンアップ
+        delete (navigator as unknown as { share?: unknown }).share;
+    });
+
+    it('Web Share非対応時はダウンロードで保存し、最終バックアップを記録する', async () => {
+        const teamA = createTeam('teamA', 'A', 'コーチ');
+        const teamB = createTeam('teamB', 'B', 'コーチ');
+        saveGameResult('第1試合', teamA, teamB, [], [], []);
+
+        // jsdomにはURL.createObjectURL等が無いためダウンロード経路をスタブ
+        const createEl = document.createElement.bind(document);
+        vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+            const el = createEl(tag);
+            if (tag === 'a') el.click = () => {};
+            return el as HTMLElement;
+        });
+        // @ts-expect-error jsdom未実装APIのスタブ
+        URL.createObjectURL = () => 'blob:mock';
+        // @ts-expect-error jsdom未実装APIのスタブ
+        URL.revokeObjectURL = () => {};
+
+        const ok = await shareBackup();
+        expect(ok).toBe(true);
+        expect(loadLastBackup()?.gameCount).toBe(1);
+    });
+
+    it('Web Share成功時はダウンロードせず記録する', async () => {
+        const teamA = createTeam('teamA', 'A', 'コーチ');
+        const teamB = createTeam('teamB', 'B', 'コーチ');
+        saveGameResult('第1試合', teamA, teamB, [], [], []);
+
+        // navigator.share を成功するモックに
+        // @ts-expect-error テスト用に share を注入
+        navigator.share = vi.fn().mockResolvedValue(undefined);
+        const downloadSpy = vi.spyOn(URL, 'createObjectURL');
+
+        const ok = await shareBackup();
+        expect(ok).toBe(true);
+        expect(loadLastBackup()?.gameCount).toBe(1);
+        expect(downloadSpy).not.toHaveBeenCalled();
     });
 });

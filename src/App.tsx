@@ -33,9 +33,12 @@ import { ToastContainer } from './components/Toast/Toast';
 import { showToast } from './components/Toast/toastApi';
 import { Modal } from './components/Modal';
 import { RestorePrompt } from './components/RestorePrompt';
+import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
+import { isBackupDue } from './utils/lastBackupStorage';
+import { shareBackup } from './utils/dataBackup';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameAutoSave } from './hooks/useGameAutoSave';
@@ -67,6 +70,7 @@ function AppContent() {
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
   const [restoreCandidate, setRestoreCandidate] = useState<MirrorSnapshot | null>(null);
+  const [showBackupPrompt, setShowBackupPrompt] = useState(false);
 
   // 起動時: 永続ストレージ要求・データ消失検知・起動スナップショット
   useEffect(() => {
@@ -629,6 +633,11 @@ function AppContent() {
 
     // ホームへ戻る
     setScreen('home');
+
+    // 前回バックアップ後に試合が増えていれば督促
+    if (isBackupDue()) {
+      setShowBackupPrompt(true);
+    }
   };
 
   // ホーム画面に戻る
@@ -717,6 +726,18 @@ function AppContent() {
           setRestoreCandidate(null);
           saveSnapshot();
         }}
+      />
+    );
+  }
+
+  if (showBackupPrompt) {
+    return (
+      <BackupPrompt
+        onBackup={async () => {
+          await shareBackup();
+          setShowBackupPrompt(false);
+        }}
+        onDismiss={() => setShowBackupPrompt(false)}
       />
     );
   }

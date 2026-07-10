@@ -5,12 +5,15 @@ import type { QuarterPlayType } from '../types/game';
 import { loadGameHistory } from './gameHistoryStorage';
 import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
-import { loadMyTeams, loadOpponents } from './teamStorage';
+import { loadMyTeams, loadOpponents, loadRecentOpponents } from './teamStorage';
 import type { AppSettings } from './appSettings';
 import { loadAppSettings } from './appSettings';
+import type { GameSession } from './gameSessionStorage';
+import { loadGameSession, hasGameSession } from './gameSessionStorage';
+import { recordBackup } from './lastBackupStorage';
 
 // バックアップデータのバージョン
-export const BACKUP_VERSION = '1.0';
+export const BACKUP_VERSION = '2.0';
 
 // バックアップデータ型定義
 export interface BackupData {
@@ -21,8 +24,10 @@ export interface BackupData {
         gameHistory?: GameRecord[];
         myTeams?: SavedTeam[];
         opponents?: SavedTeam[];
+        recentOpponents?: SavedTeam[];
         settings?: AppSettings;
         hiddenPlayers?: Record<string, string[]>;
+        gameSession?: GameSession | null;
     };
 }
 
@@ -99,7 +104,9 @@ export function exportAllData(): BackupData {
     const gameHistory = loadGameHistory();
     const myTeams = loadMyTeams();
     const opponents = loadOpponents();
+    const recentOpponents = loadRecentOpponents();
     const settings = loadAppSettings();
+    const gameSession = loadGameSession();
 
     // 非表示選手情報を取得
     const hiddenPlayers = getHiddenPlayersData();
@@ -112,8 +119,10 @@ export function exportAllData(): BackupData {
             gameHistory,
             myTeams,
             opponents,
+            recentOpponents,
             settings,
             hiddenPlayers,
+            gameSession,
         },
     };
 }
@@ -465,6 +474,35 @@ export async function shareFile(data: unknown, filename: string, title: string =
 }
 
 /**
+ * 全データバックアップを共有シート（対応時）またはダウンロードで保存する。
+ * どちらかでファイルを生成できたら最終バックアップとして記録し true を返す。
+ * データ保全のため、共有がキャンセル/失敗してもダウンロードにフォールバックする。
+ */
+export async function shareBackup(): Promise<boolean> {
+    try {
+        const data = exportAllData();
+        const filename = generateBackupFilename();
+
+        // モバイル等でWeb Shareが使えるならまず共有シートを試す
+        if ('share' in navigator) {
+            const shared = await shareFile(data, filename, 'MBCscore 全データバックアップ');
+            if (shared) {
+                recordBackup();
+                return true;
+            }
+        }
+
+        // 非対応・共有キャンセル時はダウンロードにフォールバック
+        downloadJSON(data, filename);
+        recordBackup();
+        return true;
+    } catch (error) {
+        console.error('shareBackup failed:', error);
+        return false;
+    }
+}
+
+/**
  * JSONデータをクリップボードにコピー
  */
 export async function copyToClipboard(data: unknown): Promise<boolean> {
@@ -510,6 +548,26 @@ function sanitizeImportedGame(raw: unknown): GameRecord | null {
         return { ...t, players: Array.isArray(t.players) ? t.players.filter(isPlainObject) : [] };
     };
     return { ...raw, teamA: fixTeam(raw.teamA), teamB: fixTeam(raw.teamB) } as unknown as GameRecord;
+}
+
+/**
+ * インポートされた進行中試合セッションを検証・矯正する。
+ * - game を持たない、あるいは game がオブジェクトでないレコードは取り込み不可として null を返す
+ * - game.id は必須ではない（GameSession の Game は保存済み試合と異なり id を持たない場合がある）
+ * - teamA / teamB が壊れていても players を安全な配列へ矯正する
+ */
+function sanitizeImportedGameSession(raw: unknown): GameSession | null {
+    if (!isPlainObject(raw)) return null;
+    if (!isPlainObject(raw.game)) return null;
+    const g = raw.game;
+    const fixTeam = (t: unknown) => {
+        if (!isPlainObject(t)) return { players: [] };
+        return { ...t, players: Array.isArray(t.players) ? t.players.filter(isPlainObject) : [] };
+    };
+    return {
+        ...raw,
+        game: { ...g, teamA: fixTeam(g.teamA), teamB: fixTeam(g.teamB) },
+    } as unknown as GameSession;
 }
 
 // ===== インポート機能 =====
@@ -617,6 +675,7 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
         if (bd.data.gameHistory?.length) parts.push(`試合${bd.data.gameHistory.length}件`);
         if (bd.data.myTeams?.length) parts.push(`マイチーム${bd.data.myTeams.length}件`);
         if (bd.data.opponents?.length) parts.push(`対戦チーム${bd.data.opponents.length}件`);
+        if (bd.data.recentOpponents?.length) parts.push(`最近の対戦相手${bd.data.recentOpponents.length}件`);
         if (bd.data.settings) parts.push('設定');
 
         // 既存データとの比較で新規/上書きの内訳を計算
@@ -644,6 +703,7 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
             if (updateCount > 0) hasDuplicates = true;
         }
         if (bd.data.settings) preview.push('設定: 上書き');
+        if (bd.data.gameSession) preview.push('🏀 進行中の試合: 端末に進行中の試合が無い場合に復元されます');
 
         return {
             type: 'backup',
@@ -878,6 +938,38 @@ function importFullBackup(data: BackupData): ImportResult {
             imported.opponents = teams.length;
         }
 
+        // 最近の対戦相手のインポート（updatedAt の新しい順にマージ・最大10件）
+        let importedRecent = 0;
+        if (data.data.recentOpponents && Array.isArray(data.data.recentOpponents)) {
+            const teams: SavedTeam[] = [];
+            for (const t of data.data.recentOpponents) {
+                const clean = sanitizeImportedTeam(t);
+                if (clean) teams.push(clean);
+                else errors.push('不正な最近の対戦相手データを1件スキップしました（idが不足）');
+            }
+            const existingRecent = loadRecentOpponents();
+            const byId = new Map<string, SavedTeam>();
+            for (const t of [...existingRecent, ...teams]) {
+                const prev = byId.get(t.id);
+                if (!prev || (t.updatedAt ?? '') > (prev.updatedAt ?? '')) byId.set(t.id, t);
+            }
+            const mergedRecent = [...byId.values()]
+                .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
+                .slice(0, 10);
+            localStorage.setItem('minibasket-opponent-teams', JSON.stringify(mergedRecent));
+            importedRecent = teams.length;
+        }
+
+        // 進行中の試合セッションのインポート（端末に進行中セッションが無い場合のみ復元）
+        let sessionRestored = false;
+        if (data.data.gameSession && !hasGameSession()) {
+            const cleanSession = sanitizeImportedGameSession(data.data.gameSession);
+            if (cleanSession) {
+                localStorage.setItem('minibasket-game-session', JSON.stringify(cleanSession));
+                sessionRestored = true;
+            }
+        }
+
         // アプリ設定のインポート（既存設定とマージ）
         if (data.data.settings) {
             const existingSettings = loadAppSettings();
@@ -906,6 +998,12 @@ function importFullBackup(data: BackupData): ImportResult {
         }
         if (imported.opponents > 0) {
             msgParts.push(`対戦相手: 新規${details.newOpponents}件${details.updatedOpponents > 0 ? `・更新${details.updatedOpponents}件` : ''}`);
+        }
+        if (importedRecent > 0) {
+            msgParts.push(`最近の対戦相手: ${importedRecent}件`);
+        }
+        if (sessionRestored) {
+            msgParts.push('進行中の試合: 復元');
         }
 
         return {
