@@ -456,8 +456,12 @@ function downloadBlob(blob: Blob, filename: string): void {
  * として渡すことで共有シートを開けるようにする（インポートは中身をJSON解析するため拡張子非依存）。
  * 対応可否は `navigator.canShare` で事前判定し、不可のときは false を返して呼び出し側の
  * ダウンロードにフォールバックさせる。
+ *
+ * 共有先（Google Drive等）はファイル名に `File.name` ではなく共有の `title` を使うことが
+ * あるため、`title` には日付入りの共有ファイル名（.txt）を渡す。これにより保存先でも
+ * 日付付きの一意な名前になり、複数バックアップの区別・上書き事故を防ぐ。
  */
-export async function shareFile(data: unknown, filename: string, title: string = 'MBCscore データ'): Promise<boolean> {
+export async function shareFile(data: unknown, filename: string): Promise<boolean> {
     if (!navigator.share) {
         return false;
     }
@@ -473,10 +477,11 @@ export async function shareFile(data: unknown, filename: string, title: string =
             return false;
         }
 
-        // filesと同時にtextを渡すと一部iOSで共有が失敗するため、filesとtitleのみ渡す
+        // filesと同時にtextを渡すと一部iOSで共有が失敗するため渡さない。
+        // titleには共有ファイル名を渡し、保存先で日付付きの名前になるようにする。
         await navigator.share({
             files: [file],
-            title: title,
+            title: shareName,
         });
 
         return true;
@@ -499,7 +504,7 @@ export async function shareBackup(): Promise<boolean> {
 
         // モバイル等でWeb Shareが使えるならまず共有シートを試す
         if ('share' in navigator) {
-            const shared = await shareFile(data, filename, 'MBCscore 全データバックアップ');
+            const shared = await shareFile(data, filename);
             if (shared) {
                 recordBackup();
                 return true;

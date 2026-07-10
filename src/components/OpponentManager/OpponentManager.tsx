@@ -117,7 +117,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
         // モバイルデバイスの場合はWeb Share APIを試す
         if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
-            const shared = await shareFile(data, filename, `${team.name} - チームデータ`);
+            const shared = await shareFile(data, filename);
             if (shared) {
                 showToast(`✓ ${team.name} のデータを共有しました`, 'success');
                 return;
