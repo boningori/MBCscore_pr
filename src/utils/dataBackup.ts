@@ -5,12 +5,14 @@ import type { QuarterPlayType } from '../types/game';
 import { loadGameHistory } from './gameHistoryStorage';
 import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
-import { loadMyTeams, loadOpponents } from './teamStorage';
+import { loadMyTeams, loadOpponents, loadRecentOpponents } from './teamStorage';
 import type { AppSettings } from './appSettings';
 import { loadAppSettings } from './appSettings';
+import type { GameSession } from './gameSessionStorage';
+import { loadGameSession, hasGameSession } from './gameSessionStorage';
 
 // バックアップデータのバージョン
-export const BACKUP_VERSION = '1.0';
+export const BACKUP_VERSION = '2.0';
 
 // バックアップデータ型定義
 export interface BackupData {
@@ -21,8 +23,10 @@ export interface BackupData {
         gameHistory?: GameRecord[];
         myTeams?: SavedTeam[];
         opponents?: SavedTeam[];
+        recentOpponents?: SavedTeam[];
         settings?: AppSettings;
         hiddenPlayers?: Record<string, string[]>;
+        gameSession?: GameSession | null;
     };
 }
 
@@ -99,7 +103,9 @@ export function exportAllData(): BackupData {
     const gameHistory = loadGameHistory();
     const myTeams = loadMyTeams();
     const opponents = loadOpponents();
+    const recentOpponents = loadRecentOpponents();
     const settings = loadAppSettings();
+    const gameSession = loadGameSession();
 
     // 非表示選手情報を取得
     const hiddenPlayers = getHiddenPlayersData();
@@ -112,8 +118,10 @@ export function exportAllData(): BackupData {
             gameHistory,
             myTeams,
             opponents,
+            recentOpponents,
             settings,
             hiddenPlayers,
+            gameSession,
         },
     };
 }
@@ -876,6 +884,23 @@ function importFullBackup(data: BackupData): ImportResult {
             const mergedOpponents = mergeArrayById(existingOpponents, teams);
             localStorage.setItem('minibasket-saved-opponents', JSON.stringify(mergedOpponents));
             imported.opponents = teams.length;
+        }
+
+        // 最近の対戦相手のインポート（ID単位でマージ・最大10件）
+        if (data.data.recentOpponents && Array.isArray(data.data.recentOpponents)) {
+            const teams: SavedTeam[] = [];
+            for (const t of data.data.recentOpponents) {
+                const clean = sanitizeImportedTeam(t);
+                if (clean) teams.push(clean);
+            }
+            const existingRecent = loadRecentOpponents();
+            const mergedRecent = mergeArrayById(existingRecent, teams).slice(0, 10);
+            localStorage.setItem('minibasket-opponent-teams', JSON.stringify(mergedRecent));
+        }
+
+        // 進行中の試合セッションのインポート（端末に進行中セッションが無い場合のみ復元）
+        if (data.data.gameSession && !hasGameSession()) {
+            localStorage.setItem('minibasket-game-session', JSON.stringify(data.data.gameSession));
         }
 
         // アプリ設定のインポート（既存設定とマージ）
