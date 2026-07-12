@@ -7,11 +7,20 @@ import type {
 import { createInitialGameInfo } from '../../types/game';
 
 export function handleSetTeams(state: Game, payload: GameAction['payload']): Game {
-    const { teamA, teamB } = payload as { teamA: Game['teamA']; teamB: Game['teamB'] };
+    const { teamA, teamB, showThreePoint } = payload as {
+        teamA: Game['teamA'];
+        teamB: Game['teamB'];
+        showThreePoint?: boolean;
+    };
     // デフォルトカラー設定（setupデータから来る場合は上書きされる可能性があるが、ここで保証する）
     const teamAWithColor = { ...teamA, color: teamA.color || 'white' };
     const teamBWithColor = { ...teamB, color: teamB.color || 'blue' };
-    return { ...state, teamA: teamAWithColor, teamB: teamBWithColor };
+    return {
+        ...state,
+        teamA: teamAWithColor,
+        teamB: teamBWithColor,
+        showThreePoint: showThreePoint ?? state.showThreePoint,
+    };
 }
 
 export function handleStartGame(state: Game): Game {
@@ -201,6 +210,7 @@ export function handleRestoreGame(payload: GameAction['payload']): Game {
         ...game,
         teamA: migrateTeam(game.teamA),
         teamB: migrateTeam(game.teamB),
+        showThreePoint: game.showThreePoint ?? true,
     };
 }
 

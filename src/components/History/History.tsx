@@ -83,6 +83,7 @@ export function History({ onBack }: HistoryProps) {
         endTime: new Date(record.createdAt),
         pendingActions: [],
         gameInfo: (record as { gameInfo?: GameInfo }).gameInfo || createInitialGameInfo(),
+        showThreePoint: (record as { showThreePoint?: boolean }).showThreePoint ?? true,
     });
 
     if (selectedRecord) {

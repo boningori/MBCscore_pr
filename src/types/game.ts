@@ -176,6 +176,7 @@ export interface Game {
     startTime: Date | null;
     endTime: Date | null;
     gameInfo: GameInfo;  // 試合情報
+    showThreePoint: boolean;  // 3P入力ボタンを表示するか（試合ごと・デフォルトfalse）
 }
 
 // アクション種別
@@ -289,6 +290,7 @@ export const createInitialGame = (): Game => ({
     startTime: null,
     endTime: null,
     gameInfo: createInitialGameInfo(),
+    showThreePoint: false,
 });
 
 // ミニバスルール定数
