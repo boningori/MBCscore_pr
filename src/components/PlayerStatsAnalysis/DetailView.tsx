@@ -5,6 +5,7 @@ import { exportElement } from '../../utils/pdfExport';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { GrowthComparison } from './GrowthComparison';
 import { RecentForm } from './RecentForm';
+import { WinLossSplit } from './WinLossSplit';
 import { formatDate, type DetailViewProps } from './types';
 
 export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps) {
@@ -171,6 +172,8 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                         </div>
                     </div>
                 </div>
+
+                <WinLossSplit gameHistory={player.gameHistory} />
 
                 <div className="game-history-section">
                     <h4>📋 試合別詳細</h4>

@@ -1901,3 +1901,52 @@
     font-size: 0.8rem;
     color: #64748b;
 }
+
+/* 勝敗別スプリット */
+.win-loss-split-section {
+    margin: 16px 0;
+}
+
+.win-loss-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--stats-card-shadow);
+}
+
+.win-loss-table th,
+.win-loss-table td {
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.win-loss-table th {
+    font-weight: 700;
+    background: #f8fafc;
+}
+
+.win-loss-table th.win-col {
+    color: var(--stats-success);
+}
+
+.win-loss-table th.loss-col {
+    color: var(--stats-danger);
+}
+
+.win-loss-table .wl-label {
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+}
+
+.wl-note {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-align: center;
+}
