@@ -33,6 +33,7 @@ import {
     handleSetTeams,
     handleStartGame,
     handleEndQuarter,
+    handleUndoQuarterEnd,
     handleAddTimeout,
     handleSubstitutePlayer,
     handleAddPlayerToTeam,
@@ -58,6 +59,9 @@ export function gameReducer(state: Game, action: GameAction): Game {
 
         case 'END_QUARTER':
             return handleEndQuarter(state);
+
+        case 'UNDO_QUARTER_END':
+            return handleUndoQuarterEnd(state);
 
         case 'END_GAME':
             return { ...state, phase: 'finished', endTime: new Date() };

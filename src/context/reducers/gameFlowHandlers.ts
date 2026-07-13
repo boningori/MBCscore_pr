@@ -75,6 +75,44 @@ export function handleEndQuarter(state: Game): Game {
     };
 }
 
+// クォーター終了の取り消し（誤タップ復帰用）
+// quarterEnd中のみ有効。新クォーターとして記録済みのエントリがある場合は
+// クォーター帰属が壊れるため取り消さない。
+export function handleUndoQuarterEnd(state: Game): Game {
+    if (state.phase !== 'quarterEnd') return state;
+
+    const newQuarter = state.currentQuarter; // 未開始の次クォーター
+    const prevQuarter = newQuarter - 1;
+    if (prevQuarter < 1) return state;
+
+    const hasEntriesInNewQuarter =
+        state.scoreHistory.some(e => e.quarter === newQuarter) ||
+        state.statHistory.some(e => e.quarter === newQuarter) ||
+        state.foulHistory.some(e => e.quarter === newQuarter);
+    if (hasEntriesInNewQuarter) return state;
+
+    const revertTeam = (team: typeof state.teamA) => ({
+        ...team,
+        // OT突入取り消し時はEND_QUARTERで延長した枠を戻す
+        teamFouls: newQuarter > 4 ? team.teamFouls.slice(0, prevQuarter) : team.teamFouls,
+        players: team.players.map(p => ({
+            ...p,
+            quartersPlayed: newQuarter > 4
+                ? p.quartersPlayed.slice(0, prevQuarter)
+                // 部分的にラインナップ確定済みでも、新Qの出場フラグは白紙に戻す
+                : p.quartersPlayed.map((q, i) => (i === newQuarter - 1 ? false as const : q)),
+        })),
+    });
+
+    return {
+        ...state,
+        currentQuarter: prevQuarter,
+        phase: 'playing',
+        teamA: revertTeam(state.teamA),
+        teamB: revertTeam(state.teamB),
+    };
+}
+
 export function handleAddTimeout(state: Game, payload: GameAction['payload']): Game {
     const { teamId, elapsedMinutes } = payload as {
         teamId: string;

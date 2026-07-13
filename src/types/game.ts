@@ -186,6 +186,7 @@ export type GameActionType =
     | 'PAUSE_GAME'
     | 'RESUME_GAME'
     | 'END_QUARTER'
+    | 'UNDO_QUARTER_END'
     | 'END_GAME'
     | 'ADD_SCORE'
     | 'ADD_STAT'

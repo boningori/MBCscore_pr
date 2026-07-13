@@ -2,10 +2,11 @@ import type { Game, GameAction, ScoreEntry, StatEntry } from '../../types/game';
 import { recalculateRunningScores } from './shared';
 
 export function handleAddScore(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, playerId, scoreType } = payload as {
+    const { teamId, playerId, scoreType, entryId } = payload as {
         teamId: string;
         playerId: string;
-        scoreType: '2P' | '3P' | 'FT'
+        scoreType: '2P' | '3P' | 'FT';
+        entryId?: string;  // 呼び出し側でUndo対象を特定するための明示ID（省略時は自動生成）
     };
     const points = scoreType === '3P' ? 3 : scoreType === '2P' ? 2 : 1;
 
@@ -36,7 +37,7 @@ export function handleAddScore(state: Game, payload: GameAction['payload']): Gam
 
     const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
     const scoreEntry: ScoreEntry = {
-        id: crypto.randomUUID(),
+        id: entryId ?? crypto.randomUUID(),
         teamId,
         playerId,
         playerNumber: player?.number || 0,

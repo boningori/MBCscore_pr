@@ -7,7 +7,7 @@ import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
 import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
 import { saveGameResult } from './utils/gameHistoryStorage';
-import { loadGameSession, clearGameSession } from './utils/gameSessionStorage';
+import { loadGameSession, clearGameSession, hasGameSession } from './utils/gameSessionStorage';
 import { getDefaultGameMode } from './utils/appSettings';
 import { Home } from './components/Home';
 import { MyTeamManager } from './components/MyTeamManager';
@@ -32,6 +32,7 @@ import { AppSettingsModal } from './components/Settings/AppSettingsModal';
 import { ToastContainer } from './components/Toast/Toast';
 import { showToast } from './components/Toast/toastApi';
 import { Modal } from './components/Modal';
+import { UndoSnackbar } from './components/UndoSnackbar/UndoSnackbar';
 import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
@@ -47,6 +48,23 @@ import './App.css';
 // アプリの画面状態
 type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet' | 'playerStats';
 
+// Undoスナックバー用のスタッツ表示名
+const STAT_UNDO_LABELS: Record<string, string> = {
+  OREB: 'オフェンスリバウンド',
+  DREB: 'ディフェンスリバウンド',
+  AST: 'アシスト',
+  STL: 'スティール',
+  BLK: 'ブロック',
+  TO: 'ターンオーバー',
+  'TO:DD': 'ターンオーバー(ダブドリ)',
+  'TO:TR': 'ターンオーバー(トラベリング)',
+  'TO:PM': 'ターンオーバー(パスミス)',
+  'TO:CM': 'ターンオーバー(キャッチミス)',
+  '2PA': '2Pミス',
+  '3PA': '3Pミス',
+  FTA: 'FTミス',
+};
+
 function AppContent() {
   const { state, dispatch } = useGame();
   const [screen, setScreen] = useState<AppScreen>('home');
@@ -59,13 +77,15 @@ function AppContent() {
   const [lineupTeamId, setLineupTeamId] = useState<'teamA' | 'teamB'>('teamA');
   const [showFoulSelector, setShowFoulSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; value?: string } | null>(null);
-  const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示
-  const [prevShouldShowTeamSelector, setPrevShouldShowTeamSelector] = useState(false); // showTeamSelector自動表示の直前条件値
+  const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示（保留アクション化用）
   const [resolvingPendingAction, setResolvingPendingAction] = useState<PendingAction | null>(null); // 解決中の保留アクション
   const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [endGameConfirmType, setEndGameConfirmType] = useState<'tied' | 'notTied' | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false); // 保存せず破棄の確認
+  const [showNewGameWarning, setShowNewGameWarning] = useState(false); // 進行中セッションがある状態での新規開始警告
+  // 記録直後のワンタップUndo（得点/スタッツのみ。ファウルは専用フローがあるため対象外）
+  const [undoInfo, setUndoInfo] = useState<{ message: string; kind: 'score' | 'stat'; entryId: string } | null>(null);
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
 
@@ -155,25 +175,57 @@ function AppContent() {
     setScreen('quarterLineup');
   };
 
+  // Undoスナックバー用の選手表示名
+  const getPlayerUndoLabel = (teamId: string, playerId: string): string => {
+    const team = teamId === 'teamA' ? state.teamA : state.teamB;
+    const p = team.players.find(pl => pl.id === playerId);
+    return p ? `#${formatPlayerNumber(p.number)} ${p.courtName || p.name}` : '';
+  };
+
+  // 得点を記録し、Undoスナックバーを表示する
+  const recordScore = (teamId: string, playerId: string, scoreType: '2P' | '3P' | 'FT') => {
+    const entryId = crypto.randomUUID();
+    dispatch({ type: 'ADD_SCORE', payload: { teamId, playerId, scoreType, entryId } });
+    const points = scoreType === '3P' ? 3 : scoreType === '2P' ? 2 : 1;
+    setUndoInfo({
+      message: `${getPlayerUndoLabel(teamId, playerId)} ${scoreType}成功 +${points}`,
+      kind: 'score',
+      entryId,
+    });
+  };
+
+  // スタッツを記録し、Undoスナックバーを表示する
+  const recordStat = (teamId: string, playerId: string, statType: string) => {
+    const entryId = crypto.randomUUID();
+    dispatch({ type: 'ADD_STAT', payload: { teamId, playerId, statType, entryId } });
+    setUndoInfo({
+      message: `${getPlayerUndoLabel(teamId, playerId)} ${STAT_UNDO_LABELS[statType] ?? statType}`,
+      kind: 'stat',
+      entryId,
+    });
+  };
+
+  // スナックバーからの取り消し（対象IDが既に削除済みならreducer側でno-op）
+  const handleUndoLast = useCallback(() => {
+    if (!undoInfo) return;
+    dispatch({ type: undoInfo.kind === 'score' ? 'REMOVE_SCORE' : 'REMOVE_STAT', payload: { entryId: undoInfo.entryId } });
+    setUndoInfo(null);
+  }, [undoInfo, dispatch]);
+
+  const handleDismissUndo = useCallback(() => {
+    setUndoInfo(null);
+  }, []);
+
   // 選手選択
   const handlePlayerSelect = (playerId: string, teamId: string) => {
     // 保留中のアクションがあれば実行
     if (pendingAction) {
       if (pendingAction.type === 'SCORE') {
-        dispatch({
-          type: 'ADD_SCORE',
-          payload: { teamId, playerId, scoreType: pendingAction.value as '2P' | '3P' | 'FT' },
-        });
+        recordScore(teamId, playerId, pendingAction.value as '2P' | '3P' | 'FT');
       } else if (pendingAction.type === 'STAT') {
-        dispatch({
-          type: 'ADD_STAT',
-          payload: { teamId, playerId, statType: pendingAction.value as 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA' },
-        });
+        recordStat(teamId, playerId, pendingAction.value as string);
       } else if (pendingAction.type === 'MISS') {
-        dispatch({
-          type: 'ADD_STAT',
-          payload: { teamId, playerId, statType: pendingAction.value as 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA' },
-        });
+        recordStat(teamId, playerId, pendingAction.value as string);
       } else if (pendingAction.type === 'FOUL') {
         // ファウルタイプセレクター表示のために選択状態にする
         dispatch({ type: 'SELECT_PLAYER', payload: { playerId, teamId } });
@@ -200,10 +252,7 @@ function AppContent() {
   // 得点追加
   const handleScore = (scoreType: '2P' | '3P' | 'FT') => {
     if (selectedPlayerId && selectedTeamId) {
-      dispatch({
-        type: 'ADD_SCORE',
-        payload: { teamId: selectedTeamId, playerId: selectedPlayerId, scoreType },
-      });
+      recordScore(selectedTeamId, selectedPlayerId, scoreType);
       dispatch({ type: 'CLEAR_SELECTION' });
     } else {
       setPendingAction({ type: 'SCORE', value: scoreType });
@@ -213,10 +262,7 @@ function AppContent() {
   // 統計追加（シュートミスも含む）
   const handleStat = (statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA') => {
     if (selectedPlayerId && selectedTeamId) {
-      dispatch({
-        type: 'ADD_STAT',
-        payload: { teamId: selectedTeamId, playerId: selectedPlayerId, statType },
-      });
+      recordStat(selectedTeamId, selectedPlayerId, statType);
       dispatch({ type: 'CLEAR_SELECTION' });
     } else {
       setPendingAction({ type: 'STAT', value: statType });
@@ -506,15 +552,9 @@ function AppContent() {
     });
   };
 
-  // pendingActionが設定されたらチーム選択モーダルを表示
-  // （レンダー中の状態調整。条件がfalse→trueに変化した瞬間のみ表示する）
-  const shouldShowTeamSelector = !!pendingAction && !selectedPlayerId && !selectedTeamId;
-  if (shouldShowTeamSelector && shouldShowTeamSelector !== prevShouldShowTeamSelector) {
-    setPrevShouldShowTeamSelector(shouldShowTeamSelector);
-    setShowTeamSelector(true);
-  } else if (shouldShowTeamSelector !== prevShouldShowTeamSelector) {
-    setPrevShouldShowTeamSelector(shouldShowTeamSelector);
-  }
+  // アクション先行時のチーム選択モーダルは自動表示しない。
+  // 選手カードの直接タップで即記録し、「選手がわからない」場合のみ
+  // ActionButtonsのボタンから明示的に開く（保留アクション化）。
 
 
   // タイムアウト
@@ -657,6 +697,15 @@ function AppContent() {
     }
   };
 
+  // 新規試合開始（進行中セッションがあれば上書き警告を挟む）
+  const handleStartNewGame = () => {
+    if (hasGameSession()) {
+      setShowNewGameWarning(true);
+    } else {
+      setScreen('gameSetup');
+    }
+  };
+
   // スコア履歴から削除
   const handleRemoveScore = (entryId: string) => {
     dispatch({ type: 'REMOVE_SCORE', payload: { entryId } });
@@ -747,7 +796,7 @@ function AppContent() {
     return (
       <>
         <Home
-          onStartGame={() => setScreen('gameSetup')}
+          onStartGame={handleStartNewGame}
           onManageTeams={() => setScreen('myTeamManager')}
           onViewHistory={() => setScreen('history')}
           onManageOpponents={() => setScreen('opponentManager')}
@@ -761,6 +810,38 @@ function AppContent() {
           isOpen={showAppSettings}
           onClose={() => setShowAppSettings(false)}
         />
+        {/* 進行中セッションがある状態での新規開始警告 */}
+        {showNewGameWarning && (
+          <Modal
+            onClose={() => setShowNewGameWarning(false)}
+            contentClassName="modal-content end-game-confirm-modal"
+            closeOnOverlayClick={false}
+            labelledBy="new-game-warning-title"
+          >
+            <h3 id="new-game-warning-title">進行中の試合があります</h3>
+            <p className="end-game-confirm-message">
+              新しい試合を開始して記録を始めると、<br />
+              進行中の試合データは削除されます。
+            </p>
+            <div className="modal-actions-column">
+              <button
+                className="btn btn-primary btn-large"
+                onClick={() => { setShowNewGameWarning(false); handleResumeGame(); }}
+              >
+                試合を再開する
+              </button>
+              <button
+                className="btn btn-danger btn-large"
+                onClick={() => { setShowNewGameWarning(false); setScreen('gameSetup'); }}
+              >
+                新規試合を開始
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={() => setShowNewGameWarning(false)}>
+                キャンセル
+              </button>
+            </div>
+          </Modal>
+        )}
       </>
     );
   }
@@ -939,6 +1020,8 @@ function AppContent() {
                     activeAction={pendingAction}
                     gameMode={gameMode}
                     showThreePoint={state.showThreePoint}
+                    onHoldPending={() => setShowTeamSelector(true)}
+                    onCancelAction={() => setPendingAction(null)}
                   />
                 </div>
               </div>
@@ -1041,20 +1124,21 @@ function AppContent() {
         />
       )}
 
-      {/* チーム選択モーダル（保留アクション作成用） */}
+      {/* チーム選択モーダル（保留アクション作成用・「選手がわからない」から明示的に開く） */}
       {showTeamSelector && pendingAction && (
         <Modal
-          onClose={() => { setShowTeamSelector(false); setPendingAction(null); }}
+          onClose={() => setShowTeamSelector(false)}
           overlayClassName="team-selector-overlay"
           contentClassName="team-selector-modal"
           labelledBy="team-selector-title"
         >
-          <h3 id="team-selector-title">チームを選択</h3>
+          <h3 id="team-selector-title">どちらのチームですか？</h3>
             <p className="team-selector-action">
               {pendingAction.type === 'SCORE' ? `${pendingAction.value}成功` :
                 pendingAction.type === 'STAT' ? pendingAction.value :
                   pendingAction.type === 'MISS' ? `${pendingAction.value}` :
                     'ファウル'}
+              を保留として記録し、あとから選手を割り当てられます
             </p>
             <div className="team-selector-buttons">
               <button
@@ -1074,9 +1158,9 @@ function AppContent() {
             </div>
           <button
             className="btn btn-secondary"
-            onClick={() => { setShowTeamSelector(false); setPendingAction(null); }}
+            onClick={() => setShowTeamSelector(false)}
           >
-            キャンセル
+            戻る
           </button>
         </Modal>
       )}
@@ -1335,6 +1419,15 @@ function AppContent() {
             })}
           </div>
         </Modal>
+      )}
+
+      {/* 記録直後のワンタップUndo */}
+      {undoInfo && phase !== 'finished' && (
+        <UndoSnackbar
+          message={undoInfo.message}
+          onUndo={handleUndoLast}
+          onDismiss={handleDismissUndo}
+        />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { TimeoutInputModal } from '../TimeoutInputModal/TimeoutInputModal';
+import { Modal } from '../Modal';
 import './Scoreboard.css';
 
 interface ScoreboardProps {
@@ -40,17 +41,70 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
         ? `Q${currentQuarter}`
         : currentQuarter === 5 ? 'OT' : `OT${currentQuarter - 4}`;
 
+    // クォーター終了の確認モーダル（Q1〜Q3のみ。Q4以降はApp側の試合終了確認が兼ねる）
+    const [showQuarterEndConfirm, setShowQuarterEndConfirm] = useState(false);
+
+    const executeQuarterEnd = () => {
+        if (onQuarterEnd) {
+            onQuarterEnd();
+        } else {
+            dispatch({ type: 'END_QUARTER' });
+        }
+    };
+
     const handleQuarterManagement = () => {
         if (phase === 'playing' || phase === 'setup') {
-            if (onQuarterEnd) {
-                onQuarterEnd();
+            if (currentQuarter < 4) {
+                setShowQuarterEndConfirm(true);
             } else {
-                dispatch({ type: 'END_QUARTER' });
+                executeQuarterEnd();
             }
         } else if (phase === 'quarterEnd') {
             dispatch({ type: 'START_GAME' });
         }
     };
+
+    // クォーター終了の取り消し（新Qとして記録済みのエントリがある場合は不可）
+    const canUndoQuarterEnd = phase === 'quarterEnd' && currentQuarter > 1 &&
+        !state.scoreHistory.some(e => e.quarter === currentQuarter) &&
+        !state.statHistory.some(e => e.quarter === currentQuarter) &&
+        !state.foulHistory.some(e => e.quarter === currentQuarter);
+
+    const handleUndoQuarterEnd = () => {
+        dispatch({ type: 'UNDO_QUARTER_END' });
+    };
+
+    // 確認モーダル（両モード共通）
+    const quarterEndConfirmModal = showQuarterEndConfirm && (
+        <Modal
+            onClose={() => setShowQuarterEndConfirm(false)}
+            contentClassName="modal-content end-game-confirm-modal"
+            labelledBy="quarter-end-confirm-title"
+        >
+            <h3 id="quarter-end-confirm-title">{quarterLabel}を終了しますか？</h3>
+            <p className="end-game-confirm-message">
+                終了すると次のクォーターのスタメン選択に進みます。
+            </p>
+            <div className="modal-actions-column">
+                <button
+                    className="btn btn-primary btn-large"
+                    onClick={() => { setShowQuarterEndConfirm(false); executeQuarterEnd(); }}
+                >
+                    終了する
+                </button>
+                <button className="btn btn-secondary btn-large" onClick={() => setShowQuarterEndConfirm(false)}>
+                    キャンセル
+                </button>
+            </div>
+        </Modal>
+    );
+
+    // 取り消しボタン（両モード共通・quarterEnd中のみ）
+    const undoQuarterEndButton = canUndoQuarterEnd && (
+        <button className="btn btn-secondary btn-small" onClick={handleUndoQuarterEnd}>
+            終了を取り消す
+        </button>
+    );
 
     const scoreA = getTeamScore('teamA');
     const scoreB = getTeamScore('teamB');
@@ -72,6 +126,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             {currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}
                         </button>
                     )}
+                    {undoQuarterEndButton}
                     {phase === 'setup' && (
                         <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
                             開始
@@ -135,6 +190,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                     onConfirm={handleTimeoutConfirm}
                     onCancel={handleTimeoutCancel}
                 />
+                {quarterEndConfirmModal}
             </div>
         );
     }
@@ -162,6 +218,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                                 {currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}
                             </button>
                         )}
+                        {undoQuarterEndButton}
                         {phase === 'setup' && (
                             <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
                                 試合開始
@@ -234,6 +291,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                 onConfirm={handleTimeoutConfirm}
                 onCancel={handleTimeoutCancel}
             />
+            {quarterEndConfirmModal}
         </div>
     );
 }
