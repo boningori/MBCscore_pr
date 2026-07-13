@@ -473,17 +473,28 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 </div>
                             </div>
 
-                            <div className="confirm-toggle-row">
+                            <div className="confirm-number-type">
                                 <span className="number-type-label">3Pシュート</span>
-                                <label className={`gs-toggle-switch ${showThreePoint ? 'on' : 'off'}`}>
-                                    <span className="gs-toggle-label">{showThreePoint ? '使う' : '使わない'}</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={showThreePoint}
-                                        onChange={() => setShowThreePoint(!showThreePoint)}
-                                    />
-                                    <span className="gs-toggle-slider"></span>
-                                </label>
+                                <div className="number-type-options">
+                                    <label className={`number-type-option three-point-option ${!showThreePoint ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="showThreePoint"
+                                            checked={!showThreePoint}
+                                            onChange={() => setShowThreePoint(false)}
+                                        />
+                                        <span>🚫 使わない</span>
+                                    </label>
+                                    <label className={`number-type-option three-point-option ${showThreePoint ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="showThreePoint"
+                                            checked={showThreePoint}
+                                            onChange={() => setShowThreePoint(true)}
+                                        />
+                                        <span>🎯 使う</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="confirm-colors">
