@@ -31,6 +31,7 @@ interface GameSetupProps {
         myTeamColor: 'white' | 'blue';
         opponentTeamColor: 'white' | 'blue';
         numberType: NumberType;  // マイチームの使用番号タイプ
+        showThreePoint: boolean;  // 3P入力ボタンを表示するか
     }) => void;
     onBack: () => void;
 }
@@ -52,6 +53,9 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
     // マイチームの使用番号タイプ
     const [numberType, setNumberType] = useState<NumberType>('bib');
+
+    // 3P入力ボタンを表示するか（ミニバスは通常OFF）
+    const [showThreePoint, setShowThreePoint] = useState(false);
 
     // 出場選手確認用（除外する選手のインデックス）
     const [excludedPlayerIndices, setExcludedPlayerIndices] = useState<Set<number>>(new Set());
@@ -191,6 +195,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                 myTeamColor,
                 opponentTeamColor,
                 numberType,
+                showThreePoint,
             });
         }
     };
@@ -464,6 +469,30 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                             onChange={() => setNumberType('uniform')}
                                         />
                                         <span>ユニフォーム番号</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="confirm-number-type">
+                                <span className="number-type-label">3Pシュート</span>
+                                <div className="number-type-options">
+                                    <label className={`number-type-option ${!showThreePoint ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="showThreePoint"
+                                            checked={!showThreePoint}
+                                            onChange={() => setShowThreePoint(false)}
+                                        />
+                                        <span>使わない（ミニバス）</span>
+                                    </label>
+                                    <label className={`number-type-option ${showThreePoint ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="showThreePoint"
+                                            checked={showThreePoint}
+                                            onChange={() => setShowThreePoint(true)}
+                                        />
+                                        <span>使う（U15/一般）</span>
                                     </label>
                                 </div>
                             </div>
