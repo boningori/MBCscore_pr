@@ -483,7 +483,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                             checked={!showThreePoint}
                                             onChange={() => setShowThreePoint(false)}
                                         />
-                                        <span>使わない（ミニバス）</span>
+                                        <span>使わない</span>
                                     </label>
                                     <label className={`number-type-option ${showThreePoint ? 'selected' : ''}`}>
                                         <input
@@ -492,7 +492,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                             checked={showThreePoint}
                                             onChange={() => setShowThreePoint(true)}
                                         />
-                                        <span>使う（U15/一般）</span>
+                                        <span>使う</span>
                                     </label>
                                 </div>
                             </div>
