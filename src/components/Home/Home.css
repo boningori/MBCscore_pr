@@ -42,7 +42,9 @@
     margin: 0;
 }
 
-.header-left {
+/* ホーム画面のヘッダー専用。
+   ゲーム画面の .header-left / .header-right と同名のためスコープを限定する */
+.home-header .header-left {
     position: absolute;
     left: 0;
     top: 50%;
@@ -51,7 +53,7 @@
     gap: var(--spacing-xs);
 }
 
-.header-right {
+.home-header .header-right {
     position: absolute;
     right: 0;
     top: 50%;

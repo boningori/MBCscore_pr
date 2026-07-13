@@ -1,10 +1,11 @@
 import type { Game, GameAction, StatEntry } from '../../types/game';
 
 export function handleAddStat(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, playerId, statType } = payload as {
+    const { teamId, playerId, statType, entryId } = payload as {
         teamId: string;
         playerId: string;
         statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA';
+        entryId?: string;  // 呼び出し側でUndo対象を特定するための明示ID（省略時は自動生成）
     };
 
     const updatePlayerStat = (team: typeof state.teamA, isTarget: boolean) => {
@@ -36,7 +37,7 @@ export function handleAddStat(state: Game, payload: GameAction['payload']): Game
 
     const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
     const statEntry: StatEntry = {
-        id: crypto.randomUUID(),
+        id: entryId ?? crypto.randomUUID(),
         teamId,
         playerId,
         playerNumber: player?.number || 0,

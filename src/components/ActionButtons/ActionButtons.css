@@ -238,3 +238,15 @@
     font-weight: 600;
     animation: pulse 2s infinite;
 }
+
+/* アクション先行時のヒント内操作（保留化・キャンセル） */
+.action-hint-controls {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.action-hint-controls .btn {
+    min-height: 44px;
+}

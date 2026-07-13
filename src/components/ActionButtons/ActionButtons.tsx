@@ -12,6 +12,8 @@ interface ActionButtonsProps {
     activeAction?: { type: string; value?: string } | null;
     gameMode?: 'full' | 'simple'; // ゲームモード
     showThreePoint?: boolean; // 3P入力ボタンを表示するか（未指定時true=後方互換）
+    onHoldPending?: () => void; // 選手がわからない → 保留アクション化（チーム選択へ）
+    onCancelAction?: () => void; // 選択中アクションの取り消し
 }
 
 export function ActionButtons({
@@ -24,6 +26,8 @@ export function ActionButtons({
     activeAction = null,
     gameMode = 'full',
     showThreePoint = true,
+    onHoldPending,
+    onCancelAction,
 }: ActionButtonsProps) {
     const isActive = (type: string, value?: string) => {
         if (!activeAction) return false;
@@ -169,7 +173,19 @@ export function ActionButtons({
             */}
             {activeAction && (
                 <div className="action-hint active">
-                    👇 選手を選択してください
+                    <span>👇 選手を選択してください</span>
+                    <div className="action-hint-controls">
+                        {onHoldPending && (
+                            <button className="btn btn-warning btn-small" onClick={onHoldPending}>
+                                選手がわからない
+                            </button>
+                        )}
+                        {onCancelAction && (
+                            <button className="btn btn-secondary btn-small" onClick={onCancelAction}>
+                                キャンセル
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
