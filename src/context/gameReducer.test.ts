@@ -308,4 +308,26 @@ describe('gameReducer: showThreePoint（3P表示フラグ）', () => {
         });
         expect(state.showThreePoint).toBe(true);
     });
+
+    it('RESTORE_GAMEで明示的なshowThreePoint:falseは保持される（trueに上書きしない）', () => {
+        const saved = { ...createInitialGame(), showThreePoint: false };
+        const state = gameReducer(createInitialGame(), {
+            type: 'RESTORE_GAME',
+            payload: { game: saved },
+        });
+        expect(state.showThreePoint).toBe(false);
+    });
+
+    it('SET_TEAMSで明示的なshowThreePoint:falseは保持される（既存true状態を上書きできる）', () => {
+        const base = { ...createInitialGame(), showThreePoint: true };
+        const state = gameReducer(base, {
+            type: 'SET_TEAMS',
+            payload: {
+                teamA: createTeam('teamA', 'ホーム', 'コーチA'),
+                teamB: createTeam('teamB', 'ビジター', 'コーチB'),
+                showThreePoint: false,
+            },
+        });
+        expect(state.showThreePoint).toBe(false);
+    });
 });
