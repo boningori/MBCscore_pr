@@ -45,6 +45,12 @@ function avgForm(games: PlayerGameRecord[]): FormStats {
     return { points: sum.points / n, rebounds: sum.rebounds / n, assists: sum.assists / n };
 }
 
+/**
+ * 直近フォームを計算する。
+ * @param gameHistory 日付降順（新しい順）で並んだ試合履歴。直近N試合はこの並びの先頭から取る。
+ *   （`aggregatePlayerStats` は降順ソート済みのgameHistoryを返す。）
+ * @param recentN 直近とみなす試合数（デフォルト5）。
+ */
 export function getRecentForm(gameHistory: PlayerGameRecord[], recentN = 5): RecentForm {
     const recentGames = Math.min(recentN, gameHistory.length);
     const recentAvg = avgForm(gameHistory.slice(0, recentGames));

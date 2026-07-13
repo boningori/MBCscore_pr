@@ -39,4 +39,11 @@ describe('RecentForm', () => {
         const { container } = render(<RecentForm gameHistory={gh} />);
         expect(container.querySelector('.recent-form-card.up')).toBeTruthy();
     });
+
+    it('flatバケットでは「± 0.0」を表示し「-0.0」を出さない', () => {
+        const gh = Array.from({ length: 6 }, (_, i) => rec(`2026-06-0${i + 1}`, { points: 8 }));
+        render(<RecentForm gameHistory={gh} />);
+        expect(screen.queryByText(/-0\.0/)).toBeNull();
+        expect(screen.getAllByText(/± 0\.0/).length).toBeGreaterThan(0);
+    });
 });

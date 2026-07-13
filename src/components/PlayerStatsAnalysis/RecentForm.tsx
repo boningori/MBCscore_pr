@@ -32,11 +32,12 @@ export function RecentForm({ gameHistory }: RecentFormProps) {
                     const delta = form.deltas[key];
                     const dir = delta > 0.05 ? 'up' : delta < -0.05 ? 'down' : 'flat';
                     const arrow = dir === 'up' ? '↑' : dir === 'down' ? '↓' : '±';
-                    const sign = delta > 0 ? '+' : '';
+                    const shownDelta = dir === 'flat' ? 0 : delta;
+                    const sign = shownDelta > 0 ? '+' : '';
                     return (
                         <div className={`recent-form-card ${dir}`} key={key}>
                             <span className="rf-value">{form.recentAvg[key].toFixed(1)}</span>
-                            <span className={`rf-delta ${dir}`}>{arrow} {sign}{delta.toFixed(1)}</span>
+                            <span className={`rf-delta ${dir}`}>{arrow} {sign}{shownDelta.toFixed(1)}</span>
                             <span className="rf-label">{label}</span>
                         </div>
                     );
