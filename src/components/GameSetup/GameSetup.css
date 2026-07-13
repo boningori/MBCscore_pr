@@ -611,71 +611,12 @@
     align-items: center;
     justify-content: center;
 }
-/* 3Pシュート スライド式トグル（確認画面） */
-.confirm-toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 0;
-    border-top: 1px solid var(--border-color, #e2e8f0);
+/* 3Pシュート セグメント（確認画面・選択側を緑で強調） */
+.three-point-option.selected {
+    border-color: var(--secondary-light);
+    background: rgba(16, 185, 129, 0.15);
 }
 
-.gs-toggle-switch {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.gs-toggle-switch .gs-toggle-label {
-    font-size: var(--font-size-sm, 0.85rem);
-    font-weight: 600;
-    color: #64748b;
-    min-width: 3.5em;
-    text-align: right;
-}
-
-.gs-toggle-switch.on .gs-toggle-label {
-    color: var(--success, #16a34a);
-}
-
-.gs-toggle-switch input[type="checkbox"] {
-    display: none;
-}
-
-.gs-toggle-switch .gs-toggle-slider {
-    position: relative;
-    width: 50px;
-    height: 26px;
-    background: #94a3b8;
-    border-radius: 13px;
-    transition: background 0.3s ease;
-    flex-shrink: 0;
-}
-
-.gs-toggle-switch .gs-toggle-slider::after {
-    content: '';
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 20px;
-    height: 20px;
-    background: #fff;
-    border-radius: 50%;
-    transition: left 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.gs-toggle-switch.on .gs-toggle-slider {
-    background: var(--success, #22c55e);
-}
-
-.gs-toggle-switch.on .gs-toggle-slider::after {
-    left: 27px;
-}
-
-.gs-toggle-switch:hover .gs-toggle-slider {
-    opacity: 0.9;
+.three-point-option input[type="radio"] {
+    accent-color: var(--secondary-light);
 }
