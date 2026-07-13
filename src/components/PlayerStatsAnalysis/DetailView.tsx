@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { exportElement } from '../../utils/pdfExport';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { GrowthComparison } from './GrowthComparison';
+import { RecentForm } from './RecentForm';
 import { formatDate, type DetailViewProps } from './types';
 
 export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps) {
@@ -85,6 +86,8 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                         </div>
                     </div>
                 </div>
+
+                <RecentForm gameHistory={player.gameHistory} />
 
                 <div className="stats-cards">
                     <div className="stats-card">

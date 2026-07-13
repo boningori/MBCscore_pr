@@ -1849,3 +1849,55 @@
 .detail-export-area.exporting .shooting-made {
     display: inline;
 }
+
+/* 直近フォーム */
+.recent-form-section {
+    margin: 16px 0;
+}
+
+.recent-form-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.recent-form-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: var(--stats-card-shadow);
+}
+
+.recent-form-card .rf-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.recent-form-card .rf-delta {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.recent-form-card .rf-delta.up {
+    color: var(--stats-success);
+}
+
+.recent-form-card .rf-delta.down {
+    color: var(--stats-danger);
+}
+
+.recent-form-card .rf-delta.flat {
+    color: #94a3b8;
+}
+
+.recent-form-card .rf-label {
+    font-size: 0.8rem;
+    color: #64748b;
+}
