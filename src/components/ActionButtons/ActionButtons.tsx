@@ -11,6 +11,7 @@ interface ActionButtonsProps {
     hasSelection?: boolean; // @deprecated アクション先行入力モードでは使用しないが、互換性のため残す
     activeAction?: { type: string; value?: string } | null;
     gameMode?: 'full' | 'simple'; // ゲームモード
+    showThreePoint?: boolean; // 3P入力ボタンを表示するか（未指定時true=後方互換）
 }
 
 export function ActionButtons({
@@ -22,6 +23,7 @@ export function ActionButtons({
     // hasSelection = true, // デフォルトtrueにしてボタンを有効化（App側で制御） - unused
     activeAction = null,
     gameMode = 'full',
+    showThreePoint = true,
 }: ActionButtonsProps) {
     const isActive = (type: string, value?: string) => {
         if (!activeAction) return false;
@@ -59,14 +61,16 @@ export function ActionButtons({
                         isActiveScore={isActive('SCORE', '2P')}
                         isActiveMiss={isActive('MISS', '2PA')}
                     />
-                    <SwipeableScoreButton
-                        scoreType="3P"
-                        onScore={onScore}
-                        onMiss={onMiss}
-                        disabled={isBtnDisabled}
-                        isActiveScore={isActive('SCORE', '3P')}
-                        isActiveMiss={isActive('MISS', '3PA')}
-                    />
+                    {showThreePoint && (
+                        <SwipeableScoreButton
+                            scoreType="3P"
+                            onScore={onScore}
+                            onMiss={onMiss}
+                            disabled={isBtnDisabled}
+                            isActiveScore={isActive('SCORE', '3P')}
+                            isActiveMiss={isActive('MISS', '3PA')}
+                        />
+                    )}
                     <SwipeableScoreButton
                         scoreType="FT"
                         onScore={onScore}

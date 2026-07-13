@@ -115,6 +115,7 @@ function AppContent() {
     myTeamColor: 'white' | 'blue';
     opponentTeamColor: 'white' | 'blue';
     numberType: NumberType;
+    showThreePoint: boolean;
   }) => {
     // 新しいゲームを開始するため状態をリセット
     dispatch({ type: 'RESET_GAME' });
@@ -144,7 +145,7 @@ function AppContent() {
     teamA.players = teamA.players.map(p => ({ ...p, isOnCourt: false }));
     teamB.players = teamB.players.map(p => ({ ...p, isOnCourt: false }));
 
-    dispatch({ type: 'SET_TEAMS', payload: { teamA, teamB } });
+    dispatch({ type: 'SET_TEAMS', payload: { teamA, teamB, showThreePoint: setupData.showThreePoint } });
 
     // 対戦チームを履歴に保存（念のため更新）
     saveRecentOpponent(setupData.opponentTeam);
@@ -937,6 +938,7 @@ function AppContent() {
                     hasSelection={!!selectedPlayerId}
                     activeAction={pendingAction}
                     gameMode={gameMode}
+                    showThreePoint={state.showThreePoint}
                   />
                 </div>
               </div>

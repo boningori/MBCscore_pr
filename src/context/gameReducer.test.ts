@@ -268,3 +268,66 @@ describe('gameReducer: END_QUARTER / END_GAME', () => {
         expect(state.teamA.players[0].quartersPlayed).toHaveLength(5);
     });
 });
+
+describe('gameReducer: showThreePoint（3P表示フラグ）', () => {
+    it('createInitialGameのデフォルトはfalse（新規試合は3P非表示）', () => {
+        expect(createInitialGame().showThreePoint).toBe(false);
+    });
+
+    it('SET_TEAMSでshowThreePoint:trueを渡すとstateに反映される', () => {
+        const state = gameReducer(createInitialGame(), {
+            type: 'SET_TEAMS',
+            payload: {
+                teamA: createTeam('teamA', 'ホーム', 'コーチA'),
+                teamB: createTeam('teamB', 'ビジター', 'コーチB'),
+                showThreePoint: true,
+            },
+        });
+        expect(state.showThreePoint).toBe(true);
+    });
+
+    it('SET_TEAMSでshowThreePoint未指定なら現在値を維持する', () => {
+        const base = { ...createInitialGame(), showThreePoint: true };
+        const state = gameReducer(base, {
+            type: 'SET_TEAMS',
+            payload: {
+                teamA: createTeam('teamA', 'ホーム', 'コーチA'),
+                teamB: createTeam('teamB', 'ビジター', 'コーチB'),
+            },
+        });
+        expect(state.showThreePoint).toBe(true);
+    });
+
+    it('RESTORE_GAMEでshowThreePointが無い試合はtrueに補完される', () => {
+        const legacy = createInitialGame();
+        // 既存データを模擬: フィールドを削除
+        delete (legacy as Partial<Game>).showThreePoint;
+        const state = gameReducer(createInitialGame(), {
+            type: 'RESTORE_GAME',
+            payload: { game: legacy },
+        });
+        expect(state.showThreePoint).toBe(true);
+    });
+
+    it('RESTORE_GAMEで明示的なshowThreePoint:falseは保持される（trueに上書きしない）', () => {
+        const saved = { ...createInitialGame(), showThreePoint: false };
+        const state = gameReducer(createInitialGame(), {
+            type: 'RESTORE_GAME',
+            payload: { game: saved },
+        });
+        expect(state.showThreePoint).toBe(false);
+    });
+
+    it('SET_TEAMSで明示的なshowThreePoint:falseは保持される（既存true状態を上書きできる）', () => {
+        const base = { ...createInitialGame(), showThreePoint: true };
+        const state = gameReducer(base, {
+            type: 'SET_TEAMS',
+            payload: {
+                teamA: createTeam('teamA', 'ホーム', 'コーチA'),
+                teamB: createTeam('teamB', 'ビジター', 'コーチB'),
+                showThreePoint: false,
+            },
+        });
+        expect(state.showThreePoint).toBe(false);
+    });
+});
