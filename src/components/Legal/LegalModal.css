@@ -11,7 +11,7 @@
 .legal-modal {
     background: var(--bg-secondary, #1e293b);
     color: var(--text-primary, #f1f5f9);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     max-width: 640px;
     width: calc(100% - 32px);
     max-height: 85vh;
@@ -38,7 +38,7 @@
     color: var(--text-muted, #94a3b8);
     padding: 8px 12px;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
 }
 

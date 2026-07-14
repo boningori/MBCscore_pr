@@ -156,7 +156,7 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border);
     padding: 4px 10px;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     font-size: var(--font-size-sm);
     display: flex;
     align-items: center;
