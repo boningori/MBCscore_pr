@@ -63,6 +63,9 @@ export function gameReducer(state: Game, action: GameAction): Game {
         case 'UNDO_QUARTER_END':
             return handleUndoQuarterEnd(state);
 
+        case 'SET_SHOW_THREE_POINT':
+            return { ...state, showThreePoint: (action.payload as { showThreePoint: boolean }).showThreePoint };
+
         case 'END_GAME':
             return { ...state, phase: 'finished', endTime: new Date() };
 

@@ -620,3 +620,11 @@
 .three-point-option input[type="radio"] {
     accent-color: var(--secondary-light);
 }
+
+/* button化に伴うUAスタイルのリセット */
+button.select-card {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+}

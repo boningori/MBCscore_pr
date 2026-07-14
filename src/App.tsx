@@ -569,6 +569,9 @@ function AppContent() {
   // フルモード: TeamPanelのタイムアウトチップから開く入力モーダル
   const [timeoutModalTeam, setTimeoutModalTeam] = useState<'teamA' | 'teamB' | null>(null);
 
+  // 試合オプションモーダル（3P設定の途中変更など）
+  const [showGameOptions, setShowGameOptions] = useState(false);
+
   // 交代モーダル表示
 
 
@@ -907,7 +910,13 @@ function AppContent() {
         teamName={lineupTeam.name}
         players={lineupTeam.players}
         onConfirm={handleLineupConfirm}
-        onBack={lineupTeamId === 'teamA' ? () => setScreen('game') : undefined}
+        // 戻る先: 1チーム目は試合前なら設定へ・試合中ならゲーム画面へ（Q終了の取り消しが可能）。
+        // 2チーム目は1チーム目のスタメン選択へ戻る
+        onBack={lineupTeamId === 'teamA'
+          ? (phase === 'setup' ? () => setScreen('gameSetup') : () => setScreen('game'))
+          : () => setLineupTeamId('teamA')}
+        // 1チーム目の確定は「次へ」（実際の開始は2チーム目確定時のため）
+        confirmLabel={lineupTeamId === 'teamA' ? `次へ（${state.teamB.name}のスタメン）` : undefined}
       />
     );
   }
@@ -976,6 +985,15 @@ function AppContent() {
               📊<span className="btn-label"> 統計</span>
             </button>
           )}
+          {/* 試合オプション（3P設定などの途中変更） */}
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={() => setShowGameOptions(true)}
+            style={{ marginLeft: '8px' }}
+            aria-label="試合オプション"
+          >
+            ⚙
+          </button>
         </div>
       </header>
 
@@ -1046,6 +1064,9 @@ function AppContent() {
                     showThreePoint={state.showThreePoint}
                     onHoldPending={() => setShowTeamSelector(true)}
                     onCancelAction={() => setPendingAction(null)}
+                    idleNotice={phase === 'quarterEnd'
+                      ? `⚠ 今の記録は ${currentQuarter <= 4 ? `Q${currentQuarter}` : 'OT'} として保存されます`
+                      : null}
                   />
                 </div>
               </div>
@@ -1457,6 +1478,35 @@ function AppContent() {
           onUndo={handleUndoLast}
           onDismiss={handleDismissUndo}
         />
+      )}
+
+      {/* 試合オプションモーダル（設定確認ステップで見落としてもここでリカバリ可能） */}
+      {showGameOptions && (
+        <Modal
+          onClose={() => setShowGameOptions(false)}
+          contentClassName="modal-content end-game-confirm-modal"
+          labelledBy="game-options-title"
+        >
+          <h3 id="game-options-title">試合オプション</h3>
+          <p className="end-game-confirm-message">3Pシュートの入力ボタン</p>
+          <div className="modal-actions-column">
+            <button
+              className={`btn btn-large ${!state.showThreePoint ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => dispatch({ type: 'SET_SHOW_THREE_POINT', payload: { showThreePoint: false } })}
+            >
+              🚫 使わない{!state.showThreePoint ? '（現在）' : ''}
+            </button>
+            <button
+              className={`btn btn-large ${state.showThreePoint ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => dispatch({ type: 'SET_SHOW_THREE_POINT', payload: { showThreePoint: true } })}
+            >
+              🎯 使う{state.showThreePoint ? '（現在）' : ''}
+            </button>
+            <button className="btn btn-secondary btn-large" onClick={() => setShowGameOptions(false)}>
+              閉じる
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* フルモード: TeamPanelのタイムアウトチップから開く入力モーダル */}

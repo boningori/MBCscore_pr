@@ -27,8 +27,12 @@ export function loadAppSettings(): AppSettings {
 }
 
 // デフォルトゲームモードを取得
+// 未設定時は画面幅で自動選択する（スマホ=シンプル / タブレット以上=フル）
 export function getDefaultGameMode(): GameMode {
-    return loadAppSettings().defaultGameMode;
+    const stored = settingsStorage.load();
+    if (stored.defaultGameMode) return stored.defaultGameMode;
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return 'simple';
+    return 'full';
 }
 
 // デフォルトゲームモードを保存

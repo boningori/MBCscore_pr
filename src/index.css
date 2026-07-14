@@ -54,7 +54,8 @@
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #7d8da5;
+  /* 旧 #64748b は暗背景で4.5:1を下回るため引き上げ */
 
   --border: #334155;
   --border-light: #475569;

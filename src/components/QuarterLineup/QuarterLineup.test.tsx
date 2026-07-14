@@ -65,3 +65,34 @@ describe('QuarterLineup 出場ルールの目安（非強制の警告表示）',
         expect(startBtn.disabled).toBe(false);
     });
 });
+
+describe('QuarterLineup 確定ボタンのラベル', () => {
+    const players = [
+        player('a', 4, [false, false, false, false]),
+        player('b', 5, [false, false, false, false]),
+    ];
+
+    it('confirmLabel指定時はその文言を表示する（1チーム目=次へ）', () => {
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamName="T"
+                players={players}
+                onConfirm={() => {}}
+                confirmLabel="次へ（相手チーム）"
+            />,
+        );
+        expect(screen.getByText('次へ（相手チーム）')).toBeTruthy();
+        expect(screen.queryByText('試合開始')).toBeNull();
+    });
+
+    it('confirmLabel未指定はQ1で「試合開始」、Q2以降は「Qx 開始」', () => {
+        const { unmount } = render(
+            <QuarterLineup quarter={1} teamName="T" players={players} onConfirm={() => {}} />,
+        );
+        expect(screen.getByText('試合開始')).toBeTruthy();
+        unmount();
+        render(<QuarterLineup quarter={3} teamName="T" players={players} onConfirm={() => {}} />);
+        expect(screen.getByText('Q3 開始')).toBeTruthy();
+    });
+});

@@ -364,14 +364,15 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                         ) : (
                             <div className="team-select-list">
                                 {myTeams.map(team => (
-                                    <div
+                                    <button
+                                        type="button"
                                         key={team.id}
                                         className={`select-card ${myTeam?.id === team.id ? 'selected' : ''}`}
                                         onClick={() => handleMyTeamSelect(team)}
                                     >
                                         <span className="team-name">{team.name}</span>
                                         <span className="team-detail">{team.players.length}名</span>
-                                    </div>
+                                    </button>
                                 ))}
                                 <button className="btn btn-secondary manage-btn" onClick={() => setShowMyTeamManager(true)}>
                                     チーム管理・新規登録
@@ -424,10 +425,8 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                 )}
 
                 {step === 'opponent' && (
-                    <OpponentSelect
-                        onSelect={handleOpponentSelect}
-                        onBack={() => setStep('myTeam')}
-                    />
+                    // 戻る導線はウィザードヘッダーの「← 戻る」（出場選手へ）に一本化
+                    <OpponentSelect onSelect={handleOpponentSelect} />
                 )}
 
                 {step === 'confirm' && myTeam && opponentTeam && (
@@ -522,7 +521,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                             className="btn btn-success btn-large start-game-btn"
                             onClick={handleConfirm}
                         >
-                            試合開始
+                            スタメン選択へ
                         </button>
                     </div>
                 )}

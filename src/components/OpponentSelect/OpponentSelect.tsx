@@ -10,6 +10,8 @@ import {
     loadOpponents
 } from '../../utils/teamStorage';
 import { recognizePlayerList, isOCRAvailable, getStoredApiKey } from '../../utils/imageOCR';
+import { showToast } from '../Toast/toastApi';
+import { DeleteConfirmModal } from '../TeamShared/DeleteConfirmModal';
 import {
     DOUBLE_ZERO_INTERNAL,
     formatPlayerNumber,
@@ -22,7 +24,8 @@ import './OpponentSelect.css';
 
 interface OpponentSelectProps {
     onSelect: (team: SavedTeam) => void;
-    onBack: () => void;
+    /** 戻るボタンのハンドラ。ウィザード等、親側に戻る導線がある場合は省略して二重表示を避ける */
+    onBack?: () => void;
 }
 
 export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
@@ -64,11 +67,12 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
         onSelect(team);
     };
 
+    const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
+
     const handleClearHistory = () => {
-        if (confirm('対戦チームの履歴をすべて消去しますか？')) {
-            clearRecentOpponents();
-            refreshHistory();
-        }
+        clearRecentOpponents();
+        refreshHistory();
+        setShowClearHistoryConfirm(false);
     };
 
     const handleImageImport = async (file: File) => {
@@ -117,9 +121,11 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     return (
         <div className="opponent-select">
             <div className="select-header">
-                <button className="btn btn-secondary" onClick={onBack}>
-                    ← 戻る
-                </button>
+                {onBack && (
+                    <button className="btn btn-secondary" onClick={onBack}>
+                        ← 戻る
+                    </button>
+                )}
                 <h2>対戦チームを選択</h2>
             </div>
 
@@ -149,7 +155,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                     )}
                 </div>
                 {history.length > 0 && (
-                    <button className="btn btn-small btn-danger" onClick={handleClearHistory}>
+                    <button className="btn btn-small btn-danger" onClick={() => setShowClearHistoryConfirm(true)}>
                         履歴クリア
                     </button>
                 )}
@@ -178,17 +184,17 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                         </div>
                         <div className="team-list">
                             {savedOpponents.map(team => (
-                                <div key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
+                                <button type="button" key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
                                     <div className="opponent-info">
                                         <h4 className="opponent-name">{team.name || '(未設定)'}</h4>
                                         <span className="opponent-detail">
-                                            {team.players.length} Players
+                                            {team.players.length}名
                                         </span>
                                     </div>
                                     <div className="opponent-select-btn">
                                         選択
                                     </div>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -204,22 +210,32 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                             <p className="text-muted">対戦履歴はありません</p>
                         ) : (
                             history.map(team => (
-                                <div key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
+                                <button type="button" key={team.id} className="opponent-card" onClick={() => handleSelect(team)}>
                                     <div className="opponent-info">
                                         <h4 className="opponent-name">{team.name || '(未設定)'}</h4>
                                         <span className="opponent-detail">
-                                            {team.players.length} Players
+                                            {team.players.length}名
                                         </span>
                                     </div>
                                     <div className="opponent-select-btn">
                                         選択
                                     </div>
-                                </div>
+                                </button>
                             ))
                         )}
                     </div>
                 </div>
             </div>
+
+            {showClearHistoryConfirm && (
+                <DeleteConfirmModal
+                    title="対戦履歴の消去"
+                    message="対戦チームの履歴をすべて消去しますか？"
+                    note="登録済み対戦チームは消去されません"
+                    onConfirm={handleClearHistory}
+                    onCancel={() => setShowClearHistoryConfirm(false)}
+                />
+            )}
         </div>
     );
 }
@@ -245,6 +261,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
     const [newLicenseNo, setNewLicenseNo] = useState('');
     const [saveToRegistry, setSaveToRegistry] = useState(false);
     const [showNumberGrid, setShowNumberGrid] = useState(false);
+    const [showClearPlayersConfirm, setShowClearPlayersConfirm] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
 
@@ -271,13 +288,13 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
         if (!newNumber) return;
         const number = parsePlayerNumber(newNumber);
         if (number === null || !isValidPlayerNumber(number)) {
-            alert('背番号は0〜99または00を入力してください');
+            showToast('背番号は0〜99または00を入力してください', 'error');
             return;
         }
 
         const displayNum = formatPlayerNumber(number);
         if (players.some(p => p.number === number)) {
-            alert(`背番号 ${displayNum} は既に登録されています`);
+            showToast(`背番号 ${displayNum} は既に登録されています`, 'error');
             return;
         }
 
@@ -409,11 +426,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                             )}
                             <button
                                 className="btn btn-danger btn-small"
-                                onClick={() => {
-                                    if (players.length > 0 && confirm('登録済みの選手を全てクリアしますか？')) {
-                                        setPlayers([]);
-                                    }
-                                }}
+                                onClick={() => setShowClearPlayersConfirm(true)}
                                 disabled={players.length === 0}
                             >
                                 全クリア
@@ -508,7 +521,21 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                     <button className="btn btn-success btn-large" onClick={handleSave} disabled={!name || players.length < 5}>
                         決定
                     </button>
+                    {(!name || players.length < 5) && (
+                        <p className="text-muted text-sm" style={{ textAlign: 'center', marginTop: '8px' }}>
+                            {!name ? 'チーム名を入力してください' : `選手が5名以上必要です（現在${players.length}名）`}
+                        </p>
+                    )}
                 </div>
+
+                {showClearPlayersConfirm && (
+                    <DeleteConfirmModal
+                        title="選手の全クリア"
+                        message="登録済みの選手を全てクリアしますか？"
+                        onConfirm={() => { setPlayers([]); setShowClearPlayersConfirm(false); }}
+                        onCancel={() => setShowClearPlayersConfirm(false)}
+                    />
+                )}
             </div>
         </div>
     );

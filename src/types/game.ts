@@ -215,7 +215,8 @@ export type GameActionType =
     | 'REMOVE_PENDING_ACTION'
     | 'UPDATE_GAME_INFO'
     | 'TOGGLE_OWN_GOAL'
-    | 'SET_END_TIME';
+    | 'SET_END_TIME'
+    | 'SET_SHOW_THREE_POINT';
 
 // ゲームアクション
 export interface GameAction {

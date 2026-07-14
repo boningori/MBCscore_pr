@@ -118,6 +118,7 @@ export function SwipeableTurnoverButton({
     return (
         <div className="swipeable-turnover-wrapper">
             <button
+                aria-label="ターンオーバー"
                 className={`swipeable-turnover-btn action-btn stat-btn btn-turnover ${isActive ? 'active' : ''} ${swipeDirection ? `swiping-${swipeDirection}` : ''}`}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
