@@ -11,6 +11,7 @@ import {
     shareFile,
     generateGameFilename,
 } from '../../utils/dataBackup';
+import { showToast } from '../Toast/toastApi';
 import './History.css';
 
 interface HistoryProps {
@@ -49,7 +50,7 @@ export function History({ onBack }: HistoryProps) {
 
         const data = exportGame(record.id);
         if (!data) {
-            alert('試合データが見つかりませんでした');
+            showToast('試合データが見つかりませんでした', 'error');
             return;
         }
 

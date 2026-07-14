@@ -227,3 +227,10 @@
     font-weight: 600;
     margin-bottom: var(--spacing-xs);
 }
+/* button化に伴うUAスタイルのリセット */
+button.lineup-player-card {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+}

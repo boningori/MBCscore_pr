@@ -39,6 +39,16 @@ describe('ActionButtons: 3Pボタンの表示制御', () => {
     });
 });
 
+describe('ActionButtons: スワイプボタンのaccessible name', () => {
+    it('2P/3P/FT/ターンオーバーのボタンに名前が付いている', () => {
+        renderButtons(true);
+        expect(screen.getByRole('button', { name: '2Pシュート' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: '3Pシュート' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'フリースロー' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'ターンオーバー' })).toBeTruthy();
+    });
+});
+
 describe('ActionButtons: アクション先行時のステータスバー', () => {
     function renderWithActiveAction() {
         const onHoldPending = vi.fn();
@@ -93,5 +103,20 @@ describe('ActionButtons: アクション先行時のステータスバー', () =
         expect(screen.getByRole('status')).toBeTruthy();
         expect(screen.queryByText('選手がわからない')).toBeNull();
         expect(screen.queryByText('キャンセル')).toBeNull();
+    });
+
+    it('idleNotice指定時(クォーター間)はアイドル文言の代わりに通知を表示する', () => {
+        render(
+            <ActionButtons
+                onScore={noop}
+                onStat={noop}
+                onMiss={noop}
+                onFoul={noop}
+                gameMode="full"
+                idleNotice="⚠ 今の記録は Q2 として保存されます"
+            />,
+        );
+        expect(screen.getByText('⚠ 今の記録は Q2 として保存されます')).toBeTruthy();
+        expect(screen.queryByText('選手とアクションをタップして記録')).toBeNull();
     });
 });

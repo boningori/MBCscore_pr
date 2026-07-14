@@ -48,12 +48,6 @@ const getActionLabel = (actionType: string, value: string): string => {
     return value;
 };
 
-// 時刻フォーマット
-const formatTime = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-};
-
 export function PendingActionPanel({
     pendingActions,
     onResolveUnknown,
@@ -173,7 +167,6 @@ export function PendingActionPanel({
                                     {getActionLabel(pending.actionType, pending.value)}
                                 </span>
                                 <span className="pending-quarter">Q{pending.quarter}</span>
-                                <span className="pending-time">{formatTime(pending.timestamp)}</span>
                                 <span className={`pending-team ${pending.teamId}`}>
                                     {pending.teamId === 'teamA' ? 'A' : 'B'}
                                 </span>

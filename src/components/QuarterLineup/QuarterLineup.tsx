@@ -10,6 +10,9 @@ interface QuarterLineupProps {
     players: Player[];
     onConfirm: (startingPlayerIds: string[]) => void;
     onBack?: () => void;
+    /** 確定ボタンの文言（未指定時: Q1=試合開始 / Q2以降=Qx 開始）。
+        1チーム目のスタメン選択では「次へ」系を渡し、実際の開始と区別する */
+    confirmLabel?: string;
 }
 
 export function QuarterLineup({
@@ -18,6 +21,7 @@ export function QuarterLineup({
     players,
     onConfirm,
     onBack,
+    confirmLabel,
 }: QuarterLineupProps) {
     const computeInitialSelected = () =>
         players
@@ -117,10 +121,12 @@ export function QuarterLineup({
                     const cannotReachMin = isRegularQuarter && potentialMax < 2;
 
                     return (
-                        <div
+                        <button
+                            type="button"
                             key={player.id}
                             className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''} ${overMax ? 'rule-over-max' : ''}`}
                             onClick={() => handlePlayerToggle(player.id)}
+                            aria-pressed={isSelected}
                         >
                             <div className="lineup-player-number">#{formatPlayerNumber(player.number)}</div>
                             <div className="lineup-player-name">
@@ -156,7 +162,7 @@ export function QuarterLineup({
                                 </div>
                             )}
                             {isSelected && <div className="selection-check">✓</div>}
-                        </div>
+                        </button>
                     );
                 })}
             </div>
@@ -167,7 +173,7 @@ export function QuarterLineup({
                     onClick={handleConfirm}
                     disabled={!isValid}
                 >
-                    {quarter === 1 ? '試合開始' : `${quarterLabel} 開始`}
+                    {confirmLabel ?? (quarter === 1 ? '試合開始' : `${quarterLabel} 開始`)}
                 </button>
             </div>
 

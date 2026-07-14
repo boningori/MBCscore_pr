@@ -15,6 +15,8 @@ interface ActionButtonsProps {
     showThreePoint?: boolean; // 3P入力ボタンを表示するか（未指定時true=後方互換）
     onHoldPending?: () => void; // 選手がわからない → 保留アクション化（チーム選択へ）
     onCancelAction?: () => void; // 選択中アクションの取り消し
+    /** アイドル時の注意書き（例: クォーター間の「Q◯として保存」）。指定時は通常のアイドル文言を置き換える */
+    idleNotice?: string | null;
 }
 
 export function ActionButtons({
@@ -30,6 +32,7 @@ export function ActionButtons({
     showThreePoint = true,
     onHoldPending,
     onCancelAction,
+    idleNotice = null,
 }: ActionButtonsProps) {
     const isActive = (type: string, value?: string) => {
         if (!activeAction) return false;
@@ -74,6 +77,8 @@ export function ActionButtons({
                             </button>
                         )}
                     </>
+                ) : idleNotice ? (
+                    <span className="status-notice">{idleNotice}</span>
                 ) : (
                     <span className="status-idle">選手とアクションをタップして記録</span>
                 )}

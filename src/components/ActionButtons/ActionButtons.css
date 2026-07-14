@@ -259,6 +259,12 @@
     color: var(--text-muted);
 }
 
+/* クォーター間などの注意書き（誤解を防ぐ警告トーン） */
+.action-status-bar .status-notice {
+    color: var(--warning-light);
+    font-weight: 600;
+}
+
 .action-status-bar.active {
     background: rgba(5, 150, 105, 0.15);
     color: var(--secondary-light);

@@ -200,14 +200,20 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         }
     };
 
-    // 全選手クリア
+    // 全選手クリア（確認モーダル経由）
+    const [showClearPlayersConfirm, setShowClearPlayersConfirm] = useState(false);
+
     const handleClearAllPlayers = () => {
         if (!editingTeam) return;
         if (editingTeam.players.length === 0) return;
+        setShowClearPlayersConfirm(true);
+    };
 
-        if (confirm('登録済みの選手を全てクリアしますか？')) {
+    const confirmClearAllPlayers = () => {
+        if (editingTeam) {
             setEditingTeam({ ...editingTeam, players: [] });
         }
+        setShowClearPlayersConfirm(false);
     };
 
     const handleAddPlayer = () => {
@@ -785,6 +791,15 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     note="※この操作は取り消せません"
                     onConfirm={confirmDelete}
                     onCancel={cancelDelete}
+                />
+            )}
+
+            {showClearPlayersConfirm && (
+                <DeleteConfirmModal
+                    title="選手の全クリア"
+                    message="登録済みの選手を全てクリアしますか？"
+                    onConfirm={confirmClearAllPlayers}
+                    onCancel={() => setShowClearPlayersConfirm(false)}
                 />
             )}
         </div>

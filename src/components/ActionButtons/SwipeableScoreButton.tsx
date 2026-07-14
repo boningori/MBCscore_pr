@@ -16,10 +16,10 @@ interface SwipeableScoreButtonProps {
 const SWIPE_THRESHOLD = 30;
 
 // スコアタイプの表示情報
-const SCORE_INFO: Record<ScoreType, { label: string; icon: string; missType: '2PA' | '3PA' | 'FTA' }> = {
-    '2P': { label: '2P', icon: '🏀', missType: '2PA' },
-    '3P': { label: '3P', icon: '🎯', missType: '3PA' },
-    'FT': { label: 'FT', icon: '🆓', missType: 'FTA' },
+const SCORE_INFO: Record<ScoreType, { label: string; icon: string; missType: '2PA' | '3PA' | 'FTA'; ariaLabel: string }> = {
+    '2P': { label: '2P', icon: '🏀', missType: '2PA', ariaLabel: '2Pシュート' },
+    '3P': { label: '3P', icon: '🎯', missType: '3PA', ariaLabel: '3Pシュート' },
+    'FT': { label: 'FT', icon: '🆓', missType: 'FTA', ariaLabel: 'フリースロー' },
 };
 
 export function SwipeableScoreButton({
@@ -72,6 +72,7 @@ export function SwipeableScoreButton({
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
                 disabled={disabled}
+                aria-label={info.ariaLabel}
             >
                 <div className="score-content">
                     <span className="action-icon">{info.icon}</span>
