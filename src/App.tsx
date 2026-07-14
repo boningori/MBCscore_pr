@@ -21,6 +21,7 @@ import { ActionHistory } from './components/ActionHistory';
 import { TeamPanel } from './components/TeamPanel';
 // import { VoiceInput } from './components/VoiceInput'; // 一時的に非表示
 import { SubstitutionModal } from './components/SubstitutionModal';
+import { TimeoutInputModal } from './components/TimeoutInputModal/TimeoutInputModal';
 import { StatsPanel } from './components/StatsPanel';
 import { QuarterLineup } from './components/QuarterLineup';
 import { PendingActionPanel } from './components/PendingActionPanel';
@@ -565,6 +566,9 @@ function AppContent() {
     });
   };
 
+  // フルモード: TeamPanelのタイムアウトチップから開く入力モーダル
+  const [timeoutModalTeam, setTimeoutModalTeam] = useState<'teamA' | 'teamB' | null>(null);
+
   // 交代モーダル表示
 
 
@@ -919,18 +923,24 @@ function AppContent() {
       {/* ヘッダー */}
       <header className="app-header">
         <div className="header-left">
-          <button className="btn btn-secondary btn-small" onClick={handleBackToHome}>
+          <button className="btn btn-secondary btn-small" onClick={handleBackToHome} aria-label="ホームへ戻る">
             🏠
           </button>
-          <button className="btn btn-secondary btn-small" onClick={toggleFullScreen} style={{ marginLeft: '8px' }}>
-            {isFullScreen ? '縮小' : '全画面'}
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={toggleFullScreen}
+            style={{ marginLeft: '8px' }}
+            aria-label={isFullScreen ? '全画面を解除' : '全画面表示'}
+          >
+            {isFullScreen ? '⊟' : '⊞'}<span className="btn-label">{isFullScreen ? '縮小' : '全画面'}</span>
           </button>
           <button
             className={`btn btn-small ${gameMode === 'simple' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setGameMode(gameMode === 'full' ? 'simple' : 'full')}
             style={{ marginLeft: '8px' }}
+            aria-label={gameMode === 'full' ? 'シンプルモードに切り替え' : 'フルモードに切り替え'}
           >
-            {gameMode === 'full' ? '📱 シンプル' : '💻 フル'}
+            {gameMode === 'full' ? '📱' : '💻'}<span className="btn-label">{gameMode === 'full' ? ' シンプル' : ' フル'}</span>
           </button>
         </div>
         <div className="header-center">
@@ -943,24 +953,27 @@ function AppContent() {
             className={`btn ${showHistoryPopup ? 'btn-primary' : 'btn-secondary'} btn-small history-popup-btn`}
             onClick={() => setShowHistoryPopup(!showHistoryPopup)}
             style={{ marginRight: '8px' }}
+            aria-label="アクション履歴"
           >
-            📜 履歴
+            📜<span className="btn-label"> 履歴</span>
           </button>
           {/* スコアシートボタン（両モード共通） */}
           <button
             className="btn btn-secondary btn-small"
             onClick={() => setScreen('scoresheet')}
             style={{ marginRight: '8px' }}
+            aria-label="スコアシート"
           >
-            📄 スコアシート
+            📄<span className="btn-label"> スコアシート</span>
           </button>
           {/* フルモード用: 統計 */}
           {gameMode === 'full' && (
             <button
               className={`btn ${showStats ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setShowStats(!showStats)}
+              aria-label="チーム統計"
             >
-              📊 統計
+              📊<span className="btn-label"> 統計</span>
             </button>
           )}
         </div>
@@ -977,7 +990,8 @@ function AppContent() {
         ) : (
           <>
             {/* 3列メインエリア: Team A | Center (Scoreboard + Actions) | Team B */}
-            <div className={`game-main-area ${gameMode === 'simple' ? 'simple-mode' : 'full-mode'}`}>
+            {/* action-pending: アクション先行選択中は選手カードを強調表示 */}
+            <div className={`game-main-area ${gameMode === 'simple' ? 'simple-mode' : 'full-mode'} ${pendingAction ? 'action-pending' : ''}`}>
               {/* Left: Team A */}
               <TeamPanel
                 teamId="teamA"
@@ -995,6 +1009,11 @@ function AppContent() {
                 onSubstitute={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamA')}
                 actionHistoryHandlers={actionHistoryHandlers}
+                {...(gameMode === 'full' ? {
+                  teamFouls: state.teamA.teamFouls[currentQuarter - 1] || 0,
+                  timeoutUsed: state.teamA.timeouts.some(t => t.quarter === currentQuarter),
+                  onTimeoutRequest: phase === 'playing' ? () => setTimeoutModalTeam('teamA') : undefined,
+                } : {})}
               />
 
               {/* Center: Scoreboard + Action Buttons */}
@@ -1018,6 +1037,11 @@ function AppContent() {
                     disabled={phase === 'finished'}
                     hasSelection={!!selectedPlayerId}
                     activeAction={pendingAction}
+                    activeActionLabel={pendingAction
+                      ? pendingAction.type === 'SCORE' ? `${pendingAction.value}成功`
+                        : pendingAction.type === 'FOUL' ? 'ファウル'
+                          : STAT_UNDO_LABELS[pendingAction.value ?? ''] ?? pendingAction.value
+                      : null}
                     gameMode={gameMode}
                     showThreePoint={state.showThreePoint}
                     onHoldPending={() => setShowTeamSelector(true)}
@@ -1043,6 +1067,11 @@ function AppContent() {
                 onSubstitute={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamB')}
                 actionHistoryHandlers={actionHistoryHandlers}
+                {...(gameMode === 'full' ? {
+                  teamFouls: state.teamB.teamFouls[currentQuarter - 1] || 0,
+                  timeoutUsed: state.teamB.timeouts.some(t => t.quarter === currentQuarter),
+                  onTimeoutRequest: phase === 'playing' ? () => setTimeoutModalTeam('teamB') : undefined,
+                } : {})}
               />
             </div>
           </>
@@ -1429,6 +1458,19 @@ function AppContent() {
           onDismiss={handleDismissUndo}
         />
       )}
+
+      {/* フルモード: TeamPanelのタイムアウトチップから開く入力モーダル */}
+      <TimeoutInputModal
+        isOpen={timeoutModalTeam !== null}
+        teamName={timeoutModalTeam === 'teamB' ? state.teamB.name : state.teamA.name}
+        teamColor={timeoutModalTeam === 'teamB' ? state.teamB.color : state.teamA.color}
+        currentQuarter={currentQuarter}
+        onConfirm={(elapsedMinutes) => {
+          if (timeoutModalTeam) handleTimeout(timeoutModalTeam, elapsedMinutes);
+          setTimeoutModalTeam(null);
+        }}
+        onCancel={() => setTimeoutModalTeam(null)}
+      />
     </div>
   );
 }

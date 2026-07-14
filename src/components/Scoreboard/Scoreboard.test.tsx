@@ -80,6 +80,20 @@ describe('Scoreboard: クォーター終了の確認', () => {
     });
 });
 
+describe('Scoreboard: フルモードのスコアブロック', () => {
+    it('スコアブロックに両チーム名が表示される', () => {
+        renderScoreboard();
+        expect(screen.getByText('ホーム')).toBeTruthy();
+        expect(screen.getByText('ビジター')).toBeTruthy();
+    });
+
+    it('TF・タイムアウトはTeamPanel側に移設したためスコアボードには表示しない', () => {
+        renderScoreboard();
+        expect(screen.queryByRole('button', { name: 'タイムアウト' })).toBeNull();
+        expect(screen.queryByText(/^TF /)).toBeNull();
+    });
+});
+
 describe('Scoreboard: クォーター終了の取り消し', () => {
     it('quarterEnd中は「終了を取り消す」ボタンが表示され、押すと前Qのplayingに戻る', () => {
         renderScoreboard([{ type: 'END_QUARTER' }]);

@@ -35,6 +35,25 @@ describe('UndoSnackbar', () => {
         expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
+    it('スナックバーの外側をタップするとonDismissが即座に呼ばれる', () => {
+        const onDismiss = vi.fn();
+        render(
+            <div>
+                <button>他のボタン</button>
+                <UndoSnackbar message="#4 2P成功 +2" onUndo={vi.fn()} onDismiss={onDismiss} />
+            </div>,
+        );
+        fireEvent.pointerDown(screen.getByText('他のボタン'));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('スナックバー内側のタップではonDismissは呼ばれない', () => {
+        const onDismiss = vi.fn();
+        render(<UndoSnackbar message="#4 2P成功 +2" onUndo={vi.fn()} onDismiss={onDismiss} />);
+        fireEvent.pointerDown(screen.getByText('取り消す'));
+        expect(onDismiss).not.toHaveBeenCalled();
+    });
+
     it('メッセージが変わるとタイマーがリセットされる', () => {
         vi.useFakeTimers();
         const onDismiss = vi.fn();

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import './PendingActionPanel.css';
@@ -62,6 +62,22 @@ export function PendingActionPanel({
 }: PendingActionPanelProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<Record<string, string | null>>({});
+    // 折りたたみ状態（既定: バッジ表示）。展開中のパネルは下の操作を覆うため、
+    // 使うときだけ開き、外側タップで閉じる
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    // 展開中に外側をタップしたら折りたたむ
+    useEffect(() => {
+        if (!open) return;
+        const handlePointerDown = (e: PointerEvent) => {
+            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('pointerdown', handlePointerDown);
+        return () => document.removeEventListener('pointerdown', handlePointerDown);
+    }, [open]);
 
     if (pendingActions.length === 0) {
         return null;
@@ -123,13 +139,25 @@ export function PendingActionPanel({
         return pending.actionType === 'STAT';
     };
 
+    // 折りたたみ時: 件数バッジのみ
+    if (!open) {
+        return (
+            <button className="pending-badge" onClick={() => setOpen(true)}>
+                <span className="pending-icon">⏳</span>
+                <span className="pending-title">保留</span>
+                <span className="pending-count">{pendingActions.length}</span>
+            </button>
+        );
+    }
+
     return (
-        <div className="pending-action-panel">
-            <div className="pending-action-header">
+        <div className="pending-action-panel" ref={rootRef}>
+            <button className="pending-action-header" onClick={() => setOpen(false)}>
                 <span className="pending-icon">⏳</span>
                 <span className="pending-title">保留中</span>
                 <span className="pending-count">{pendingActions.length}</span>
-            </div>
+                <span className="pending-collapse" aria-hidden="true">▲</span>
+            </button>
             <div className="pending-action-list">
                 {pendingActions.map((pending, index) => {
                     const selectedPlayerId = selectedPlayerIds[pending.id] || null;

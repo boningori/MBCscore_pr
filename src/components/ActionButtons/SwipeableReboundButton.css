@@ -7,7 +7,8 @@
 .swipeable-rebound-btn {
     position: relative;
     overflow: hidden;
-    touch-action: pan-y;
+    /* 縦フリック中にページスクロールが競合しないようにする */
+    touch-action: none;
     /* 高さを画面サイズに応じてスケール */
     min-height: clamp(70px, 11vh, 100px);
     width: 100%;
@@ -76,7 +77,7 @@
     left: 50%;
     transform: translateX(-50%);
     padding: 12px 24px;
-    border-radius: 16px;
+    border-radius: var(--radius-md);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     z-index: 101;
     animation: reboundPopIn 0.15s ease;
@@ -167,7 +168,7 @@
     display: flex;
     gap: 8px;
     background: var(--bg-secondary, #1e293b);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 101;
@@ -194,7 +195,7 @@
     justify-content: center;
     gap: 2px;
     padding: 12px 20px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: none;
     cursor: pointer;
     font-weight: 600;

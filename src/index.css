@@ -237,10 +237,11 @@ button.player-card {
 
 .btn-small {
   min-width: auto;
-  min-height: 36px;
+  /* タッチターゲット44px・角丸はボタン標準(radius-md)に統一 */
+  min-height: 44px;
   padding: 4px 12px;
   font-size: var(--font-size-sm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }
 
 .btn:disabled {
@@ -764,7 +765,56 @@ textarea,
   animation: fadeIn 0.3s ease;
 }
 
-/* モーダル */
+/* ===== チーム状態チップ（TeamPanelヘッダー・シンプルモードカードで共用） =====
+   TFバッジは隣のタイムアウトボタンと高さ44px・角丸12pxを揃える。
+   押せない情報表示であることはフラットな暗色背景(枠線なし)で区別する */
+.tf-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 2px 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.tf-badge.bonus {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-timeout-chip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 10px;
+  min-height: 44px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-timeout-chip:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.btn-timeout-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* モーダル
+   z-indexは他のモーダル系オーバーレイ(FoulInputFlow等)と同じ1000に統一。
+   保留パネル(500)より上・Toast(10000)より下 */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -772,7 +822,7 @@ textarea,
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
   padding: var(--spacing-md);
 }
 

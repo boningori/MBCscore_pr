@@ -39,7 +39,7 @@ describe('ActionButtons: 3Pボタンの表示制御', () => {
     });
 });
 
-describe('ActionButtons: アクション先行時のヒント操作', () => {
+describe('ActionButtons: アクション先行時のステータスバー', () => {
     function renderWithActiveAction() {
         const onHoldPending = vi.fn();
         const onCancelAction = vi.fn();
@@ -51,6 +51,7 @@ describe('ActionButtons: アクション先行時のヒント操作', () => {
                 onFoul={noop}
                 gameMode="full"
                 activeAction={{ type: 'SCORE', value: '2P' }}
+                activeActionLabel="2P成功"
                 onHoldPending={onHoldPending}
                 onCancelAction={onCancelAction}
             />,
@@ -58,11 +59,19 @@ describe('ActionButtons: アクション先行時のヒント操作', () => {
         return { onHoldPending, onCancelAction };
     }
 
-    it('activeActionがあるとヒントと「選手がわからない」「キャンセル」ボタンが表示される', () => {
+    it('activeActionがあるとアクション名入りガイドと「選手がわからない」「キャンセル」が表示される', () => {
         renderWithActiveAction();
-        expect(screen.getByText('👇 選手を選択してください')).toBeTruthy();
+        expect(screen.getByText(/2P成功.*選手をタップ/)).toBeTruthy();
         expect(screen.getByText('選手がわからない')).toBeTruthy();
         expect(screen.getByText('キャンセル')).toBeTruthy();
+    });
+
+    it('ステータスバーはボタン群より前(上)に配置される', () => {
+        renderWithActiveAction();
+        const bar = screen.getByRole('status');
+        const scoreLabel = screen.getByText('2P'); // 2Pボタンのラベル
+        // barがscoreLabelより文書順で前にある
+        expect(bar.compareDocumentPosition(scoreLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it('「選手がわからない」でonHoldPendingが呼ばれる', () => {
@@ -77,10 +86,12 @@ describe('ActionButtons: アクション先行時のヒント操作', () => {
         expect(onCancelAction).toHaveBeenCalledTimes(1);
     });
 
-    it('activeActionがなければヒント操作は表示されない', () => {
+    it('activeActionがなくてもバーは常設され(高さ確保)、操作ボタンは表示されない', () => {
         render(
             <ActionButtons onScore={noop} onStat={noop} onMiss={noop} onFoul={noop} gameMode="full" />,
         );
+        expect(screen.getByRole('status')).toBeTruthy();
         expect(screen.queryByText('選手がわからない')).toBeNull();
+        expect(screen.queryByText('キャンセル')).toBeNull();
     });
 });

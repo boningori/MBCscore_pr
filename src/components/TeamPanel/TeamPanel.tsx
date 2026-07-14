@@ -29,6 +29,12 @@ interface TeamPanelProps {
   onSubstitute: () => void;
   onCoachFoul: () => void;
   actionHistoryHandlers: ActionHistoryHandlers;
+  /** 現クォーターのチームファウル数（指定時のみヘッダーにTFバッジを表示） */
+  teamFouls?: number;
+  /** 現クォーターのタイムアウト使用済みか */
+  timeoutUsed?: boolean;
+  /** タイムアウト記録の要求（指定時のみヘッダーに⏱チップを表示） */
+  onTimeoutRequest?: () => void;
 }
 
 export function TeamPanel({
@@ -47,6 +53,9 @@ export function TeamPanel({
   onSubstitute,
   onCoachFoul,
   actionHistoryHandlers,
+  teamFouls,
+  timeoutUsed,
+  onTimeoutRequest,
 }: TeamPanelProps) {
   const side = teamId === 'teamA' ? 'team-a' : 'team-b';
 
@@ -54,6 +63,23 @@ export function TeamPanel({
     <div className={`team-panel ${side} color-${teamColor} ${isActive ? 'active' : ''}`}>
       <div className="team-panel-header">
         <span className="team-name">{teamName}</span>
+        {/* チーム帰属の状態(TF・タイムアウト)はチームパネル側に表示する */}
+        <div className="team-panel-status">
+          {teamFouls !== undefined && (
+            <span className={`tf-badge ${teamFouls >= 4 ? 'bonus' : ''}`}>TF {teamFouls}</span>
+          )}
+          {onTimeoutRequest && (
+            <button
+              className="btn-timeout-chip"
+              onClick={onTimeoutRequest}
+              disabled={timeoutUsed}
+              aria-label="タイムアウト"
+              title="タイムアウト"
+            >
+              ⏱ {timeoutUsed ? '済' : '残1'}
+            </button>
+          )}
+        </div>
       </div>
       <div className="team-players">
         {players.filter(p => p.isOnCourt).map(player => {
