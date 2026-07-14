@@ -6,7 +6,8 @@
 .action-btn.swipeable-turnover-btn {
     width: 100%;
     position: relative;
-    touch-action: manipulation;
+    /* 4方向フリック中にページスクロールが競合しないようにする */
+    touch-action: none;
     user-select: none;
     /* 高さを画面サイズに応じてスケール */
     min-height: clamp(70px, 11vh, 100px);
@@ -87,7 +88,7 @@
     position: absolute;
     z-index: 100;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     animation: turnoverPopIn 0.15s ease-out;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }

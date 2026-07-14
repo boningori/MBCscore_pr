@@ -117,13 +117,15 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                 <div className="simple-quarter-row">
                     <span className={`quarter-badge ${currentQuarter <= 4 ? `q${currentQuarter}` : 'ot'}`}>{quarterLabel}</span>
                     {phase === 'playing' && (
-                        <button className="btn btn-secondary btn-small" onClick={handleQuarterManagement}>
-                            {quarterLabel}終了
+                        <button className="btn btn-quarter-end btn-small" onClick={handleQuarterManagement}>
+                            <span aria-hidden="true">🏁</span>
+                            <span>{quarterLabel}終了</span>
                         </button>
                     )}
                     {phase === 'quarterEnd' && (
                         <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
-                            {currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}
+                            <span aria-hidden="true">▶</span>
+                            <span>{currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}</span>
                         </button>
                     )}
                     {undoQuarterEndButton}
@@ -195,27 +197,40 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
         );
     }
 
+    // チームスコアブロック（チーム名 + スコア。TF/タイムアウトはTeamPanel側に表示）
+    const renderTeamBlock = (teamId: 'teamA' | 'teamB') => {
+        const team = teamId === 'teamA' ? state.teamA : state.teamB;
+        const score = teamId === 'teamA' ? scoreA : scoreB;
+        return (
+            <div className={`team-score-block ${teamId === 'teamA' ? 'team-a-block' : 'team-b-block'} color-${team.color}`}>
+                <div className="team-info">
+                    <span className="team-label">{team.name}</span>
+                </div>
+                <div className="score-display">{score}</div>
+            </div>
+        );
+    };
+
     return (
         <div className="scoreboard-new">
-            {/* Row 1: スコア表示 */}
+            {/* スコア表示（チーム名・スコア・クォーターの1段構成） */}
             <div className="scoreboard-main">
-                {/* チームA */}
-                <div className={`team-score-block team-a-block color-${state.teamA.color}`}>
-                    <div className="score-display">{scoreA}</div>
-                </div>
+                {renderTeamBlock('teamA')}
 
                 {/* クォーター表示 */}
                 <div className="quarter-section">
                     <span className={`quarter-badge-large ${currentQuarter <= 4 ? `q${currentQuarter}` : 'ot'}`}>{quarterLabel}</span>
                     <div className="quarter-controls">
                         {phase === 'playing' && (
-                            <button className="btn btn-secondary btn-small" onClick={handleQuarterManagement}>
-                                {quarterLabel}終了
+                            <button className="btn btn-quarter-end btn-small" onClick={handleQuarterManagement}>
+                                <span aria-hidden="true">🏁</span>
+                                <span>{quarterLabel}終了</span>
                             </button>
                         )}
                         {phase === 'quarterEnd' && (
                             <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
-                                {currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}
+                                <span aria-hidden="true">▶</span>
+                                <span>{currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}</span>
                             </button>
                         )}
                         {undoQuarterEndButton}
@@ -227,59 +242,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                     </div>
                 </div>
 
-                {/* チームB */}
-                <div className={`team-score-block team-b-block color-${state.teamB.color}`}>
-                    <div className="score-display">{scoreB}</div>
-                </div>
-            </div>
-
-            {/* Row 2: チームファウル & タイムアウト */}
-            <div className="scoreboard-stats">
-                {/* チームA情報 */}
-                <div className="team-stats-block">
-                    <div className={`stat-item tf-count ${(state.teamA.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
-                        <span className="stat-label">TF</span>
-                        <span className="stat-value">{(state.teamA.teamFouls[currentQuarter - 1] || 0)}</span>
-                    </div>
-                    <div className="stat-item to-count">
-                        <span className="stat-label">TO</span>
-                        <span className="stat-value">
-                            {state.teamA.timeouts.some(t => t.quarter === currentQuarter) ? '済' : '残1'}
-                        </span>
-                    </div>
-                    {phase === 'playing' && onTimeout && (
-                        <button
-                            className="btn btn-small btn-game-action"
-                            onClick={() => handleTimeoutClick('teamA')}
-                            disabled={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
-                        >
-                            タイムアウト
-                        </button>
-                    )}
-                </div>
-
-                {/* チームB情報 */}
-                <div className="team-stats-block">
-                    <div className={`stat-item tf-count ${(state.teamB.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
-                        <span className="stat-label">TF</span>
-                        <span className="stat-value">{(state.teamB.teamFouls[currentQuarter - 1] || 0)}</span>
-                    </div>
-                    <div className="stat-item to-count">
-                        <span className="stat-label">TO</span>
-                        <span className="stat-value">
-                            {state.teamB.timeouts.some(t => t.quarter === currentQuarter) ? '済' : '残1'}
-                        </span>
-                    </div>
-                    {phase === 'playing' && onTimeout && (
-                        <button
-                            className="btn btn-small btn-game-action"
-                            onClick={() => handleTimeoutClick('teamB')}
-                            disabled={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
-                        >
-                            タイムアウト
-                        </button>
-                    )}
-                </div>
+                {renderTeamBlock('teamB')}
             </div>
 
             {/* タイムアウト入力モーダル */}

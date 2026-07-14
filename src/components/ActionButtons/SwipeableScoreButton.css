@@ -19,7 +19,8 @@
     gap: 0;
     padding: var(--spacing-sm) var(--spacing-xs);
     transition: all 0.15s ease;
-    touch-action: manipulation;
+    /* 縦フリック(成功/ミス)中にページスクロールが競合しないようにする */
+    touch-action: none;
     user-select: none;
 }
 
@@ -81,7 +82,7 @@
     left: 50%;
     transform: translateX(-50%);
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     z-index: 100;
     pointer-events: none;
     animation: scoreSwipeFadeIn 0.1s ease;
@@ -143,7 +144,7 @@
 
 .score-option {
     padding: 16px 24px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;

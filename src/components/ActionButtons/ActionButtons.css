@@ -54,7 +54,7 @@
     padding: var(--spacing-sm);
     background: var(--bg-tertiary);
     border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     color: var(--text-primary);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -239,14 +239,41 @@
     animation: pulse 2s infinite;
 }
 
-/* アクション先行時のヒント内操作（保留化・キャンセル） */
-.action-hint-controls {
+/* アクション先行時のステータスバー（ボタン群の上・常設・高さ固定）
+   高さを56pxに固定してレイアウトシフトを起こさない。
+   狭い画面では文言側を省略し、操作ボタンは縮めない */
+.action-status-bar {
     display: flex;
+    align-items: center;
     justify-content: center;
+    flex-wrap: nowrap;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-sm);
+    height: 56px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    overflow: hidden;
 }
 
-.action-hint-controls .btn {
+.action-status-bar .status-idle {
+    color: var(--text-muted);
+}
+
+.action-status-bar.active {
+    background: rgba(5, 150, 105, 0.15);
+    color: var(--secondary-light);
+    font-weight: 600;
+}
+
+.action-status-bar .status-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.action-status-bar .btn {
     min-height: 44px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }

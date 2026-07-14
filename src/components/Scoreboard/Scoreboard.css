@@ -3,7 +3,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    padding: var(--spacing-md);
+    /* 縦paddingは抑えめにして低い画面(720px)でもフィットさせる */
+    padding: var(--spacing-sm) var(--spacing-md);
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
@@ -95,7 +96,8 @@
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    /* Q終了ボタンの44px化に伴い縦paddingを圧縮（720px高でもフィットさせる） */
+    padding: var(--spacing-xs) var(--spacing-lg);
 }
 
 .quarter-badge-large {
@@ -137,71 +139,31 @@
     gap: var(--spacing-sm);
 }
 
-/* Row 2: チーム情報（ファウル・タイムアウト） */
-.scoreboard-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-lg);
-    padding-top: var(--spacing-sm);
-    border-top: 1px solid var(--border);
-}
-
-.team-stats-block {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-}
-
-.stat-item {
-    display: flex;
+/* クォーター終了ボタン: ゲーム進行のアクションであることを
+   旗アイコン+オレンジ枠で明示（グレーだと状態表示に見えて押せると分かりにくい） */
+.btn-quarter-end {
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
-}
-
-.stat-label {
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.stat-value {
-    color: var(--text-primary);
-    font-weight: 700;
-}
-
-.stat-item.tf-count.bonus {
-    background: var(--danger);
-}
-
-.stat-item.tf-count.bonus .stat-label,
-.stat-item.tf-count.bonus .stat-value {
-    color: white;
-}
-
-.btn-game-action {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    min-width: auto;
-    /* 高さを画面サイズに応じてスケール */
-    min-height: clamp(40px, 6vh, 50px);
-    font-size: var(--font-size-sm);
+    background: rgba(245, 158, 11, 0.12);
+    border: 2px solid var(--warning);
+    color: var(--warning-light);
     white-space: nowrap;
-    background: #ffffff;
-    color: #374151;
 }
 
-.btn-game-action:hover:not(:disabled) {
-    background: #f3f4f6;
+.btn-quarter-end:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.25);
 }
 
-.btn-game-action:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+/* 高さに余裕がある画面ではスコアを主役として大きく表示 */
+@media (min-height: 900px) {
+    .score-display {
+        font-size: var(--font-size-3xl);
+    }
 }
+
+/* TF・タイムアウトのチップスタイルは index.css の共有定義を使用
+   （TeamPanelヘッダーとシンプルモードのチームカードで共用） */
 
 /* レスポンシブ: タブレット縦向き (iPad Air 11インチ等) */
 @media (max-width: 900px) {
@@ -224,19 +186,15 @@
         justify-content: center;
     }
 
-    .scoreboard-stats {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-sm);
-    }
-
-    .btn-game-action {
-        padding: 4px 8px;
+    .btn-timeout-chip {
+        padding: 2px 8px;
         font-size: var(--font-size-xs);
     }
 }
 
 .scoreboard-simple {
-    padding: var(--spacing-sm);
+    /* Q終了ボタンの44px化に伴い縦paddingを圧縮（スマホでのフィット維持） */
+    padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .simple-quarter-row {
@@ -244,12 +202,11 @@
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
 }
 
 .simple-quarter-row .btn-small {
     padding: 6px 12px;
-    min-height: 36px;
     font-size: var(--font-size-sm);
 }
 
@@ -308,10 +265,11 @@
 
 .quarter-badge {
     padding: 6px 12px;
-    border-radius: var(--radius-sm);
+    /* 隣のQ終了ボタンと高さ44px・角丸12pxを揃える */
+    border-radius: var(--radius-md);
     font-weight: 700;
     font-size: var(--font-size-sm);
-    min-height: 36px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -337,25 +295,14 @@
     color: white;
 }
 
-.tf-badge {
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    background: var(--bg-primary);
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
-
-.tf-badge.bonus {
-    background: var(--danger);
-    color: white;
-}
+/* .tf-badge は index.css の共有定義を使用 */
 
 /* シンプルモード用タイムアウトボタン */
 .btn-timeout-simple {
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
+    padding: 2px 10px;
+    /* タッチターゲット確保（従来23pxで押しにくかった） */
+    min-height: 44px;
+    border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     font-weight: 600;
     line-height: 1.4;

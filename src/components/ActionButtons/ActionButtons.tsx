@@ -10,6 +10,7 @@ interface ActionButtonsProps {
     disabled?: boolean;
     hasSelection?: boolean; // @deprecated アクション先行入力モードでは使用しないが、互換性のため残す
     activeAction?: { type: string; value?: string } | null;
+    activeActionLabel?: string | null; // 選択中アクションの表示名（例: "2P成功"）
     gameMode?: 'full' | 'simple'; // ゲームモード
     showThreePoint?: boolean; // 3P入力ボタンを表示するか（未指定時true=後方互換）
     onHoldPending?: () => void; // 選手がわからない → 保留アクション化（チーム選択へ）
@@ -24,6 +25,7 @@ export function ActionButtons({
     disabled = false,
     // hasSelection = true, // デフォルトtrueにしてボタンを有効化（App側で制御） - unused
     activeAction = null,
+    activeActionLabel = null,
     gameMode = 'full',
     showThreePoint = true,
     onHoldPending,
@@ -53,6 +55,30 @@ export function ActionButtons({
 
     return (
         <div className="action-buttons-container">
+            {/* ステータスバー（常設・高さ固定でレイアウトシフトを防ぐ）。
+                アクション選択中はガイドと保留/キャンセル操作を表示する */}
+            <div className={`action-status-bar ${activeAction ? 'active' : ''}`} role="status">
+                {activeAction ? (
+                    <>
+                        <span className="status-text">
+                            {activeActionLabel ?? ''} → 選手をタップ
+                        </span>
+                        {onHoldPending && (
+                            <button className="btn btn-warning btn-small" onClick={onHoldPending}>
+                                選手がわからない
+                            </button>
+                        )}
+                        {onCancelAction && (
+                            <button className="btn btn-secondary btn-small" onClick={onCancelAction}>
+                                キャンセル
+                            </button>
+                        )}
+                    </>
+                ) : (
+                    <span className="status-idle">選手とアクションをタップして記録</span>
+                )}
+            </div>
+
             {/* シュートボタン（スワイプ対応: 上=成功, 下=ミス） */}
             <div className="action-group">
                 {/* <h4 className="action-group-title">シュート</h4> */}
@@ -164,30 +190,6 @@ export function ActionButtons({
                 </div>
             </div>
 
-            {/* アクション選択ヒント（不要のため無効化）
-            {!hasSelection && !activeAction && gameMode !== 'simple' && (
-                <div className="action-hint">
-                    👆 アクションを選択してください
-                </div>
-            )}
-            */}
-            {activeAction && (
-                <div className="action-hint active">
-                    <span>👇 選手を選択してください</span>
-                    <div className="action-hint-controls">
-                        {onHoldPending && (
-                            <button className="btn btn-warning btn-small" onClick={onHoldPending}>
-                                選手がわからない
-                            </button>
-                        )}
-                        {onCancelAction && (
-                            <button className="btn btn-secondary btn-small" onClick={onCancelAction}>
-                                キャンセル
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
