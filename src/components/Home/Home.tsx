@@ -107,7 +107,8 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                     📖 使用説明書
                 </a>
                 <p className="text-muted text-sm">
-                    タブレット最適化 | オフライン動作
+                    {/* バージョン表示: PWA更新の確認と不具合報告時の特定用 */}
+                    v{__APP_VERSION__} | タブレット最適化 | オフライン動作
                 </p>
             </div>
         </div>
