@@ -11,7 +11,7 @@
 .backup-prompt-modal {
     background: var(--bg-secondary, #1e293b);
     color: var(--text-primary, #f1f5f9);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     max-width: 420px;
     padding: 1.25rem;
     width: calc(100% - 32px);

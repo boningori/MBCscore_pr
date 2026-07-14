@@ -84,6 +84,7 @@
   --font-size-score: clamp(48px, 8vh, 72px);
 
   /* ボーダー */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 16px;

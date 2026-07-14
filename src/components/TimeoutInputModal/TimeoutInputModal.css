@@ -13,7 +13,7 @@
 
 .timeout-modal-content {
     background: #fff;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     width: 90%;
     max-width: 320px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);

@@ -208,7 +208,7 @@
     color: var(--text-muted);
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-full);
     padding: 1px 8px;
     line-height: 1.6;
 }
@@ -319,7 +319,7 @@
     font-weight: 600;
     color: var(--primary-light);
     background: rgba(59, 130, 246, 0.15);
-    border-radius: 999px;
+    border-radius: var(--radius-full);
     padding: 1px 8px;
     vertical-align: middle;
 }
