@@ -11,7 +11,7 @@
 }
 
 /* Row 1: メインスコア表示 */
-.scoreboard-main {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .scoreboard-main {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
@@ -19,7 +19,7 @@
 }
 
 /* チームスコアブロック */
-.team-score-block {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -32,38 +32,38 @@
     /* グリッドで同じ幅を保証 */
 }
 
-.team-score-block.color-white {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.color-white {
     border-left-color: var(--team-white);
 }
 
-.team-score-block.color-blue {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.color-blue {
     border-left-color: var(--team-blue);
 }
 
 /* Team A (左パネル) はボーダーを右側に */
-.team-score-block.team-a-block {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.team-a-block {
     border-left: none !important;
     border-right: 4px solid var(--border) !important;
 }
 
-.team-score-block.team-a-block.color-white {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.team-a-block.color-white {
     border-left: none !important;
     border-right: 4px solid var(--team-white) !important;
 }
 
-.team-score-block.team-a-block.color-blue {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.team-a-block.color-blue {
     border-left: none !important;
     border-right: 4px solid var(--team-blue) !important;
 }
 
-.team-info {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-info {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     margin-bottom: var(--spacing-xs);
 }
 
-.team-label {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-label {
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-primary);
@@ -73,7 +73,7 @@
     white-space: nowrap;
 }
 
-.team-color-badge {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-color-badge {
     font-size: var(--font-size-xs);
     padding: 1px 6px;
     border-radius: var(--radius-sm);
@@ -81,7 +81,7 @@
     color: var(--text-muted);
 }
 
-.score-display {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .score-display {
     /* フォントサイズを画面に応じてスケール（3桁対応のため上限を抑制） */
     font-size: clamp(var(--font-size-xl), 3.5vw, var(--font-size-2xl));
     font-weight: 800;
@@ -91,7 +91,7 @@
 }
 
 /* クォーターセクション */
-.quarter-section {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-section {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -100,7 +100,7 @@
     padding: var(--spacing-xs) var(--spacing-lg);
 }
 
-.quarter-badge-large {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large {
     padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--radius-md);
     font-weight: 800;
@@ -110,38 +110,38 @@
     text-align: center;
 }
 
-.quarter-badge-large.q1 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q1 {
     background: #86efac;
     /* とても明るい緑 */
     color: #166534;
 }
 
-.quarter-badge-large.q2 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q2 {
     background: #4ade80;
     /* 明るい緑 */
     color: white;
 }
 
-.quarter-badge-large.q3 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q3 {
     background: #16a34a;
     /* 中間緑 */
     color: white;
 }
 
-.quarter-badge-large.q4 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q4 {
     background: #14532d;
     /* とても濃い緑 */
     color: white;
 }
 
-.quarter-controls {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-controls {
     display: flex;
     gap: var(--spacing-sm);
 }
 
 /* クォーター終了ボタン: ゲーム進行のアクションであることを
    旗アイコン+オレンジ枠で明示（グレーだと状態表示に見えて押せると分かりにくい） */
-.btn-quarter-end {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-quarter-end {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -151,13 +151,13 @@
     white-space: nowrap;
 }
 
-.btn-quarter-end:hover:not(:disabled) {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-quarter-end:hover:not(:disabled) {
     background: rgba(245, 158, 11, 0.25);
 }
 
 /* 高さに余裕がある画面ではスコアを主役として大きく表示 */
 @media (min-height: 900px) {
-    .score-display {
+    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .score-display {
         font-size: var(--font-size-3xl);
     }
 }
@@ -167,7 +167,7 @@
 
 /* レスポンシブ: タブレット縦向き (iPad Air 11インチ等) */
 @media (max-width: 900px) {
-    .score-display {
+    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .score-display {
         /* 3列レイアウト時、中央列が狭いため文字を抑制 */
         font-size: clamp(var(--font-size-xl), 3vh, var(--font-size-2xl));
     }
@@ -177,16 +177,16 @@
 @media (max-width: 600px) {
     /* scoreboard-main は常に横並び（TeamA | Q | TeamB）を維持するため変更しない */
 
-    .score-display {
+    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .score-display {
         font-size: var(--font-size-xl);
     }
 
-    .quarter-section {
+    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-section {
         flex-direction: row;
         justify-content: center;
     }
 
-    .btn-timeout-chip {
+    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-chip {
         padding: 2px 8px;
         font-size: var(--font-size-xs);
     }
@@ -197,7 +197,7 @@
     padding: var(--spacing-xs) var(--spacing-sm);
 }
 
-.simple-quarter-row {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-quarter-row {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -205,40 +205,40 @@
     margin-bottom: var(--spacing-xs);
 }
 
-.simple-quarter-row .btn-small {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-quarter-row .btn-small {
     padding: 6px 12px;
     font-size: var(--font-size-sm);
 }
 
-.scoreboard-simple-grid {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .scoreboard-simple-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-sm);
 }
 
-.simple-team-card {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-card {
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     padding: var(--spacing-sm);
     border-left: 4px solid var(--border);
 }
 
-.simple-team-card.color-white {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-card.color-white {
     border-left-color: var(--team-white);
 }
 
-.simple-team-card.color-blue {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-card.color-blue {
     border-left-color: var(--team-blue);
 }
 
-.simple-team-header {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-xs);
 }
 
-.simple-team-name {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-name {
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-secondary);
@@ -249,21 +249,21 @@
     max-width: clamp(60px, 10vw, 120px);
 }
 
-.simple-team-score {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-score {
     /* 3桁スコアも枝内に収まるようclampで制御 */
     font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-2xl));
     font-weight: 800;
     color: var(--text-primary);
 }
 
-.simple-team-footer {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-footer {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     flex-wrap: wrap;
 }
 
-.quarter-badge {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge {
     padding: 6px 12px;
     /* 隣のQ終了ボタンと高さ44px・角丸12pxを揃える */
     border-radius: var(--radius-md);
@@ -275,22 +275,22 @@
     justify-content: center;
 }
 
-.quarter-badge.q1 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q1 {
     background: #86efac;
     color: #166534;
 }
 
-.quarter-badge.q2 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q2 {
     background: #4ade80;
     color: white;
 }
 
-.quarter-badge.q3 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q3 {
     background: #16a34a;
     color: white;
 }
 
-.quarter-badge.q4 {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q4 {
     background: #14532d;
     color: white;
 }
@@ -298,7 +298,7 @@
 /* .tf-badge は index.css の共有定義を使用 */
 
 /* シンプルモード用タイムアウトボタン */
-.btn-timeout-simple {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple {
     padding: 2px 10px;
     /* タッチターゲット確保（従来23pxで押しにくかった） */
     min-height: 44px;
@@ -313,11 +313,11 @@
     transition: background 0.15s;
 }
 
-.btn-timeout-simple:hover:not(:disabled) {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple:hover:not(:disabled) {
     background: #f3f4f6;
 }
 
-.btn-timeout-simple:disabled {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }

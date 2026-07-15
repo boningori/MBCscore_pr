@@ -7,7 +7,7 @@
     min-height: 100vh;
 }
 
-.scoresheet-toolbar {
+.running-scoresheet-container .scoresheet-toolbar {
     display: flex;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
@@ -16,7 +16,7 @@
 }
 
 /* スコアシート本体 - 印刷用スタイル */
-.running-scoresheet {
+.running-scoresheet-container .running-scoresheet {
     background: #ffffff;
     color: #000000;
     padding: 9mm 6mm;
@@ -34,7 +34,7 @@
 }
 
 /* Top Header (Logo & Title) */
-.rs-top-header {
+.running-scoresheet-container .rs-top-header {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -43,7 +43,7 @@
     height: 13mm;
 }
 
-.rs-logo-container {
+.running-scoresheet-container .rs-logo-container {
     position: absolute;
     left: 0;
     display: flex;
@@ -52,7 +52,7 @@
     line-height: 1;
 }
 
-.jba-text {
+.running-scoresheet-container .jba-text {
     font-size: 24pt;
     font-weight: 900;
     font-family: sans-serif;
@@ -60,14 +60,14 @@
     letter-spacing: -2px;
 }
 
-.jba-sub {
+.running-scoresheet-container .jba-sub {
     font-size: 4pt;
     font-weight: 700;
     font-family: sans-serif;
     transform: scale(0.8);
 }
 
-.rs-main-title {
+.running-scoresheet-container .rs-main-title {
     font-size: 15pt;
     /* Request: 15pt */
     font-weight: normal;
@@ -78,11 +78,11 @@
 }
 
 /* Main Content Adjustments */
-.rs-main-content {
+.running-scoresheet-container .rs-main-content {
     display: flex;
 }
 
-.rs-teams-section {
+.running-scoresheet-container .rs-teams-section {
     /* 残りの幅を使用 -> Fixed 96.5mm */
     flex: none;
     width: 96.5mm;
@@ -92,14 +92,14 @@
 }
 
 /* Center Section */
-.rs-center-section {
+.running-scoresheet-container .rs-center-section {
     flex: 1;
     width: auto;
     display: flex;
     flex-direction: column;
 }
 
-.rs-center-team-block {
+.running-scoresheet-container .rs-center-team-block {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -107,12 +107,12 @@
 }
 
 /* チームBのブロックを27mm下げる */
-.rs-center-team-block:nth-child(2) {
+.running-scoresheet-container .rs-center-team-block:nth-child(2) {
     margin-top: 27mm;
 }
 
 /* チームファウル タイトルボックス (11mm x 10mm) */
-.rs-tf-title-box {
+.running-scoresheet-container .rs-tf-title-box {
     width: 11mm;
     height: 10mm;
     border: 1px solid #000;
@@ -127,12 +127,12 @@
 }
 
 /* グリッドグループ (タイトルボックスの下3mm) */
-.rs-tf-grid-group {
+.running-scoresheet-container .rs-tf-grid-group {
     margin-top: 3mm;
 }
 
 /* 2列5行のグリッド (ヘッダー8mm + 数字セル5mm×4) */
-.rs-tf-grid {
+.running-scoresheet-container .rs-tf-grid {
     display: grid;
     grid-template-columns: repeat(2, 5.5mm);
     grid-template-rows: 8mm repeat(4, 5mm);
@@ -140,7 +140,7 @@
 }
 
 /* ヘッダーセル (1Q/2Q/3Q/4Q) */
-.rs-tf-header-cell {
+.running-scoresheet-container .rs-tf-header-cell {
     width: 5.5mm;
     height: 8mm;
     border: 1px solid #000;
@@ -153,7 +153,7 @@
 }
 
 /* 数字セル (1-4) */
-.rs-tf-cell {
+.running-scoresheet-container .rs-tf-cell {
     width: 5.5mm;
     height: 5mm;
     border: 1px solid #000;
@@ -166,37 +166,37 @@
 }
 
 /* 左列のセルは右境界を共有 */
-.rs-tf-header-cell:first-child,
-.rs-tf-cell:nth-child(odd) {
+.running-scoresheet-container .rs-tf-header-cell:first-child,
+.running-scoresheet-container .rs-tf-cell:nth-child(odd) {
     border-right: none;
 }
 
 /* マーク済みセル（斜線クロス×） */
-.rs-tf-cell.marked {
+.running-scoresheet-container .rs-tf-cell.marked {
     background-size: 100% 100%;
 }
 
 /* 1Q/3Q: 赤色のクロス (線の太さ約0.25mm) */
-.rs-tf-cell.marked.q-red {
+.running-scoresheet-container .rs-tf-cell.marked.q-red {
     background-image:
         linear-gradient(to bottom right, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%),
         linear-gradient(to bottom left, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
 }
 
 /* 2Q/4Q: 黒色のクロス (線の太さ約0.25mm) */
-.rs-tf-cell.marked.q-black {
+.running-scoresheet-container .rs-tf-cell.marked.q-black {
     background-image:
         linear-gradient(to bottom right, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%),
         linear-gradient(to bottom left, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
 /* 試合終了後: 未使用のチームファウル枠に2本の縦線 */
-.rs-tf-cell.tf-unused {
+.running-scoresheet-container .rs-tf-cell.tf-unused {
     position: relative;
 }
 
-.rs-tf-cell.tf-unused::before,
-.rs-tf-cell.tf-unused::after {
+.running-scoresheet-container .rs-tf-cell.tf-unused::before,
+.running-scoresheet-container .rs-tf-cell.tf-unused::after {
     content: '';
     position: absolute;
     top: 0;
@@ -205,28 +205,28 @@
     background-color: #000;
 }
 
-.rs-tf-cell.tf-unused::before {
+.running-scoresheet-container .rs-tf-cell.tf-unused::before {
     left: 33%;
 }
 
-.rs-tf-cell.tf-unused::after {
+.running-scoresheet-container .rs-tf-cell.tf-unused::after {
     right: 33%;
 }
 
 /* 1Q/3Q: 赤色の縦線 */
-.rs-tf-cell.tf-unused.q-red::before,
-.rs-tf-cell.tf-unused.q-red::after {
+.running-scoresheet-container .rs-tf-cell.tf-unused.q-red::before,
+.running-scoresheet-container .rs-tf-cell.tf-unused.q-red::after {
     background-color: #f00;
 }
 
-.rs-running-score-section {
+.running-scoresheet-container .rs-running-score-section {
     width: 74.2mm;
     /* Fixed 74.2mm */
     flex: none;
 }
 
 /* Header Grid System (Full Width 2400px -> 2340px) */
-.rs-header-grid {
+.running-scoresheet-container .rs-header-grid {
     display: flex;
     flex-direction: column;
     border: 1px solid #000;
@@ -236,14 +236,14 @@
 }
 
 /* Row 1: Competition & Game Info */
-.rs-header-top-row {
+.running-scoresheet-container .rs-header-top-row {
     display: flex;
     border-bottom: 1px solid #000;
     height: 13.55mm;
     /* Request: Competition cell height 160px @ 300dpi (~13.55mm) */
 }
 
-.rs-competition-box {
+.running-scoresheet-container .rs-competition-box {
     flex: none;
     width: 97mm;
     display: flex;
@@ -255,7 +255,7 @@
     /* Request: 7.48pt */
 }
 
-.rs-competition-box label {
+.running-scoresheet-container .rs-competition-box label {
     font-weight: 700;
     width: 13.5mm;
     height: 100%;
@@ -267,24 +267,24 @@
     font-size: 9pt;
 }
 
-.rs-competition-value {
+.running-scoresheet-container .rs-competition-value {
     font-size: 12pt;
     font-weight: 600;
 }
 
-.rs-game-info-box {
+.running-scoresheet-container .rs-game-info-box {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.rs-date-time-row {
+.running-scoresheet-container .rs-date-time-row {
     display: flex;
     border-bottom: 1px solid #000;
     flex: 1;
 }
 
-.rs-date-box {
+.running-scoresheet-container .rs-date-box {
     flex: 1.5;
     display: flex;
     align-items: center;
@@ -293,7 +293,7 @@
     font-size: 9pt;
 }
 
-.rs-date-box label {
+.running-scoresheet-container .rs-date-box label {
     font-weight: 700;
     height: 100%;
     display: flex;
@@ -303,30 +303,30 @@
     border-right: 1px solid #000;
 }
 
-.rs-date-part {
+.running-scoresheet-container .rs-date-part {
     text-align: right;
     font-weight: 600;
     padding: 0 5px;
 }
 
-.rs-date-part.year {
+.running-scoresheet-container .rs-date-part.year {
     width: 40px;
 }
 
-.rs-date-part.month {
+.running-scoresheet-container .rs-date-part.month {
     width: 20px;
 }
 
-.rs-date-part.day {
+.running-scoresheet-container .rs-date-part.day {
     width: 20px;
 }
 
-.rs-date-label {
+.running-scoresheet-container .rs-date-label {
     font-weight: normal;
     margin-right: 5px;
 }
 
-.rs-time-box {
+.running-scoresheet-container .rs-time-box {
     flex: 1;
     display: flex;
     align-items: center;
@@ -334,7 +334,7 @@
     font-size: 9pt;
 }
 
-.rs-time-box label {
+.running-scoresheet-container .rs-time-box label {
     font-weight: 700;
     width: 13.5mm;
     height: 100%;
@@ -345,17 +345,17 @@
     border-right: 1px solid #000;
 }
 
-.rs-time-box span {
+.running-scoresheet-container .rs-time-box span {
     flex: 1;
     text-align: center;
 }
 
-.rs-place-game-row {
+.running-scoresheet-container .rs-place-game-row {
     display: flex;
     flex: 1;
 }
 
-.rs-place-box {
+.running-scoresheet-container .rs-place-box {
     flex: 1.5;
     display: flex;
     align-items: center;
@@ -364,7 +364,7 @@
     font-size: 9pt;
 }
 
-.rs-place-box label {
+.running-scoresheet-container .rs-place-box label {
     font-weight: 700;
     height: 100%;
     display: flex;
@@ -374,7 +374,7 @@
     border-right: 1px solid #000;
 }
 
-.rs-game-no-box {
+.running-scoresheet-container .rs-game-no-box {
     flex: 1;
     display: flex;
     align-items: center;
@@ -382,7 +382,7 @@
     font-size: 9pt;
 }
 
-.rs-game-no-box label {
+.running-scoresheet-container .rs-game-no-box label {
     font-size: 8px;
     font-weight: 700;
     width: 13.5mm;
@@ -394,19 +394,19 @@
     border-right: 1px solid #000;
 }
 
-.rs-game-no-box span {
+.running-scoresheet-container .rs-game-no-box span {
     flex: 1;
     text-align: center;
 }
 
 /* Row 2: Scores & Officials */
-.rs-header-second-row {
+.running-scoresheet-container .rs-header-second-row {
     display: flex;
     /* height: 26mm; Request: Score cell height ~306px@300dpi */
 }
 
 /* Score Display Section */
-.rs-score-display-section {
+.running-scoresheet-container .rs-score-display-section {
     width: 97mm;
     flex: none;
     border-right: 1px solid #000;
@@ -418,14 +418,14 @@
 }
 
 /* Running Score Section */
-.rs-running-score-section {
+.running-scoresheet-container .rs-running-score-section {
     flex: 1;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
 }
 
-.rs-rs-header-title-row {
+.running-scoresheet-container .rs-rs-header-title-row {
     text-align: center;
     border: 1px solid #000;
     background: #fff;
@@ -433,16 +433,16 @@
     font-size: 7.48pt;
 }
 
-.rs-rs-header-title-row .jp {
+.running-scoresheet-container .rs-rs-header-title-row .jp {
     margin-right: 15px;
     font-weight: bold;
 }
 
-.rs-rs-header-title-row .en {
+.running-scoresheet-container .rs-rs-header-title-row .en {
     font-family: 'Century', serif;
 }
 
-.rs-rs-columns-container {
+.running-scoresheet-container .rs-rs-columns-container {
     display: flex;
     width: 100%;
     /* Reverted to flex spacing */
@@ -452,7 +452,7 @@
     /* Right align as requested */
 }
 
-.rs-rs-column {
+.running-scoresheet-container .rs-rs-column {
     display: flex;
     flex-direction: column;
     width: 21.2mm;
@@ -467,7 +467,7 @@
 
 
 /* Header inside column A | B */
-.rs-rs-col-header {
+.running-scoresheet-container .rs-rs-col-header {
     display: flex;
     border-bottom: 1px solid #000;
     height: 5.0mm;
@@ -475,7 +475,7 @@
     margin: 0;
 }
 
-.rs-rs-header-cell {
+.running-scoresheet-container .rs-rs-header-cell {
     flex: 1;
     height: 100%;
     display: flex;
@@ -486,31 +486,31 @@
     font-size: 7.48pt;
 }
 
-.rs-rs-header-cell:last-child {
+.running-scoresheet-container .rs-rs-header-cell:last-child {
     border-right: none;
 }
 
-.rs-rs-header-cell.b-side {
+.running-scoresheet-container .rs-rs-header-cell.b-side {
     background: #d0d0d0;
 }
 
 /* Grey for B header too? Image seems so */
 
-.rs-rs-rows-container {
+.running-scoresheet-container .rs-rs-rows-container {
     position: relative;
 }
 
-.rs-rs-row {
+.running-scoresheet-container .rs-rs-row {
     display: flex;
     border-bottom: 1px solid #000;
     height: 5.0mm;
 }
 
-.rs-rs-row:last-child {
+.running-scoresheet-container .rs-rs-row:last-child {
     border-bottom: none;
 }
 
-.rs-rs-cell {
+.running-scoresheet-container .rs-rs-cell {
     flex: 1;
     /* Reverted */
     border-right: 1px solid #000;
@@ -522,40 +522,40 @@
     /* Request */
 }
 
-.rs-rs-cell:last-child {
+.running-scoresheet-container .rs-rs-cell:last-child {
     border-right: none;
 }
 
 /* Grey Backgrounds for B side */
 /* B side is cells 3 and 4: b-score, b-no */
-.rs-rs-cell.b-score {
+.running-scoresheet-container .rs-rs-cell.b-score {
     background-color: #e0e0e0;
 }
 
 /* Slashed Styles for Running Score (2P: 斜め線) */
-.rs-rs-cell.slashed {
+.running-scoresheet-container .rs-rs-cell.slashed {
     position: relative;
     color: #000;
 }
 
 /* Use background-image to overlay on color */
-.rs-rs-cell.slashed.q-black {
+.running-scoresheet-container .rs-rs-cell.slashed.q-black {
     background-image: linear-gradient(to bottom right, transparent 47%, #000 48%, #000 52%, transparent 53%);
     background-size: 100% 100%;
 }
 
-.rs-rs-cell.slashed.q-red {
+.running-scoresheet-container .rs-rs-cell.slashed.q-red {
     background-image: linear-gradient(to bottom right, transparent 47%, #f00 48%, #f00 52%, transparent 53%);
     background-size: 100% 100%;
 }
 
 /* Filled Styles for Running Score (FT: 黒丸●を点数に重ねる) */
-.rs-rs-cell.filled {
+.running-scoresheet-container .rs-rs-cell.filled {
     position: relative;
     color: #000;
 }
 
-.rs-rs-cell.filled::after {
+.running-scoresheet-container .rs-rs-cell.filled::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -567,20 +567,20 @@
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-.rs-rs-cell.filled.q-red::after {
+.running-scoresheet-container .rs-rs-cell.filled.q-red::after {
     background-color: rgba(255, 0, 0, 0.5);
 }
 
 /* Circled Styles for Running Score (Q終了/試合終了: 丸囲み○) */
 /* 得点セル用は::beforeを使用（filledの::afterと共存するため） */
-.rs-rs-cell.a-score.circled,
-.rs-rs-cell.b-score.circled {
+.running-scoresheet-container .rs-rs-cell.a-score.circled,
+.running-scoresheet-container .rs-rs-cell.b-score.circled {
     position: relative;
     color: #000;
 }
 
-.rs-rs-cell.a-score.circled::before,
-.rs-rs-cell.b-score.circled::before {
+.running-scoresheet-container .rs-rs-cell.a-score.circled::before,
+.running-scoresheet-container .rs-rs-cell.b-score.circled::before {
     content: '';
     position: absolute;
     top: 50%;
@@ -593,19 +593,19 @@
     background-color: transparent;
 }
 
-.rs-rs-cell.a-score.circled.q-red::before,
-.rs-rs-cell.b-score.circled.q-red::before {
+.running-scoresheet-container .rs-rs-cell.a-score.circled.q-red::before,
+.running-scoresheet-container .rs-rs-cell.b-score.circled.q-red::before {
     border-color: #f00;
 }
 
 /* Circled Styles for Player Number (3P: 選手番号を丸囲み○) */
-.rs-rs-cell.a-no.circled,
-.rs-rs-cell.b-no.circled {
+.running-scoresheet-container .rs-rs-cell.a-no.circled,
+.running-scoresheet-container .rs-rs-cell.b-no.circled {
     position: relative;
 }
 
-.rs-rs-cell.a-no.circled::after,
-.rs-rs-cell.b-no.circled::after {
+.running-scoresheet-container .rs-rs-cell.a-no.circled::after,
+.running-scoresheet-container .rs-rs-cell.b-no.circled::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -618,90 +618,90 @@
     background-color: transparent;
 }
 
-.rs-rs-cell.a-no.circled.q-red::after,
-.rs-rs-cell.b-no.circled.q-red::after {
+.running-scoresheet-container .rs-rs-cell.a-no.circled.q-red::after,
+.running-scoresheet-container .rs-rs-cell.b-no.circled.q-red::after {
     border-color: #f00;
 }
 
 /* Quarter End Underline */
-.rs-rs-cell.quarter-end {
+.running-scoresheet-container .rs-rs-cell.quarter-end {
     border-bottom: 2px solid;
 }
 
-.rs-rs-cell.quarter-end.q-black {
+.running-scoresheet-container .rs-rs-cell.quarter-end.q-black {
     border-bottom-color: #000;
 }
 
-.rs-rs-cell.quarter-end.q-red {
+.running-scoresheet-container .rs-rs-cell.quarter-end.q-red {
     border-bottom-color: #f00;
 }
 
 /* Game End Double Underline */
-.rs-rs-cell.game-end {
+.running-scoresheet-container .rs-rs-cell.game-end {
     border-bottom: 3px double;
 }
 
-.rs-rs-cell.game-end.q-black {
+.running-scoresheet-container .rs-rs-cell.game-end.q-black {
     border-bottom-color: #000;
 }
 
-.rs-rs-cell.game-end.q-red {
+.running-scoresheet-container .rs-rs-cell.game-end.q-red {
     border-bottom-color: #f00;
 }
 
 /* 試合終了後の未使用セル斜線（SVGオーバーレイ） */
-.rs-unused-slash {
+.running-scoresheet-container .rs-unused-slash {
     position: absolute;
     pointer-events: none;
     z-index: 10;
 }
 
-.rs-unused-slash line {
+.running-scoresheet-container .rs-unused-slash line {
     stroke: #000;
     stroke-width: 1px;
 }
 
 /* Aチーム側: 左半分（a-no + a-score） */
-.rs-unused-slash-a {
+.running-scoresheet-container .rs-unused-slash-a {
     left: 0;
     width: 50%;
 }
 
 /* Bチーム側: 右半分（b-score + b-no） */
-.rs-unused-slash-b {
+.running-scoresheet-container .rs-unused-slash-b {
     left: 50%;
     width: 50%;
 }
 
 /* Officials Section */
-.rs-officials-table {
+.running-scoresheet-container .rs-officials-table {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.rs-official-row {
+.running-scoresheet-container .rs-official-row {
     flex: 1;
     display: flex;
     border-bottom: 1px solid #000;
 }
 
-.rs-official-row:last-child {
+.running-scoresheet-container .rs-official-row:last-child {
     border-bottom: none;
 }
 
-.rs-official-cell {
+.running-scoresheet-container .rs-official-cell {
     display: flex;
     align-items: center;
     padding: 0 2px;
     border-right: 1px solid #000;
 }
 
-.rs-official-cell:last-child {
+.running-scoresheet-container .rs-official-cell:last-child {
     border-right: none;
 }
 
-.rs-official-cell.label-cell {
+.running-scoresheet-container .rs-official-cell.label-cell {
     width: 60px;
     /* Adjust as needed */
     font-size: 5.44pt;
@@ -709,13 +709,13 @@
     font-weight: 700;
 }
 
-.rs-official-cell.value-cell {
+.running-scoresheet-container .rs-official-cell.value-cell {
     flex: 1;
     font-size: 11pt;
     align-items: center;
 }
 
-.rs-score-label-area {
+.running-scoresheet-container .rs-score-label-area {
     width: 13.5mm;
     display: flex;
     flex-direction: column;
@@ -727,36 +727,36 @@
     font-size: 9pt;
 }
 
-.score-en {
+.running-scoresheet-container .score-en {
     font-size: 6.12pt;
     /* Request: 6.12pt */
     font-weight: normal;
 }
 
-.rs-teams-score-container {
+.running-scoresheet-container .rs-teams-score-container {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: space-around;
 }
 
-.rs-team-score-box {
+.running-scoresheet-container .rs-team-score-box {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
 }
 
-.rs-team-score-box:last-of-type {
+.running-scoresheet-container .rs-team-score-box:last-of-type {
     margin-right: 2mm;
 }
 
-.rs-ts-team-name {
+.running-scoresheet-container .rs-ts-team-name {
     font-size: 9pt;
     font-weight: normal;
 }
 
-.rs-ts-box {
+.running-scoresheet-container .rs-ts-box {
     width: 13.5mm;
     height: 13.5mm;
     border: 1px solid #000;
@@ -766,7 +766,7 @@
     justify-content: center;
 }
 
-.rs-ts-name-val {
+.running-scoresheet-container .rs-ts-name-val {
     font-size: 9pt;
     margin-bottom: 2px;
     text-align: center;
@@ -776,13 +776,13 @@
     white-space: nowrap;
 }
 
-.rs-ts-score-val {
+.running-scoresheet-container .rs-ts-score-val {
     font-size: 20pt;
     /* Large score */
     font-weight: 900;
 }
 
-.rs-score-breakdown {
+.running-scoresheet-container .rs-score-breakdown {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -793,7 +793,7 @@
     margin: 0 5px;
 }
 
-.rs-brace {
+.running-scoresheet-container .rs-brace {
     font-size: 80px;
     font-weight: 40;
     font-family: 'MS PMincho', 'MS P明朝', serif;
@@ -804,7 +804,7 @@
     margin: 0 -5px;
 }
 
-.rs-sb-row {
+.running-scoresheet-container .rs-sb-row {
     display: flex;
     width: 100%;
     justify-content: center;
@@ -813,40 +813,40 @@
     gap: 5px;
 }
 
-.rs-sb-row .sep {
+.running-scoresheet-container .rs-sb-row .sep {
     font-size: 10pt;
     margin: 0 8px;
 }
 
-.rs-sb-row .sep.ot-label {
+.running-scoresheet-container .rs-sb-row .sep.ot-label {
     font-size: 8pt;
 }
 
-.divider-label {
+.running-scoresheet-container .divider-label {
     font-size: 7px;
     margin-top: 2px;
 }
 
 /* Officials Table */
 /* Officials Table */
-.rs-officials-table {
+.running-scoresheet-container .rs-officials-table {
     flex: 1;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
 }
 
-.rs-official-row {
+.running-scoresheet-container .rs-official-row {
     display: flex;
     flex: 1;
     border-bottom: 1px solid #000;
 }
 
-.rs-official-row:last-child {
+.running-scoresheet-container .rs-official-row:last-child {
     border-bottom: none;
 }
 
-.rs-official-cell {
+.running-scoresheet-container .rs-official-cell {
     display: flex;
     align-items: start;
     padding: 2px 4px;
@@ -854,11 +854,11 @@
     border-right: 1px solid #000;
 }
 
-.rs-official-cell:last-child {
+.running-scoresheet-container .rs-official-cell:last-child {
     border-right: none;
 }
 
-.label-cell {
+.running-scoresheet-container .label-cell {
     width: 30%;
     font-weight: 600;
     background: #fff;
@@ -869,20 +869,20 @@
 }
 
 /* Specific adjustment for Shot Clock Operator (Long Text) */
-.rs-official-row:nth-child(3) .label-cell:nth-child(3) {
+.running-scoresheet-container .rs-official-row:nth-child(3) .label-cell:nth-child(3) {
     font-size: 6px;
     letter-spacing: -1px;
     overflow: visible;
     /* Allow slight overflow if merged with value cell visually */
 }
 
-.value-cell {
+.running-scoresheet-container .value-cell {
     flex: 1;
 }
 
 /* Duplicates removed to prevent conflicts */
 
-.rs-running-score-section h3 {
+.running-scoresheet-container .rs-running-score-section h3 {
     margin: 0 0 5px;
     font-size: 10px;
     text-align: center;
@@ -891,26 +891,26 @@
 }
 
 /* チームブロック */
-.rs-team-block {
+.running-scoresheet-container .rs-team-block {
     width: 100%;
     margin-bottom: 1mm;
 }
 
 /* チーム名セル（テーブル統合版） */
-.rs-roster-table td.team-name-cell {
+.running-scoresheet-container .rs-roster-table td.team-name-cell {
     text-align: left;
     vertical-align: middle;
     padding: 5px 10px;
     position: relative;
 }
 
-.team-header-row,
-.timeout-label-row,
-.timeout-value-row {
+.running-scoresheet-container .team-header-row,
+.running-scoresheet-container .timeout-label-row,
+.running-scoresheet-container .timeout-value-row {
     height: auto;
 }
 
-.team-name-row {
+.running-scoresheet-container .team-name-row {
     padding-right: 15mm;
     padding-left: 13mm;
     text-indent: -13mm;
@@ -920,7 +920,7 @@
     right: 0;
 }
 
-.rs-team-label {
+.running-scoresheet-container .rs-team-label {
     font-size: 8pt;
     font-weight: 700;
     color: #000;
@@ -928,14 +928,14 @@
     letter-spacing: 0.05em;
 }
 
-.team-name-label {
+.running-scoresheet-container .team-name-label {
     font-size: 11pt;
     font-weight: 700;
     word-break: break-all;
     letter-spacing: 0.05em;
 }
 
-.team-name-sub {
+.running-scoresheet-container .team-name-sub {
     font-size: 7pt;
     font-family: 'Century', serif;
     margin-left: 5px;
@@ -944,7 +944,7 @@
     left: 10px;
 }
 
-.team-category-paren {
+.running-scoresheet-container .team-category-paren {
     position: absolute;
     right: 5mm;
     top: 50%;
@@ -953,7 +953,7 @@
 }
 
 /* タイムアウトヘッダーセル */
-.timeout-header-cell {
+.running-scoresheet-container .timeout-header-cell {
     text-align: center;
     font-size: 8pt;
     font-weight: 700;
@@ -961,14 +961,14 @@
 }
 
 /* タイムアウトラベル・値セル */
-.to-cell-label {
+.running-scoresheet-container .to-cell-label {
     text-align: center;
     vertical-align: middle;
     font-family: sans-serif;
     font-size: 7pt;
 }
 
-.to-cell-val {
+.running-scoresheet-container .to-cell-val {
     text-align: center;
     vertical-align: middle;
     font-weight: bold;
@@ -976,30 +976,30 @@
 }
 
 /* タイムアウト使用時：経過時間の数字を表示 */
-.to-cell-val.to-has-value {
+.running-scoresheet-container .to-cell-val.to-has-value {
     background: transparent;
 }
 
 /* 経過時間の数字スタイル */
-.to-elapsed-minutes {
+.running-scoresheet-container .to-elapsed-minutes {
     font-size: 10pt;
     font-weight: bold;
     font-style: italic;
 }
 
 /* 1Q/3Q: 赤色の数字 */
-.to-cell-val.to-has-value.q-red .to-elapsed-minutes {
+.running-scoresheet-container .to-cell-val.to-has-value.q-red .to-elapsed-minutes {
     color: #f00;
 }
 
 /* 2Q/4Q/OT: 黒色の数字 */
-.to-cell-val.to-has-value.q-black .to-elapsed-minutes {
+.running-scoresheet-container .to-cell-val.to-has-value.q-black .to-elapsed-minutes {
     color: #000;
 }
 
 /* 試合終了後: 使用しなかったタイムアウト欄に2本の横線 */
-.to-cell-val.to-unused::before,
-.to-cell-val.to-unused::after {
+.running-scoresheet-container .to-cell-val.to-unused::before,
+.running-scoresheet-container .to-cell-val.to-unused::after {
     content: '';
     position: absolute;
     left: 0;
@@ -1008,22 +1008,22 @@
     background-color: #000;
 }
 
-.to-cell-val.to-unused::before {
+.running-scoresheet-container .to-cell-val.to-unused::before {
     top: 35%;
 }
 
-.to-cell-val.to-unused::after {
+.running-scoresheet-container .to-cell-val.to-unused::after {
     bottom: 35%;
 }
 
 /* 1Q/3Q: 赤色の横線 */
-.to-cell-val.to-unused.q-red::before,
-.to-cell-val.to-unused.q-red::after {
+.running-scoresheet-container .to-cell-val.to-unused.q-red::before,
+.running-scoresheet-container .to-cell-val.to-unused.q-red::after {
     background-color: #f00;
 }
 
 /* ロスターテーブル */
-.rs-roster-table {
+.running-scoresheet-container .rs-roster-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 8pt;
@@ -1032,8 +1032,8 @@
     border-left: 1px solid #000;
 }
 
-.rs-roster-table th,
-.rs-roster-table td {
+.running-scoresheet-container .rs-roster-table th,
+.running-scoresheet-container .rs-roster-table td {
     border: none;
     border-right: 1px solid #000;
     border-bottom: 1px solid #000;
@@ -1044,48 +1044,48 @@
     box-sizing: border-box;
 }
 
-.rs-roster-table th {
+.running-scoresheet-container .rs-roster-table th {
     font-weight: 600;
     /* background: #fff; Default white */
 }
 
-.rs-roster-table th.th-name {
+.running-scoresheet-container .rs-roster-table th.th-name {
     font-family: "MS PMincho", serif;
     line-height: 1.2;
 }
 
-.rs-roster-table th.th-name .en {
+.running-scoresheet-container .rs-roster-table th.th-name .en {
     font-size: 7pt;
     font-family: "Century", serif;
 }
 
 /* Column Widths */
-.th-no {
+.running-scoresheet-container .th-no {
     width: 4.5mm;
 }
 
-.cell-no {
+.running-scoresheet-container .cell-no {
     font-size: 9pt;
 }
 
-.th-license {
+.running-scoresheet-container .th-license {
     width: 14mm;
     font-size: 5.5pt;
 }
 
-.cell-license {
+.running-scoresheet-container .cell-license {
     font-size: 7pt;
     position: relative;
     padding: 0 !important;
 }
 
-.license-digits {
+.running-scoresheet-container .license-digits {
     display: flex;
     width: 100%;
     height: 100%;
 }
 
-.license-digit {
+.running-scoresheet-container .license-digit {
     flex: 1;
     display: flex;
     align-items: center;
@@ -1093,25 +1093,25 @@
     border-right: 1px dotted #999;
 }
 
-.license-digit:last-child {
+.running-scoresheet-container .license-digit:last-child {
     border-right: none;
 }
 
-.th-name {
+.running-scoresheet-container .th-name {
     width: 32mm;
 }
 
-.rs-roster-table td.cell-name {
+.running-scoresheet-container .rs-roster-table td.cell-name {
     text-align: left;
     padding-left: 10px;
     font-size: 10pt;
 }
 
-.th-number {
+.running-scoresheet-container .th-number {
     width: 5mm;
 }
 
-.cell-number {
+.running-scoresheet-container .cell-number {
     font-size: 9pt;
     font-weight: normal;
     font-style: italic;
@@ -1119,11 +1119,11 @@
 
 /* 未使用選手欄（空行）のスタイル */
 /* ライセンス〜出場時限: 横線で区切る */
-.empty-cell-line {
+.running-scoresheet-container .empty-cell-line {
     position: relative;
 }
 
-.empty-cell-line::after {
+.running-scoresheet-container .empty-cell-line::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -1134,12 +1134,12 @@
 }
 
 /* ファウル欄: 空行全体で1本の斜線 */
-.empty-foul-slash-container {
+.running-scoresheet-container .empty-foul-slash-container {
     position: relative;
     overflow: visible;
 }
 
-.empty-foul-slash {
+.running-scoresheet-container .empty-foul-slash {
     position: absolute;
     top: -1px;
     left: -1px;
@@ -1147,95 +1147,95 @@
     z-index: 5;
 }
 
-.empty-foul-slash line {
+.running-scoresheet-container .empty-foul-slash line {
     stroke: #000;
     stroke-width: 1px;
 }
 
-.th-time {
+.running-scoresheet-container .th-time {
     width: 18mm;
 }
 
-.cell-quarter {
+.running-scoresheet-container .cell-quarter {
     width: 4.5mm;
     position: relative;
 }
 
 /* 出場記録の斜め線スタイル */
 /* スターター（Q開始時の5人）: 右上から左下（＼） */
-.cell-quarter.slash-starter {
+.running-scoresheet-container .cell-quarter.slash-starter {
     background-size: 100% 100%;
 }
 
-.cell-quarter.slash-starter.q-red {
+.running-scoresheet-container .cell-quarter.slash-starter.q-red {
     background-image: linear-gradient(to bottom right, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
 }
 
-.cell-quarter.slash-starter.q-black {
+.running-scoresheet-container .cell-quarter.slash-starter.q-black {
     background-image: linear-gradient(to bottom right, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
 /* 途中交代: 左上から右下（／） */
-.cell-quarter.slash-sub {
+.running-scoresheet-container .cell-quarter.slash-sub {
     background-size: 100% 100%;
 }
 
-.cell-quarter.slash-sub.q-red {
+.running-scoresheet-container .cell-quarter.slash-sub.q-red {
     background-image: linear-gradient(to bottom left, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
 }
 
-.cell-quarter.slash-sub.q-black {
+.running-scoresheet-container .cell-quarter.slash-sub.q-black {
     background-image: linear-gradient(to bottom left, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
 /* 両方（スタメンが一度退いて再出場）: ×（両方の斜線を重ねる） */
-.cell-quarter.slash-both {
+.running-scoresheet-container .cell-quarter.slash-both {
     background-size: 100% 100%;
 }
 
-.cell-quarter.slash-both.q-red {
+.running-scoresheet-container .cell-quarter.slash-both.q-red {
     background-image:
         linear-gradient(to bottom right, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%),
         linear-gradient(to bottom left, transparent 47.7%, #f00 48%, #f00 52%, transparent 52.3%);
 }
 
-.cell-quarter.slash-both.q-black {
+.running-scoresheet-container .cell-quarter.slash-both.q-black {
     background-image:
         linear-gradient(to bottom right, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%),
         linear-gradient(to bottom left, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
-.th-foul {
+.running-scoresheet-container .th-foul {
     width: 23mm;
 }
 
-.cell-foul {
+.running-scoresheet-container .cell-foul {
     width: 4.6mm;
     font-weight: bold;
 }
 
 /* 第2Q終了時: 階段状の太線境界 */
 /* 最後に使用したファウル枠の右に太線 */
-.cell-foul.foul-half-border {
+.running-scoresheet-container .cell-foul.foul-half-border {
     border-right: 2px solid #000;
 }
 
 /* 上境界: このセルが使用済みで、上の選手の同じ位置が未使用の場合 */
-.cell-foul.foul-half-border-top {
+.running-scoresheet-container .cell-foul.foul-half-border-top {
     border-top: 2px solid #000;
 }
 
 /* 下境界: このセルが使用済みで、下の選手の同じ位置が未使用の場合 */
-.cell-foul.foul-half-border-bottom {
+.running-scoresheet-container .cell-foul.foul-half-border-bottom {
     border-bottom: 2px solid #000;
 }
 
 /* 試合終了後: 未使用のファウル欄に横線 */
-.cell-foul.foul-unused {
+.running-scoresheet-container .cell-foul.foul-unused {
     position: relative;
 }
 
-.cell-foul.foul-unused::after {
+.running-scoresheet-container .cell-foul.foul-unused::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -1246,12 +1246,12 @@
 }
 
 /* 個人ファウル: 1Q/3Qは赤色 */
-.cell-foul.q-red {
+.running-scoresheet-container .cell-foul.q-red {
     color: #f00;
 }
 
 /* 個人ファウル: 2Q/4Q/OTは黒色 */
-.cell-foul.q-black {
+.running-scoresheet-container .cell-foul.q-black {
     color: #000;
 }
 
@@ -1262,19 +1262,19 @@
 /* ファウル列の下境界 — 片側border方式では前行セルのborder-bottomが担当 */
 
 /* Coach Row Styles */
-.coach-row td {
+.running-scoresheet-container .coach-row td {
     /* border-top removed — 片側border方式では前行セルのborder-bottomが担当 */
     height: 5mm;
 }
 
-.coach-label {
+.running-scoresheet-container .coach-label {
     text-align: left;
     padding-left: 5px;
     border-right: 1px solid #000;
     font-size: 8pt;
 }
 
-.coach-name {
+.running-scoresheet-container .coach-name {
     text-align: left;
     padding-left: 15mm;
     font-size: 10pt;
@@ -1282,7 +1282,7 @@
     border-right: none;
 }
 
-.coach-license-area {
+.running-scoresheet-container .coach-license-area {
     position: absolute;
     left: 0;
     top: 0;
@@ -1293,7 +1293,7 @@
     box-sizing: border-box;
 }
 
-.coach-license-area .license-digit {
+.running-scoresheet-container .coach-license-area .license-digit {
     flex: 1;
     display: flex;
     align-items: center;
@@ -1302,30 +1302,30 @@
     border-right: 1px dotted #999;
 }
 
-.coach-license-area .license-digit:last-child {
+.running-scoresheet-container .coach-license-area .license-digit:last-child {
     border-right: none;
 }
 
 
 /* Team Fouls Adjustment */
-.rs-team-fouls {
+.running-scoresheet-container .rs-team-fouls {
     margin-top: 2px;
 }
 
-.foul-box.marked {
+.running-scoresheet-container .foul-box.marked {
     background: #000;
     color: #fff;
 }
 
 /* ランニングスコア */
 /* ランニングスコア */
-.rs-running-score-grid {
+.running-scoresheet-container .rs-running-score-grid {
     display: flex;
     gap: 5px;
     justify-content: center;
 }
 
-.running-score-column {
+.running-scoresheet-container .running-score-column {
     display: flex;
     flex-direction: column;
     border: 1px solid #000;
@@ -1333,7 +1333,7 @@
     min-width: 60px;
 }
 
-.column-header {
+.running-scoresheet-container .column-header {
     display: flex;
     border-bottom: 1px solid #000;
     font-weight: 700;
@@ -1342,22 +1342,22 @@
     font-size: 8px;
 }
 
-.col-header-a,
-.col-header-b {
+.running-scoresheet-container .col-header-a,
+.running-scoresheet-container .col-header-b {
     flex: 1;
     padding: 2px;
 }
 
-.col-header-a {
+.running-scoresheet-container .col-header-a {
     border-right: 1px solid #000;
 }
 
-.column-body {
+.running-scoresheet-container .column-body {
     display: flex;
     flex-direction: column;
 }
 
-.score-row {
+.running-scoresheet-container .score-row {
     display: flex;
     height: 14px;
     /* 行の高さを調整 */
@@ -1365,15 +1365,15 @@
     font-size: 8px;
 }
 
-.score-row:last-child {
+.running-scoresheet-container .score-row:last-child {
     border-bottom: none;
 }
 
-.score-row:nth-child(5n) {
+.running-scoresheet-container .score-row:nth-child(5n) {
     border-bottom: 1px solid #000;
 }
 
-.score-cell {
+.running-scoresheet-container .score-cell {
     flex: 1;
     display: flex;
     align-items: center;
@@ -1383,23 +1383,23 @@
     padding: 0;
 }
 
-.score-cell:last-child {
+.running-scoresheet-container .score-cell:last-child {
     border-right: none;
 }
 
-.player-num-a,
-.player-num-b {
+.running-scoresheet-container .player-num-a,
+.running-scoresheet-container .player-num-b {
     font-weight: 700;
     width: 25%;
     font-size: 7px;
 }
 
-.score-val-a {
+.running-scoresheet-container .score-val-a {
     border-right: 1px solid #000;
 }
 
-.score-val-a,
-.score-val-b {
+.running-scoresheet-container .score-val-a,
+.running-scoresheet-container .score-val-b {
     font-weight: 600;
     font-size: 8px;
     color: #999;
@@ -1408,48 +1408,48 @@
 
 /* 斜線（得点済み） */
 /* 斜線（得点済み）: 右上から左下 */
-.score-cell.slashed {
+.running-scoresheet-container .score-cell.slashed {
     color: #000;
     /* 数字を濃く */
 }
 
 /* 1Q/3Qは黒、2Q/4Qは赤の斜線 */
-.score-cell.slashed.q-black {
+.running-scoresheet-container .score-cell.slashed.q-black {
     background: linear-gradient(to bottom left, transparent 45%, #000 48%, #000 52%, transparent 55%);
 }
 
-.score-cell.slashed.q-red {
+.running-scoresheet-container .score-cell.slashed.q-red {
     background: linear-gradient(to bottom left, transparent 45%, #f00 48%, #f00 52%, transparent 55%);
 }
 
 /* クオーター区切り線 */
-.score-cell.quarter-end {
+.running-scoresheet-container .score-cell.quarter-end {
     border-bottom: 2px solid;
     /* 色はクラスによって変化 */
 }
 
-.score-cell.quarter-end.q-black {
+.running-scoresheet-container .score-cell.quarter-end.q-black {
     border-bottom-color: #000;
 }
 
-.score-cell.quarter-end.q-red {
+.running-scoresheet-container .score-cell.quarter-end.q-red {
     border-bottom-color: #f00;
 }
 
 /* Game End Double Underline */
-.rs-rs-cell.game-end {
+.running-scoresheet-container .rs-rs-cell.game-end {
     border-bottom: 3px double;
 }
 
-.rs-rs-cell.game-end.q-black {
+.running-scoresheet-container .rs-rs-cell.game-end.q-black {
     border-bottom-color: #000;
 }
 
-.rs-rs-cell.game-end.q-red {
+.running-scoresheet-container .rs-rs-cell.game-end.q-red {
     border-bottom-color: #f00;
 }
 
-.rs-winner {
+.running-scoresheet-container .rs-winner {
     margin-top: 5mm;
     height: 5mm;
     border: 1px solid #000;
@@ -1459,7 +1459,7 @@
     box-sizing: border-box;
 }
 
-.rs-game-end-time {
+.running-scoresheet-container .rs-game-end-time {
     height: 5mm;
     border: 1px solid #000;
     display: flex;
@@ -1467,7 +1467,7 @@
     box-sizing: border-box;
 }
 
-.rs-result-label {
+.running-scoresheet-container .rs-result-label {
     width: 21.2mm;
     padding: 0 1em;
     font-size: 9px;
@@ -1479,19 +1479,19 @@
     flex-shrink: 0;
 }
 
-.rs-result-value {
+.running-scoresheet-container .rs-result-value {
     padding: 0 1em;
     font-size: 9px;
     flex: 1;
 }
 
-.rs-jba-credit {
+.running-scoresheet-container .rs-jba-credit {
     margin-top: 4px;
     font-size: 8pt;
     text-align: right;
 }
 
-.rs-license-note {
+.running-scoresheet-container .rs-license-note {
     font-size: 6pt;
     text-align: left;
     margin-top: -2mm;
@@ -1505,62 +1505,62 @@
         background: #fff;
     }
 
-    .scoresheet-toolbar {
+    .running-scoresheet-container .scoresheet-toolbar {
         display: none;
     }
 
-    .running-scoresheet {
+    .running-scoresheet-container .running-scoresheet {
         box-shadow: none;
         max-width: 100%;
     }
 }
 
 /* エクスポート時はA4レイアウトを強制（デバイス非依存） */
-.running-scoresheet.exporting .rs-top-header {
+.running-scoresheet-container .running-scoresheet.exporting .rs-top-header {
     display: flex;
 }
 
-.running-scoresheet.exporting .rs-header-grid {
+.running-scoresheet-container .running-scoresheet.exporting .rs-header-grid {
     display: flex;
 }
 
-.running-scoresheet.exporting .rs-center-section {
+.running-scoresheet-container .running-scoresheet.exporting .rs-center-section {
     display: flex;
 }
 
-.running-scoresheet.exporting .rs-main-content {
+.running-scoresheet-container .running-scoresheet.exporting .rs-main-content {
     flex-direction: row;
 }
 
-.running-scoresheet.exporting .rs-teams-section {
+.running-scoresheet-container .running-scoresheet.exporting .rs-teams-section {
     flex: none;
     width: 96.5mm;
 }
 
 /* レスポンシブ */
 @media (max-width: 768px) {
-    .rs-top-header {
+    .running-scoresheet-container .rs-top-header {
         display: none;
     }
 
-    .rs-header-grid {
+    .running-scoresheet-container .rs-header-grid {
         display: none;
     }
 
-    .rs-center-section {
+    .running-scoresheet-container .rs-center-section {
         display: none;
     }
 
-    .rs-main-content {
+    .running-scoresheet-container .rs-main-content {
         flex-direction: column;
     }
 
-    .rs-teams-section {
+    .running-scoresheet-container .rs-teams-section {
         flex: none;
     }
 }
 
-.rs-unofficial-note {
+.running-scoresheet-container .rs-unofficial-note {
     font-size: 0.75rem;
     color: var(--text-muted, #94a3b8);
     margin: 4px 0 8px;
