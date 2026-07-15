@@ -4,7 +4,7 @@
     width: 100%;
 }
 
-.swipeable-rebound-btn {
+.swipeable-rebound-wrapper .swipeable-rebound-btn {
     position: relative;
     overflow: hidden;
     /* 縦フリック中にページスクロールが競合しないようにする */
@@ -19,11 +19,11 @@
     padding: var(--spacing-sm) var(--spacing-md);
 }
 
-.action-btn.swipeable-rebound-btn {
+.swipeable-rebound-wrapper .action-btn.swipeable-rebound-btn {
     border-color: #C4B5FD;
 }
 
-.rebound-content {
+.swipeable-rebound-wrapper .rebound-content {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -31,48 +31,48 @@
     transition: transform 0.15s ease;
 }
 
-.rebound-content .action-label {
+.swipeable-rebound-wrapper .rebound-content .action-label {
     font-size: 1.1rem;
     font-weight: 700;
     color: inherit;
 }
 
-.rebound-content .action-hint {
+.swipeable-rebound-wrapper .rebound-content .action-hint {
     font-size: 0.65rem;
     opacity: 0.6;
     font-weight: 500;
 }
 
 /* スワイプ中のビジュアルフィードバック */
-.swipeable-rebound-btn.swiping-up {
+.swipeable-rebound-wrapper .swipeable-rebound-btn.swiping-up {
     background: linear-gradient(180deg, rgba(16, 185, 129, 0.3) 0%, transparent 50%);
 }
 
-.swipeable-rebound-btn.swiping-up .rebound-content {
+.swipeable-rebound-wrapper .swipeable-rebound-btn.swiping-up .rebound-content {
     transform: translateY(-4px);
 }
 
-.swipeable-rebound-btn.swiping-down {
+.swipeable-rebound-wrapper .swipeable-rebound-btn.swiping-down {
     background: linear-gradient(0deg, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
 }
 
-.swipeable-rebound-btn.swiping-down .rebound-content {
+.swipeable-rebound-wrapper .swipeable-rebound-btn.swiping-down .rebound-content {
     transform: translateY(4px);
 }
 
 /* アクティブ状態（リバウンド選択済み） */
-.swipeable-rebound-btn.active-oreb {
+.swipeable-rebound-wrapper .swipeable-rebound-btn.active-oreb {
     background: linear-gradient(135deg, #059669 0%, #10b981 100%);
     border-color: #34d399;
 }
 
-.swipeable-rebound-btn.active-dreb {
+.swipeable-rebound-wrapper .swipeable-rebound-btn.active-dreb {
     background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
     border-color: #60a5fa;
 }
 
 /* スワイプ中のポップアップ（指を離すと確定） */
-.swipe-popup {
+.swipeable-rebound-wrapper .swipe-popup {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -84,12 +84,12 @@
     pointer-events: none;
 }
 
-.swipe-popup.oreb {
+.swipeable-rebound-wrapper .swipe-popup.oreb {
     bottom: calc(100% + 12px);
     background: linear-gradient(135deg, #059669 0%, #10b981 100%);
 }
 
-.swipe-popup.dreb {
+.swipeable-rebound-wrapper .swipe-popup.dreb {
     bottom: calc(100% + 12px);
     top: auto;
     background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
@@ -107,25 +107,25 @@
     }
 }
 
-.swipe-popup-content {
+.swipeable-rebound-wrapper .swipe-popup-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     color: white;
 }
 
-.swipe-popup-content .popup-label {
+.swipeable-rebound-wrapper .swipe-popup-content .popup-label {
     font-size: 1.8rem;
     font-weight: 700;
     letter-spacing: 2px;
 }
 
-.swipe-popup-content .popup-sublabel {
+.swipeable-rebound-wrapper .swipe-popup-content .popup-sublabel {
     font-size: 0.75rem;
     opacity: 0.9;
 }
 
-.swipe-popup-content .popup-hint {
+.swipeable-rebound-wrapper .swipe-popup-content .popup-hint {
     font-size: 0.65rem;
     opacity: 0.7;
     margin-top: 4px;
@@ -133,7 +133,7 @@
     padding-top: 4px;
 }
 
-.swipe-popup-cancel {
+.swipeable-rebound-wrapper .swipe-popup-cancel {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -148,19 +148,19 @@
     transition: all 0.15s ease;
 }
 
-.swipe-popup-cancel:hover,
-.swipe-popup-cancel:active {
+.swipeable-rebound-wrapper .swipe-popup-cancel:hover,
+.swipeable-rebound-wrapper .swipe-popup-cancel:active {
     background: rgba(0, 0, 0, 0.5);
 }
 
 /* タップ時のセレクター */
-.rebound-selector-backdrop {
+.swipeable-rebound-wrapper .rebound-selector-backdrop {
     position: fixed;
     inset: 0;
     z-index: 100;
 }
 
-.rebound-selector {
+.swipeable-rebound-wrapper .rebound-selector {
     position: absolute;
     bottom: calc(100% + 8px);
     left: 50%;
@@ -187,7 +187,7 @@
     }
 }
 
-.rebound-option {
+.swipeable-rebound-wrapper .rebound-option {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -203,56 +203,56 @@
     min-width: 70px;
 }
 
-.rebound-option .option-label {
+.swipeable-rebound-wrapper .rebound-option .option-label {
     font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: 1px;
 }
 
-.rebound-option .option-sublabel {
+.swipeable-rebound-wrapper .rebound-option .option-sublabel {
     font-size: 0.65rem;
     opacity: 0.85;
     white-space: nowrap;
 }
 
-.rebound-option.oreb {
+.swipeable-rebound-wrapper .rebound-option.oreb {
     background: linear-gradient(135deg, #059669 0%, #10b981 100%);
     color: white;
 }
 
-.rebound-option.oreb:hover,
-.rebound-option.oreb:active {
+.swipeable-rebound-wrapper .rebound-option.oreb:hover,
+.swipeable-rebound-wrapper .rebound-option.oreb:active {
     background: linear-gradient(135deg, #047857 0%, #059669 100%);
     transform: scale(1.05);
 }
 
-.rebound-option.dreb {
+.swipeable-rebound-wrapper .rebound-option.dreb {
     background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
     color: white;
 }
 
-.rebound-option.dreb:hover,
-.rebound-option.dreb:active {
+.swipeable-rebound-wrapper .rebound-option.dreb:hover,
+.swipeable-rebound-wrapper .rebound-option.dreb:active {
     background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
     transform: scale(1.05);
 }
 
 /* モバイル最適化 */
 @media (max-width: 600px) {
-    .swipe-popup-btn {
+    .swipeable-rebound-wrapper .swipe-popup-btn {
         padding: 12px 20px;
     }
 
-    .swipe-popup-btn .popup-label {
+    .swipeable-rebound-wrapper .swipe-popup-btn .popup-label {
         font-size: 1.4rem;
     }
 
-    .rebound-option {
+    .swipeable-rebound-wrapper .rebound-option {
         padding: 10px 16px;
         min-width: 60px;
     }
 
-    .rebound-option .option-label {
+    .swipeable-rebound-wrapper .rebound-option .option-label {
         font-size: 1.2rem;
     }
 }
