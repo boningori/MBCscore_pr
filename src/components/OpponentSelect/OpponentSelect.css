@@ -2,35 +2,35 @@
     padding: var(--spacing-lg);
 }
 
-.saved-opponents-section {
+:is(.opponent-select, .opponent-editor) .saved-opponents-section {
     flex: 1;
     min-width: 0;
 }
 
-.saved-opponents-section h3,
-.history-section h3 {
+:is(.opponent-select, .opponent-editor) .saved-opponents-section h3,
+:is(.opponent-select, .opponent-editor) .history-section h3 {
     margin: 0;
     color: var(--text-primary);
     font-size: var(--font-size-lg);
 }
 
-.history-section h3 {
+:is(.opponent-select, .opponent-editor) .history-section h3 {
     color: var(--text-secondary);
 }
 
-.select-header {
+:is(.opponent-select, .opponent-editor) .select-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
 }
 
-.select-header h2 {
+:is(.opponent-select, .opponent-editor) .select-header h2 {
     margin: 0;
     color: var(--text-primary);
 }
 
-.select-actions {
+:is(.opponent-select, .opponent-editor) .select-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -38,30 +38,30 @@
     margin-bottom: var(--spacing-xl);
 }
 
-.select-actions-left {
+:is(.opponent-select, .opponent-editor) .select-actions-left {
     display: flex;
     gap: var(--spacing-md);
 }
 
 /* 2列レイアウト用コンテナ */
-.teams-container {
+:is(.opponent-select, .opponent-editor) .teams-container {
     display: flex;
     gap: 32px;
     align-items: flex-start;
 }
 
-.history-section {
+:is(.opponent-select, .opponent-editor) .history-section {
     flex: 1;
     min-width: 0;
 }
 
-.history-section.full {
+:is(.opponent-select, .opponent-editor) .history-section.full {
     flex: 1;
 }
 
 /* セクションヘッダー（両方のセクションで統一） */
-.section-header,
-.history-header {
+:is(.opponent-select, .opponent-editor) .section-header,
+:is(.opponent-select, .opponent-editor) .history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -72,7 +72,7 @@
 }
 
 /* チームリスト（各セクション内のカード一覧） */
-.team-list {
+:is(.opponent-select, .opponent-editor) .team-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
@@ -80,18 +80,18 @@
 
 /* レスポンシブ: タブレット・スマホでは縦並び */
 @media (max-width: 768px) {
-    .teams-container {
+    :is(.opponent-select, .opponent-editor) .teams-container {
         flex-direction: column;
         gap: var(--spacing-xl);
     }
 
-    .saved-opponents-section {
+    :is(.opponent-select, .opponent-editor) .saved-opponents-section {
         padding-bottom: var(--spacing-lg);
         border-bottom: 1px solid var(--border);
     }
 }
 
-.opponent-card {
+:is(.opponent-select, .opponent-editor) .opponent-card {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -103,29 +103,29 @@
     transition: all var(--transition-fast);
 }
 
-.opponent-card:hover {
+:is(.opponent-select, .opponent-editor) .opponent-card:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.opponent-info {
+:is(.opponent-select, .opponent-editor) .opponent-info {
     display: flex;
     flex-direction: column;
 }
 
-.opponent-name {
+:is(.opponent-select, .opponent-editor) .opponent-name {
     margin: 0 0 4px;
     font-size: var(--font-size-md);
     color: var(--text-primary);
 }
 
-.opponent-detail {
+:is(.opponent-select, .opponent-editor) .opponent-detail {
     font-size: var(--font-size-sm);
     color: var(--text-muted);
 }
 
-.opponent-select-btn {
+:is(.opponent-select, .opponent-editor) .opponent-select-btn {
     background: var(--primary);
     color: white;
     padding: 4px 12px;
@@ -141,7 +141,7 @@
     margin: 0 auto;
 }
 
-.players-list-simple {
+:is(.opponent-select, .opponent-editor) .players-list-simple {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -152,7 +152,7 @@
     min-height: 100px;
 }
 
-.player-chip {
+:is(.opponent-select, .opponent-editor) .player-chip {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
     padding: 4px 10px;
@@ -163,7 +163,7 @@
     gap: 6px;
 }
 
-.remove-btn {
+:is(.opponent-select, .opponent-editor) .remove-btn {
     background: none;
     border: none;
     color: var(--text-muted);
@@ -173,25 +173,25 @@
     line-height: 1;
 }
 
-.remove-btn:hover {
+:is(.opponent-select, .opponent-editor) .remove-btn:hover {
     color: var(--danger);
 }
 
 /* Coach license row */
-.opponent-coach-row {
+:is(.opponent-select, .opponent-editor) .opponent-coach-row {
     display: flex;
     gap: var(--spacing-sm);
 }
 
-.opponent-coach-name-input {
+:is(.opponent-select, .opponent-editor) .opponent-coach-name-input {
     flex: 1;
 }
 
-.opponent-coach-license-input {
+:is(.opponent-select, .opponent-editor) .opponent-coach-license-input {
     width: 140px;
 }
 
-.opponent-player-license-input {
+:is(.opponent-select, .opponent-editor) .opponent-player-license-input {
     width: 100px;
 }
 
@@ -210,14 +210,14 @@
 }
 
 /* 保存オプション */
-.save-option {
+:is(.opponent-select, .opponent-editor) .save-option {
     margin: var(--spacing-lg) 0;
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
 }
 
-.checkbox-label {
+:is(.opponent-select, .opponent-editor) .checkbox-label {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -226,7 +226,7 @@
     color: var(--text-primary);
 }
 
-.checkbox-label input[type="checkbox"] {
+:is(.opponent-select, .opponent-editor) .checkbox-label input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;

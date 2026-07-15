@@ -3,7 +3,7 @@
     width: 100%;
 }
 
-.action-btn.swipeable-turnover-btn {
+.swipeable-turnover-wrapper .action-btn.swipeable-turnover-btn {
     width: 100%;
     position: relative;
     /* 4方向フリック中にページスクロールが競合しないようにする */
@@ -14,7 +14,7 @@
     overflow: visible;
 }
 
-.turnover-content {
+.swipeable-turnover-wrapper .turnover-content {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -24,7 +24,7 @@
 }
 
 /* スワイプヒント */
-.swipe-hints {
+.swipeable-turnover-wrapper .swipe-hints {
     position: absolute;
     inset: 0;
     pointer-events: none;
@@ -33,58 +33,58 @@
     font-weight: 600;
 }
 
-.hint {
+.swipeable-turnover-wrapper .hint {
     position: absolute;
     color: var(--text-muted);
 }
 
-.hint-up {
+.swipeable-turnover-wrapper .hint-up {
     top: 6px;
     left: 50%;
     transform: translateX(-50%);
 }
 
-.hint-down {
+.swipeable-turnover-wrapper .hint-down {
     bottom: 6px;
     left: 50%;
     transform: translateX(-50%);
 }
 
-.hint-left {
+.swipeable-turnover-wrapper .hint-left {
     left: 8px;
     top: 50%;
     transform: translateY(-50%);
 }
 
-.hint-right {
+.swipeable-turnover-wrapper .hint-right {
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
 }
 
 /* スワイプ中の状態 */
-.swipeable-turnover-btn.swiping-up {
+.swipeable-turnover-wrapper .swipeable-turnover-btn.swiping-up {
     border-color: #f59e0b;
     background: linear-gradient(to top, transparent 50%, rgba(245, 158, 11, 0.3) 100%);
 }
 
-.swipeable-turnover-btn.swiping-down {
+.swipeable-turnover-wrapper .swipeable-turnover-btn.swiping-down {
     border-color: #ef4444;
     background: linear-gradient(to bottom, transparent 50%, rgba(239, 68, 68, 0.3) 100%);
 }
 
-.swipeable-turnover-btn.swiping-left {
+.swipeable-turnover-wrapper .swipeable-turnover-btn.swiping-left {
     border-color: #8b5cf6;
     background: linear-gradient(to left, transparent 50%, rgba(139, 92, 246, 0.3) 100%);
 }
 
-.swipeable-turnover-btn.swiping-right {
+.swipeable-turnover-wrapper .swipeable-turnover-btn.swiping-right {
     border-color: #06b6d4;
     background: linear-gradient(to right, transparent 50%, rgba(6, 182, 212, 0.3) 100%);
 }
 
 /* スワイプポップアップ */
-.swipe-popup {
+.swipeable-turnover-wrapper .swipe-popup {
     position: absolute;
     z-index: 100;
     padding: 12px 20px;
@@ -93,7 +93,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.swipe-popup-up {
+.swipeable-turnover-wrapper .swipe-popup-up {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
@@ -101,7 +101,7 @@
     background: linear-gradient(135deg, #f59e0b, #fbbf24);
 }
 
-.swipe-popup-down {
+.swipeable-turnover-wrapper .swipe-popup-down {
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
@@ -109,7 +109,7 @@
     background: linear-gradient(135deg, #ef4444, #f87171);
 }
 
-.swipe-popup-left {
+.swipeable-turnover-wrapper .swipe-popup-left {
     right: 100%;
     top: 50%;
     transform: translateY(-50%);
@@ -117,7 +117,7 @@
     background: linear-gradient(135deg, #8b5cf6, #a78bfa);
 }
 
-.swipe-popup-right {
+.swipeable-turnover-wrapper .swipe-popup-right {
     left: 100%;
     top: 50%;
     transform: translateY(-50%);
@@ -125,21 +125,21 @@
     background: linear-gradient(135deg, #06b6d4, #22d3ee);
 }
 
-.popup-content {
+.swipeable-turnover-wrapper .popup-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
 }
 
-.popup-label {
+.swipeable-turnover-wrapper .popup-label {
     font-size: 1.2rem;
     font-weight: 700;
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.popup-hint {
+.swipeable-turnover-wrapper .popup-hint {
     font-size: 0.7rem;
     color: rgba(255, 255, 255, 0.8);
 }
@@ -157,7 +157,7 @@
 }
 
 /* セレクターオーバーレイ（ファウルスタイルに統一） */
-.turnover-selector-overlay {
+.swipeable-turnover-wrapper .turnover-selector-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -172,7 +172,7 @@
     /* 下のレイヤーへのタッチ伝播を防ぐ */
 }
 
-.turnover-selector {
+.swipeable-turnover-wrapper .turnover-selector {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-xl);
@@ -182,25 +182,25 @@
     overflow-y: auto;
 }
 
-.selector-header {
+.swipeable-turnover-wrapper .selector-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--spacing-lg);
 }
 
-.selector-header h3 {
+.swipeable-turnover-wrapper .selector-header h3 {
     margin: 0;
     color: var(--text-primary);
 }
 
-.selector-options {
+.swipeable-turnover-wrapper .selector-options {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.selector-btn {
+.swipeable-turnover-wrapper .selector-btn {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -212,16 +212,16 @@
     transition: all 0.2s;
 }
 
-.selector-btn:hover {
+.swipeable-turnover-wrapper .selector-btn:hover {
     border-color: #e8503a;
     background: rgba(232, 80, 58, 0.1);
 }
 
-.selector-btn:active {
+.swipeable-turnover-wrapper .selector-btn:active {
     transform: scale(0.98);
 }
 
-.selector-btn-label {
+.swipeable-turnover-wrapper .selector-btn-label {
     font-weight: 800;
     font-size: var(--font-size-lg);
     color: #e8503a;
@@ -229,12 +229,12 @@
     text-align: center;
 }
 
-.selector-btn-desc {
+.swipeable-turnover-wrapper .selector-btn-desc {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
 }
 
-.selector-cancel {
+.swipeable-turnover-wrapper .selector-cancel {
     width: 100%;
     margin-top: var(--spacing-lg);
     display: flex;
@@ -243,24 +243,24 @@
 
 /* スマホ向けレスポンシブ対応 */
 @media (max-width: 600px) {
-    .turnover-selector {
+    .swipeable-turnover-wrapper .turnover-selector {
         min-width: auto;
         width: 95%;
         max-width: none;
         padding: var(--spacing-md);
     }
 
-    .selector-btn {
+    .swipeable-turnover-wrapper .selector-btn {
         padding: var(--spacing-lg);
         min-height: 60px;
     }
 
-    .selector-btn-label {
+    .swipeable-turnover-wrapper .selector-btn-label {
         font-size: var(--font-size-xl);
         min-width: 50px;
     }
 
-    .selector-btn-desc {
+    .swipeable-turnover-wrapper .selector-btn-desc {
         font-size: var(--font-size-md);
     }
 }

@@ -39,7 +39,7 @@
     animation: pending-pulse 2s ease-in-out infinite;
 }
 
-.pending-action-header {
+:is(.pending-badge, .pending-action-panel) .pending-action-header {
     display: flex;
     align-items: center;
     width: 100%;
@@ -52,22 +52,22 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.pending-collapse {
+:is(.pending-badge, .pending-action-panel) .pending-collapse {
     margin-left: auto;
     color: #a0aec0;
     font-size: 0.8rem;
 }
 
-.pending-icon {
+:is(.pending-badge, .pending-action-panel) .pending-icon {
     font-size: 1.2rem;
 }
 
-.pending-title {
+:is(.pending-badge, .pending-action-panel) .pending-title {
     font-weight: 600;
     color: #fbbf24;
 }
 
-.pending-count {
+:is(.pending-badge, .pending-action-panel) .pending-count {
     background: #f59e0b;
     color: #1a202c;
     font-weight: 700;
@@ -76,19 +76,19 @@
     font-size: 0.85rem;
 }
 
-.pending-action-list {
+:is(.pending-badge, .pending-action-panel) .pending-action-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-.pending-action-item {
+:is(.pending-badge, .pending-action-panel) .pending-action-item {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     overflow: hidden;
 }
 
-.pending-action-summary {
+:is(.pending-badge, .pending-action-panel) .pending-action-summary {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -97,11 +97,11 @@
     transition: background 0.2s;
 }
 
-.pending-action-summary:hover {
+:is(.pending-badge, .pending-action-panel) .pending-action-summary:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.pending-index {
+:is(.pending-badge, .pending-action-panel) .pending-index {
     background: rgba(255, 255, 255, 0.2);
     color: #fff;
     width: 24px;
@@ -114,13 +114,13 @@
     font-weight: 600;
 }
 
-.pending-action-type {
+:is(.pending-badge, .pending-action-panel) .pending-action-type {
     flex: 1;
     font-weight: 500;
     color: #fff;
 }
 
-.pending-quarter {
+:is(.pending-badge, .pending-action-panel) .pending-quarter {
     background: #4a5568;
     color: #e2e8f0;
     padding: 2px 8px;
@@ -128,13 +128,13 @@
     font-size: 0.8rem;
 }
 
-.pending-time {
+:is(.pending-badge, .pending-action-panel) .pending-time {
     color: #a0aec0;
     font-size: 0.85rem;
     font-family: 'Consolas', 'Monaco', monospace;
 }
 
-.pending-team {
+:is(.pending-badge, .pending-action-panel) .pending-team {
     width: 24px;
     height: 24px;
     border-radius: var(--radius-xs);
@@ -145,39 +145,39 @@
     font-size: 0.8rem;
 }
 
-.pending-team.teamA {
+:is(.pending-badge, .pending-action-panel) .pending-team.teamA {
     background: #3182ce;
     color: #fff;
 }
 
-.pending-team.teamB {
+:is(.pending-badge, .pending-action-panel) .pending-team.teamB {
     background: #38a169;
     color: #fff;
 }
 
-.pending-action-details {
+:is(.pending-badge, .pending-action-panel) .pending-action-details {
     padding: 12px;
     background: rgba(0, 0, 0, 0.2);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.candidate-section {
+:is(.pending-badge, .pending-action-panel) .candidate-section {
     margin-bottom: 12px;
 }
 
-.candidate-label {
+:is(.pending-badge, .pending-action-panel) .candidate-label {
     font-size: 0.85rem;
     color: #a0aec0;
     margin-bottom: 8px;
 }
 
-.candidate-players {
+:is(.pending-badge, .pending-action-panel) .candidate-players {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.candidate-player-btn {
+:is(.pending-badge, .pending-action-panel) .candidate-player-btn {
     padding: 10px 14px;
     border-radius: var(--radius-md);
     border: 2px solid #4a5568;
@@ -190,30 +190,30 @@
     min-width: 60px;
 }
 
-.candidate-player-btn:hover {
+:is(.pending-badge, .pending-action-panel) .candidate-player-btn:hover {
     background: #3182ce;
     border-color: #3182ce;
     transform: scale(1.02);
 }
 
-.candidate-player-btn:active {
+:is(.pending-badge, .pending-action-panel) .candidate-player-btn:active {
     transform: scale(0.98);
     background: #2c5282;
 }
 
-.candidate-player-btn.selected {
+:is(.pending-badge, .pending-action-panel) .candidate-player-btn.selected {
     background: #f59e0b;
     border-color: #fbbf24;
     color: #1a202c;
     font-weight: 600;
 }
 
-.candidate-player-btn.selected:hover {
+:is(.pending-badge, .pending-action-panel) .candidate-player-btn.selected:hover {
     background: #d97706;
     border-color: #f59e0b;
 }
 
-.pending-action-buttons {
+:is(.pending-badge, .pending-action-panel) .pending-action-buttons {
     display: flex;
     gap: 8px;
     justify-content: flex-end;

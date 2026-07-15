@@ -17,17 +17,17 @@
     width: calc(100% - 32px);
 }
 
-.backup-prompt-body h2 {
+.backup-prompt-modal .backup-prompt-body h2 {
     margin: 0 0 0.75rem;
     font-size: 1.15rem;
 }
 
-.backup-prompt-body p {
+.backup-prompt-modal .backup-prompt-body p {
     margin: 0 0 1.25rem;
     line-height: 1.6;
 }
 
-.backup-prompt-actions {
+.backup-prompt-modal .backup-prompt-actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;

@@ -28,19 +28,19 @@
     font-size: var(--font-size-xl);
 }
 
-.game-info-form {
+.game-info-modal .game-info-form {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
 }
 
-.form-section {
+.game-info-modal .form-section {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
 }
 
-.form-section h4 {
+.game-info-modal .form-section h4 {
     margin: 0 0 var(--spacing-md);
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
@@ -48,30 +48,30 @@
     letter-spacing: 0.5px;
 }
 
-.form-row {
+.game-info-modal .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-md);
 }
 
-.form-row:last-child {
+.game-info-modal .form-row:last-child {
     margin-bottom: 0;
 }
 
-.form-group {
+.game-info-modal .form-group {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
 }
 
-.form-group label {
+.game-info-modal .form-group label {
     font-weight: 600;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
 }
 
-.form-group input {
+.game-info-modal .form-group input {
     padding: var(--spacing-sm);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -80,18 +80,18 @@
     font-size: var(--font-size-md);
 }
 
-.form-group input:focus {
+.game-info-modal .form-group input:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.form-group input.disabled-input {
+.game-info-modal .form-group input.disabled-input {
     background: var(--bg-primary);
     color: var(--text-secondary);
     cursor: not-allowed;
 }
 
-.modal-actions {
+.game-info-modal .modal-actions {
     margin-top: var(--spacing-lg);
     display: flex;
     justify-content: flex-end;
@@ -100,7 +100,7 @@
 
 /* Responsive */
 @media (max-width: 480px) {
-    .form-row {
+    .game-info-modal .form-row {
         grid-template-columns: 1fr;
     }
 }

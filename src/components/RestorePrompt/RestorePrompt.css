@@ -22,18 +22,18 @@
     font-size: 1.2rem;
 }
 
-.restore-prompt-note {
+.restore-prompt .restore-prompt-note {
     font-size: 0.85rem;
     color: var(--text-muted, #94a3b8);
 }
 
-.restore-prompt-actions {
+.restore-prompt .restore-prompt-actions {
     display: flex;
     gap: 12px;
     margin-top: 20px;
 }
 
-.restore-prompt-actions .btn {
+.restore-prompt .restore-prompt-actions .btn {
     flex: 1;
     min-height: 48px;
 }

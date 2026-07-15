@@ -21,18 +21,18 @@
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
-.resolver-header {
+.pending-resolver-modal .resolver-header {
     text-align: center;
     margin-bottom: 16px;
 }
 
-.resolver-header h3 {
+.pending-resolver-modal .resolver-header h3 {
     color: #fff;
     font-size: 1.25rem;
     margin: 0;
 }
 
-.resolver-info {
+.pending-resolver-modal .resolver-info {
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
     padding: 16px;
@@ -40,20 +40,20 @@
     margin-bottom: 16px;
 }
 
-.resolver-action-type {
+.pending-resolver-modal .resolver-action-type {
     font-size: 1.5rem;
     font-weight: 700;
     color: #fbbf24;
     margin-bottom: 8px;
 }
 
-.resolver-meta {
+.pending-resolver-modal .resolver-meta {
     display: flex;
     justify-content: center;
     gap: 12px;
 }
 
-.resolver-quarter {
+.pending-resolver-modal .resolver-quarter {
     background: #4a5568;
     color: #e2e8f0;
     padding: 4px 12px;
@@ -61,31 +61,31 @@
     font-size: 0.9rem;
 }
 
-.resolver-time {
+.pending-resolver-modal .resolver-time {
     color: #a0aec0;
     font-family: 'Consolas', 'Monaco', monospace;
 }
 
-.resolver-instruction {
+.pending-resolver-modal .resolver-instruction {
     color: #a0aec0;
     font-size: 0.9rem;
     margin-bottom: 8px;
 }
 
-.resolver-candidates-hint {
+.pending-resolver-modal .resolver-candidates-hint {
     color: #fbbf24;
     font-size: 0.85rem;
     margin-bottom: 12px;
 }
 
-.resolver-players {
+.pending-resolver-modal .resolver-players {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 8px;
     margin-bottom: 20px;
 }
 
-.resolver-player-btn {
+.pending-resolver-modal .resolver-player-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -100,28 +100,28 @@
     position: relative;
 }
 
-.resolver-player-btn:hover {
+.pending-resolver-modal .resolver-player-btn:hover {
     background: #5a6878;
     transform: translateY(-2px);
 }
 
-.resolver-player-btn.selected {
+.pending-resolver-modal .resolver-player-btn.selected {
     background: #3182ce;
     border-color: #63b3ed;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(49, 130, 206, 0.4);
 }
 
-.resolver-player-btn.candidate {
+.pending-resolver-modal .resolver-player-btn.candidate {
     border-color: #fbbf24;
 }
 
-.resolver-player-btn .player-number {
+.pending-resolver-modal .resolver-player-btn .player-number {
     font-size: 1.5rem;
     font-weight: 700;
 }
 
-.resolver-player-btn .player-name {
+.pending-resolver-modal .resolver-player-btn .player-name {
     font-size: 0.75rem;
     color: #a0aec0;
     margin-top: 2px;
@@ -131,11 +131,11 @@
     white-space: nowrap;
 }
 
-.resolver-player-btn.selected .player-name {
+.pending-resolver-modal .resolver-player-btn.selected .player-name {
     color: #bee3f8;
 }
 
-.candidate-star {
+.pending-resolver-modal .candidate-star {
     position: absolute;
     top: 4px;
     right: 4px;
@@ -143,17 +143,17 @@
     font-size: 0.9rem;
 }
 
-.resolver-buttons {
+.pending-resolver-modal .resolver-buttons {
     display: flex;
     gap: 12px;
     justify-content: center;
 }
 
-.resolver-buttons .btn {
+.pending-resolver-modal .resolver-buttons .btn {
     min-width: 100px;
 }
 
-.resolver-buttons .btn:disabled {
+.pending-resolver-modal .resolver-buttons .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }

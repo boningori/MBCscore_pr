@@ -5,7 +5,7 @@
     gap: var(--spacing-sm);
 }
 
-.voice-toggle-btn {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-toggle-btn {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -21,15 +21,15 @@
     min-height: var(--touch-target);
 }
 
-.voice-toggle-btn:hover {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-toggle-btn:hover {
     background: var(--border);
 }
 
-.voice-toggle-btn:active {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-toggle-btn:active {
     transform: scale(0.95);
 }
 
-.voice-toggle-btn.listening {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-toggle-btn.listening {
     background: rgba(220, 38, 38, 0.2);
     border-color: var(--danger);
     animation: pulse-listening 1.5s infinite;
@@ -47,15 +47,15 @@
     }
 }
 
-.voice-icon {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-icon {
     font-size: 20px;
 }
 
-.voice-status {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-status {
     font-size: var(--font-size-sm);
 }
 
-.voice-feedback {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-feedback {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -66,19 +66,19 @@
     min-width: 200px;
 }
 
-.voice-transcript {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-transcript {
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     font-style: italic;
 }
 
-.voice-command-feedback {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-command-feedback {
     font-size: var(--font-size-sm);
     color: var(--secondary-light);
     font-weight: 600;
 }
 
-.voice-error {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-error {
     font-size: var(--font-size-sm);
     color: var(--danger);
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -110,10 +110,10 @@
     font-size: var(--font-size-sm);
 }
 
-.voice-icon.disabled {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-icon.disabled {
     opacity: 0.5;
 }
 
-.offline-label {
+:is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .offline-label {
     font-weight: 500;
 }

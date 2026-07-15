@@ -10,7 +10,7 @@
 }
 
 /* Header */
-.app-header {
+.app-container .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -24,12 +24,12 @@
   z-index: 50;
 }
 
-.header-left,
-.header-right {
+.app-container .header-left,
+.app-container .header-right {
   flex: 1;
 }
 
-.header-right {
+.app-container .header-right {
   display: flex;
   justify-content: flex-end;
   flex-wrap: nowrap;
@@ -37,23 +37,23 @@
 }
 
 /* ヘッダー内のボタンのテキスト折り返しを禁止 */
-.header-right .btn {
+.app-container .header-right .btn {
   white-space: nowrap;
 }
 
 /* スマホ幅ではヘッダーボタンをアイコンのみにして1行に収める
    (2行になると縦スクロール量が増え、スワイプ入力の妨げになる) */
 @media (max-width: 600px) {
-  .app-header .btn-label {
+  .app-container .app-header .btn-label {
     display: none;
   }
 
-  .app-header .btn {
+  .app-container .app-header .btn {
     min-width: 44px;
   }
 }
 
-.header-center {
+.app-container .header-center {
   flex: 2;
   display: flex;
   justify-content: center;
@@ -66,14 +66,14 @@
   }
 }
 
-.app-title {
+.app-container .app-title {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--text-primary);
 }
 
 /* Main */
-.app-main {
+.app-container .app-main {
   flex: 1;
   padding: var(--spacing-md);
   display: flex;
@@ -83,12 +83,12 @@
 }
 
 /* Scoreboard Section（中央列内） */
-.scoreboard-section {
+.app-container .scoreboard-section {
   width: 100%;
 }
 
 /* Team Tabs */
-.team-tabs {
+.app-container .team-tabs {
   display: flex;
   gap: 2px;
   background: var(--bg-tertiary);
@@ -96,7 +96,7 @@
   padding: 2px;
 }
 
-.team-tab {
+.app-container .team-tab {
   flex: 1;
   padding: var(--spacing-sm) var(--spacing-md);
   background: transparent;
@@ -109,25 +109,25 @@
   transition: all var(--transition-fast);
 }
 
-.team-tab:hover {
+.app-container .team-tab:hover {
   color: var(--text-primary);
 }
 
-.team-tab.active {
+.app-container .team-tab.active {
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
-.team-tab.active.team-a {
+.app-container .team-tab.active.team-a {
   border-bottom: 3px solid var(--team-a);
 }
 
-.team-tab.active.team-b {
+.app-container .team-tab.active.team-b {
   border-bottom: 3px solid var(--team-b);
 }
 
 /* Game Area */
-.game-area {
+.app-container .game-area {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-md);
@@ -135,13 +135,13 @@
 }
 
 @media (max-width: 800px) {
-  .game-area {
+  .app-container .game-area {
     grid-template-columns: 1fr;
   }
 }
 
 /* Players Section */
-.players-section {
+.app-container .players-section {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -152,20 +152,20 @@
 }
 
 /* Actions Section */
-.actions-section {
+.app-container .actions-section {
   display: flex;
   flex-direction: column;
 }
 
 /* Stats View */
-.stats-view {
+.app-container .stats-view {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
 }
 
 /* Game Finished Overlay */
-.game-finished-overlay {
+.app-container .game-finished-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.8);
@@ -176,7 +176,7 @@
   padding: var(--spacing-md);
 }
 
-.game-finished-content {
+.app-container .game-finished-content {
   background: var(--bg-secondary);
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
@@ -185,12 +185,12 @@
   width: 100%;
 }
 
-.game-finished-content h2 {
+.app-container .game-finished-content h2 {
   font-size: var(--font-size-2xl);
   margin-bottom: var(--spacing-lg);
 }
 
-.final-score {
+.app-container .final-score {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,58 +199,58 @@
   margin-bottom: var(--spacing-xl);
 }
 
-.final-score-value {
+.app-container .final-score-value {
   font-size: var(--font-size-3xl);
   font-weight: 800;
 }
 
 /* 試合終了パネルのボタンエリア */
-.game-finished-actions {
+.app-container .game-finished-actions {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
 }
 
-.game-finished-btn {
+.app-container .game-finished-btn {
   width: 100%;
 }
 
 /* タブレット横向き最適化 */
 @media (min-width: 1024px) and (orientation: landscape) {
-  .app-main {
+  .app-container .app-main {
     padding: var(--spacing-sm) var(--spacing-lg);
   }
 
-  .game-area {
+  .app-container .game-area {
     grid-template-columns: 1fr 1.2fr;
   }
 }
 
 /* 縦向きタブレット */
 @media (max-width: 768px) {
-  .app-header {
+  .app-container .app-header {
     flex-wrap: wrap;
     gap: var(--spacing-sm);
   }
 
-  .header-left,
-  .header-right {
+  .app-container .header-left,
+  .app-container .header-right {
     flex: none;
   }
 
-  .header-center {
+  .app-container .header-center {
     order: 3;
     flex: 1 1 100%;
     margin-top: var(--spacing-sm);
   }
 
-  .app-title {
+  .app-container .app-title {
     font-size: var(--font-size-md);
   }
 }
 
 /* ===== 3列メインレイアウト ===== */
-.game-main-area {
+.app-container .game-main-area {
   display: grid;
   /* 中央列の幅を画面サイズに応じてスケール */
   grid-template-columns: 1fr clamp(320px, 35vw, 450px) 1fr;
@@ -261,7 +261,7 @@
 }
 
 /* 中央列（Scoreboard + ActionButtons） */
-.center-column {
+.app-container .center-column {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -269,12 +269,12 @@
 }
 
 /* 中央列内のスコアボードセクション */
-.center-column .scoreboard-section {
+.app-container .center-column .scoreboard-section {
   flex: none;
 }
 
 /* 中央アクションエリア */
-.center-actions-area {
+.app-container .center-actions-area {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -292,7 +292,7 @@
 }
 
 /* ActionButtons内部のコンテナスタイルをリセット */
-.center-actions-area .action-buttons-container {
+.app-container .center-actions-area .action-buttons-container {
   background: transparent;
   border: none;
   padding: var(--spacing-md);
@@ -300,13 +300,13 @@
   justify-content: flex-start;
 }
 
-.center-actions-area.active {
+.app-container .center-actions-area.active {
   border-color: var(--primary-light);
   /* 少し目立たせるためのシャドウ追加 */
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
-.team-panel {
+.app-container .team-panel {
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   border: 2px solid var(--border);
@@ -321,7 +321,7 @@
 
 /* レスポンシブ: スマホ向け（11インチ縦834pxでは発動させない） */
 @media (max-width: 800px) {
-  .game-main-area {
+  .app-container .game-main-area {
     grid-template-columns: 1fr 1fr;
     /* 2列に変更 */
     grid-template-rows: auto auto;
@@ -331,29 +331,29 @@
   /* モバイルではグリッドを画面高に押し込まない（縦積み＋ページスクロール）。
      flex:1のままだとoverflow:autoを持つパネル行だけが最小サイズ(約28px)まで
      圧縮され、選手カード下段・交代ボタンがタップ不能になる */
-  .game-main-area {
+  .app-container .game-main-area {
     flex: none;
   }
 
   /* グリッドauto行ではheight:100%が潰れるため内容基準にする */
-  .team-panel {
+  .app-container .team-panel {
     height: auto;
     max-height: 280px;
   }
 
   /* 中央列（Scoreboard + Actions）を全幅で下に配置 */
-  .center-column {
+  .app-container .center-column {
     grid-column: 1 / -1;
     grid-row: 2;
     flex-direction: column;
     gap: var(--spacing-sm);
   }
 
-  .center-column .scoreboard-section {
+  .app-container .center-column .scoreboard-section {
     width: 100%;
   }
 
-  .center-actions-area {
+  .app-container .center-actions-area {
     flex-direction: row;
     /* 横並び */
     flex-wrap: wrap;
@@ -365,81 +365,81 @@
   }
 
   /* モバイル時のアクションコンテナ */
-  .center-actions-area .action-buttons-container {
+  .app-container .center-actions-area .action-buttons-container {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     width: 100%;
   }
 
-  .center-actions-area.active .action-buttons-container {
+  .app-container .center-actions-area.active .action-buttons-container {
     border-color: var(--primary-light);
   }
 }
 
 
-.team-panel.active {
+.app-container .team-panel.active {
   border-color: var(--active-highlight);
   box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.4);
 }
 
 /* チームパネルのカラーライン（内側に配置：左チームは右側、右チームは左側） */
-.team-panel.team-a {
+.app-container .team-panel.team-a {
   border-right: 4px solid var(--team-a);
   border-left: none;
 }
 
-.team-panel.team-b {
+.app-container .team-panel.team-b {
   border-left: 4px solid var(--team-b);
   border-right: none;
 }
 
 /* チームカラーに基づくボーダー（白/青）- 高い詳細度で上書き */
-.team-panel.team-a.color-white {
+.app-container .team-panel.team-a.color-white {
   border-right: 4px solid var(--team-white);
   border-left: none;
 }
 
-.team-panel.team-a.color-blue {
+.app-container .team-panel.team-a.color-blue {
   border-right: 4px solid var(--team-blue);
   border-left: none;
 }
 
-.team-panel.team-b.color-white {
+.app-container .team-panel.team-b.color-white {
   border-left: 4px solid var(--team-white);
   border-right: none;
 }
 
-.team-panel.team-b.color-blue {
+.app-container .team-panel.team-b.color-blue {
   border-left: 4px solid var(--team-blue);
   border-right: none;
 }
 
 /* フルモード時のボーダー位置を明示的に指定 */
-.game-main-area.full-mode .team-panel.team-a {
+.app-container .game-main-area.full-mode .team-panel.team-a {
   border-right: 4px solid var(--team-a) !important;
   border-left: none !important;
 }
 
-.game-main-area.full-mode .team-panel.team-a.color-white {
+.app-container .game-main-area.full-mode .team-panel.team-a.color-white {
   border-right: 4px solid var(--team-white) !important;
   border-left: none !important;
 }
 
-.game-main-area.full-mode .team-panel.team-a.color-blue {
+.app-container .game-main-area.full-mode .team-panel.team-a.color-blue {
   border-right: 4px solid var(--team-blue) !important;
   border-left: none !important;
 }
 
 
-.team-panel-header {
+.app-container .team-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-bottom: var(--spacing-xs);
 }
 
-.team-panel-header .team-name {
+.app-container .team-panel-header .team-name {
   font-size: var(--font-size-lg);
   font-weight: 700;
   min-width: 0;
@@ -449,20 +449,20 @@
 }
 
 /* ヘッダー右側のチーム状態（TF・タイムアウト） */
-.team-panel-status {
+.app-container .team-panel-status {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
   flex-shrink: 0;
 }
 
-.team-panel-header .team-score {
+.app-container .team-panel-header .team-score {
   font-size: var(--font-size-2xl);
   font-weight: 800;
   color: var(--primary-light);
 }
 
-.team-players {
+.app-container .team-players {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
@@ -475,7 +475,7 @@
   /* はみ出し防止（通常5人固定） */
 }
 
-.mini-player-card {
+.app-container .mini-player-card {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -494,42 +494,42 @@
   -webkit-user-select: none;
 }
 
-.mini-player-card:hover {
+.app-container .mini-player-card:hover {
   background: var(--bg-primary);
 }
 
-.mini-player-card:active {
+.app-container .mini-player-card:active {
   transform: scale(0.98);
 }
 
-.mini-player-card.selected {
+.app-container .mini-player-card.selected {
   border-color: var(--secondary);
   background: rgba(5, 150, 105, 0.2);
 }
 
-.mini-player-card .player-num {
+.app-container .mini-player-card .player-num {
   font-weight: 700;
   font-size: var(--font-size-lg);
   min-width: 40px;
 }
 
-.mini-player-card .player-pts {
+.app-container .mini-player-card .player-pts {
   font-weight: 600;
   color: var(--primary-light);
 }
 
-.mini-player-card .player-fouls {
+.app-container .mini-player-card .player-fouls {
   margin-left: auto;
   color: var(--text-muted);
   font-size: var(--font-size-sm);
 }
 
-.mini-player-card .player-fouls.warning {
+.app-container .mini-player-card .player-fouls.warning {
   color: var(--danger);
   font-weight: 700;
 }
 
-.team-bench {
+.app-container .team-bench {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -538,7 +538,7 @@
   flex-wrap: wrap;
 }
 
-.bench-num {
+.app-container .bench-num {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   padding: 4px 8px;
@@ -549,13 +549,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.bench-num:hover {
+.app-container .bench-num:hover {
   background: var(--bg-primary);
   color: var(--text-primary);
 }
 
 /* ベンチアクションエリア */
-.bench-actions {
+.app-container .bench-actions {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -565,52 +565,52 @@
 }
 
 /* 交代・ベンチファウルボタンの高さを統一 - スケーリング対応 */
-.bench-actions .btn {
+.app-container .bench-actions .btn {
   min-height: clamp(60px, 9vh, 80px);
 }
 
 /* 交代・ベンチファウルボタンを同じ幅に */
-.bench-actions .btn {
+.app-container .bench-actions .btn {
   flex: 1;
 }
 
 /* ベンチファウルボタン（朱色） */
-.bench-actions .btn-danger {
+.app-container .bench-actions .btn-danger {
   background: linear-gradient(135deg, #e74c3c 0%, #ec7063 100%);
   border-color: #e74c3c;
 }
 
-.bench-actions .btn-danger:hover {
+.app-container .bench-actions .btn-danger:hover {
   background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
 }
 
 /* レスポンシブ: スマホ縦向き */
 @media (max-width: 600px) {
-  .dual-team-area {
+  .app-container .dual-team-area {
     grid-template-columns: 1fr;
   }
 
   /* 3列レイアウトを1列縦積みに */
-  .game-main-area {
+  .app-container .game-main-area {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     gap: var(--spacing-sm);
   }
 
   /* 中央列を最初に表示 */
-  .center-column {
+  .app-container .center-column {
     order: -1;
     width: 100%;
   }
 
   /* チームパネルをコンパクトに */
-  .team-panel {
+  .app-container .team-panel {
     max-height: 280px;
     overflow-y: auto;
   }
 
   /* 選手カードを2列グリッドに変更（タップしやすく） */
-  .team-players {
+  .app-container .team-players {
     display: grid;
     grid-template-columns: 1fr 1fr;
     height: auto;
@@ -619,40 +619,40 @@
   }
 
   /* 選手カードのサイズ最適化（タッチターゲット48px以上確保） */
-  .mini-player-card {
+  .app-container .mini-player-card {
     height: 52px;
     min-height: 48px;
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--font-size-sm);
   }
 
-  .mini-player-card .player-num {
+  .app-container .mini-player-card .player-num {
     min-width: 28px;
     font-size: var(--font-size-md);
   }
 
-  .mini-player-card .player-pts {
+  .app-container .mini-player-card .player-pts {
     font-size: var(--font-size-sm);
   }
 
-  .mini-player-card .player-fouls {
+  .app-container .mini-player-card .player-fouls {
     font-size: var(--font-size-xs);
   }
 
   /* ベンチエリアをコンパクトに */
-  .team-bench {
+  .app-container .team-bench {
     flex-wrap: wrap;
     gap: var(--spacing-xs);
   }
 
-  .bench-num {
+  .app-container .bench-num {
     padding: 6px 10px;
     font-size: var(--font-size-sm);
     min-height: 36px;
   }
 
   /* ターゲットハイライト（コーチボタン等） */
-  .btn-warning.active-target {
+  .app-container .btn-warning.active-target {
     box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
     animation: pulse-border 1.5s infinite;
     position: relative;
@@ -675,7 +675,7 @@
 }
 
 /* ===== チーム選択モーダル ===== */
-.team-selector-overlay {
+.app-container .team-selector-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
@@ -686,7 +686,7 @@
   padding: var(--spacing-md);
 }
 
-.team-selector-modal {
+.app-container .team-selector-modal {
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
@@ -696,26 +696,26 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
-.team-selector-modal h3 {
+.app-container .team-selector-modal h3 {
   font-size: var(--font-size-xl);
   margin-bottom: var(--spacing-sm);
   color: var(--text-primary);
 }
 
-.team-selector-action {
+.app-container .team-selector-action {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--primary-light);
   margin-bottom: var(--spacing-lg);
 }
 
-.team-selector-buttons {
+.app-container .team-selector-buttons {
   display: flex;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
 }
 
-.team-select-btn {
+.app-container .team-select-btn {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -729,59 +729,59 @@
   transition: all var(--transition-fast);
 }
 
-.team-select-btn:hover {
+.app-container .team-select-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.team-select-btn.team-a {
+.app-container .team-select-btn.team-a {
   border-color: var(--team-a);
 }
 
-.team-select-btn.team-a:hover {
+.app-container .team-select-btn.team-a:hover {
   background: rgba(59, 130, 246, 0.2);
 }
 
-.team-select-btn.team-b {
+.app-container .team-select-btn.team-b {
   border-color: var(--team-b);
 }
 
-.team-select-btn.team-b:hover {
+.app-container .team-select-btn.team-b:hover {
   background: rgba(34, 197, 94, 0.2);
 }
 
 /* チームカラーに基づくボーダー（白/青）- 高い詳細度で上書き */
-.team-select-btn.color-white {
+.app-container .team-select-btn.color-white {
   border-color: var(--team-white);
 }
 
-.team-select-btn.color-white:hover {
+.app-container .team-select-btn.color-white:hover {
   background: rgba(226, 232, 240, 0.2);
 }
 
-.team-select-btn.color-blue {
+.app-container .team-select-btn.color-blue {
   border-color: var(--team-blue);
 }
 
-.team-select-btn.color-blue:hover {
+.app-container .team-select-btn.color-blue:hover {
   background: rgba(59, 130, 246, 0.2);
 }
 
-.team-select-btn .team-name {
+.app-container .team-select-btn .team-name {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--spacing-xs);
 }
 
-.team-select-btn .team-color {
+.app-container .team-select-btn .team-color {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
 }
 
 /* アクション先行選択中: タップ先である選手カードを強調
    (レイアウトに依存せず「どこを押すか」を目的地側で示す) */
-.game-main-area.action-pending .mini-player-card {
+.app-container .game-main-area.action-pending .mini-player-card {
   border-color: var(--secondary-light);
   animation: player-target-pulse 1.5s ease-in-out infinite;
 }
@@ -799,14 +799,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .game-main-area.action-pending .mini-player-card {
+  .app-container .game-main-area.action-pending .mini-player-card {
     animation: none;
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.45);
   }
 }
 
 /* ===== 保留アクション (フローティング) ===== */
-.pending-actions-floating-left {
+.app-container .pending-actions-floating-left {
   position: fixed;
   top: 80px;
   /* ヘッダー(約60px)の下 */
@@ -815,7 +815,7 @@
   z-index: 500;
 }
 
-.pending-actions-floating-right {
+.app-container .pending-actions-floating-right {
   position: fixed;
   top: 80px;
   /* ヘッダー(約60px)の下 */
@@ -826,8 +826,8 @@
 
 @media (max-width: 600px) {
 
-  .pending-actions-floating-left,
-  .pending-actions-floating-right {
+  .app-container .pending-actions-floating-left,
+  .app-container .pending-actions-floating-right {
     /* ヘッダーがモバイルでは2行(約110px)に折り返すため、その下に配置 */
     top: 118px;
     bottom: auto;
@@ -839,11 +839,11 @@
     /* スマホでは横並びにするか、スタックするか要調整 */
   }
 
-  .pending-actions-floating-left {
+  .app-container .pending-actions-floating-left {
     right: auto;
   }
 
-  .pending-actions-floating-right {
+  .app-container .pending-actions-floating-right {
     left: auto;
     right: var(--spacing-sm);
   }
@@ -854,78 +854,78 @@
    =========================================== */
 
 /* シンプルモード時：縦型レイアウト */
-.game-main-area.simple-mode {
+.app-container .game-main-area.simple-mode {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
 }
 
 /* シンプルモード：中央列の高さを自動に（余分なスペース防止） */
-.game-main-area.simple-mode .center-column {
+.app-container .game-main-area.simple-mode .center-column {
   height: auto;
 }
 
-.game-main-area.simple-mode .team-panel {
+.app-container .game-main-area.simple-mode .team-panel {
   flex: none;
   width: 100%;
   padding: var(--spacing-sm);
 }
 
-.game-main-area.simple-mode .team-panel-header {
+.app-container .game-main-area.simple-mode .team-panel-header {
   margin-bottom: var(--spacing-xs);
 }
 
 /* シンプルモード：スコアボードを横幅フィット */
-.game-main-area.simple-mode+.scoreboard-section,
-.simple-mode~.scoreboard-section {
+.app-container .game-main-area.simple-mode+.scoreboard-section,
+.app-container .simple-mode~.scoreboard-section {
   width: 100%;
 }
 
 /* シンプルモード時のスコアボードセクション */
-.app-main:has(.simple-mode) .scoreboard-section {
+.app-container .app-main:has(.simple-mode) .scoreboard-section {
   width: 100%;
 }
 
-.app-main:has(.simple-mode) .scoreboard-section .scoreboard-new {
+.app-container .app-main:has(.simple-mode) .scoreboard-section .scoreboard-new {
   width: 100%;
   max-width: 100%;
 }
 
 /* シンプルモード：タイムアウト関連ボタンを非表示 */
-.app-main:has(.simple-mode) .to-count,
-.app-main:has(.simple-mode) .btn-game-action {
+.app-container .app-main:has(.simple-mode) .to-count,
+.app-container .app-main:has(.simple-mode) .btn-game-action {
   display: none !important;
 }
 
 /* シンプルモード：スコアボードの左右配置を維持 */
-.app-main:has(.simple-mode) .scoreboard-main {
+.app-container .app-main:has(.simple-mode) .scoreboard-main {
   grid-template-columns: 1fr auto 1fr !important;
   gap: var(--spacing-sm);
 }
 
-.app-main:has(.simple-mode) .team-score-block {
+.app-container .app-main:has(.simple-mode) .team-score-block {
   flex-direction: row !important;
   justify-content: space-between;
   padding: var(--spacing-xs) var(--spacing-sm);
 }
 
-.app-main:has(.simple-mode) .score-display {
+.app-container .app-main:has(.simple-mode) .score-display {
   font-size: var(--font-size-2xl);
 }
 
-.app-main:has(.simple-mode) .quarter-section {
+.app-container .app-main:has(.simple-mode) .quarter-section {
   padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 /* シンプルモード：チームパネルの余白を減らしてフィット */
-.game-main-area.simple-mode .team-panel {
+.app-container .game-main-area.simple-mode .team-panel {
   padding: var(--spacing-xs) var(--spacing-sm);
   margin-bottom: var(--spacing-xs);
   flex: none !important;
   height: auto !important;
 }
 
-.game-main-area.simple-mode .team-players {
+.app-container .game-main-area.simple-mode .team-players {
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: wrap !important;
@@ -937,7 +937,7 @@
 }
 
 /* シンプルモード：選手カードを3列配置でコンパクトに */
-.game-main-area.simple-mode .mini-player-card {
+.app-container .game-main-area.simple-mode .mini-player-card {
   flex: 0 0 calc(33.33% - 4px) !important;
   width: calc(33.33% - 4px) !important;
   min-width: 0 !important;
@@ -952,24 +952,24 @@
   box-sizing: border-box;
 }
 
-.game-main-area.simple-mode .mini-player-card .player-num {
+.app-container .game-main-area.simple-mode .mini-player-card .player-num {
   font-size: var(--font-size-lg);
   font-weight: 700;
 }
 
-.game-main-area.simple-mode .mini-player-card .player-pts {
+.app-container .game-main-area.simple-mode .mini-player-card .player-pts {
   font-size: var(--font-size-xl);
   min-width: 30px;
   text-align: right;
 }
 
 /* シンプルモード：ベンチ選手リストは非表示、交代ボタンは表示 */
-.game-main-area.simple-mode .team-bench {
+.app-container .game-main-area.simple-mode .team-bench {
   display: none;
 }
 
 /* シンプルモード：チームパネル内の選手リストに交代ボタンを追加するためのスタイル */
-.game-main-area.simple-mode .team-players {
+.app-container .game-main-area.simple-mode .team-players {
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: wrap !important;
@@ -979,7 +979,7 @@
 }
 
 /* シンプルモード：チームパネル内の交代ボタン（選手カードと同じグリッド内） */
-.game-main-area.simple-mode .simple-sub-btn {
+.app-container .game-main-area.simple-mode .simple-sub-btn {
   flex: 0 0 calc(33.33% - 4px);
   width: calc(33.33% - 4px);
   min-width: 0;
@@ -999,14 +999,14 @@
   box-sizing: border-box;
 }
 
-.game-main-area.simple-mode .simple-sub-btn:hover {
+.app-container .game-main-area.simple-mode .simple-sub-btn:hover {
   border-color: var(--primary);
   color: var(--primary);
   background: rgba(59, 130, 246, 0.1);
 }
 
 /* シンプルモード：アクションパネル */
-.game-main-area.simple-mode .center-actions-area {
+.app-container .game-main-area.simple-mode .center-actions-area {
   position: relative !important;
   width: 100%;
   height: auto !important;
@@ -1019,7 +1019,7 @@
 }
 
 /* シンプルモード：ActionButtonsコンテナを横並びに */
-.game-main-area.simple-mode .action-buttons-container {
+.app-container .game-main-area.simple-mode .action-buttons-container {
   display: flex;
   flex-direction: row;
   /* ステータスバーを独立した行にするため折り返しを許可 */
@@ -1032,16 +1032,16 @@
 
 /* シンプルモードのステータスバー: 横並び行を圧迫しないよう全幅の独立行にする。
    画面フィット優先のため、アイドル時は非表示・アクション選択中のみ表示 */
-.game-main-area.simple-mode .action-status-bar {
+.app-container .game-main-area.simple-mode .action-status-bar {
   flex: 1 1 100%;
   height: 48px;
 }
 
-.game-main-area.simple-mode .action-status-bar:not(.active) {
+.app-container .game-main-area.simple-mode .action-status-bar:not(.active) {
   display: none;
 }
 
-.game-main-area.simple-mode .action-buttons-container .action-group {
+.app-container .game-main-area.simple-mode .action-buttons-container .action-group {
   flex: 3;
   /* デフォルトはスコアグループとして広く取る */
   margin: 0;
@@ -1050,23 +1050,23 @@
 }
 
 /* ファウルグループ（最後のグループ）は幅を狭くする (3:1の比率) */
-.game-main-area.simple-mode .action-buttons-container .action-group:last-child {
+.app-container .game-main-area.simple-mode .action-buttons-container .action-group:last-child {
   flex: 1;
 }
 
-.game-main-area.simple-mode .action-buttons-container .action-group-title {
+.app-container .game-main-area.simple-mode .action-buttons-container .action-group-title {
   display: none;
 }
 
 /* シンプルモード：スコアボタンを横並びに */
-.game-main-area.simple-mode .action-row.score-row {
+.app-container .game-main-area.simple-mode .action-row.score-row {
   display: flex;
   flex-direction: row;
   gap: var(--spacing-xs);
   width: 100%;
 }
 
-.game-main-area.simple-mode .score-row .swipeable-score-btn {
+.app-container .game-main-area.simple-mode .score-row .swipeable-score-btn {
   flex: 1;
   min-height: 90px;
   padding: 0 !important;
@@ -1076,7 +1076,7 @@
   justify-content: center;
 }
 
-.game-main-area.simple-mode .swipeable-score-btn .score-content {
+.app-container .game-main-area.simple-mode .swipeable-score-btn .score-content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1085,33 +1085,33 @@
 }
 
 /* シンプルモード：スワイプヒントを非表示 */
-.game-main-area.simple-mode .action-hint,
-.game-main-area.simple-mode .swipe-hint,
-.game-main-area.simple-mode .swipe-up-hint,
-.game-main-area.simple-mode .swipe-down-hint,
-.game-main-area.simple-mode .to-arrows,
-.game-main-area.simple-mode .stat-btn-group .swipe-hint {
+.app-container .game-main-area.simple-mode .action-hint,
+.app-container .game-main-area.simple-mode .swipe-hint,
+.app-container .game-main-area.simple-mode .swipe-up-hint,
+.app-container .game-main-area.simple-mode .swipe-down-hint,
+.app-container .game-main-area.simple-mode .to-arrows,
+.app-container .game-main-area.simple-mode .stat-btn-group .swipe-hint {
   display: none !important;
 }
 
 /* シンプルモード：ボタン高さを統一 - スケーリング対応 */
-.game-main-area.simple-mode .stat-btn-group {
+.app-container .game-main-area.simple-mode .stat-btn-group {
   min-height: clamp(70px, 10vh, 90px) !important;
 }
 
-.game-main-area.simple-mode .stat-btn {
+.app-container .game-main-area.simple-mode .stat-btn {
   min-height: clamp(70px, 10vh, 90px) !important;
   padding: var(--spacing-xs) !important;
 }
 
-.game-main-area.simple-mode .swipeable-score-wrapper,
-.game-main-area.simple-mode .swipeable-score-btn,
-.game-main-area.simple-mode .action-row.score-row {
+.app-container .game-main-area.simple-mode .swipeable-score-wrapper,
+.app-container .game-main-area.simple-mode .swipeable-score-btn,
+.app-container .game-main-area.simple-mode .action-row.score-row {
   min-height: clamp(70px, 10vh, 90px) !important;
 }
 
 /* シンプルモード：ファウルボタンも同じ高さに統一 */
-.game-main-area.simple-mode .btn-foul {
+.app-container .game-main-area.simple-mode .btn-foul {
   min-height: clamp(70px, 10vh, 90px) !important;
   height: clamp(70px, 10vh, 90px) !important;
   padding: 0 var(--spacing-sm) !important;
@@ -1123,22 +1123,22 @@
 }
 
 /* シンプルモード：不要なアクション行（ターンオーバー、REB）を非表示 */
-.game-main-area.simple-mode .action-group.stat-group {
+.app-container .game-main-area.simple-mode .action-group.stat-group {
   display: none;
 }
 
 /* シンプルモード：チームAのボーダー位置修正（右→左） */
-.game-main-area.simple-mode .team-panel.team-a {
+.app-container .game-main-area.simple-mode .team-panel.team-a {
   border-right: none !important;
   border-left: 4px solid var(--team-a) !important;
 }
 
 /* チームカラーオーバーライド対応 */
-.game-main-area.simple-mode .team-panel.team-a.color-white {
+.app-container .game-main-area.simple-mode .team-panel.team-a.color-white {
   border-left: 4px solid var(--team-white) !important;
 }
 
-.game-main-area.simple-mode .team-panel.team-a.color-blue {
+.app-container .game-main-area.simple-mode .team-panel.team-a.color-blue {
   border-left: 4px solid var(--team-blue) !important;
 }
 
@@ -1146,7 +1146,7 @@
    History Popup (履歴ポップアップ)
    =========================================== */
 
-.history-popup-overlay {
+.app-container .history-popup-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
@@ -1157,7 +1157,7 @@
   padding: var(--spacing-md);
 }
 
-.history-popup-content {
+.app-container .history-popup-content {
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   max-width: 600px;
@@ -1168,7 +1168,7 @@
   flex-direction: column;
 }
 
-.history-popup-header {
+.app-container .history-popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1176,12 +1176,12 @@
   border-bottom: 1px solid var(--border);
 }
 
-.history-popup-header h3 {
+.app-container .history-popup-header h3 {
   margin: 0;
   color: var(--text-primary);
 }
 
-.history-popup-body {
+.app-container .history-popup-body {
   flex: 1;
   overflow: hidden;
   padding: var(--spacing-sm);
@@ -1191,7 +1191,7 @@
   min-height: 0;
 }
 
-.history-popup-team {
+.app-container .history-popup-team {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
@@ -1201,15 +1201,15 @@
   overflow: hidden;
 }
 
-.history-popup-team.color-white {
+.app-container .history-popup-team.color-white {
   border-left-color: var(--team-white);
 }
 
-.history-popup-team.color-blue {
+.app-container .history-popup-team.color-blue {
   border-left-color: var(--team-blue);
 }
 
-.history-popup-team h4 {
+.app-container .history-popup-team h4 {
   margin: 0 0 var(--spacing-xs) 0;
   color: var(--text-primary);
   font-size: var(--font-size-sm);
@@ -1219,79 +1219,79 @@
 }
 
 /* ポップアップ内ではActionHistoryのヘッダーを非表示 */
-.history-popup-content .history-header {
+.app-container .history-popup-content .history-header {
   display: none;
 }
 
 /* 履歴ポップアップ：タブレット向け - 画面にフィット */
 @media (min-width: 768px) {
-  .history-popup-content {
+  .app-container .history-popup-content {
     max-width: 90vw;
     width: 90vw;
     height: 90vh;
   }
 
-  .history-popup-header {
+  .app-container .history-popup-header {
     padding: var(--spacing-md) var(--spacing-lg);
   }
 
-  .history-popup-header h3 {
+  .app-container .history-popup-header h3 {
     font-size: var(--font-size-xl);
   }
 
-  .history-popup-body {
+  .app-container .history-popup-body {
     padding: var(--spacing-md) var(--spacing-lg);
     gap: var(--spacing-lg);
   }
 
-  .history-popup-team {
+  .app-container .history-popup-team {
     padding-left: var(--spacing-md);
   }
 
-  .history-popup-team h4 {
+  .app-container .history-popup-team h4 {
     font-size: var(--font-size-lg);
     padding: var(--spacing-sm) var(--spacing-md);
   }
 
   /* 履歴アイテムを大きく表示 */
-  .history-popup-content .history-item {
+  .app-container .history-popup-content .history-item {
     height: 48px;
     padding: 0 var(--spacing-md);
   }
 
-  .history-popup-content .history-item .player-number {
+  .app-container .history-popup-content .history-item .player-number {
     font-size: var(--font-size-md);
     min-width: 40px;
   }
 
-  .history-popup-content .history-item .action-desc {
+  .app-container .history-popup-content .history-item .action-desc {
     font-size: var(--font-size-md);
   }
 
-  .history-popup-content .history-header {
+  .app-container .history-popup-content .history-header {
     height: 32px;
     padding: 0 var(--spacing-md);
   }
 
-  .history-popup-content .history-header .team-name {
+  .app-container .history-popup-content .history-header .team-name {
     font-size: var(--font-size-md);
   }
 }
 
 /* 履歴ポップアップ：スマホ向け改善 */
 @media (max-width: 600px) {
-  .history-popup-overlay {
+  .app-container .history-popup-overlay {
     padding: 0;
   }
 
-  .history-popup-content {
+  .app-container .history-popup-content {
     max-width: 100%;
     max-height: 100vh;
     height: 100vh;
     border-radius: 0;
   }
 
-  .history-popup-header {
+  .app-container .history-popup-header {
     padding: var(--spacing-sm) var(--spacing-md);
     position: sticky;
     top: 0;
@@ -1299,15 +1299,15 @@
     z-index: 10;
   }
 
-  .history-popup-header h3 {
+  .app-container .history-popup-header h3 {
     font-size: var(--font-size-lg);
   }
 
-  .history-popup-body {
+  .app-container .history-popup-body {
     padding: var(--spacing-md);
   }
 
-  .history-popup-team h4 {
+  .app-container .history-popup-team h4 {
     font-size: var(--font-size-md);
     padding: var(--spacing-sm);
     position: sticky;

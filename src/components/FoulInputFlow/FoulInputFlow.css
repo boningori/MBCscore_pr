@@ -24,19 +24,19 @@
     overflow-y: auto;
 }
 
-.foul-input-header {
+.foul-input-flow .foul-input-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--spacing-lg);
 }
 
-.foul-input-header h3 {
+.foul-input-flow .foul-input-header h3 {
     margin: 0;
     color: var(--text-primary);
 }
 
-.btn-back {
+.foul-input-flow .btn-back {
     background: none;
     border: none;
     color: var(--text-secondary);
@@ -45,12 +45,12 @@
     padding: var(--spacing-xs) var(--spacing-sm);
 }
 
-.btn-back:hover {
+.foul-input-flow .btn-back:hover {
     color: var(--text-primary);
 }
 
 /* チームファウル情報 */
-.team-foul-info {
+.foul-input-flow .team-foul-info {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -61,19 +61,19 @@
     font-size: var(--font-size-sm);
 }
 
-.penalty-warning {
+.foul-input-flow .penalty-warning {
     color: var(--danger);
     font-weight: 600;
 }
 
 /* ファウルタイプリスト */
-.foul-type-list {
+.foul-input-flow .foul-type-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.foul-type-btn {
+.foul-input-flow .foul-type-btn {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -85,17 +85,17 @@
     transition: all 0.2s;
 }
 
-.foul-type-btn:hover:not(.disabled) {
+.foul-input-flow .foul-type-btn:hover:not(.disabled) {
     border-color: var(--warning);
     background: rgba(255, 193, 7, 0.1);
 }
 
-.foul-type-btn.disabled {
+.foul-input-flow .foul-type-btn.disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.foul-type-label {
+.foul-input-flow .foul-type-label {
     font-weight: 800;
     font-size: var(--font-size-lg);
     color: var(--warning);
@@ -103,32 +103,32 @@
     text-align: center;
 }
 
-.foul-type-desc {
+.foul-input-flow .foul-type-desc {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
 }
 
-.foul-type-desc-container {
+.foul-input-flow .foul-type-desc-container {
     display: flex;
     flex-direction: column;
     gap: 2px;
     align-items: flex-start;
 }
 
-.foul-type-hint {
+.foul-input-flow .foul-type-hint {
     color: var(--text-muted);
     font-size: var(--font-size-xs);
     opacity: 0.7;
 }
 
 /* シュート状況リスト */
-.shot-situation-list {
+.foul-input-flow .shot-situation-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.shot-situation-btn {
+.foul-input-flow .shot-situation-btn {
     padding: var(--spacing-md) var(--spacing-lg);
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
@@ -139,19 +139,19 @@
     font-size: var(--font-size-md);
 }
 
-.shot-situation-btn:hover {
+.foul-input-flow .shot-situation-btn:hover {
     border-color: var(--primary);
     background: rgba(59, 130, 246, 0.1);
 }
 
 /* シュート結果リスト（成功/失敗選択）*/
-.shot-result-list {
+.foul-input-flow .shot-result-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.shot-result-btn {
+.foul-input-flow .shot-result-btn {
     padding: var(--spacing-md) var(--spacing-lg);
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
@@ -162,42 +162,42 @@
     font-weight: 600;
 }
 
-.shot-result-btn.success {
+.foul-input-flow .shot-result-btn.success {
     color: var(--success);
 }
 
-.shot-result-btn.success:hover {
+.foul-input-flow .shot-result-btn.success:hover {
     border-color: var(--success);
     background: rgba(34, 197, 94, 0.2);
 }
 
-.shot-result-btn.fail {
+.foul-input-flow .shot-result-btn.fail {
     color: var(--danger);
 }
 
-.shot-result-btn.fail:hover {
+.foul-input-flow .shot-result-btn.fail:hover {
     border-color: var(--danger);
     background: rgba(220, 38, 38, 0.2);
 }
 
 /* FT本数選択 */
-.ft-count-section {
+.foul-input-flow .ft-count-section {
     text-align: center;
 }
 
-.ft-suggested {
+.foul-input-flow .ft-suggested {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin-bottom: var(--spacing-md);
 }
 
-.ft-count-list {
+.foul-input-flow .ft-count-list {
     display: flex;
     justify-content: center;
     gap: var(--spacing-md);
 }
 
-.ft-count-btn {
+.foul-input-flow .ft-count-btn {
     /* サイズを画面に応じてスケール */
     width: clamp(48px, 7vw, 60px);
     height: clamp(48px, 7vw, 60px);
@@ -211,52 +211,52 @@
     font-weight: 600;
 }
 
-.ft-count-btn:hover {
+.foul-input-flow .ft-count-btn:hover {
     border-color: var(--primary);
     background: rgba(59, 130, 246, 0.1);
 }
 
-.ft-count-btn.suggested {
+.foul-input-flow .ft-count-btn.suggested {
     border-color: var(--success);
     background: rgba(34, 197, 94, 0.2);
 }
 
-.ft-count-btn.suggested:hover {
+.foul-input-flow .ft-count-btn.suggested:hover {
     background: rgba(34, 197, 94, 0.3);
 }
 
 /* FT結果入力 */
-.ft-result-section {
+.foul-input-flow .ft-result-section {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
 }
 
-.ft-result-list {
+.foul-input-flow .ft-result-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.ft-result-row {
+.foul-input-flow .ft-result-row {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
 }
 
-.ft-result-label {
+.foul-input-flow .ft-result-label {
     min-width: 60px;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
 }
 
-.ft-result-buttons {
+.foul-input-flow .ft-result-buttons {
     display: flex;
     gap: var(--spacing-sm);
     flex: 1;
 }
 
-.ft-result-btn {
+.foul-input-flow .ft-result-btn {
     flex: 1;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid var(--border);
@@ -267,27 +267,27 @@
     font-size: var(--font-size-sm);
 }
 
-.ft-result-btn.success {
+.foul-input-flow .ft-result-btn.success {
     color: var(--success);
 }
 
-.ft-result-btn.success:hover,
-.ft-result-btn.success.selected {
+.foul-input-flow .ft-result-btn.success:hover,
+.foul-input-flow .ft-result-btn.success.selected {
     border-color: var(--success);
     background: rgba(34, 197, 94, 0.2);
 }
 
-.ft-result-btn.fail {
+.foul-input-flow .ft-result-btn.fail {
     color: var(--danger);
 }
 
-.ft-result-btn.fail:hover,
-.ft-result-btn.fail.selected {
+.foul-input-flow .ft-result-btn.fail:hover,
+.foul-input-flow .ft-result-btn.fail.selected {
     border-color: var(--danger);
     background: rgba(220, 38, 38, 0.2);
 }
 
-.ft-result-summary {
+.foul-input-flow .ft-result-summary {
     text-align: center;
     color: var(--text-primary);
     font-size: var(--font-size-md);
@@ -297,12 +297,12 @@
     border-radius: var(--radius-md);
 }
 
-.ft-result-next {
+.foul-input-flow .ft-result-next {
     margin-top: var(--spacing-md);
 }
 
 /* シューター情報表示 */
-.shooter-info {
+.foul-input-flow .shooter-info {
     text-align: center;
     color: var(--primary);
     font-size: var(--font-size-md);
@@ -315,26 +315,26 @@
 }
 
 /* シューター選択 */
-.shooter-section {
+.foul-input-flow .shooter-section {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
 }
 
-.shooter-team-name {
+.foul-input-flow .shooter-team-name {
     text-align: center;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin-bottom: var(--spacing-sm);
 }
 
-.shooter-list {
+.foul-input-flow .shooter-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: var(--spacing-sm);
 }
 
-.shooter-btn {
+.foul-input-flow .shooter-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -346,23 +346,23 @@
     transition: all 0.2s;
 }
 
-.shooter-btn:hover {
+.foul-input-flow .shooter-btn:hover {
     border-color: var(--primary);
     background: rgba(59, 130, 246, 0.1);
 }
 
-.shooter-btn.selected {
+.foul-input-flow .shooter-btn.selected {
     border-color: var(--primary);
     background: rgba(59, 130, 246, 0.2);
 }
 
-.shooter-number {
+.foul-input-flow .shooter-number {
     font-weight: 800;
     font-size: var(--font-size-lg);
     color: var(--text-primary);
 }
 
-.shooter-name {
+.foul-input-flow .shooter-name {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
     font-weight: 500;
@@ -372,19 +372,19 @@
     max-width: 100%;
 }
 
-.shooter-complete {
+.foul-input-flow .shooter-complete {
     margin-top: var(--spacing-md);
 }
 
 /* アクションボタン */
-.foul-input-actions {
+.foul-input-flow .foul-input-actions {
     margin-top: var(--spacing-lg);
     display: flex;
     justify-content: center;
 }
 
 /* ファウル警告 */
-.foul-warning {
+.foul-input-flow .foul-warning {
     background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(147, 51, 234, 0.2));
     border: 2px solid var(--danger);
     border-radius: var(--radius-md);
@@ -409,7 +409,7 @@
 }
 
 /* ファウル数情報 */
-.foul-count-info {
+.foul-input-flow .foul-count-info {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -420,16 +420,16 @@
     font-size: var(--font-size-sm);
 }
 
-.foul-trouble {
+.foul-input-flow .foul-trouble {
     color: var(--warning);
     font-weight: 600;
 }
 
-.foul-type-btn.warning-context {
+.foul-input-flow .foul-type-btn.warning-context {
     border-color: rgba(220, 38, 38, 0.5);
 }
 
-.foul-type-btn.warning-context:hover:not(.disabled) {
+.foul-input-flow .foul-type-btn.warning-context:hover:not(.disabled) {
     border-color: var(--danger);
     background: rgba(220, 38, 38, 0.1);
 }
@@ -443,45 +443,45 @@
         padding: var(--spacing-md);
     }
 
-    .foul-type-btn {
+    .foul-input-flow .foul-type-btn {
         padding: var(--spacing-lg);
         min-height: 60px;
     }
 
-    .foul-type-label {
+    .foul-input-flow .foul-type-label {
         font-size: var(--font-size-xl);
         min-width: 50px;
     }
 
-    .foul-type-desc {
+    .foul-input-flow .foul-type-desc {
         font-size: var(--font-size-md);
     }
 
-    .shot-situation-btn {
+    .foul-input-flow .shot-situation-btn {
         padding: var(--spacing-lg);
         min-height: 56px;
     }
 
-    .ft-count-btn {
+    .foul-input-flow .ft-count-btn {
         width: 70px;
         height: 70px;
     }
 
-    .ft-result-row {
+    .foul-input-flow .ft-result-row {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .ft-result-label {
+    .foul-input-flow .ft-result-label {
         text-align: center;
         min-width: auto;
     }
 
-    .shooter-list {
+    .foul-input-flow .shooter-list {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 
-    .foul-input-actions .btn {
+    .foul-input-flow .foul-input-actions .btn {
         width: 100%;
         padding: var(--spacing-md);
     }

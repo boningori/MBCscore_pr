@@ -14,7 +14,7 @@
 }
 
 /* トースト本体 */
-.toast {
+.toast-container .toast {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -30,25 +30,25 @@
 }
 
 /* 成功トースト */
-.toast-success {
+.toast-container .toast-success {
     background: rgba(34, 197, 94, 0.95);
     color: #fff;
     border: 1px solid rgba(34, 197, 94, 1);
 }
 
 /* エラートースト */
-.toast-error {
+.toast-container .toast-error {
     background: rgba(239, 68, 68, 0.95);
     color: #fff;
     border: 1px solid rgba(239, 68, 68, 1);
 }
 
-.toast-text {
+.toast-container .toast-text {
     flex: 1;
     line-height: 1.4;
 }
 
-.toast-dismiss {
+.toast-container .toast-dismiss {
     background: none;
     border: none;
     color: inherit;
@@ -60,7 +60,7 @@
     flex-shrink: 0;
 }
 
-.toast-dismiss:hover {
+.toast-container .toast-dismiss:hover {
     opacity: 1;
 }
 
@@ -84,7 +84,7 @@
         width: calc(100vw - 32px);
     }
 
-    .toast {
+    .toast-container .toast {
         font-size: var(--font-size-xs, 0.75rem);
         padding: 10px 12px;
     }

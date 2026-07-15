@@ -4,31 +4,31 @@
     padding: var(--spacing-lg);
 }
 
-.team-manager-header {
+:is(.team-manager, .team-editor) .team-manager-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
 }
 
-.team-manager-header h2 {
+:is(.team-manager, .team-editor) .team-manager-header h2 {
     font-size: var(--font-size-xl);
     font-weight: 700;
 }
 
-.team-manager-actions {
+:is(.team-manager, .team-editor) .team-manager-actions {
     display: flex;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
 }
 
-.team-list {
+:is(.team-manager, .team-editor) .team-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
 }
 
-.team-list-empty {
+:is(.team-manager, .team-editor) .team-list-empty {
     text-align: center;
     padding: var(--spacing-xl);
     background: var(--bg-secondary);
@@ -36,11 +36,11 @@
     border: 1px dashed var(--border);
 }
 
-.team-list-empty p {
+:is(.team-manager, .team-editor) .team-list-empty p {
     margin: var(--spacing-sm) 0;
 }
 
-.team-card {
+:is(.team-manager, .team-editor) .team-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -51,32 +51,32 @@
     transition: border-color var(--transition-fast);
 }
 
-.team-card:hover {
+:is(.team-manager, .team-editor) .team-card:hover {
     border-color: var(--primary-light);
 }
 
-.team-card-info {
+:is(.team-manager, .team-editor) .team-card-info {
     flex: 1;
 }
 
-.team-card-name {
+:is(.team-manager, .team-editor) .team-card-name {
     font-size: var(--font-size-lg);
     font-weight: 700;
     margin-bottom: var(--spacing-xs);
 }
 
-.team-card-detail {
+:is(.team-manager, .team-editor) .team-card-detail {
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin-bottom: var(--spacing-xs);
 }
 
-.team-card-players {
+:is(.team-manager, .team-editor) .team-card-players {
     font-size: var(--font-size-sm);
     color: var(--text-muted);
 }
 
-.team-card-actions {
+:is(.team-manager, .team-editor) .team-card-actions {
     display: flex;
     gap: var(--spacing-sm);
 }
@@ -88,32 +88,32 @@
     padding: var(--spacing-lg);
 }
 
-.team-editor-header {
+:is(.team-manager, .team-editor) .team-editor-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
 }
 
-.team-editor-header h2 {
+:is(.team-manager, .team-editor) .team-editor-header h2 {
     font-size: var(--font-size-xl);
     font-weight: 700;
 }
 
-.team-editor-form {
+:is(.team-manager, .team-editor) .team-editor-form {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
 }
 
-.form-label-row {
+:is(.team-manager, .team-editor) .form-label-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-sm);
 }
 
-.player-edit-card {
+:is(.team-manager, .team-editor) .player-edit-card {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -122,21 +122,21 @@
     border-radius: var(--radius-md);
 }
 
-.player-edit-card .player-number {
+:is(.team-manager, .team-editor) .player-edit-card .player-number {
     font-weight: 700;
     min-width: 40px;
 }
 
-.player-edit-card .player-name {
+:is(.team-manager, .team-editor) .player-edit-card .player-name {
     flex: 1;
 }
 
-.player-edit-actions {
+:is(.team-manager, .team-editor) .player-edit-actions {
     display: flex;
     gap: var(--spacing-xs);
 }
 
-.team-editor-actions {
+:is(.team-manager, .team-editor) .team-editor-actions {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-md);
@@ -146,17 +146,17 @@
 }
 
 @media (max-width: 600px) {
-    .team-editor-actions {
+    :is(.team-manager, .team-editor) .team-editor-actions {
         flex-direction: column-reverse;
     }
 
-    .team-editor-actions button {
+    :is(.team-manager, .team-editor) .team-editor-actions button {
         width: 100%;
     }
 }
 
 /* OCR Loading */
-.ocr-loading {
+:is(.team-manager, .team-editor) .ocr-loading {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -166,7 +166,7 @@
     color: var(--primary-light);
 }
 
-.spinner {
+:is(.team-manager, .team-editor) .spinner {
     width: 20px;
     height: 20px;
     border: 2px solid var(--border);

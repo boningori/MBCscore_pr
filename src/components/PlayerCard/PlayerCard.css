@@ -33,7 +33,7 @@
     pointer-events: none;
 }
 
-.player-number {
+:is(.player-card, .player-list-container) .player-number {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -47,7 +47,7 @@
     flex-shrink: 0;
 }
 
-.player-info {
+:is(.player-card, .player-list-container) .player-info {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -55,7 +55,7 @@
     gap: 2px;
 }
 
-.player-name {
+:is(.player-card, .player-list-container) .player-name {
     font-size: var(--font-size-md);
     font-weight: 500;
     white-space: nowrap;
@@ -63,38 +63,38 @@
     text-overflow: ellipsis;
 }
 
-.player-name.captain::after {
+:is(.player-card, .player-list-container) .player-name.captain::after {
     content: ' (C)';
     color: var(--warning);
     font-size: var(--font-size-sm);
 }
 
-.player-quick-stats {
+:is(.player-card, .player-list-container) .player-quick-stats {
     display: flex;
     gap: var(--spacing-sm);
     font-size: var(--font-size-sm);
 }
 
-.stat-points {
+:is(.player-card, .player-list-container) .stat-points {
     color: var(--text-secondary);
     font-weight: 600;
 }
 
-.stat-fouls {
+:is(.player-card, .player-list-container) .stat-fouls {
     color: var(--warning);
     font-weight: 600;
 }
 
-.stat-fouls.warning {
+:is(.player-card, .player-list-container) .stat-fouls.warning {
     color: var(--danger);
 }
 
-.player-fouls {
+:is(.player-card, .player-list-container) .player-fouls {
     display: flex;
     gap: 3px;
 }
 
-.foul-indicator {
+:is(.player-card, .player-list-container) .foul-indicator {
     width: 18px;
     height: 18px;
     background: var(--warning);
@@ -107,18 +107,18 @@
     font-weight: 700;
 }
 
-.foul-indicator.empty {
+:is(.player-card, .player-list-container) .foul-indicator.empty {
     background: transparent;
     border: 1px solid var(--border);
 }
 
-.foul-indicator:nth-child(5):not(.empty) {
+:is(.player-card, .player-list-container) .foul-indicator:nth-child(5):not(.empty) {
     background: var(--danger);
     color: white;
 }
 
 /* 6個目以降のファウル（追加ファウル） */
-.foul-indicator.extra-foul {
+:is(.player-card, .player-list-container) .foul-indicator.extra-foul {
     background: #9333ea;
     color: white;
     animation: pulse-extra 1s infinite;
@@ -136,7 +136,7 @@
     }
 }
 
-.on-court-badge {
+:is(.player-card, .player-list-container) .on-court-badge {
     position: absolute;
     top: -6px;
     right: -6px;
@@ -155,19 +155,19 @@
     gap: var(--spacing-sm);
 }
 
-.player-list-title {
+:is(.player-card, .player-list-container) .player-list-title {
     font-size: var(--font-size-md);
     font-weight: 600;
     color: var(--text-secondary);
 }
 
-.player-list {
+:is(.player-card, .player-list-container) .player-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.player-list-empty {
+:is(.player-card, .player-list-container) .player-list-empty {
     padding: var(--spacing-md);
     text-align: center;
     background: var(--bg-tertiary);
@@ -182,28 +182,28 @@
         gap: var(--spacing-xs);
     }
 
-    .player-number {
+    :is(.player-card, .player-list-container) .player-number {
         width: 36px;
         height: 36px;
         font-size: var(--font-size-md);
     }
 
-    .player-name {
+    :is(.player-card, .player-list-container) .player-name {
         font-size: var(--font-size-sm);
     }
 
-    .player-quick-stats {
+    :is(.player-card, .player-list-container) .player-quick-stats {
         gap: var(--spacing-xs);
         font-size: var(--font-size-xs);
     }
 
-    .foul-indicator {
+    :is(.player-card, .player-list-container) .foul-indicator {
         width: 14px;
         height: 14px;
         font-size: 9px;
     }
 
-    .on-court-badge {
+    :is(.player-card, .player-list-container) .on-court-badge {
         top: -4px;
         right: -4px;
         padding: 1px 4px;
