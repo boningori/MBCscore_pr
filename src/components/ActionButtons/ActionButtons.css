@@ -10,7 +10,7 @@
     min-width: clamp(260px, 28vw, 320px);
 }
 
-.action-group {
+.action-buttons-container .action-group {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -18,7 +18,7 @@
     overflow: visible;
 }
 
-.action-group-title {
+.action-buttons-container .action-group-title {
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-muted);
@@ -26,24 +26,24 @@
     letter-spacing: 0.05em;
 }
 
-.action-row {
+.action-buttons-container .action-row {
     display: flex;
     gap: var(--spacing-sm);
 }
 
-.action-row.score-row {
+.action-buttons-container .action-row.score-row {
     gap: var(--spacing-sm);
     position: relative;
     /* 最小高さを画面サイズに応じてスケール */
     min-height: clamp(70px, 11vh, 100px);
 }
 
-.action-row.score-row>* {
+.action-buttons-container .action-row.score-row>* {
     flex: 1;
     min-width: 0;
 }
 
-.action-btn {
+.action-buttons-container .action-btn {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -60,156 +60,156 @@
     transition: all var(--transition-fast);
 }
 
-.action-btn:hover:not(:disabled) {
+.action-buttons-container .action-btn:hover:not(:disabled) {
     background: var(--border);
     transform: translateY(-1px);
 }
 
-.action-btn:active:not(:disabled) {
+.action-buttons-container .action-btn:active:not(:disabled) {
     transform: scale(0.95);
 }
 
-.action-btn:disabled {
+.action-buttons-container .action-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-.action-icon {
+.action-buttons-container .action-icon {
     font-size: 20px;
     line-height: 1;
 }
 
-.action-label {
+.action-buttons-container .action-label {
     font-size: var(--font-size-sm);
     font-weight: 600;
     margin-top: 2px;
 }
 
 /* 得点ボタン */
-.score-btn {
+.action-buttons-container .score-btn {
     border-color: var(--secondary);
 }
 
-.btn-2p {
+.action-buttons-container .btn-2p {
     background: rgba(5, 150, 105, 0.15);
     border-color: var(--secondary);
 }
 
-.btn-2p:hover:not(:disabled) {
+.action-buttons-container .btn-2p:hover:not(:disabled) {
     background: rgba(5, 150, 105, 0.3);
 }
 
-.btn-3p {
+.action-buttons-container .btn-3p {
     background: rgba(37, 99, 235, 0.15);
     border-color: #00BFFF;
 }
 
-.btn-3p:hover:not(:disabled) {
+.action-buttons-container .btn-3p:hover:not(:disabled) {
     background: rgba(37, 99, 235, 0.3);
 }
 
-.btn-ft {
+.action-buttons-container .btn-ft {
     background: rgba(236, 72, 153, 0.15);
     border-color: #f9a8d4;
 }
 
-.btn-ft:hover:not(:disabled) {
+.action-buttons-container .btn-ft:hover:not(:disabled) {
     background: rgba(236, 72, 153, 0.3);
 }
 
 /* ミスボタン */
-.miss-btn {
+.action-buttons-container .miss-btn {
     min-height: 44px;
     background: rgba(220, 38, 38, 0.1);
     border-color: var(--danger);
     color: var(--danger-light);
 }
 
-.miss-btn:hover:not(:disabled) {
+.action-buttons-container .miss-btn:hover:not(:disabled) {
     background: rgba(220, 38, 38, 0.2);
 }
 
 /* 統計ボタン */
-.stat-btn {
+.action-buttons-container .stat-btn {
     min-height: clamp(70px, 11vh, 100px);
 }
 
-.btn-ast,
-.btn-stl,
-.btn-blk {
+.action-buttons-container .btn-ast,
+.action-buttons-container .btn-stl,
+.action-buttons-container .btn-blk {
     background: rgba(148, 163, 184, 0.1);
     border-color: #94a3b8;
 }
 
-.btn-ast:hover:not(:disabled),
-.btn-stl:hover:not(:disabled),
-.btn-blk:hover:not(:disabled) {
+.action-buttons-container .btn-ast:hover:not(:disabled),
+.action-buttons-container .btn-stl:hover:not(:disabled),
+.action-buttons-container .btn-blk:hover:not(:disabled) {
     background: rgba(148, 163, 184, 0.2);
 }
 
 /* リバウンドボタン（OR/DR分割） */
-.btn-oreb {
+.action-buttons-container .btn-oreb {
     background: rgba(139, 92, 246, 0.25);
     border-color: #8b5cf6;
 }
 
-.btn-oreb:hover:not(:disabled) {
+.action-buttons-container .btn-oreb:hover:not(:disabled) {
     background: rgba(139, 92, 246, 0.4);
 }
 
-.btn-dreb {
+.action-buttons-container .btn-dreb {
     background: rgba(139, 69, 19, 0.35);
     border-color: #8b4513;
 }
 
-.btn-dreb:hover:not(:disabled) {
+.action-buttons-container .btn-dreb:hover:not(:disabled) {
     background: rgba(139, 69, 19, 0.5);
 }
 
-.rebound-label {
+.action-buttons-container .rebound-label {
     font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: 1px;
 }
 
-.rebound-sublabel {
+.action-buttons-container .rebound-sublabel {
     font-size: 0.65rem;
     opacity: 0.85;
     white-space: nowrap;
 }
 
-.btn-turnover {
+.action-buttons-container .btn-turnover {
     background: rgba(220, 38, 38, 0.1);
     border-color: var(--danger);
 }
 
 /* ゲーム操作ボタン */
-.game-btn {
+.action-buttons-container .game-btn {
     min-height: clamp(70px, 11vh, 100px);
 }
 
-.btn-foul {
+.action-buttons-container .btn-foul {
     background: rgba(245, 158, 11, 0.15);
     border: 2px solid var(--warning);
     min-height: clamp(70px, 11vh, 100px);
 }
 
-.btn-foul:hover:not(:disabled) {
+.action-buttons-container .btn-foul:hover:not(:disabled) {
     background: rgba(245, 158, 11, 0.25);
 }
 
-.action-btn.btn-timeout {
+.action-buttons-container .action-btn.btn-timeout {
     background: #ffffff;
     color: #374151;
     border-color: #d1d5db;
 }
 
-.btn-substitute {
+.action-buttons-container .btn-substitute {
     background: rgba(5, 150, 105, 0.15);
     border-color: var(--secondary);
 }
 
-.action-hint {
+.action-buttons-container .action-hint {
     text-align: center;
     padding: var(--spacing-sm);
     background: rgba(37, 99, 235, 0.1);
@@ -219,7 +219,7 @@
 }
 
 /* アクティブ（選択中）ボタン */
-.action-btn.active {
+.action-buttons-container .action-btn.active {
     background: var(--primary);
     color: white;
     border-color: var(--primary);
@@ -227,12 +227,12 @@
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.action-btn.active:hover {
+.action-buttons-container .action-btn.active:hover {
     background: var(--primary);
     opacity: 0.9;
 }
 
-.action-hint.active {
+.action-buttons-container .action-hint.active {
     background: rgba(5, 150, 105, 0.15);
     color: var(--secondary);
     font-weight: 600;
@@ -242,7 +242,7 @@
 /* アクション先行時のステータスバー（ボタン群の上・常設・高さ固定）
    高さを56pxに固定してレイアウトシフトを起こさない。
    狭い画面では文言側を省略し、操作ボタンは縮めない */
-.action-status-bar {
+.action-buttons-container .action-status-bar {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -255,30 +255,30 @@
     overflow: hidden;
 }
 
-.action-status-bar .status-idle {
+.action-buttons-container .action-status-bar .status-idle {
     color: var(--text-muted);
 }
 
 /* クォーター間などの注意書き（誤解を防ぐ警告トーン） */
-.action-status-bar .status-notice {
+.action-buttons-container .action-status-bar .status-notice {
     color: var(--warning-light);
     font-weight: 600;
 }
 
-.action-status-bar.active {
+.action-buttons-container .action-status-bar.active {
     background: rgba(5, 150, 105, 0.15);
     color: var(--secondary-light);
     font-weight: 600;
 }
 
-.action-status-bar .status-text {
+.action-buttons-container .action-status-bar .status-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
 }
 
-.action-status-bar .btn {
+.action-buttons-container .action-status-bar .btn {
     min-height: 44px;
     flex-shrink: 0;
     white-space: nowrap;

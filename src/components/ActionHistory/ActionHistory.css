@@ -10,7 +10,7 @@
     /* フレックスアイテムの縮小を許可 */
 }
 
-.history-header {
+.action-history .history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -22,24 +22,24 @@
     border-bottom: 1px solid var(--border);
 }
 
-.history-header .team-name {
+.action-history .history-header .team-name {
     font-weight: 600;
     font-size: var(--font-size-sm);
     color: var(--text-primary);
 }
 
-.history-header .item-count {
+.action-history .history-header .item-count {
     font-size: var(--font-size-xs);
     color: var(--text-muted);
 }
 
-.history-body {
+.action-history .history-body {
     display: flex;
     flex: 1;
     overflow: hidden;
 }
 
-.history-list {
+.action-history .history-list {
     flex: 1;
     overflow-y: auto;
     padding: 0;
@@ -55,19 +55,19 @@
     justify-content: flex-start;
 }
 
-.history-list::-webkit-scrollbar {
+.action-history .history-list::-webkit-scrollbar {
     display: none;
     /* Chrome/Safari */
 }
 
-.history-empty {
+.action-history .history-empty {
     text-align: center;
     padding: var(--spacing-md);
     color: var(--text-muted);
     font-size: var(--font-size-sm);
 }
 
-.history-item {
+.action-history .history-item {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
@@ -87,35 +87,35 @@
 }
 
 /* 縞々スタイル（センス良く） */
-.history-item.even {
+.action-history .history-item.even {
     background: rgba(59, 130, 246, 0.08);
 }
 
-.history-item.odd {
+.action-history .history-item.odd {
     background: rgba(16, 185, 129, 0.08);
 }
 
-.history-item:hover {
+.action-history .history-item:hover {
     background: var(--bg-hover);
 }
 
-.history-item.score {
+.action-history .history-item.score {
     border-left: 3px solid var(--color-success);
 }
 
-.history-item.stat {
+.action-history .history-item.stat {
     border-left: 3px solid var(--color-info);
 }
 
-.history-item.foul {
+.action-history .history-item.foul {
     border-left: 3px solid var(--danger);
 }
 
-.history-item.selected {
+.action-history .history-item.selected {
     background: var(--bg-hover);
 }
 
-.history-item .player-number {
+.action-history .history-item .player-number {
     font-weight: 700;
     font-size: var(--font-size-sm);
     color: var(--text-primary);
@@ -125,12 +125,12 @@
     /* 数字を中央揃えに */
 }
 
-.history-item .action-desc {
+.action-history .history-item .action-desc {
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
 }
 
-.action-menu {
+.action-history .action-menu {
     position: absolute;
     right: var(--spacing-xs);
     top: 50%;
@@ -144,7 +144,7 @@
 }
 
 /* ジョグダイヤル */
-.jog-dial {
+.action-history .jog-dial {
     width: 44px;
     min-width: 44px;
     display: flex;
@@ -159,11 +159,11 @@
     padding: 4px 0;
 }
 
-.jog-dial:active {
+.action-history .jog-dial:active {
     cursor: grabbing;
 }
 
-.dial-inner {
+.action-history .dial-inner {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -179,7 +179,7 @@
     transition: transform 0.05s ease-out;
 }
 
-.dial-grip {
+.action-history .dial-grip {
     width: 6px;
     height: 6px;
     background: #94a3b8;
@@ -188,25 +188,25 @@
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.dial-arrow {
+.action-history .dial-arrow {
     font-size: 10px;
     color: #64748b;
     user-select: none;
     pointer-events: none;
 }
 
-.dial-arrow.up {
+.action-history .dial-arrow.up {
     position: absolute;
     top: 2px;
 }
 
-.dial-arrow.down {
+.action-history .dial-arrow.down {
     position: absolute;
     bottom: 2px;
 }
 
 /* タッチ時のフィードバック */
-.jog-dial:active .dial-inner {
+.action-history .jog-dial:active .dial-inner {
     background: linear-gradient(145deg, #64748b, #334155);
     border-color: #94a3b8;
 }

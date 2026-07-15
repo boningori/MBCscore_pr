@@ -4,19 +4,19 @@
     min-height: 100vh;
 }
 
-.manager-header {
+:is(.my-team-manager, .my-team-editor) .manager-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
 }
 
-.manager-header h2 {
+:is(.my-team-manager, .my-team-editor) .manager-header h2 {
     margin: 0;
     color: var(--text-primary);
 }
 
-.manager-content {
+:is(.my-team-manager, .my-team-editor) .manager-content {
     max-width: 500px;
     margin: 0 auto;
     display: flex;
@@ -24,13 +24,13 @@
     gap: var(--spacing-md);
 }
 
-.manager-actions {
+:is(.my-team-manager, .my-team-editor) .manager-actions {
     display: flex;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
 }
 
-.team-list {
+:is(.my-team-manager, .my-team-editor) .team-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
@@ -38,7 +38,7 @@
     margin: 0 auto;
 }
 
-.list-empty {
+:is(.my-team-manager, .my-team-editor) .list-empty {
     grid-column: 1 / -1;
     text-align: center;
     padding: var(--spacing-xl);
@@ -47,7 +47,7 @@
     border: 2px dashed var(--border);
 }
 
-.team-card {
+:is(.my-team-manager, .my-team-editor) .team-card {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
@@ -57,22 +57,22 @@
     justify-content: space-between;
 }
 
-.team-card-info {
+:is(.my-team-manager, .my-team-editor) .team-card-info {
     margin-bottom: var(--spacing-md);
 }
 
-.team-card-name {
+:is(.my-team-manager, .my-team-editor) .team-card-name {
     margin: 0 0 var(--spacing-xs);
     color: var(--primary);
 }
 
-.team-card-detail {
+:is(.my-team-manager, .my-team-editor) .team-card-detail {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm);
 }
 
-.team-card-players {
+:is(.my-team-manager, .my-team-editor) .team-card-players {
     color: var(--text-muted);
     font-size: var(--font-size-sm);
     white-space: nowrap;
@@ -80,7 +80,7 @@
     text-overflow: ellipsis;
 }
 
-.team-card-actions {
+:is(.my-team-manager, .my-team-editor) .team-card-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -94,39 +94,39 @@
     margin: 0 auto;
 }
 
-.editor-header {
+:is(.my-team-manager, .my-team-editor) .editor-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
 }
 
-.editor-form {
+:is(.my-team-manager, .my-team-editor) .editor-form {
     background: var(--bg-secondary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
 }
 
-.form-section {
+:is(.my-team-manager, .my-team-editor) .form-section {
     margin-bottom: var(--spacing-xl);
 }
 
-.form-label {
+:is(.my-team-manager, .my-team-editor) .form-label {
     display: block;
     margin-bottom: var(--spacing-sm);
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.form-label-row {
+:is(.my-team-manager, .my-team-editor) .form-label-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-sm);
 }
 
-.input {
+:is(.my-team-manager, .my-team-editor) .input {
     width: 100%;
     padding: var(--spacing-sm);
     border: 1px solid var(--border);
@@ -136,49 +136,49 @@
     font-size: var(--font-size-md);
 }
 
-.add-player-row {
+:is(.my-team-manager, .my-team-editor) .add-player-row {
     display: flex;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
 }
 
-.player-number-input {
+:is(.my-team-manager, .my-team-editor) .player-number-input {
     width: 80px;
 }
 
-.player-name-input {
+:is(.my-team-manager, .my-team-editor) .player-name-input {
     flex: 1;
 }
 
-.player-courtname-input {
+:is(.my-team-manager, .my-team-editor) .player-courtname-input {
     flex: 0.8;
 }
 
-.player-license-input {
+:is(.my-team-manager, .my-team-editor) .player-license-input {
     width: 100px;
 }
 
-.editor-coach-row {
+:is(.my-team-manager, .my-team-editor) .editor-coach-row {
     display: flex;
     gap: var(--spacing-sm);
 }
 
-.editor-coach-name-input {
+:is(.my-team-manager, .my-team-editor) .editor-coach-name-input {
     flex: 1;
 }
 
-.editor-coach-license-input {
+:is(.my-team-manager, .my-team-editor) .editor-coach-license-input {
     width: 140px;
 }
 
-.players-list {
+:is(.my-team-manager, .my-team-editor) .players-list {
     display: grid;
     gap: var(--spacing-sm);
     max-height: 400px;
     overflow-y: auto;
 }
 
-.player-edit-card {
+:is(.my-team-manager, .my-team-editor) .player-edit-card {
     display: flex;
     align-items: center;
     padding: var(--spacing-sm);
@@ -187,35 +187,35 @@
     gap: var(--spacing-md);
 }
 
-.player-number {
+:is(.my-team-manager, .my-team-editor) .player-number {
     font-weight: 800;
     width: 40px;
     color: var(--primary);
 }
 
-.player-name {
+:is(.my-team-manager, .my-team-editor) .player-name {
     flex: 1;
 }
 
-.player-courtname {
+:is(.my-team-manager, .my-team-editor) .player-courtname {
     color: var(--text-muted);
     font-size: var(--font-size-sm);
     flex: 0.8;
 }
 
-.player-license {
+:is(.my-team-manager, .my-team-editor) .player-license {
     color: var(--text-muted);
     font-size: var(--font-size-sm);
     min-width: 80px;
     text-align: right;
 }
 
-.clickable {
+:is(.my-team-manager, .my-team-editor) .clickable {
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease;
 }
 
-.clickable:hover {
+:is(.my-team-manager, .my-team-editor) .clickable:hover {
     color: var(--primary);
     background: var(--bg-hover);
     border-radius: var(--radius-sm);
@@ -223,17 +223,17 @@
     margin: -2px -4px;
 }
 
-.player-edit-card.editing {
+:is(.my-team-manager, .my-team-editor) .player-edit-card.editing {
     background: var(--primary-light);
     border: 2px solid var(--primary);
 }
 
-.player-edit-actions {
+:is(.my-team-manager, .my-team-editor) .player-edit-actions {
     display: flex;
     gap: var(--spacing-sm);
 }
 
-.editor-actions {
+:is(.my-team-manager, .my-team-editor) .editor-actions {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-md);
@@ -242,7 +242,7 @@
     border-top: 1px solid var(--border);
 }
 
-.ocr-loading {
+:is(.my-team-manager, .my-team-editor) .ocr-loading {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -254,7 +254,7 @@
 }
 
 /* Modal Styles */
-.modal-overlay {
+:is(.my-team-manager, .my-team-editor) .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -268,7 +268,7 @@
     animation: fadeIn 0.2s ease;
 }
 
-.modal-content {
+:is(.my-team-manager, .my-team-editor) .modal-content {
     background: var(--bg-secondary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
@@ -278,36 +278,36 @@
     animation: slideUp 0.2s ease;
 }
 
-.modal-content h3 {
+:is(.my-team-manager, .my-team-editor) .modal-content h3 {
     margin-top: 0;
     color: var(--text-primary);
 }
 
-.modal-actions {
+:is(.my-team-manager, .my-team-editor) .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
 }
 
-.my-2 {
+:is(.my-team-manager, .my-team-editor) .my-2 {
     margin-top: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
 }
 
 /* タブレット以上: 横並び */
 @media (min-width: 601px) {
-    .manager-content {
+    :is(.my-team-manager, .my-team-editor) .manager-content {
         flex-direction: row;
         flex-wrap: wrap;
     }
 
-    .manager-content .btn {
+    :is(.my-team-manager, .my-team-editor) .manager-content .btn {
         flex: 1 1 calc(50% - var(--spacing-md) / 2);
         min-width: 200px;
     }
 
-    .manager-content .add-team-btn {
+    :is(.my-team-manager, .my-team-editor) .manager-content .add-team-btn {
         flex: 1 1 100%;
     }
 }
@@ -321,108 +321,108 @@
         padding: var(--spacing-sm);
     }
 
-    .editor-form {
+    :is(.my-team-manager, .my-team-editor) .editor-form {
         padding: var(--spacing-md);
     }
 
-    .team-list {
+    :is(.my-team-manager, .my-team-editor) .team-list {
         grid-template-columns: 1fr;
     }
 
-    .team-card-actions {
+    :is(.my-team-manager, .my-team-editor) .team-card-actions {
         flex-wrap: wrap;
     }
 
-    .editor-coach-row {
+    :is(.my-team-manager, .my-team-editor) .editor-coach-row {
         flex-direction: column;
     }
 
-    .editor-coach-license-input {
+    :is(.my-team-manager, .my-team-editor) .editor-coach-license-input {
         width: 100%;
     }
 
-    .add-player-row {
+    :is(.my-team-manager, .my-team-editor) .add-player-row {
         flex-wrap: wrap;
     }
 
-    .add-player-row .player-number-input {
+    :is(.my-team-manager, .my-team-editor) .add-player-row .player-number-input {
         width: calc(50% - var(--spacing-sm) / 2);
     }
 
-    .add-player-row .player-name-input,
-    .add-player-row .player-courtname-input {
+    :is(.my-team-manager, .my-team-editor) .add-player-row .player-name-input,
+    :is(.my-team-manager, .my-team-editor) .add-player-row .player-courtname-input {
         flex: 1 1 calc(50% - var(--spacing-sm) / 2);
         min-width: 0;
     }
 
-    .add-player-row .player-license-input {
+    :is(.my-team-manager, .my-team-editor) .add-player-row .player-license-input {
         flex: 1;
         width: auto;
     }
 
-    .add-player-row .btn {
+    :is(.my-team-manager, .my-team-editor) .add-player-row .btn {
         width: 100%;
     }
 
-    .player-edit-card {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card {
         flex-wrap: wrap;
         gap: var(--spacing-xs);
     }
 
-    .player-edit-card .player-numbers,
-    .player-edit-card .player-number {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-numbers,
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-number {
         width: auto;
     }
 
-    .player-edit-card .player-name {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-name {
         flex: 1;
         min-width: 0;
     }
 
-    .player-edit-card .player-courtname,
-    .player-edit-card .player-license {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-courtname,
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-license {
         font-size: 0.7rem;
     }
 
-    .player-edit-card .input {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .input {
         min-width: 0;
     }
 
-    .player-edit-card .player-number-input {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-number-input {
         width: 60px;
     }
 
-    .player-edit-card .player-name-input {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-name-input {
         flex: 1;
         min-width: 80px;
     }
 
-    .player-edit-card .player-courtname-input {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-courtname-input {
         flex: 1;
         min-width: 80px;
     }
 
-    .player-edit-card .player-license-input {
+    :is(.my-team-manager, .my-team-editor) .player-edit-card .player-license-input {
         flex: 1;
         width: auto;
         min-width: 80px;
     }
 
-    .editor-actions {
+    :is(.my-team-manager, .my-team-editor) .editor-actions {
         flex-direction: column-reverse;
     }
 
-    .editor-actions button {
+    :is(.my-team-manager, .my-team-editor) .editor-actions button {
         width: 100%;
     }
 
-    .modal-actions button {
+    :is(.my-team-manager, .my-team-editor) .modal-actions button {
         flex: 1;
     }
 }
 
 /* ステータスメッセージ（success / error） */
-.status-message {
+:is(.my-team-manager, .my-team-editor) .status-message {
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
@@ -434,19 +434,19 @@
     animation: fadeIn 0.2s ease;
 }
 
-.status-message.success {
+:is(.my-team-manager, .my-team-editor) .status-message.success {
     background: rgba(34, 197, 94, 0.2);
     color: var(--success);
     border: 1px solid var(--success);
 }
 
-.status-message.error {
+:is(.my-team-manager, .my-team-editor) .status-message.error {
     background: rgba(239, 68, 68, 0.2);
     color: var(--danger);
     border: 1px solid var(--danger);
 }
 
-.status-dismiss {
+:is(.my-team-manager, .my-team-editor) .status-dismiss {
     background: none;
     border: none;
     color: inherit;
@@ -457,12 +457,12 @@
     opacity: 0.7;
 }
 
-.status-dismiss:hover {
+:is(.my-team-manager, .my-team-editor) .status-dismiss:hover {
     opacity: 1;
 }
 
 /* インポート確認パネル */
-.import-confirm-panel {
+:is(.my-team-manager, .my-team-editor) .import-confirm-panel {
     padding: var(--spacing-md);
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
@@ -471,19 +471,19 @@
     animation: fadeIn 0.2s ease;
 }
 
-.import-confirm-panel h4 {
+:is(.my-team-manager, .my-team-editor) .import-confirm-panel h4 {
     margin: 0 0 var(--spacing-sm) 0;
     color: var(--text-primary);
     font-size: var(--font-size-md);
 }
 
-.import-summary {
+:is(.my-team-manager, .my-team-editor) .import-summary {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
 }
 
-.import-warning {
+:is(.my-team-manager, .my-team-editor) .import-warning {
     color: var(--warning, #f59e0b);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
@@ -491,7 +491,7 @@
 }
 
 /* 重要な警告（データ損失リスク） */
-.import-danger-warning {
+:is(.my-team-manager, .my-team-editor) .import-danger-warning {
     padding: var(--spacing-md);
     background: rgba(239, 68, 68, 0.15);
     border: 2px solid var(--danger);
@@ -499,40 +499,40 @@
     margin-bottom: var(--spacing-md);
 }
 
-.import-confirm-panel.has-duplicates {
+:is(.my-team-manager, .my-team-editor) .import-confirm-panel.has-duplicates {
     background: rgba(245, 158, 11, 0.1);
     border-color: rgba(245, 158, 11, 0.4);
 }
 
-.import-preview {
+:is(.my-team-manager, .my-team-editor) .import-preview {
     padding: var(--spacing-sm) var(--spacing-md);
     background: rgba(0, 0, 0, 0.15);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-sm);
 }
 
-.import-preview-line {
+:is(.my-team-manager, .my-team-editor) .import-preview-line {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 2px 0;
     line-height: 1.4;
 }
 
-.import-warning-title {
+:is(.my-team-manager, .my-team-editor) .import-warning-title {
     color: var(--danger);
     font-size: var(--font-size-md);
     font-weight: 700;
     margin: 0 0 var(--spacing-xs) 0;
 }
 
-.import-warning-text {
+:is(.my-team-manager, .my-team-editor) .import-warning-text {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
     margin: 0;
     line-height: 1.5;
 }
 
-.import-info {
+:is(.my-team-manager, .my-team-editor) .import-info {
     color: var(--primary-light);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
@@ -542,7 +542,7 @@
     border-radius: var(--radius-sm);
 }
 
-.import-confirm-actions {
+:is(.my-team-manager, .my-team-editor) .import-confirm-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -550,7 +550,7 @@
 }
 
 /* テキスト貼り付けパネル */
-.text-import-panel {
+:is(.my-team-manager, .my-team-editor) .text-import-panel {
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
@@ -559,13 +559,13 @@
     animation: fadeIn 0.2s ease;
 }
 
-.text-import-panel h4 {
+:is(.my-team-manager, .my-team-editor) .text-import-panel h4 {
     margin: 0 0 var(--spacing-sm) 0;
     color: var(--text-primary);
     font-size: var(--font-size-md);
 }
 
-.text-import-textarea {
+:is(.my-team-manager, .my-team-editor) .text-import-textarea {
     width: 100%;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
@@ -579,12 +579,12 @@
     box-sizing: border-box;
 }
 
-.text-import-textarea:focus {
+:is(.my-team-manager, .my-team-editor) .text-import-textarea:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.text-import-actions {
+:is(.my-team-manager, .my-team-editor) .text-import-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -592,7 +592,7 @@
 }
 
 /* テキスト入力バリデーション表示 */
-.text-validation {
+:is(.my-team-manager, .my-team-editor) .text-validation {
     font-size: var(--font-size-xs);
     margin: var(--spacing-xs) 0 0 0;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -600,12 +600,12 @@
     animation: fadeIn 0.2s ease;
 }
 
-.text-validation.valid {
+:is(.my-team-manager, .my-team-editor) .text-validation.valid {
     color: var(--success);
     background: rgba(34, 197, 94, 0.1);
 }
 
-.text-validation.invalid {
+:is(.my-team-manager, .my-team-editor) .text-validation.invalid {
     color: var(--warning, #f59e0b);
     background: rgba(245, 158, 11, 0.1);
 }

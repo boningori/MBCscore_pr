@@ -4,19 +4,19 @@
     min-height: 100vh;
 }
 
-.opponent-manager-header {
+.opponent-manager-container .opponent-manager-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
 }
 
-.opponent-manager-header h2 {
+.opponent-manager-container .opponent-manager-header h2 {
     margin: 0;
     color: var(--text-primary);
 }
 
-.opponent-manager-content {
+.opponent-manager-container .opponent-manager-content {
     max-width: 500px;
     margin: 0 auto;
     display: flex;
@@ -24,18 +24,18 @@
     gap: var(--spacing-md);
 }
 
-.add-team-btn {
+.opponent-manager-container .add-team-btn {
     width: 100%;
     margin-bottom: var(--spacing-lg);
 }
 
-.empty-state {
+.opponent-manager-container .empty-state {
     text-align: center;
     padding: var(--spacing-2xl);
     color: var(--text-muted);
 }
 
-.teams-list {
+.opponent-manager-container .teams-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
@@ -43,7 +43,7 @@
     margin: 0 auto;
 }
 
-.team-card {
+.opponent-manager-container .team-card {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
@@ -53,22 +53,22 @@
     justify-content: space-between;
 }
 
-.team-card-info {
+.opponent-manager-container .team-card-info {
     margin-bottom: var(--spacing-md);
 }
 
-.team-card-name {
+.opponent-manager-container .team-card-name {
     margin: 0 0 var(--spacing-xs);
     color: var(--primary);
 }
 
-.team-card-detail {
+.opponent-manager-container .team-card-detail {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm);
 }
 
-.team-card-players {
+.opponent-manager-container .team-card-players {
     color: var(--text-muted);
     font-size: var(--font-size-sm);
     white-space: nowrap;
@@ -76,7 +76,7 @@
     text-overflow: ellipsis;
 }
 
-.team-card-actions {
+.opponent-manager-container .team-card-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -84,7 +84,7 @@
 }
 
 /* Edit Form */
-.team-edit-form {
+.opponent-manager-container .team-edit-form {
     max-width: 800px;
     margin: 0 auto;
     background: var(--bg-secondary);
@@ -93,18 +93,18 @@
     border: 1px solid var(--border);
 }
 
-.form-group {
+.opponent-manager-container .form-group {
     margin-bottom: var(--spacing-lg);
 }
 
-.form-group label {
+.opponent-manager-container .form-group label {
     display: block;
     margin-bottom: var(--spacing-xs);
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.form-group input[type="text"] {
+.opponent-manager-container .form-group input[type="text"] {
     width: 100%;
     padding: var(--spacing-sm);
     border: 1px solid var(--border);
@@ -114,34 +114,34 @@
     color: var(--text-primary);
 }
 
-.players-section {
+.opponent-manager-container .players-section {
     margin-top: var(--spacing-xl);
 }
 
-.players-header {
+.opponent-manager-container .players-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-md);
 }
 
-.players-header h3 {
+.opponent-manager-container .players-header h3 {
     margin: 0;
 }
 
-.players-list {
+.opponent-manager-container .players-list {
     display: grid;
     gap: var(--spacing-sm);
 }
 
 /* Player Input Styles */
-.add-player-row {
+.opponent-manager-container .add-player-row {
     display: flex;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
 }
 
-.player-edit-row {
+.opponent-manager-container .player-edit-row {
     display: flex;
     align-items: center;
     padding: var(--spacing-sm);
@@ -150,40 +150,40 @@
     gap: var(--spacing-md);
 }
 
-.player-number {
+.opponent-manager-container .player-number {
     font-weight: 800;
     width: 40px;
     color: var(--primary);
 }
 
-.player-name {
+.opponent-manager-container .player-name {
     flex: 1;
 }
 
-.player-actions {
+.opponent-manager-container .player-actions {
     display: flex;
     gap: var(--spacing-sm);
 }
 
 /* クリック可能な要素 */
-.player-number.clickable,
-.player-name.clickable {
+.opponent-manager-container .player-number.clickable,
+.opponent-manager-container .player-name.clickable {
     cursor: pointer;
     transition: color 0.15s;
 }
 
-.player-number.clickable:hover,
-.player-name.clickable:hover {
+.opponent-manager-container .player-number.clickable:hover,
+.opponent-manager-container .player-name.clickable:hover {
     color: var(--primary-light);
 }
 
 /* 編集中の行 */
-.player-edit-row.editing {
+.opponent-manager-container .player-edit-row.editing {
     background: rgba(59, 130, 246, 0.15);
     border: 1px solid var(--primary);
 }
 
-.player-number-input {
+.opponent-manager-container .player-number-input {
     width: 80px;
     padding: var(--spacing-sm);
     text-align: center;
@@ -193,7 +193,7 @@
     color: var(--text-primary);
 }
 
-.player-name-input {
+.opponent-manager-container .player-name-input {
     flex: 1;
     padding: var(--spacing-sm);
     border: 1px solid var(--border);
@@ -203,12 +203,12 @@
 }
 
 /* Coach license row */
-.opponent-coach-row {
+.opponent-manager-container .opponent-coach-row {
     display: flex;
     gap: var(--spacing-sm);
 }
 
-.opponent-coach-row input[type="text"].opponent-coach-name-input {
+.opponent-manager-container .opponent-coach-row input[type="text"].opponent-coach-name-input {
     flex: 1;
     width: auto;
     min-width: 0;
@@ -219,7 +219,7 @@
     color: var(--text-primary);
 }
 
-.opponent-coach-row input[type="text"].opponent-coach-license-input {
+.opponent-manager-container .opponent-coach-row input[type="text"].opponent-coach-license-input {
     width: 140px;
     flex-shrink: 0;
     padding: var(--spacing-sm);
@@ -229,7 +229,7 @@
     color: var(--text-primary);
 }
 
-.opponent-player-license-input {
+.opponent-manager-container .opponent-player-license-input {
     width: 100px;
     padding: var(--spacing-sm);
     border: 1px solid var(--border);
@@ -238,14 +238,14 @@
     color: var(--text-primary);
 }
 
-.opponent-player-license {
+.opponent-manager-container .opponent-player-license {
     color: var(--text-muted);
     font-size: var(--font-size-sm);
     min-width: 80px;
     text-align: right;
 }
 
-.form-actions {
+.opponent-manager-container .form-actions {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-md);
@@ -255,7 +255,7 @@
 }
 
 /* Modal Styles */
-.modal-overlay {
+.opponent-manager-container .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -269,7 +269,7 @@
     animation: fadeIn 0.2s ease;
 }
 
-.modal-content {
+.opponent-manager-container .modal-content {
     background: var(--bg-secondary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
@@ -279,38 +279,38 @@
     animation: slideUp 0.2s ease;
 }
 
-.modal-content h3 {
+.opponent-manager-container .modal-content h3 {
     margin-top: 0;
     color: var(--text-primary);
 }
 
-.modal-actions {
+.opponent-manager-container .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
 }
 
-.my-2 {
+.opponent-manager-container .my-2 {
     margin-top: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
 }
 
 @media (max-width: 600px) {
-    .modal-actions button {
+    .opponent-manager-container .modal-actions button {
         flex: 1;
     }
 }
 
 /* OCR Styles */
-.players-header-row {
+.opponent-manager-container .players-header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-sm);
 }
 
-.ocr-loading {
+.opponent-manager-container .ocr-loading {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -322,7 +322,7 @@
 }
 
 /* Player Actions Row */
-.player-actions-row {
+.opponent-manager-container .player-actions-row {
     display: flex;
     gap: var(--spacing-xs);
     flex-wrap: wrap;
@@ -330,46 +330,46 @@
 
 /* タブレット以上: 横並び */
 @media (min-width: 601px) {
-    .opponent-manager-content {
+    .opponent-manager-container .opponent-manager-content {
         flex-direction: row;
         flex-wrap: wrap;
     }
 
-    .opponent-manager-content .btn {
+    .opponent-manager-container .opponent-manager-content .btn {
         flex: 1 1 calc(50% - var(--spacing-md) / 2);
         min-width: 200px;
     }
 
-    .opponent-manager-content .add-team-btn {
+    .opponent-manager-container .opponent-manager-content .add-team-btn {
         flex: 1 1 100%;
     }
 }
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
-    .players-header-row {
+    .opponent-manager-container .players-header-row {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--spacing-xs);
     }
 
-    .player-actions-row {
+    .opponent-manager-container .player-actions-row {
         flex-wrap: wrap;
         width: 100%;
     }
 
-    .player-actions-row .btn-small {
+    .opponent-manager-container .player-actions-row .btn-small {
         font-size: 0.75rem;
         padding: var(--spacing-xs) var(--spacing-sm);
     }
 
-    .team-card-actions {
+    .opponent-manager-container .team-card-actions {
         flex-wrap: wrap;
     }
 }
 
 /* ステータスメッセージ（success / error） */
-.status-message {
+.opponent-manager-container .status-message {
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
@@ -381,19 +381,19 @@
     animation: fadeIn 0.2s ease;
 }
 
-.status-message.success {
+.opponent-manager-container .status-message.success {
     background: rgba(34, 197, 94, 0.2);
     color: var(--success);
     border: 1px solid var(--success);
 }
 
-.status-message.error {
+.opponent-manager-container .status-message.error {
     background: rgba(239, 68, 68, 0.2);
     color: var(--danger);
     border: 1px solid var(--danger);
 }
 
-.status-dismiss {
+.opponent-manager-container .status-dismiss {
     background: none;
     border: none;
     color: inherit;
@@ -404,12 +404,12 @@
     opacity: 0.7;
 }
 
-.status-dismiss:hover {
+.opponent-manager-container .status-dismiss:hover {
     opacity: 1;
 }
 
 /* インポート確認パネル */
-.import-confirm-panel {
+.opponent-manager-container .import-confirm-panel {
     padding: var(--spacing-md);
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
@@ -418,19 +418,19 @@
     animation: fadeIn 0.2s ease;
 }
 
-.import-confirm-panel h4 {
+.opponent-manager-container .import-confirm-panel h4 {
     margin: 0 0 var(--spacing-sm) 0;
     color: var(--text-primary);
     font-size: var(--font-size-md);
 }
 
-.import-summary {
+.opponent-manager-container .import-summary {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
 }
 
-.import-warning {
+.opponent-manager-container .import-warning {
     color: var(--warning, #f59e0b);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
@@ -438,7 +438,7 @@
 }
 
 /* 重要な警告（データ損失リスク） */
-.import-danger-warning {
+.opponent-manager-container .import-danger-warning {
     padding: var(--spacing-md);
     background: rgba(239, 68, 68, 0.15);
     border: 2px solid var(--danger);
@@ -446,21 +446,21 @@
     margin-bottom: var(--spacing-md);
 }
 
-.import-warning-title {
+.opponent-manager-container .import-warning-title {
     color: var(--danger);
     font-size: var(--font-size-md);
     font-weight: 700;
     margin: 0 0 var(--spacing-xs) 0;
 }
 
-.import-warning-text {
+.opponent-manager-container .import-warning-text {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
     margin: 0;
     line-height: 1.5;
 }
 
-.import-info {
+.opponent-manager-container .import-info {
     color: var(--primary-light);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
@@ -470,40 +470,40 @@
     border-radius: var(--radius-sm);
 }
 
-.import-confirm-panel.has-duplicates {
+.opponent-manager-container .import-confirm-panel.has-duplicates {
     background: rgba(245, 158, 11, 0.1);
     border-color: rgba(245, 158, 11, 0.4);
 }
 
-.import-preview {
+.opponent-manager-container .import-preview {
     padding: var(--spacing-sm) var(--spacing-md);
     background: rgba(0, 0, 0, 0.15);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-sm);
 }
 
-.import-preview-line {
+.opponent-manager-container .import-preview-line {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 2px 0;
     line-height: 1.4;
 }
 
-.import-target-selector {
+.opponent-manager-container .import-target-selector {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
 }
 
-.import-target-selector label {
+.opponent-manager-container .import-target-selector label {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
     font-weight: 600;
     white-space: nowrap;
 }
 
-.import-target-selector select {
+.opponent-manager-container .import-target-selector select {
     padding: var(--spacing-xs) var(--spacing-sm);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -512,7 +512,7 @@
     font-size: var(--font-size-sm);
 }
 
-.import-confirm-actions {
+.opponent-manager-container .import-confirm-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -520,7 +520,7 @@
 }
 
 /* テキスト貼り付けパネル */
-.text-import-panel {
+.opponent-manager-container .text-import-panel {
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
@@ -529,13 +529,13 @@
     animation: fadeIn 0.2s ease;
 }
 
-.text-import-panel h4 {
+.opponent-manager-container .text-import-panel h4 {
     margin: 0 0 var(--spacing-sm) 0;
     color: var(--text-primary);
     font-size: var(--font-size-md);
 }
 
-.text-import-textarea {
+.opponent-manager-container .text-import-textarea {
     width: 100%;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
@@ -549,12 +549,12 @@
     box-sizing: border-box;
 }
 
-.text-import-textarea:focus {
+.opponent-manager-container .text-import-textarea:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.text-import-actions {
+.opponent-manager-container .text-import-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -562,7 +562,7 @@
 }
 
 /* テキスト入力バリデーション表示 */
-.text-validation {
+.opponent-manager-container .text-validation {
     font-size: var(--font-size-xs);
     margin: var(--spacing-xs) 0 0 0;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -570,12 +570,12 @@
     animation: fadeIn 0.2s ease;
 }
 
-.text-validation.valid {
+.opponent-manager-container .text-validation.valid {
     color: var(--success);
     background: rgba(34, 197, 94, 0.1);
 }
 
-.text-validation.invalid {
+.opponent-manager-container .text-validation.invalid {
     color: var(--warning, #f59e0b);
     background: rgba(245, 158, 11, 0.1);
 }

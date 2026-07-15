@@ -5,7 +5,7 @@
     padding: var(--spacing-lg);
 }
 
-.home-header {
+.home-container .home-header {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -13,14 +13,14 @@
     position: relative;
 }
 
-.home-brand {
+.home-container .home-brand {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
 }
 
-.home-title {
+.home-container .home-title {
     /* フォントサイズを画面に応じてスケール */
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: 800;
@@ -30,12 +30,12 @@
     line-height: 1;
 }
 
-.home-title .title-accent {
+.home-container .home-title .title-accent {
     color: #3b82f6;
     font-weight: 600;
 }
 
-.home-tagline {
+.home-container .home-tagline {
     font-size: 0.8rem;
     color: var(--text-muted);
     letter-spacing: 0.5px;
@@ -44,7 +44,7 @@
 
 /* ホーム画面のヘッダー専用。
    ゲーム画面の .header-left / .header-right と同名のためスコープを限定する */
-.home-header .header-left {
+.home-container .home-header .header-left {
     position: absolute;
     left: 0;
     top: 50%;
@@ -53,7 +53,7 @@
     gap: var(--spacing-xs);
 }
 
-.home-header .header-right {
+.home-container .home-header .header-right {
     position: absolute;
     right: 0;
     top: 50%;
@@ -62,7 +62,7 @@
     gap: var(--spacing-xs);
 }
 
-.btn-icon {
+.home-container .btn-icon {
     /* サイズを画面に応じてスケール */
     width: clamp(36px, 5vw, 40px);
     height: clamp(36px, 5vw, 40px);
@@ -73,14 +73,14 @@
     justify-content: center;
 }
 
-.home-content {
+.home-container .home-content {
     flex: 1;
     max-width: 500px;
     margin: 0 auto;
     width: 100%;
 }
 
-.home-welcome {
+.home-container .home-welcome {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -91,23 +91,23 @@
     border: 1px dashed var(--border);
 }
 
-.home-welcome h2 {
+.home-container .home-welcome h2 {
     font-size: var(--font-size-xl);
     margin-bottom: var(--spacing-md);
 }
 
-.home-welcome p {
+.home-container .home-welcome p {
     color: var(--text-secondary);
     margin-bottom: var(--spacing-lg);
 }
 
-.home-menu {
+.home-container .home-menu {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
 }
 
-.home-menu-item {
+.home-container .home-menu-item {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -121,53 +121,53 @@
     text-align: center;
 }
 
-.home-menu-item:hover {
+.home-container .home-menu-item:hover {
     border-color: var(--primary-light);
     transform: translateY(-2px);
 }
 
-.home-menu-item:active {
+.home-container .home-menu-item:active {
     transform: scale(0.98);
 }
 
-.home-menu-item.primary {
+.home-container .home-menu-item.primary {
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(5, 150, 105, 0.15));
     border-color: var(--primary);
 }
 
-.menu-icon {
+.home-container .menu-icon {
     /* サイズを画面に応じてスケール */
     font-size: clamp(24px, 4vw, 32px);
 }
 
-.menu-label {
+.home-container .menu-label {
     font-size: var(--font-size-lg);
     font-weight: 700;
     color: var(--text-primary);
 }
 
-.menu-description {
+.home-container .menu-description {
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
 }
 
-.home-recent {
+.home-container .home-recent {
     margin-top: var(--spacing-xl);
 }
 
-.home-recent h3 {
+.home-container .home-recent h3 {
     font-size: var(--font-size-md);
     color: var(--text-secondary);
     margin-bottom: var(--spacing-md);
 }
 
-.recent-list {
+.home-container .recent-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.recent-item {
+.home-container .recent-item {
     display: flex;
     justify-content: space-between;
     padding: var(--spacing-sm) var(--spacing-md);
@@ -175,16 +175,16 @@
     border-radius: var(--radius-md);
 }
 
-.recent-name {
+.home-container .recent-name {
     font-weight: 500;
 }
 
-.recent-players {
+.home-container .recent-players {
     color: var(--text-muted);
     font-size: var(--font-size-sm);
 }
 
-.home-footer {
+.home-container .home-footer {
     text-align: center;
     padding: var(--spacing-lg) 0;
     display: flex;
@@ -193,7 +193,7 @@
     gap: var(--spacing-sm);
 }
 
-.manual-link {
+.home-container .manual-link {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -207,7 +207,7 @@
     transition: all var(--transition-fast);
 }
 
-.manual-link:hover {
+.home-container .manual-link:hover {
     background: rgba(59, 130, 246, 0.1);
     border-color: var(--primary-light);
 }

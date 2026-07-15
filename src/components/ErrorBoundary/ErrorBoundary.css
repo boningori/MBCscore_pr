@@ -21,18 +21,18 @@
     line-height: 1.6;
 }
 
-.error-boundary-actions {
+.error-boundary .error-boundary-actions {
     display: flex;
     gap: 12px;
     margin: 24px 0 8px;
 }
 
-.error-boundary-actions .btn {
+.error-boundary .error-boundary-actions .btn {
     min-height: 48px;
     padding: 0 24px;
 }
 
-.error-boundary-contact {
+.error-boundary .error-boundary-contact {
     font-size: 0.85rem;
     color: var(--text-muted, #94a3b8);
 }
