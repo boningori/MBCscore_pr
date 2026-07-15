@@ -22,7 +22,7 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.settings-header {
+.app-settings-modal .settings-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -30,13 +30,13 @@
     border-bottom: 1px solid var(--border);
 }
 
-.settings-header h2 {
+.app-settings-modal .settings-header h2 {
     margin: 0;
     color: var(--text-primary);
     font-size: var(--font-size-lg);
 }
 
-.close-btn {
+.app-settings-modal .close-btn {
     background: none;
     border: none;
     color: var(--text-secondary);
@@ -46,36 +46,36 @@
     line-height: 1;
 }
 
-.close-btn:hover {
+.app-settings-modal .close-btn:hover {
     color: var(--text-primary);
 }
 
-.settings-content {
+.app-settings-modal .settings-content {
     padding: var(--spacing-lg);
 }
 
-.settings-section {
+.app-settings-modal .settings-section {
     margin-bottom: var(--spacing-xl);
 }
 
-.settings-section:last-child {
+.app-settings-modal .settings-section:last-child {
     margin-bottom: 0;
 }
 
-.settings-section h3 {
+.app-settings-modal .settings-section h3 {
     color: var(--text-primary);
     font-size: var(--font-size-md);
     margin: 0 0 var(--spacing-sm) 0;
 }
 
-.section-description {
+.app-settings-modal .section-description {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-md) 0;
     line-height: 1.5;
 }
 
-.security-notice {
+.app-settings-modal .security-notice {
     color: var(--text-secondary);
     font-size: var(--font-size-xs);
     margin: 0 0 var(--spacing-md) 0;
@@ -86,11 +86,11 @@
     line-height: 1.4;
 }
 
-.api-status {
+.app-settings-modal .api-status {
     margin-bottom: var(--spacing-md);
 }
 
-.status-badge {
+.app-settings-modal .status-badge {
     display: inline-block;
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
@@ -98,35 +98,35 @@
     font-weight: 600;
 }
 
-.status-badge.active {
+.app-settings-modal .status-badge.active {
     background: rgba(34, 197, 94, 0.2);
     color: var(--success);
     border: 1px solid var(--success);
 }
 
-.status-badge.inactive {
+.app-settings-modal .status-badge.inactive {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
     border: 1px solid var(--border);
 }
 
-.input-group {
+.app-settings-modal .input-group {
     margin-bottom: var(--spacing-md);
 }
 
-.input-group label {
+.app-settings-modal .input-group label {
     display: block;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin-bottom: var(--spacing-xs);
 }
 
-.password-wrapper {
+.app-settings-modal .password-wrapper {
     display: flex;
     gap: var(--spacing-xs);
 }
 
-.password-wrapper input {
+.app-settings-modal .password-wrapper input {
     flex: 1;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
@@ -136,12 +136,12 @@
     font-size: var(--font-size-sm);
 }
 
-.password-wrapper input:focus {
+.app-settings-modal .password-wrapper input:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.toggle-visibility {
+.app-settings-modal .toggle-visibility {
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -151,30 +151,30 @@
     font-size: var(--font-size-sm);
 }
 
-.toggle-visibility:hover {
+.app-settings-modal .toggle-visibility:hover {
     background: var(--bg-primary);
 }
 
-.test-connection-section {
+.app-settings-modal .test-connection-section {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-sm);
 }
 
-.test-status {
+.app-settings-modal .test-status {
     font-size: var(--font-size-sm);
 }
 
-.test-status.success {
+.app-settings-modal .test-status.success {
     color: var(--success);
 }
 
-.test-status.error {
+.app-settings-modal .test-status.error {
     color: var(--danger);
 }
 
-.help-link {
+.app-settings-modal .help-link {
     display: block;
     margin-top: var(--spacing-sm);
     color: var(--primary-light);
@@ -182,11 +182,11 @@
     text-decoration: none;
 }
 
-.help-link:hover {
+.app-settings-modal .help-link:hover {
     text-decoration: underline;
 }
 
-.help-link-large {
+.app-settings-modal .help-link-large {
     display: inline-block;
     padding: var(--spacing-md) var(--spacing-lg);
     background: var(--bg-tertiary);
@@ -197,35 +197,35 @@
     transition: all 0.2s ease;
 }
 
-.help-link-large:hover {
+.app-settings-modal .help-link-large:hover {
     background: var(--bg-primary);
     border-color: var(--primary);
     text-decoration: none;
 }
 
-.contact-info {
+.app-settings-modal .contact-info {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
 }
 
-.contact-item {
+.app-settings-modal .contact-item {
     margin: var(--spacing-xs) 0;
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
 }
 
-.contact-item a {
+.app-settings-modal .contact-item a {
     color: var(--primary-light);
     text-decoration: none;
 }
 
-.contact-item a:hover {
+.app-settings-modal .contact-item a:hover {
     text-decoration: underline;
 }
 
-.settings-footer {
+.app-settings-modal .settings-footer {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-sm);
@@ -234,12 +234,12 @@
 }
 
 /* デフォルトゲームモード選択 */
-.mode-selector {
+.app-settings-modal .mode-selector {
     display: flex;
     gap: var(--spacing-md);
 }
 
-.mode-btn {
+.app-settings-modal .mode-btn {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -253,40 +253,40 @@
     transition: all 0.2s ease;
 }
 
-.mode-btn:hover {
+.app-settings-modal .mode-btn:hover {
     border-color: var(--primary);
     background: var(--bg-primary);
 }
 
-.mode-btn.active {
+.app-settings-modal .mode-btn.active {
     border-color: var(--primary);
     background: rgba(59, 130, 246, 0.15);
 }
 
-.mode-icon {
+.app-settings-modal .mode-icon {
     font-size: 1.5rem;
 }
 
-.mode-label {
+.app-settings-modal .mode-label {
     font-size: var(--font-size-md);
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.mode-desc {
+.app-settings-modal .mode-desc {
     font-size: var(--font-size-xs);
     color: var(--text-secondary);
     text-align: center;
 }
 
 /* データ管理セクション */
-.data-management-buttons {
+.app-settings-modal .data-management-buttons {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
 }
 
-.data-section-card {
+.app-settings-modal .data-section-card {
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
@@ -296,14 +296,14 @@
     gap: var(--spacing-sm);
 }
 
-.subsection-title {
+.app-settings-modal .subsection-title {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
     font-weight: 600;
     margin: 0;
 }
 
-.btn-block {
+.app-settings-modal .btn-block {
     width: 100%;
     text-align: left;
     justify-content: flex-start;
@@ -311,7 +311,7 @@
     align-items: flex-start;
 }
 
-.btn-description {
+.app-settings-modal .btn-description {
     display: block;
     font-size: var(--font-size-xs);
     color: var(--text-secondary);
@@ -320,7 +320,7 @@
     line-height: 1.5;
 }
 
-.excel-badge {
+.app-settings-modal .excel-badge {
     display: inline-block;
     font-size: 10px;
     padding: 1px 6px;
@@ -333,7 +333,7 @@
 }
 
 /* ステータスメッセージ（success / error） */
-.status-message {
+.app-settings-modal .status-message {
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
@@ -345,19 +345,19 @@
     animation: fadeIn 0.2s ease;
 }
 
-.status-message.success {
+.app-settings-modal .status-message.success {
     background: rgba(34, 197, 94, 0.2);
     color: var(--success);
     border: 1px solid var(--success);
 }
 
-.status-message.error {
+.app-settings-modal .status-message.error {
     background: rgba(239, 68, 68, 0.2);
     color: var(--danger);
     border: 1px solid var(--danger);
 }
 
-.status-dismiss {
+.app-settings-modal .status-dismiss {
     background: none;
     border: none;
     color: inherit;
@@ -368,12 +368,12 @@
     opacity: 0.7;
 }
 
-.status-dismiss:hover {
+.app-settings-modal .status-dismiss:hover {
     opacity: 1;
 }
 
 /* インポート確認パネル */
-.import-confirm-panel {
+.app-settings-modal .import-confirm-panel {
     padding: var(--spacing-md);
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
@@ -382,19 +382,19 @@
     animation: fadeIn 0.2s ease;
 }
 
-.import-confirm-panel h4 {
+.app-settings-modal .import-confirm-panel h4 {
     margin: 0 0 var(--spacing-sm) 0;
     color: var(--text-primary);
     font-size: var(--font-size-md);
 }
 
-.import-summary {
+.app-settings-modal .import-summary {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
 }
 
-.import-warning {
+.app-settings-modal .import-warning {
     color: var(--warning, #f59e0b);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
@@ -402,7 +402,7 @@
 }
 
 /* 重要な警告（データ損失リスク） */
-.import-danger-warning {
+.app-settings-modal .import-danger-warning {
     padding: var(--spacing-md);
     background: rgba(239, 68, 68, 0.15);
     border: 2px solid var(--danger);
@@ -410,21 +410,21 @@
     margin-bottom: var(--spacing-md);
 }
 
-.import-warning-title {
+.app-settings-modal .import-warning-title {
     color: var(--danger);
     font-size: var(--font-size-md);
     font-weight: 700;
     margin: 0 0 var(--spacing-xs) 0;
 }
 
-.import-warning-text {
+.app-settings-modal .import-warning-text {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
     margin: 0;
     line-height: 1.5;
 }
 
-.import-info {
+.app-settings-modal .import-info {
     color: var(--primary-light);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
@@ -434,40 +434,40 @@
     border-radius: var(--radius-sm);
 }
 
-.import-confirm-panel.has-duplicates {
+.app-settings-modal .import-confirm-panel.has-duplicates {
     background: rgba(245, 158, 11, 0.1);
     border-color: rgba(245, 158, 11, 0.4);
 }
 
-.import-preview {
+.app-settings-modal .import-preview {
     padding: var(--spacing-sm) var(--spacing-md);
     background: rgba(0, 0, 0, 0.15);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-sm);
 }
 
-.import-preview-line {
+.app-settings-modal .import-preview-line {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     margin: 2px 0;
     line-height: 1.4;
 }
 
-.import-target-selector {
+.app-settings-modal .import-target-selector {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
 }
 
-.import-target-selector label {
+.app-settings-modal .import-target-selector label {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
     font-weight: 600;
     white-space: nowrap;
 }
 
-.import-target-selector select {
+.app-settings-modal .import-target-selector select {
     padding: var(--spacing-xs) var(--spacing-sm);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -476,7 +476,7 @@
     font-size: var(--font-size-sm);
 }
 
-.import-confirm-actions {
+.app-settings-modal .import-confirm-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -484,7 +484,7 @@
 }
 
 /* テキスト貼り付けパネル */
-.text-import-panel {
+.app-settings-modal .text-import-panel {
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
@@ -493,24 +493,24 @@
     animation: fadeIn 0.2s ease;
 }
 
-.text-import-panel h4 {
+.app-settings-modal .text-import-panel h4 {
     margin: 0 0 var(--spacing-sm) 0;
     color: var(--text-primary);
     font-size: var(--font-size-md);
 }
 
-.text-import-hint {
+.app-settings-modal .text-import-hint {
     color: var(--text-secondary);
     font-size: var(--font-size-xs);
     margin: 0 0 var(--spacing-sm) 0;
     line-height: 1.5;
 }
 
-.import-merge-info {
+.app-settings-modal .import-merge-info {
     margin-bottom: var(--spacing-sm);
 }
 
-.text-import-textarea {
+.app-settings-modal .text-import-textarea {
     width: 100%;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
@@ -524,12 +524,12 @@
     box-sizing: border-box;
 }
 
-.text-import-textarea:focus {
+.app-settings-modal .text-import-textarea:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.text-import-actions {
+.app-settings-modal .text-import-actions {
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
@@ -537,7 +537,7 @@
 }
 
 /* テキスト入力バリデーション表示 */
-.text-validation {
+.app-settings-modal .text-validation {
     font-size: var(--font-size-xs);
     margin: var(--spacing-xs) 0 0 0;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -545,12 +545,12 @@
     animation: fadeIn 0.2s ease;
 }
 
-.text-validation.valid {
+.app-settings-modal .text-validation.valid {
     color: var(--success);
     background: rgba(34, 197, 94, 0.1);
 }
 
-.text-validation.invalid {
+.app-settings-modal .text-validation.invalid {
     color: var(--warning, #f59e0b);
     background: rgba(245, 158, 11, 0.1);
 }
@@ -567,7 +567,7 @@
     }
 }
 
-.backup-notice {
+.app-settings-modal .backup-notice {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
     background: rgba(245, 158, 11, 0.1);
@@ -576,27 +576,27 @@
     font-size: var(--font-size-sm);
 }
 
-.backup-notice p {
+.app-settings-modal .backup-notice p {
     margin: 0 0 var(--spacing-xs) 0;
     color: var(--text-primary);
 }
 
-.backup-notice ul {
+.app-settings-modal .backup-notice ul {
     margin: 0;
     padding-left: var(--spacing-lg);
     color: var(--text-secondary);
     line-height: 1.6;
 }
 
-.backup-notice li {
+.app-settings-modal .backup-notice li {
     margin-bottom: var(--spacing-xs);
 }
 
-.backup-notice li:last-child {
+.app-settings-modal .backup-notice li:last-child {
     margin-bottom: 0;
 }
 
-.error-log-detail {
+.app-settings-modal .error-log-detail {
     margin-top: 12px;
     padding: 12px;
     background: rgba(0, 0, 0, 0.3);
@@ -608,7 +608,7 @@
     overflow-y: auto;
 }
 
-.backup-buttons {
+.app-settings-modal .backup-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;

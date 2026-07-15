@@ -25,13 +25,13 @@
     color: var(--text-primary);
 }
 
-.foul-type-list {
+.foul-type-selector .foul-type-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.foul-type-btn {
+.foul-type-selector .foul-type-btn {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -43,22 +43,22 @@
     transition: all 0.2s;
 }
 
-.foul-type-btn:hover:not(.disabled) {
+.foul-type-selector .foul-type-btn:hover:not(.disabled) {
     border-color: var(--warning);
     background: rgba(255, 193, 7, 0.1);
 }
 
-.foul-type-btn.selected {
+.foul-type-selector .foul-type-btn.selected {
     border-color: var(--warning);
     background: rgba(255, 193, 7, 0.2);
 }
 
-.foul-type-btn.disabled {
+.foul-type-selector .foul-type-btn.disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.foul-type-label {
+.foul-type-selector .foul-type-label {
     font-weight: 800;
     font-size: var(--font-size-lg);
     color: var(--warning);
@@ -66,12 +66,12 @@
     text-align: center;
 }
 
-.foul-type-desc {
+.foul-type-selector .foul-type-desc {
     color: var(--text-primary);
     font-size: var(--font-size-sm);
 }
 
-.foul-type-actions {
+.foul-type-selector .foul-type-actions {
     margin-top: var(--spacing-lg);
     display: flex;
     justify-content: center;
@@ -86,28 +86,28 @@
         padding: var(--spacing-md);
     }
 
-    .foul-type-btn {
+    .foul-type-selector .foul-type-btn {
         padding: var(--spacing-lg);
         min-height: 60px;
     }
 
-    .foul-type-label {
+    .foul-type-selector .foul-type-label {
         font-size: var(--font-size-xl);
         min-width: 50px;
     }
 
-    .foul-type-desc {
+    .foul-type-selector .foul-type-desc {
         font-size: var(--font-size-md);
     }
 
-    .foul-type-actions .btn {
+    .foul-type-selector .foul-type-actions .btn {
         width: 100%;
         padding: var(--spacing-md);
     }
 }
 
 /* ファウル警告表示 */
-.foul-warning {
+.foul-type-selector .foul-warning {
     background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(147, 51, 234, 0.2));
     border: 2px solid var(--danger);
     border-radius: var(--radius-md);
@@ -132,7 +132,7 @@
 }
 
 /* ファウル数情報 */
-.foul-count-info {
+.foul-type-selector .foul-count-info {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -143,17 +143,17 @@
     font-size: var(--font-size-sm);
 }
 
-.foul-trouble {
+.foul-type-selector .foul-trouble {
     color: var(--warning);
     font-weight: 600;
 }
 
 /* 警告コンテキスト */
-.foul-type-btn.warning-context {
+.foul-type-selector .foul-type-btn.warning-context {
     border-color: rgba(220, 38, 38, 0.5);
 }
 
-.foul-type-btn.warning-context:hover:not(.disabled) {
+.foul-type-selector .foul-type-btn.warning-context:hover:not(.disabled) {
     border-color: var(--danger);
     background: rgba(220, 38, 38, 0.1);
 }

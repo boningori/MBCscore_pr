@@ -25,25 +25,25 @@
     color: var(--text-primary);
 }
 
-.edit-form {
+.edit-action-modal .edit-form {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
 }
 
-.form-group {
+.edit-action-modal .form-group {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
 }
 
-.form-group label {
+.edit-action-modal .form-group label {
     font-weight: 600;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
 }
 
-.form-group select {
+.edit-action-modal .form-group select {
     padding: var(--spacing-sm);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -52,14 +52,14 @@
     font-size: var(--font-size-md);
 }
 
-.edit-actions {
+.edit-action-modal .edit-actions {
     margin-top: var(--spacing-lg);
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-sm);
 }
 
-.form-group-inline {
+.edit-action-modal .form-group-inline {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -69,19 +69,19 @@
     padding: var(--spacing-sm) var(--spacing-md);
 }
 
-.form-group-inline label {
+.edit-action-modal .form-group-inline label {
     font-size: var(--font-size-md);
     color: var(--text-primary);
 }
 
-.form-group-inline input[type="checkbox"] {
+.edit-action-modal .form-group-inline input[type="checkbox"] {
     width: 20px;
     height: 20px;
     cursor: pointer;
     accent-color: #ff9800;
 }
 
-.conversion-notice {
+.edit-action-modal .conversion-notice {
     background: rgba(255, 193, 7, 0.15);
     border: 1px solid rgba(255, 193, 7, 0.5);
     border-radius: var(--radius-md);

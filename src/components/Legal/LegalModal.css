@@ -19,7 +19,7 @@
     flex-direction: column;
 }
 
-.legal-modal-header {
+.legal-modal .legal-modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -27,12 +27,12 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.legal-tabs {
+.legal-modal .legal-tabs {
     display: flex;
     gap: 8px;
 }
 
-.legal-tabs button {
+.legal-modal .legal-tabs button {
     background: transparent;
     border: none;
     color: var(--text-muted, #94a3b8);
@@ -42,13 +42,13 @@
     font-size: 0.9rem;
 }
 
-.legal-tabs button.active {
+.legal-modal .legal-tabs button.active {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary, #f1f5f9);
     font-weight: bold;
 }
 
-.legal-close {
+.legal-modal .legal-close {
     background: transparent;
     border: none;
     color: var(--text-muted, #94a3b8);
@@ -57,36 +57,36 @@
     padding: 0 8px;
 }
 
-.legal-modal-body {
+.legal-modal .legal-modal-body {
     padding: 16px 20px;
     overflow-y: auto;
     line-height: 1.7;
     font-size: 0.9rem;
 }
 
-.legal-modal-body h2 {
+.legal-modal .legal-modal-body h2 {
     font-size: 1.1rem;
     margin: 0 0 8px;
 }
 
-.legal-modal-body h3 {
+.legal-modal .legal-modal-body h3 {
     font-size: 0.95rem;
     margin: 16px 0 4px;
 }
 
-.legal-modal-body a {
+.legal-modal .legal-modal-body a {
     color: var(--primary, #3b82f6);
 }
 
-.license-list {
+.legal-modal .license-list {
     padding-left: 20px;
 }
 
-.license-list li {
+.legal-modal .license-list li {
     margin: 8px 0;
 }
 
-.license-note {
+.legal-modal .license-note {
     font-size: 0.8rem;
     color: var(--text-muted, #94a3b8);
 }
