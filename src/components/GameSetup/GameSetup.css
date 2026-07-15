@@ -6,20 +6,20 @@
     flex-direction: column;
 }
 
-.setup-header {
+.game-setup .setup-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
 }
 
-.setup-header h2 {
+.game-setup .setup-header h2 {
     margin: 0;
     color: var(--text-primary);
 }
 
 /* Progress Steps - Modern Stepper */
-.setup-progress {
+.game-setup .setup-progress {
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -28,7 +28,7 @@
     gap: 0;
 }
 
-.step-item {
+.game-setup .step-item {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -36,7 +36,7 @@
     min-width: 80px;
 }
 
-.step-circle {
+.game-setup .step-circle {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -53,7 +53,7 @@
     z-index: 1;
 }
 
-.step-item.active .step-circle {
+.game-setup .step-item.active .step-circle {
     background: linear-gradient(135deg, var(--primary), #4a90d9);
     color: white;
     border-color: var(--primary);
@@ -61,13 +61,13 @@
     transform: scale(1.1);
 }
 
-.step-item.completed .step-circle {
+.game-setup .step-item.completed .step-circle {
     background: linear-gradient(135deg, var(--success), #38a169);
     color: white;
     border-color: var(--success);
 }
 
-.step-label {
+.game-setup .step-label {
     font-size: var(--font-size-xs);
     color: var(--text-muted);
     font-weight: 500;
@@ -75,16 +75,16 @@
     transition: color 0.3s ease;
 }
 
-.step-item.active .step-label {
+.game-setup .step-item.active .step-label {
     color: var(--primary);
     font-weight: 700;
 }
 
-.step-item.completed .step-label {
+.game-setup .step-item.completed .step-label {
     color: var(--success);
 }
 
-.step-connector {
+.game-setup .step-connector {
     flex: 1;
     height: 3px;
     background: var(--border);
@@ -95,59 +95,59 @@
     transition: background 0.3s ease;
 }
 
-.step-connector.completed {
+.game-setup .step-connector.completed {
     background: linear-gradient(90deg, var(--success), var(--primary));
 }
 
 /* Responsive: 狭い画面ではコネクタをさらに縮小 */
 @media (max-width: 480px) {
-    .setup-progress {
+    .game-setup .setup-progress {
         padding: var(--spacing-sm) var(--spacing-xs);
     }
 
-    .step-item {
+    .game-setup .step-item {
         min-width: 50px;
     }
 
-    .step-circle {
+    .game-setup .step-circle {
         width: 32px;
         height: 32px;
         font-size: var(--font-size-sm);
         border-width: 2px;
     }
 
-    .step-item.active .step-circle {
+    .game-setup .step-item.active .step-circle {
         transform: scale(1.05);
     }
 
-    .step-connector {
+    .game-setup .step-connector {
         min-width: 8px;
         max-width: 30px;
         margin-top: 14px; /* 円の高さ32pxの半分-2px */
     }
 
-    .step-label {
+    .game-setup .step-label {
         font-size: 10px;
     }
 }
 
 /* さらに狭い画面ではラベルを非表示 */
 @media (max-width: 360px) {
-    .step-label {
+    .game-setup .step-label {
         display: none;
     }
 
-    .step-item {
+    .game-setup .step-item {
         min-width: 36px;
     }
 
-    .step-circle {
+    .game-setup .step-circle {
         width: 28px;
         height: 28px;
         font-size: var(--font-size-xs);
     }
 
-    .step-connector {
+    .game-setup .step-connector {
         min-width: 4px;
         max-width: 20px;
         margin-top: 12px;
@@ -155,14 +155,14 @@
 }
 
 /* Setup Content */
-.setup-content {
+.game-setup .setup-content {
     flex: 1;
     max-width: 800px;
     margin: 0 auto;
     width: 100%;
 }
 
-.setup-step {
+.game-setup .setup-step {
     background: var(--bg-secondary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
@@ -182,17 +182,17 @@
     }
 }
 
-.setup-step h3 {
+.game-setup .setup-step h3 {
     margin: 0 0 var(--spacing-xl);
     text-align: center;
     color: var(--text-primary);
 }
 
-.form-group {
+.game-setup .form-group {
     margin-bottom: var(--spacing-lg);
 }
 
-.form-group label {
+.game-setup .form-group label {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -202,7 +202,7 @@
 }
 
 /* 「任意」バッジ */
-.label-optional {
+.game-setup .label-optional {
     font-size: var(--font-size-xs);
     font-weight: 600;
     color: var(--text-muted);
@@ -214,7 +214,7 @@
 }
 
 /* 入力欄の補足ヒント */
-.field-hint {
+.game-setup .field-hint {
     margin: var(--spacing-sm) 0 0;
     font-size: var(--font-size-xs);
     color: var(--text-muted);
@@ -222,11 +222,11 @@
 }
 
 /* カスタムサジェスションドロップダウン */
-.suggestion-input-wrapper {
+.game-setup .suggestion-input-wrapper {
     position: relative;
 }
 
-.suggestion-dropdown {
+.game-setup .suggestion-dropdown {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
@@ -253,7 +253,7 @@
     }
 }
 
-.suggestion-dropdown-header {
+.game-setup .suggestion-dropdown-header {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -264,11 +264,11 @@
     letter-spacing: 0.03em;
 }
 
-.suggestion-dropdown-header svg {
+.game-setup .suggestion-dropdown-header svg {
     opacity: 0.7;
 }
 
-.suggestion-item {
+.game-setup .suggestion-item {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -287,32 +287,32 @@
     user-select: none;
 }
 
-.suggestion-item-icon {
+.game-setup .suggestion-item-icon {
     display: inline-flex;
     color: var(--text-muted);
     transition: color 0.12s ease;
     flex-shrink: 0;
 }
 
-.suggestion-item-text {
+.game-setup .suggestion-item-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.suggestion-item:hover,
-.suggestion-item.active {
+.game-setup .suggestion-item:hover,
+.game-setup .suggestion-item.active {
     background: rgba(59, 130, 246, 0.16);
     color: var(--primary-light);
 }
 
-.suggestion-item:hover .suggestion-item-icon,
-.suggestion-item.active .suggestion-item-icon {
+.game-setup .suggestion-item:hover .suggestion-item-icon,
+.game-setup .suggestion-item.active .suggestion-item-icon {
     color: var(--primary-light);
 }
 
 /* 確認画面: 自動命名バッジ */
-.confirm-auto-badge {
+.game-setup .confirm-auto-badge {
     display: inline-block;
     margin-left: var(--spacing-sm);
     font-size: var(--font-size-xs);
@@ -324,18 +324,18 @@
     vertical-align: middle;
 }
 
-.next-btn {
+.game-setup .next-btn {
     width: 100%;
     margin-top: var(--spacing-lg);
 }
 
 /* My Team Select */
-.team-select-list {
+.game-setup .team-select-list {
     display: grid;
     gap: var(--spacing-md);
 }
 
-.select-card {
+.game-setup .select-card {
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border: 2px solid transparent;
@@ -346,43 +346,43 @@
     align-items: center;
 }
 
-.select-card:hover {
+.game-setup .select-card:hover {
     background: var(--bg-hover);
 }
 
-.select-card.selected {
+.game-setup .select-card.selected {
     border-color: var(--primary);
     background: var(--primary-light);
 }
 
-.team-name {
+.game-setup .team-name {
     font-weight: 600;
 }
 
-.team-detail {
+.game-setup .team-detail {
     color: var(--text-muted);
     font-size: var(--font-size-sm);
 }
 
-.manage-btn {
+.game-setup .manage-btn {
     margin-top: var(--spacing-lg);
     width: 100%;
 }
 
-.no-teams {
+.game-setup .no-teams {
     text-align: center;
     padding: var(--spacing-xl);
 }
 
 /* Confirm */
-.confirm-card {
+.game-setup .confirm-card {
     background: var(--bg-tertiary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-xl);
 }
 
-.confirm-row {
+.game-setup .confirm-row {
     display: flex;
     justify-content: space-between;
     margin-bottom: var(--spacing-md);
@@ -390,11 +390,11 @@
     border-bottom: 1px solid var(--border);
 }
 
-.confirm-row:last-child {
+.game-setup .confirm-row:last-child {
     border-bottom: none;
 }
 
-.confirm-vs {
+.game-setup .confirm-vs {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -406,7 +406,7 @@
 
 
 /* Team Color Indicators */
-.color-indicator {
+.game-setup .color-indicator {
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -414,17 +414,17 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.color-indicator.white {
+.game-setup .color-indicator.white {
     background: #ffffff;
     border: 3px solid #cbd5e0;
 }
 
-.color-indicator.blue {
+.game-setup .color-indicator.blue {
     background: #3182ce;
     border: 3px solid #2c5282;
 }
 
-.vs-team {
+.game-setup .vs-team {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -433,43 +433,43 @@
     transition: all 0.3s ease;
 }
 
-.vs-label {
+.game-setup .vs-label {
     font-size: var(--font-size-xs);
     color: var(--text-muted);
 }
 
-.vs-name {
+.game-setup .vs-name {
     font-weight: 800;
     font-size: var(--font-size-lg);
     text-align: center;
 }
 
-.vs-mark {
+.game-setup .vs-mark {
     font-weight: 900;
     color: var(--danger);
     font-size: var(--font-size-xl);
     padding: 0 var(--spacing-md);
 }
 
-.start-game-btn {
+.game-setup .start-game-btn {
     width: 100%;
     font-size: var(--font-size-lg);
     padding: var(--spacing-lg);
 }
 
 /* Number Type Selection */
-.confirm-number-type {
+.game-setup .confirm-number-type {
     margin-top: var(--spacing-lg);
     padding-top: var(--spacing-lg);
     border-top: 1px solid var(--border);
 }
 
 /* Color Swap */
-.confirm-colors {
+.game-setup .confirm-colors {
     margin-top: var(--spacing-lg);
 }
 
-.confirm-colors .btn {
+.game-setup .confirm-colors .btn {
     width: 100%;
     font-size: var(--font-size-md);
     padding: var(--spacing-md) var(--spacing-lg);
@@ -481,24 +481,24 @@
     transition: all 0.2s ease;
 }
 
-.confirm-colors .btn:hover {
+.game-setup .confirm-colors .btn:hover {
     background-color: var(--bg-hover);
     border-color: var(--primary);
 }
 
-.number-type-label {
+.game-setup .number-type-label {
     display: block;
     color: var(--text-secondary);
     font-weight: 600;
     margin-bottom: var(--spacing-md);
 }
 
-.number-type-options {
+.game-setup .number-type-options {
     display: flex;
     gap: var(--spacing-md);
 }
 
-.number-type-option {
+.game-setup .number-type-option {
     flex: 1;
     display: flex;
     align-items: center;
@@ -512,56 +512,56 @@
     transition: all 0.2s ease;
 }
 
-.number-type-option:hover {
+.game-setup .number-type-option:hover {
     background: var(--bg-hover);
 }
 
-.number-type-option.selected {
+.game-setup .number-type-option.selected {
     border-color: var(--primary);
     background: var(--primary-light);
 }
 
-.number-type-option input[type="radio"] {
+.game-setup .number-type-option input[type="radio"] {
     accent-color: var(--primary);
 }
 
-.number-type-option span {
+.game-setup .number-type-option span {
     font-weight: 500;
 }
 
 /* Player Confirm Step */
-.player-confirm-desc {
+.game-setup .player-confirm-desc {
     text-align: center;
     color: var(--text-secondary);
     margin-bottom: var(--spacing-md);
 }
 
-.player-count {
+.game-setup .player-count {
     text-align: center;
     margin-bottom: var(--spacing-lg);
     font-size: var(--font-size-md);
     color: var(--text-secondary);
 }
 
-.player-count strong {
+.game-setup .player-count strong {
     color: var(--text-primary);
     font-size: var(--font-size-lg);
 }
 
-.player-count-warning {
+.game-setup .player-count-warning {
     color: var(--danger);
     font-weight: 600;
     margin-left: var(--spacing-xs);
 }
 
-.player-check-list {
+.game-setup .player-check-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-lg);
 }
 
-.player-check-item {
+.game-setup .player-check-item {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -572,34 +572,34 @@
     transition: opacity 0.2s ease, background 0.2s ease;
 }
 
-.player-check-item:hover {
+.game-setup .player-check-item:hover {
     background: var(--bg-hover);
 }
 
-.player-check-item.excluded {
+.game-setup .player-check-item.excluded {
     opacity: 0.4;
     text-decoration: line-through;
 }
 
-.player-check-item input[type="checkbox"] {
+.game-setup .player-check-item input[type="checkbox"] {
     width: 20px;
     height: 20px;
     accent-color: var(--primary);
     flex-shrink: 0;
 }
 
-.player-number {
+.game-setup .player-number {
     font-weight: 700;
     min-width: 40px;
     color: var(--text-primary);
 }
 
-.player-name-text {
+.game-setup .player-name-text {
     flex: 1;
     color: var(--text-primary);
 }
 
-.captain-badge {
+.game-setup .captain-badge {
     background: var(--warning);
     color: #fff;
     font-weight: 700;
@@ -612,12 +612,12 @@
     justify-content: center;
 }
 /* 3Pシュート セグメント（確認画面・選択側を緑で強調） */
-.three-point-option.selected {
+.game-setup .three-point-option.selected {
     border-color: var(--secondary-light);
     background: rgba(16, 185, 129, 0.15);
 }
 
-.three-point-option input[type="radio"] {
+.game-setup .three-point-option input[type="radio"] {
     accent-color: var(--secondary-light);
 }
 
