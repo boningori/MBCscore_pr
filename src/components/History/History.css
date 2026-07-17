@@ -2,6 +2,7 @@
     padding: var(--spacing-lg);
     background: var(--bg-primary);
     min-height: 100vh;
+    min-height: var(--app-vh, 100vh);
 }
 
 /* History page header - use specific selector to override ActionHistory.css */
@@ -180,6 +181,7 @@
     padding: var(--spacing-lg);
     background: var(--bg-primary);
     min-height: 100vh;
+    min-height: var(--app-vh, 100vh);
 }
 
 /* 履歴詳細ビュー内のスタッツパネルからボーダーを削除 */

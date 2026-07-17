@@ -3,7 +3,7 @@
        下部だとターンオーバー/ファウル等の頻用ボタンを覆い、
        誤って「取り消す」を押すリスクがあるため */
     position: fixed;
-    top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));
+    top: calc(var(--spacing-sm) + var(--safe-top, 0px));
     left: 50%;
     transform: translateX(-50%);
     display: flex;

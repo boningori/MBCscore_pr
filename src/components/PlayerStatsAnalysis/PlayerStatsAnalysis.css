@@ -15,6 +15,7 @@
 
 .player-stats-container {
     min-height: 100vh;
+    min-height: var(--app-vh, 100vh);
     background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
     padding: 16px;
     padding-bottom: 32px;

@@ -35,7 +35,8 @@ export default defineConfig({
         theme_color: '#1e293b',
         background_color: '#0f172a',
         display: 'standalone',
-        orientation: 'portrait',
+        // タブレット横向き(フルモード3カラム)を推奨しているため向きは固定しない
+        orientation: 'any',
         start_url: '/MBCscore_pr/',
         icons: [
           {

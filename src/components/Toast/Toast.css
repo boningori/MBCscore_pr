@@ -1,7 +1,7 @@
 /* トースト通知コンテナ - 画面下部中央に固定 */
 .toast-container {
     position: fixed;
-    bottom: 24px;
+    bottom: calc(24px + var(--safe-bottom, 0px));
     left: 50%;
     transform: translateX(-50%);
     z-index: 10000;

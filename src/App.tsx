@@ -44,10 +44,15 @@ import { shareBackup } from './utils/dataBackup';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameAutoSave } from './hooks/useGameAutoSave';
+import { useScreenHistorySync } from './hooks/useScreenHistorySync';
 import './App.css';
 
 // アプリの画面状態
 type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet' | 'playerStats';
+
+// 試合データがないと表示できない画面（戻る/進むでの復元をガードする対象）。
+// 試合系画面を追加したらここにも追加すること
+const GAME_SCREENS: readonly AppScreen[] = ['game', 'quarterLineup', 'scoresheet'];
 
 // Undoスナックバー用のスタッツ表示名
 const STAT_UNDO_LABELS: Record<string, string> = {
@@ -92,6 +97,14 @@ function AppContent() {
 
   const [restoreCandidate, setRestoreCandidate] = useState<MirrorSnapshot | null>(null);
   const [showBackupPrompt, setShowBackupPrompt] = useState(false);
+
+  // ブラウザ履歴と画面遷移を同期（Androidの戻るボタン/ジェスチャでアプリが終了しないように）。
+  // 試合系画面は表示できる試合がない場合（未設定/終了保存後）に復元せずホームへ差し替える
+  useScreenHistorySync(screen, setScreen, {
+    homeScreen: 'home',
+    guardedScreens: GAME_SCREENS,
+    canShowGuarded: state.teamA.players.length > 0 && state.phase !== 'finished',
+  });
 
   // 起動時: 永続ストレージ要求・データ消失検知・起動スナップショット
   useEffect(() => {
