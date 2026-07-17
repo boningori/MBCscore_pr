@@ -135,8 +135,15 @@ export function PendingActionPanel({
 
     // 折りたたみ時: 件数バッジのみ
     if (!open) {
+        // 1件だけなら開くと同時に展開してタップ数を減らす
+        const handleOpen = () => {
+            setOpen(true);
+            if (pendingActions.length === 1) {
+                setExpandedId(pendingActions[0].id);
+            }
+        };
         return (
-            <button className="pending-badge" onClick={() => setOpen(true)}>
+            <button className="pending-badge" onClick={handleOpen}>
                 <span className="pending-icon">⏳</span>
                 <span className="pending-title">保留</span>
                 <span className="pending-count">{pendingActions.length}</span>
@@ -158,9 +165,11 @@ export function PendingActionPanel({
 
                     return (
                         <div key={pending.id} className="pending-action-item">
-                            <div
+                            <button
+                                type="button"
                                 className="pending-action-summary"
                                 onClick={() => toggleExpand(pending.id)}
+                                aria-expanded={expandedId === pending.id}
                             >
                                 <span className="pending-index">{index + 1}</span>
                                 <span className="pending-action-type">
@@ -170,7 +179,7 @@ export function PendingActionPanel({
                                 <span className={`pending-team ${pending.teamId}`}>
                                     {pending.teamId === 'teamA' ? 'A' : 'B'}
                                 </span>
-                            </div>
+                            </button>
 
                             {expandedId === pending.id && (
                                 <div className="pending-action-details">

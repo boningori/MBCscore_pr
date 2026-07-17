@@ -62,12 +62,38 @@ describe('PendingActionPanel: 折りたたみバッジ', () => {
         expect(screen.queryByText('2P成功')).toBeNull();
     });
 
-    it('展開→明細→選手選択→確定で解決できる(既存フロー維持)', () => {
+    it('1件のみの場合はバッジタップで明細まで自動展開され、選手選択→確定で解決できる', () => {
         const { onDirectResolve } = renderPanel();
         fireEvent.click(screen.getByRole('button', { name: /保留/ }));
+        // 1件だけなので候補選手まで自動展開されている
+        fireEvent.click(screen.getByText(/#4/));
+        fireEvent.click(screen.getByText('確定'));
+        expect(onDirectResolve).toHaveBeenCalledWith('pending-1', 'a1');
+    });
+
+    it('複数件の場合は明細行をタップして展開→選手選択→確定で解決できる', () => {
+        const { onDirectResolve } = renderPanel([
+            makePending(),
+            makePending({ id: 'pending-2', value: 'FT' }),
+        ]);
+        fireEvent.click(screen.getByRole('button', { name: /保留/ }));
+        // 複数件は自動展開されない
+        expect(screen.queryByText('確定')).toBeNull();
         fireEvent.click(screen.getByText('2P成功'));
         fireEvent.click(screen.getByText(/#4/));
         fireEvent.click(screen.getByText('確定'));
         expect(onDirectResolve).toHaveBeenCalledWith('pending-1', 'a1');
+    });
+
+    it('明細行はaria-expandedを持つボタンとしてキーボード操作できる', () => {
+        renderPanel([
+            makePending(),
+            makePending({ id: 'pending-2', value: 'FT' }),
+        ]);
+        fireEvent.click(screen.getByRole('button', { name: /保留/ }));
+        const summary = screen.getByRole('button', { name: /2P成功/ });
+        expect(summary.getAttribute('aria-expanded')).toBe('false');
+        fireEvent.click(summary);
+        expect(summary.getAttribute('aria-expanded')).toBe('true');
     });
 });
