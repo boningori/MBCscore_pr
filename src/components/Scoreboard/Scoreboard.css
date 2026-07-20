@@ -61,13 +61,16 @@
     align-items: center;
     gap: var(--spacing-xs);
     margin-bottom: var(--spacing-xs);
+    /* ブロック幅までに制限（固定100pxだとブロックより広くなり隣へはみ出す） */
+    max-width: 100%;
+    min-width: 0;
 }
 
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-label {
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-primary);
-    max-width: 100px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -96,8 +99,9 @@
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-sm);
-    /* Q終了ボタンの44px化に伴い縦paddingを圧縮（720px高でもフィットさせる） */
-    padding: var(--spacing-xs) var(--spacing-lg);
+    /* Q終了ボタンの44px化に伴い縦paddingを圧縮（720px高でもフィットさせる）。
+       横paddingは控えめにして左右のチーム名表示域を確保 */
+    padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large {

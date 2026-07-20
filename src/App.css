@@ -26,20 +26,23 @@
   z-index: 50;
 }
 
+/* 左右は内容幅で確保し、空の中央が余白を吸収する
+   （flex:1で左右を均等割りすると狭い画面で左側のボタンが2段に折り返す） */
 .app-container .header-left,
 .app-container .header-right {
-  flex: 1;
-}
-
-.app-container .header-right {
+  flex: 0 0 auto;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
   flex-wrap: nowrap;
   /* ボタン同士の折り返しを禁止 */
 }
 
+.app-container .header-right {
+  justify-content: flex-end;
+}
+
 /* ヘッダー内のボタンのテキスト折り返しを禁止 */
-.app-container .header-right .btn {
+.app-container .app-header .btn {
   white-space: nowrap;
 }
 
@@ -56,7 +59,8 @@
 }
 
 .app-container .header-center {
-  flex: 2;
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   justify-content: center;
 }
@@ -442,7 +446,8 @@
 }
 
 .app-container .team-panel-header .team-name {
-  font-size: var(--font-size-lg);
+  /* 狭い画面ではフォントを縮めて表示できる文字数を確保 */
+  font-size: clamp(var(--font-size-md), 1.8vw, var(--font-size-lg));
   font-weight: 700;
   min-width: 0;
   overflow: hidden;
@@ -807,11 +812,12 @@
   }
 }
 
-/* ===== 保留アクション (フローティング) ===== */
+/* ===== 保留アクション (フローティング) =====
+   画面下端に固定（上部だとチームパネルのチーム名・TFバッジを覆ってしまう。
+   下端はアクション履歴の末尾で、隠れても影響が最も少ない） */
 .app-container .pending-actions-floating-left {
   position: fixed;
-  top: calc(80px + var(--safe-top, 0px));
-  /* ヘッダー(約60px)の下 */
+  bottom: calc(var(--spacing-md) + var(--safe-bottom, 0px));
   left: calc(var(--spacing-md) + var(--safe-left, 0px));
   max-width: 380px;
   z-index: 500;
@@ -819,11 +825,20 @@
 
 .app-container .pending-actions-floating-right {
   position: fixed;
-  top: calc(80px + var(--safe-top, 0px));
-  /* ヘッダー(約60px)の下 */
+  bottom: calc(var(--spacing-md) + var(--safe-bottom, 0px));
   right: calc(var(--spacing-md) + var(--safe-right, 0px));
   max-width: 380px;
   z-index: 500;
+}
+
+/* 2列レイアウト(〜800px)では下部がアクションボタン領域のため、従来どおり上部に表示 */
+@media (max-width: 800px) {
+
+  .app-container .pending-actions-floating-left,
+  .app-container .pending-actions-floating-right {
+    bottom: auto;
+    top: calc(80px + var(--safe-top, 0px));
+  }
 }
 
 @media (max-width: 600px) {

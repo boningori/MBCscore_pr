@@ -100,7 +100,9 @@
     text-align: left;
 }
 
-.team-name {
+/* .history-team 配下に限定（無スコープだとゲーム画面の.team-nameに漏れて
+   ellipsisを壊し、履歴ヘッダーの文字が下にはみ出す） */
+.history-team .team-name {
     font-size: var(--font-size-base);
     color: var(--text-primary);
     font-weight: 700;
