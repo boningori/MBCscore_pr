@@ -7,6 +7,7 @@ interface TimeoutInputModalProps {
     teamName: string;
     teamColor: 'white' | 'blue';
     currentQuarter: number;
+    quarterMinutes?: 5 | 6;  // クォーター時間（分）。未指定時6＝後方互換
     onConfirm: (elapsedMinutes: number) => void;
     onCancel: () => void;
 }
@@ -16,11 +17,12 @@ export function TimeoutInputModal({
     teamName,
     teamColor,
     currentQuarter,
+    quarterMinutes = 6,
     onConfirm,
     onCancel,
 }: TimeoutInputModalProps) {
-    // OTは3分、通常Qは6分
-    const quarterDuration = currentQuarter > 4 ? 3 : 6;
+    // OTは3分、通常Qは試合設定のクォーター時間
+    const quarterDuration = currentQuarter > 4 ? 3 : quarterMinutes;
 
     // 残り時間の状態
     const [remainingMin, setRemainingMin] = useState(quarterDuration);
