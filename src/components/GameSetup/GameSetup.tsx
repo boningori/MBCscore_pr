@@ -32,6 +32,7 @@ interface GameSetupProps {
         opponentTeamColor: 'white' | 'blue';
         numberType: NumberType;  // マイチームの使用番号タイプ
         showThreePoint: boolean;  // 3P入力ボタンを表示するか
+        quarterMinutes: 5 | 6;    // クォーター時間（分）
     }) => void;
     onBack: () => void;
 }
@@ -56,6 +57,9 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
     // 3P入力ボタンを表示するか（ミニバスは通常OFF）
     const [showThreePoint, setShowThreePoint] = useState(false);
+
+    // クォーター時間（分）。JBA公式は6分、地方大会などで5分運用あり
+    const [quarterMinutes, setQuarterMinutes] = useState<5 | 6>(6);
 
     // 出場選手確認用（除外する選手のインデックス）
     const [excludedPlayerIndices, setExcludedPlayerIndices] = useState<Set<number>>(new Set());
@@ -196,6 +200,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                 opponentTeamColor,
                 numberType,
                 showThreePoint,
+                quarterMinutes,
             });
         }
     };
@@ -492,6 +497,30 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                             onChange={() => setShowThreePoint(true)}
                                         />
                                         <span>🎯 使う</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="confirm-number-type">
+                                <span className="number-type-label">クォーター時間</span>
+                                <div className="number-type-options">
+                                    <label className={`number-type-option ${quarterMinutes === 6 ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="quarterMinutes"
+                                            checked={quarterMinutes === 6}
+                                            onChange={() => setQuarterMinutes(6)}
+                                        />
+                                        <span>6分（公式）</span>
+                                    </label>
+                                    <label className={`number-type-option ${quarterMinutes === 5 ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="quarterMinutes"
+                                            checked={quarterMinutes === 5}
+                                            onChange={() => setQuarterMinutes(5)}
+                                        />
+                                        <span>5分</span>
                                     </label>
                                 </div>
                             </div>

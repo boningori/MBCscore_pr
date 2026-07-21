@@ -85,6 +85,7 @@ export function History({ onBack }: HistoryProps) {
         pendingActions: [],
         gameInfo: (record as { gameInfo?: GameInfo }).gameInfo || createInitialGameInfo(),
         showThreePoint: (record as { showThreePoint?: boolean }).showThreePoint ?? true,
+        quarterMinutes: (record as { quarterMinutes?: 5 | 6 }).quarterMinutes ?? 6,
     });
 
     if (selectedRecord) {

@@ -150,6 +150,7 @@ function AppContent() {
     opponentTeamColor: 'white' | 'blue';
     numberType: NumberType;
     showThreePoint: boolean;
+    quarterMinutes: 5 | 6;
   }) => {
     // 新しいゲームを開始するため状態をリセット
     dispatch({ type: 'RESET_GAME' });
@@ -179,7 +180,7 @@ function AppContent() {
     teamA.players = teamA.players.map(p => ({ ...p, isOnCourt: false }));
     teamB.players = teamB.players.map(p => ({ ...p, isOnCourt: false }));
 
-    dispatch({ type: 'SET_TEAMS', payload: { teamA, teamB, showThreePoint: setupData.showThreePoint } });
+    dispatch({ type: 'SET_TEAMS', payload: { teamA, teamB, showThreePoint: setupData.showThreePoint, quarterMinutes: setupData.quarterMinutes } });
 
     // 対戦チームを履歴に保存（念のため更新）
     saveRecentOpponent(setupData.opponentTeam);
@@ -1515,6 +1516,21 @@ function AppContent() {
             >
               🎯 使う{state.showThreePoint ? '（現在）' : ''}
             </button>
+          </div>
+          <p className="end-game-confirm-message">クォーター時間</p>
+          <div className="modal-actions-column">
+            <button
+              className={`btn btn-large ${state.quarterMinutes === 6 ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => dispatch({ type: 'SET_QUARTER_MINUTES', payload: { quarterMinutes: 6 } })}
+            >
+              6分（公式）{state.quarterMinutes === 6 ? '（現在）' : ''}
+            </button>
+            <button
+              className={`btn btn-large ${state.quarterMinutes === 5 ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => dispatch({ type: 'SET_QUARTER_MINUTES', payload: { quarterMinutes: 5 } })}
+            >
+              5分{state.quarterMinutes === 5 ? '（現在）' : ''}
+            </button>
             <button className="btn btn-secondary btn-large" onClick={() => setShowGameOptions(false)}>
               閉じる
             </button>
@@ -1528,6 +1544,7 @@ function AppContent() {
         teamName={timeoutModalTeam === 'teamB' ? state.teamB.name : state.teamA.name}
         teamColor={timeoutModalTeam === 'teamB' ? state.teamB.color : state.teamA.color}
         currentQuarter={currentQuarter}
+        quarterMinutes={state.quarterMinutes}
         onConfirm={(elapsedMinutes) => {
           if (timeoutModalTeam) handleTimeout(timeoutModalTeam, elapsedMinutes);
           setTimeoutModalTeam(null);
