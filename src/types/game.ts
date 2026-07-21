@@ -177,6 +177,7 @@ export interface Game {
     endTime: Date | null;
     gameInfo: GameInfo;  // 試合情報
     showThreePoint: boolean;  // 3P入力ボタンを表示するか（試合ごと・デフォルトfalse）
+    quarterMinutes: 5 | 6;    // クォーター時間（分）。試合ごと・デフォルト6。OTは常に3分
 }
 
 // アクション種別
@@ -216,7 +217,8 @@ export type GameActionType =
     | 'UPDATE_GAME_INFO'
     | 'TOGGLE_OWN_GOAL'
     | 'SET_END_TIME'
-    | 'SET_SHOW_THREE_POINT';
+    | 'SET_SHOW_THREE_POINT'
+    | 'SET_QUARTER_MINUTES';
 
 // ゲームアクション
 export interface GameAction {
@@ -293,12 +295,13 @@ export const createInitialGame = (): Game => ({
     endTime: null,
     gameInfo: createInitialGameInfo(),
     showThreePoint: false,
+    quarterMinutes: DEFAULT_QUARTER_MINUTES,
 });
 
 // ミニバスルール定数
 export const MAX_QUARTERS = 4;
 export const MAX_PERSONAL_FOULS = 5;
-export const QUARTER_DURATION_SECONDS = 6 * 60; // 6分
+export const DEFAULT_QUARTER_MINUTES = 6; // クォーター時間の既定値（分）
 export const TEAM_FOUL_LIMIT = 4;  // 5つ目からFT
 export const MAX_PLAYERS_PER_TEAM = 15;
 export const PLAYERS_ON_COURT = 5;

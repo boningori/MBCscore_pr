@@ -4,13 +4,14 @@ import type {
     Player,
     GameInfo,
 } from '../../types/game';
-import { createInitialGameInfo } from '../../types/game';
+import { createInitialGameInfo, DEFAULT_QUARTER_MINUTES } from '../../types/game';
 
 export function handleSetTeams(state: Game, payload: GameAction['payload']): Game {
-    const { teamA, teamB, showThreePoint } = payload as {
+    const { teamA, teamB, showThreePoint, quarterMinutes } = payload as {
         teamA: Game['teamA'];
         teamB: Game['teamB'];
         showThreePoint?: boolean;
+        quarterMinutes?: 5 | 6;
     };
     // デフォルトカラー設定（setupデータから来る場合は上書きされる可能性があるが、ここで保証する）
     const teamAWithColor = { ...teamA, color: teamA.color || 'white' };
@@ -20,6 +21,7 @@ export function handleSetTeams(state: Game, payload: GameAction['payload']): Gam
         teamA: teamAWithColor,
         teamB: teamBWithColor,
         showThreePoint: showThreePoint ?? state.showThreePoint,
+        quarterMinutes: quarterMinutes ?? state.quarterMinutes,
     };
 }
 
@@ -249,6 +251,7 @@ export function handleRestoreGame(payload: GameAction['payload']): Game {
         teamA: migrateTeam(game.teamA),
         teamB: migrateTeam(game.teamB),
         showThreePoint: game.showThreePoint ?? true,
+        quarterMinutes: game.quarterMinutes ?? DEFAULT_QUARTER_MINUTES,
     };
 }
 

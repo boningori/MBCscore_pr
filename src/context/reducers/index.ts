@@ -66,6 +66,9 @@ export function gameReducer(state: Game, action: GameAction): Game {
         case 'SET_SHOW_THREE_POINT':
             return { ...state, showThreePoint: (action.payload as { showThreePoint: boolean }).showThreePoint };
 
+        case 'SET_QUARTER_MINUTES':
+            return { ...state, quarterMinutes: (action.payload as { quarterMinutes: 5 | 6 }).quarterMinutes };
+
         case 'END_GAME':
             return { ...state, phase: 'finished', endTime: new Date() };
 
