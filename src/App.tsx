@@ -1143,6 +1143,7 @@ function AppContent() {
               opponentTeamId={opponentTeamIdForPending}
               opponentPlayers={opponentTeam.players}
               opponentTeamName={opponentTeam.name}
+              showThreePoint={state.showThreePoint}
             />
           );
         }
@@ -1167,6 +1168,7 @@ function AppContent() {
             opponentTeamId={opponentTeamId}
             opponentPlayers={opponentTeam.players}
             opponentTeamName={opponentTeam.name}
+            showThreePoint={state.showThreePoint}
           />
         );
       })()}
@@ -1445,6 +1447,7 @@ function AppContent() {
             benchFoulMode={true}
             benchFoulType={coachFoulState.foulType}
             benchFoulLabel={coachFoulState.label}
+            showThreePoint={state.showThreePoint}
           />
         );
       })()}

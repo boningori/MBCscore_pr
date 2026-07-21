@@ -29,6 +29,7 @@ interface FoulInputFlowProps {
     benchFoulMode?: boolean;
     benchFoulType?: FoulType;
     benchFoulLabel?: string;
+    showThreePoint?: boolean;  // 3P入力を使う試合か（未指定時true＝後方互換）
 }
 
 const FOUL_TYPES: { type: FoulType; label: string; description: string; requiresPlayer: boolean }[] = [
@@ -55,6 +56,7 @@ export function FoulInputFlow({
     benchFoulMode = false,
     benchFoulType,
     benchFoulLabel,
+    showThreePoint = true,
 }: FoulInputFlowProps) {
     // ベンチファウルモードの場合は初期ステップをshooterに、FT本数を1本に設定
     const [step, setStep] = useState<Step>(benchFoulMode ? 'shooter' : 'foulType');
@@ -117,8 +119,14 @@ export function FoulInputFlow({
     // Pファウル長押し（シュートファウル）
     const handlePFoulLongPress = useCallback(() => {
         setFoulType('P');
-        setStep('shotSituation');
-    }, []);
+        if (showThreePoint) {
+            setStep('shotSituation');
+        } else {
+            // 3P非表示の試合ではシュートファウルは常に2P扱い（状況選択をスキップ）
+            setShotSituation('2P');
+            setStep('shotResult');
+        }
+    }, [showThreePoint]);
 
     // 長押し開始
     const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -238,7 +246,14 @@ export function FoulInputFlow({
                 setFoulType(null);
                 break;
             case 'shotResult':
-                setStep('shotSituation');
+                if (showThreePoint) {
+                    setStep('shotSituation');
+                } else {
+                    // shotSituationステップをスキップしているためファウル種類選択まで戻る
+                    setStep('foulType');
+                    setFoulType(null);
+                    setShotSituation('none');
+                }
                 setShotMade(false);
                 break;
             case 'ftCount':
@@ -247,7 +262,7 @@ export function FoulInputFlow({
                     setFoulType(null);
                 } else {
                     // Pファウルのシュートファウル時
-                    setStep('shotSituation');
+                    setStep(showThreePoint ? 'shotSituation' : 'shotResult');
                 }
                 break;
             case 'shooter':
@@ -274,7 +289,7 @@ export function FoulInputFlow({
                 setFreeThrowResults(new Array(freeThrows).fill(null));
                 break;
         }
-    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel]);
+    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel, showThreePoint]);
 
     // FT成功数を計算
     const ftMadeCount = freeThrowResults.filter(r => r === 'made').length;
