@@ -654,13 +654,13 @@
                 box-shadow: none;
                 width: 210mm;
                 height: 297mm;
-                /* 背景グラフィックOFF時のフォールバック */
-                background: var(--primary-bg) !important;
+                /* 印刷は白背景ベースに統一（ダーク文字と両立させる） */
+                background: #ffffff !important;
             }
 
             /* ===================================
-               背景グラフィックがOFFの場合でも
-               文字が必ず見えるようにダーク色にする
+               印刷時は白背景ベースのため
+               文字はダーク色に統一する
                =================================== */
 
             /* タイトル系 */
@@ -941,7 +941,8 @@
                     <div class="cta-right">
                         <div class="qr-wrapper">
                             <div class="qr-code">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fboningori.github.io%2FMBCscore_pr%2F"
+                                <!-- QRコードはローカル埋め込み（外部API非依存・オフラインOK） -->
+                                <img src="data:image/png;base64,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"
                                     alt="QRコード">
                             </div>
                             <span class="qr-label">📷 スマホでスキャン</span>
