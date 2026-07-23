@@ -157,6 +157,46 @@
             font-weight: 700;
         }
 
+        /* ====== ヘッダー画像 ====== */
+        .section-title {
+            max-width: 1080px;
+            margin: 0 auto 24px;
+            text-align: center;
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+        .header-frame {
+            margin: 0 auto 48px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+        .header-frame--x { width: 750px; height: 250px; }
+        .header-frame--fb { width: 410px; height: 156px; }
+        body.fullsize .header-frame--x { width: 1500px; height: 500px; }
+        body.fullsize .header-frame--fb { width: 820px; height: 312px; }
+        .header-card {
+            transform: scale(0.5);
+            transform-origin: top left;
+            background: var(--primary-bg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-card--x { width: 1500px; height: 500px; }
+        .header-card--fb { width: 820px; height: 312px; }
+        body.fullsize .header-card { transform: none; }
+        .header-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
+
         /* ====== 表示切替ボタン ====== */
         #sizeToggle {
             position: fixed;
@@ -403,6 +443,44 @@
     </div>
 
     <!-- CARD_SLOT -->
+
+    <!-- ====== ヘッダー画像 ====== -->
+    <p class="section-title">▼ プロフィール用ヘッダー画像（X: 1500×500 / Facebook: 820×312）。実寸表示でスクリーンショットしてください。<br>Xは左下がプロフィールアイコンで隠れ、上下端も見切れるため、重要要素は中央に配置しています。</p>
+
+    <!-- ヘッダー: X (1500×500) -->
+    <div class="header-frame header-frame--x">
+        <div class="header-card header-card--x" id="header-x">
+            <div class="orb orb--blue" style="width: 600px; height: 600px; top: -300px; right: -150px;"></div>
+            <div class="orb orb--green" style="width: 450px; height: 450px; bottom: -250px; left: -100px;"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 48px;">
+                <img src="./icon-512.png" alt="MBCscore" style="width: 170px; height: 170px; border-radius: 38px; box-shadow: 0 12px 40px rgba(59, 130, 246, 0.35);">
+                <div>
+                    <div style="font-size: 84px; font-weight: 900; line-height: 1.1;">MBCscore</div>
+                    <div style="font-size: 36px; color: var(--text-muted); margin-top: 10px;">ミニバスのスコア記録、<span style="color: var(--accent-blue); font-weight: 700;">スマホ1台</span>で。</div>
+                    <div style="display: flex; gap: 16px; margin-top: 22px;">
+                        <span class="badge" style="font-size: 26px; padding: 8px 24px;">✅ 完全無料</span>
+                        <span class="badge" style="font-size: 26px; padding: 8px 24px;">✅ 登録不要</span>
+                        <span class="badge" style="font-size: 26px; padding: 8px 24px;">✅ オフラインOK</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ヘッダー: Facebook (820×312) -->
+    <div class="header-frame header-frame--fb">
+        <div class="header-card header-card--fb" id="header-fb">
+            <div class="orb orb--blue" style="width: 400px; height: 400px; top: -200px; right: -100px;"></div>
+            <div class="orb orb--green" style="width: 300px; height: 300px; bottom: -160px; left: -80px;"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 30px;">
+                <img src="./icon-512.png" alt="MBCscore" style="width: 110px; height: 110px; border-radius: 24px; box-shadow: 0 8px 28px rgba(59, 130, 246, 0.35);">
+                <div>
+                    <div style="font-size: 58px; font-weight: 900; line-height: 1.1;">MBCscore</div>
+                    <div style="font-size: 27px; color: var(--text-muted); margin-top: 8px;">ミニバスのスコア記録、<span style="color: var(--accent-blue); font-weight: 700;">スマホ1台</span>で。</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>
