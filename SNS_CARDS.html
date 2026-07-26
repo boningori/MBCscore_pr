@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBCscore SNS投稿カード</title>
+    <style>
+        :root {
+            --primary-bg: #0a1628;
+            --secondary-bg: #111d35;
+            --accent-blue: #3b82f6;
+            --accent-blue-dark: #2563eb;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --text-white: #f1f5f9;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-white);
+            padding: 40px 20px 80px;
+        }
+
+        .page-header {
+            max-width: 1080px;
+            margin: 0 auto 32px;
+            text-align: center;
+        }
+        .page-header h1 { font-size: 24px; margin-bottom: 8px; }
+        .page-header p { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+
+        /* ====== カードフレーム（画面上は50%縮小、トグルで実寸） ====== */
+        .card-frame {
+            width: 540px;
+            height: 540px;
+            margin: 0 auto 48px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+        .card {
+            width: 1080px;
+            height: 1080px;
+            transform: scale(0.5);
+            transform-origin: top left;
+            background: var(--primary-bg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        body.fullsize .card-frame { width: 1080px; height: 1080px; }
+        body.fullsize .card { transform: none; }
+
+        /* ====== カード背景装飾 ====== */
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .orb--blue {
+            width: 700px; height: 700px; top: -260px; right: -220px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.30) 0%, transparent 70%);
+        }
+        .orb--green {
+            width: 560px; height: 560px; bottom: -220px; left: -180px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, transparent 70%);
+        }
+
+        /* ====== カード内共通パーツ ====== */
+        .card-body {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 72px 80px 0;
+        }
+        .card-kicker {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--accent-orange);
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 72px;
+            font-weight: 900;
+            line-height: 1.25;
+            margin-bottom: 24px;
+        }
+        .card-title .accent { color: var(--accent-blue); }
+        .card-lead {
+            font-size: 34px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+        .card-visual {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+        }
+        .card-footer {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 80px 56px;
+        }
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 34px;
+            font-weight: 900;
+        }
+        .footer-brand img { width: 56px; height: 56px; border-radius: 12px; }
+        .footer-url {
+            font-size: 28px;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 40px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 999px;
+            padding: 16px 36px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        /* ====== ヘッダー画像 ====== */
+        .section-title {
+            max-width: 1080px;
+            margin: 0 auto 24px;
+            text-align: center;
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+        .header-frame {
+            margin: 0 auto 48px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+        .header-frame--x { width: 750px; height: 250px; }
+        .header-frame--fb { width: 410px; height: 156px; }
+        body.fullsize .header-frame--x { width: 1500px; height: 500px; }
+        body.fullsize .header-frame--fb { width: 820px; height: 312px; }
+        .header-card {
+            transform: scale(0.5);
+            transform-origin: top left;
+            background: var(--primary-bg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-card--x { width: 1500px; height: 500px; }
+        .header-card--fb { width: 820px; height: 312px; }
+        body.fullsize .header-card { transform: none; }
+        .header-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
+
+        /* ====== 表示切替ボタン ====== */
+        #sizeToggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 10;
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <button id="sizeToggle" onclick="document.body.classList.toggle('fullsize'); this.textContent = document.body.classList.contains('fullsize') ? '縮小表示に戻す' : '実寸表示 (1080px)';">実寸表示 (1080px)</button>
+
+    <div class="page-header">
+        <h1>🏀 MBCscore SNS投稿カード</h1>
+        <p>各カードは実寸1080×1080pxです。「実寸表示」に切り替えてカード単位でスクリーンショットを撮り、<br>X / Instagram の投稿画像として使用してください。文面は docs/marketing/sns-posts.md 参照。</p>
+    </div>
+
+    <!-- カード1: 告知 -->
+    <div class="card-frame">
+        <div class="card" id="card-1">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="card-body" style="align-items: center; text-align: center; padding-top: 88px;">
+                <img src="./icon-512.png" alt="MBCscore" style="width: 160px; height: 160px; border-radius: 36px; margin-bottom: 36px; box-shadow: 0 12px 40px rgba(59, 130, 246, 0.35);">
+                <h2 class="card-title" style="font-size: 76px;">ミニバスのスコア記録、<br><span class="accent">スマホ1台</span>で。</h2>
+                <p class="card-lead">ミニバス専用デジタルスコアシート「MBCscore」</p>
+                <div style="display: flex; gap: 24px; margin-top: 44px;">
+                    <span class="badge">✅ 完全無料</span>
+                    <span class="badge">✅ 登録不要</span>
+                    <span class="badge">✅ オフラインOK</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 28px; margin-top: 48px;">
+                    <div style="background: #fff; border-radius: 20px; padding: 14px;">
+                        <img src="data:image/png;base64,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" alt="QRコード" style="width: 190px; height: 190px; display: block;">
+                    </div>
+                    <p style="font-size: 30px; color: var(--text-muted); text-align: left; line-height: 1.6;">📷 スキャンして<br>今すぐ使える</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="footer-brand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="footer-url">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カード2: フリック入力 -->
+    <div class="card-frame">
+        <div class="card" id="card-2">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="card-body">
+                <p class="card-kicker">MBCscore 機能紹介 #1</p>
+                <h2 class="card-title">コートから目を離さない。<br><span class="accent">フリック</span>で高速入力</h2>
+                <div class="card-visual">
+                    <div class="glass-panel" style="text-align: center; width: 380px;">
+                        <div style="font-size: 110px; color: var(--accent-green);">⬆️</div>
+                        <p style="font-size: 44px; font-weight: 900; color: var(--accent-green); margin-top: 12px;">上フリック</p>
+                        <p style="font-size: 34px; margin-top: 8px;">得点（成功）</p>
+                    </div>
+                    <div class="glass-panel" style="text-align: center; width: 380px;">
+                        <div style="font-size: 110px; color: var(--accent-red);">⬇️</div>
+                        <p style="font-size: 44px; font-weight: 900; color: var(--accent-red); margin-top: 12px;">下フリック</p>
+                        <p style="font-size: 34px; margin-top: 8px;">シュートミス</p>
+                    </div>
+                </div>
+                <p class="card-lead" style="text-align: center; padding-bottom: 40px;">試合のテンポを崩さず、プレーを見ながら記録。</p>
+            </div>
+            <div class="card-footer">
+                <div class="footer-brand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="footer-url">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カード3: 保留機能 -->
+    <div class="card-frame">
+        <div class="card" id="card-3">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="card-body">
+                <p class="card-kicker">MBCscore 機能紹介 #2</p>
+                <h2 class="card-title">「今の、<span class="accent">誰！？</span>」<br>でも慌てない。</h2>
+                <div class="card-visual" style="flex-direction: column; gap: 24px;">
+                    <div class="glass-panel" style="display: flex; align-items: center; gap: 28px; width: 820px; padding: 28px 40px;">
+                        <span style="font-size: 40px; font-weight: 900; color: var(--accent-blue);">STEP 1</span>
+                        <span style="font-size: 36px;">まず<b>得点だけ</b>記録（保留）</span>
+                    </div>
+                    <div style="font-size: 48px; color: var(--text-muted);">⬇️</div>
+                    <div class="glass-panel" style="display: flex; align-items: center; gap: 28px; width: 820px; padding: 28px 40px; border-color: rgba(16, 185, 129, 0.4);">
+                        <span style="font-size: 40px; font-weight: 900; color: var(--accent-green);">STEP 2</span>
+                        <span style="font-size: 36px;">選手が分かったら<b>後から紐付け</b></span>
+                    </div>
+                </div>
+                <p class="card-lead" style="text-align: center; padding-bottom: 40px;">背番号を見逃しても、記録漏れを防げる。</p>
+            </div>
+            <div class="card-footer">
+                <div class="footer-brand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="footer-url">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カード4: JBA公式様式スコアシート -->
+    <div class="card-frame">
+        <div class="card" id="card-4">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="card-body">
+                <p class="card-kicker">MBCscore 機能紹介 #3</p>
+                <h2 class="card-title">ワンタップで完成。<br><span class="accent">JBA公式様式</span>に準拠</h2>
+                <div class="card-visual">
+                    <div style="background: #f8fafc; color: #0a1628; border-radius: 16px; width: 460px; padding: 32px; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);">
+                        <p style="font-size: 30px; font-weight: 900; text-align: center; letter-spacing: 0.1em;">SCORE SHEET</p>
+                        <div style="border-top: 3px solid #0a1628; margin: 16px 0;"></div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                            <div style="height: 44px; background: #e2e8f0; border-radius: 4px;"></div>
+                        </div>
+                        <p style="font-size: 28px; color: #64748b; text-align: center; margin-top: 16px;">集計・斜線もぜんぶ自動</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <span class="badge">📄 PDF出力</span>
+                        <span class="badge">🖼️ 画像出力</span>
+                        <span class="badge">💬 LINEで共有</span>
+                    </div>
+                </div>
+                <p class="card-lead" style="text-align: center; padding-bottom: 40px;">試合記録から公式様式を自動生成。</p>
+            </div>
+            <div class="card-footer">
+                <div class="footer-brand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="footer-url">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カード5: OCR選手登録 -->
+    <div class="card-frame">
+        <div class="card" id="card-5">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="card-body">
+                <p class="card-kicker">MBCscore 機能紹介 #4</p>
+                <h2 class="card-title">メンバー表を<br><span class="accent">パシャッ</span>と撮るだけ。</h2>
+                <div class="card-visual">
+                    <div class="glass-panel" style="text-align: center; width: 300px;">
+                        <div style="font-size: 100px;">📋</div>
+                        <p style="font-size: 32px; margin-top: 12px;">紙のメンバー表</p>
+                    </div>
+                    <div style="font-size: 56px; color: var(--accent-orange);">→ 📸 →</div>
+                    <div class="glass-panel" style="text-align: center; width: 300px; border-color: rgba(16, 185, 129, 0.4);">
+                        <div style="font-size: 100px;">✅</div>
+                        <p style="font-size: 32px; margin-top: 12px;">選手登録 完了</p>
+                    </div>
+                </div>
+                <p class="card-lead" style="text-align: center; padding-bottom: 40px;">OCRが背番号と名前を読み取り。手入力なしで一括登録。</p>
+            </div>
+            <div class="card-footer">
+                <div class="footer-brand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="footer-url">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カード6: 2つの表示モード -->
+    <div class="card-frame">
+        <div class="card" id="card-6">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="card-body">
+                <p class="card-kicker">MBCscore 機能紹介 #5</p>
+                <h2 class="card-title">スマホでも、iPadでも。<br><span class="accent">2つのモード</span></h2>
+                <div class="card-visual" style="align-items: flex-end;">
+                    <div style="text-align: center;">
+                        <div style="width: 460px; height: 320px; border: 5px solid var(--glass-border); border-radius: 24px; background: var(--secondary-bg); display: flex; gap: 10px; padding: 18px;">
+                            <div style="flex: 1; background: var(--glass-bg); border-radius: 10px;"></div>
+                            <div style="flex: 1.2; background: rgba(59, 130, 246, 0.18); border-radius: 10px;"></div>
+                            <div style="flex: 1; background: var(--glass-bg); border-radius: 10px;"></div>
+                        </div>
+                        <p style="font-size: 36px; font-weight: 900; margin-top: 20px; color: var(--accent-blue);">フルモード</p>
+                        <p style="font-size: 30px; color: var(--text-muted);">タブレットで詳細スタッツ</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="width: 200px; height: 380px; border: 5px solid var(--glass-border); border-radius: 28px; background: var(--secondary-bg); display: flex; flex-direction: column; gap: 10px; padding: 18px;">
+                            <div style="flex: 1; background: rgba(16, 185, 129, 0.18); border-radius: 10px;"></div>
+                            <div style="flex: 2; background: var(--glass-bg); border-radius: 10px;"></div>
+                        </div>
+                        <p style="font-size: 36px; font-weight: 900; margin-top: 20px; color: var(--accent-green);">シンプルモード</p>
+                        <p style="font-size: 30px; color: var(--text-muted);">スマホで片手操作</p>
+                    </div>
+                </div>
+                <p class="card-lead" style="text-align: center; padding-bottom: 40px;">デバイスに合わせて、いつでも切替OK。</p>
+            </div>
+            <div class="card-footer">
+                <div class="footer-brand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="footer-url">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カード7: オフライン&データ保護 -->
+    <div class="card-frame">
+        <div class="card" id="card-7">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="card-body">
+                <p class="card-kicker">MBCscore 機能紹介 #6</p>
+                <h2 class="card-title">電波の悪い体育館でも、<br><span class="accent">サクサク</span>動く。</h2>
+                <div class="card-visual" style="flex-direction: column; gap: 24px;">
+                    <div class="glass-panel" style="display: flex; align-items: center; gap: 24px; width: 800px; padding: 28px 40px;">
+                        <span style="font-size: 56px;">📶</span>
+                        <span style="font-size: 36px;"><b>オフライン対応</b> — 圏外でも全機能が動作</span>
+                    </div>
+                    <div class="glass-panel" style="display: flex; align-items: center; gap: 24px; width: 800px; padding: 28px 40px;">
+                        <span style="font-size: 56px;">💾</span>
+                        <span style="font-size: 36px;"><b>フルバックアップ</b> — 機種変更も安心</span>
+                    </div>
+                    <div class="glass-panel" style="display: flex; align-items: center; gap: 24px; width: 800px; padding: 28px 40px;">
+                        <span style="font-size: 56px;">📊</span>
+                        <span style="font-size: 36px;"><b>CSVエクスポート</b> — 後から分析できる</span>
+                    </div>
+                </div>
+                <p class="card-lead" style="text-align: center; padding-bottom: 40px;">ホーム画面に追加すれば、アプリとして起動。</p>
+            </div>
+            <div class="card-footer">
+                <div class="footer-brand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="footer-url">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD_SLOT -->
+
+    <!-- ====== ヘッダー画像 ====== -->
+    <p class="section-title">▼ プロフィール用ヘッダー画像（X: 1500×500 / Facebook: 820×312）。実寸表示でスクリーンショットしてください。<br>Xは左下がプロフィールアイコンで隠れ、上下端も見切れるため、重要要素は中央に配置しています。</p>
+
+    <!-- ヘッダー: X (1500×500) -->
+    <div class="header-frame header-frame--x">
+        <div class="header-card header-card--x" id="header-x">
+            <div class="orb orb--blue" style="width: 600px; height: 600px; top: -300px; right: -150px;"></div>
+            <div class="orb orb--green" style="width: 450px; height: 450px; bottom: -250px; left: -100px;"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 48px;">
+                <img src="./icon-512.png" alt="MBCscore" style="width: 170px; height: 170px; border-radius: 38px; box-shadow: 0 12px 40px rgba(59, 130, 246, 0.35);">
+                <div>
+                    <div style="font-size: 84px; font-weight: 900; line-height: 1.1;">MBCscore</div>
+                    <div style="font-size: 36px; color: var(--text-muted); margin-top: 10px;">ミニバスのスコア記録、<span style="color: var(--accent-blue); font-weight: 700;">スマホ1台</span>で。</div>
+                    <div style="display: flex; gap: 16px; margin-top: 22px;">
+                        <span class="badge" style="font-size: 26px; padding: 8px 24px;">✅ 完全無料</span>
+                        <span class="badge" style="font-size: 26px; padding: 8px 24px;">✅ 登録不要</span>
+                        <span class="badge" style="font-size: 26px; padding: 8px 24px;">✅ オフラインOK</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ヘッダー: Facebook (820×312) -->
+    <div class="header-frame header-frame--fb">
+        <div class="header-card header-card--fb" id="header-fb">
+            <div class="orb orb--blue" style="width: 400px; height: 400px; top: -200px; right: -100px;"></div>
+            <div class="orb orb--green" style="width: 300px; height: 300px; bottom: -160px; left: -80px;"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 30px;">
+                <img src="./icon-512.png" alt="MBCscore" style="width: 110px; height: 110px; border-radius: 24px; box-shadow: 0 8px 28px rgba(59, 130, 246, 0.35);">
+                <div>
+                    <div style="font-size: 58px; font-weight: 900; line-height: 1.1;">MBCscore</div>
+                    <div style="font-size: 27px; color: var(--text-muted); margin-top: 8px;">ミニバスのスコア記録、<span style="color: var(--accent-blue); font-weight: 700;">スマホ1台</span>で。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
