@@ -1924,6 +1924,8 @@
     text-align: center;
     font-size: 0.9rem;
     border-bottom: 1px solid #f1f5f9;
+    /* bodyのダーク用文字色(#f8fafc)を白背景セルに継承させない */
+    color: #1e293b;
 }
 
 .player-stats-container .win-loss-table th {
