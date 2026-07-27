@@ -103,10 +103,12 @@
     transition: all var(--transition-fast);
 }
 
-:is(.opponent-select, .opponent-editor) .opponent-card:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  :is(.opponent-select, .opponent-editor) .opponent-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 }
 
 :is(.opponent-select, .opponent-editor) .opponent-info {
@@ -173,8 +175,10 @@
     line-height: 1;
 }
 
-:is(.opponent-select, .opponent-editor) .remove-btn:hover {
-    color: var(--danger);
+@media (hover: hover) and (pointer: fine) {
+  :is(.opponent-select, .opponent-editor) .remove-btn:hover {
+      color: var(--danger);
+  }
 }
 
 /* Coach license row */

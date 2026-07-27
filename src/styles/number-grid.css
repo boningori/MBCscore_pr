@@ -42,10 +42,12 @@
     padding: 0;
 }
 
-.number-grid-item:hover {
-    background: var(--bg-primary);
-    border-color: var(--primary);
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .number-grid-item:hover {
+      background: var(--bg-primary);
+      border-color: var(--primary);
+      color: var(--text-primary);
+  }
 }
 
 .number-grid-item.selected {
@@ -54,9 +56,11 @@
     color: white;
 }
 
-.number-grid-item.selected:hover {
-    background: var(--danger);
-    border-color: var(--danger-light);
+@media (hover: hover) and (pointer: fine) {
+  .number-grid-item.selected:hover {
+      background: var(--danger);
+      border-color: var(--danger-light);
+  }
 }
 
 /* Mobile adjustments for number grid */

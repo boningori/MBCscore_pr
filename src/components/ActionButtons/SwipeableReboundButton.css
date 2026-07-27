@@ -148,9 +148,14 @@
     transition: all 0.15s ease;
 }
 
-.swipeable-rebound-wrapper .swipe-popup-cancel:hover,
 .swipeable-rebound-wrapper .swipe-popup-cancel:active {
     background: rgba(0, 0, 0, 0.5);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .swipeable-rebound-wrapper .swipe-popup-cancel:hover {
+        background: rgba(0, 0, 0, 0.5);
+    }
 }
 
 /* タップ時のセレクター */
@@ -220,10 +225,16 @@
     color: white;
 }
 
-.swipeable-rebound-wrapper .rebound-option.oreb:hover,
 .swipeable-rebound-wrapper .rebound-option.oreb:active {
     background: linear-gradient(135deg, #047857 0%, #059669 100%);
     transform: scale(1.05);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .swipeable-rebound-wrapper .rebound-option.oreb:hover {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+        transform: scale(1.05);
+    }
 }
 
 .swipeable-rebound-wrapper .rebound-option.dreb {
@@ -231,10 +242,16 @@
     color: white;
 }
 
-.swipeable-rebound-wrapper .rebound-option.dreb:hover,
 .swipeable-rebound-wrapper .rebound-option.dreb:active {
     background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
     transform: scale(1.05);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .swipeable-rebound-wrapper .rebound-option.dreb:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+        transform: scale(1.05);
+    }
 }
 
 /* モバイル最適化 */

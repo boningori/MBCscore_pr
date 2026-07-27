@@ -212,8 +212,12 @@ button.player-card {
   color: white;
 }
 
-.btn-primary:hover {
-  background: var(--primary-light);
+/* ホバー効果はマウス環境のみ（タッチではタップ後も:hoverが残り続けるため）。
+   タップ時の手応えは:activeが担当する */
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background: var(--primary-light);
+  }
 }
 
 .btn-secondary {
@@ -221,8 +225,10 @@ button.player-card {
   color: var(--text-primary);
 }
 
-.btn-secondary:hover {
-  background: var(--border-light);
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover {
+    background: var(--border-light);
+  }
 }
 
 .btn-danger {
@@ -230,8 +236,10 @@ button.player-card {
   color: white;
 }
 
-.btn-danger:hover {
-  background: var(--danger-light);
+@media (hover: hover) and (pointer: fine) {
+  .btn-danger:hover {
+    background: var(--danger-light);
+  }
 }
 
 .btn-success {
@@ -239,8 +247,10 @@ button.player-card {
   color: white;
 }
 
-.btn-success:hover {
-  background: var(--secondary-light);
+@media (hover: hover) and (pointer: fine) {
+  .btn-success:hover {
+    background: var(--secondary-light);
+  }
 }
 
 .btn-large {
@@ -818,8 +828,10 @@ textarea,
   transition: background 0.15s;
 }
 
-.btn-timeout-chip:hover:not(:disabled) {
-  background: #f3f4f6;
+@media (hover: hover) and (pointer: fine) {
+  .btn-timeout-chip:hover:not(:disabled) {
+    background: #f3f4f6;
+  }
 }
 
 .btn-timeout-chip:disabled {
@@ -988,9 +1000,11 @@ textarea,
   text-align: left;
 }
 
-.bench-player-btn:hover {
-  background: var(--border);
-  border-color: var(--primary);
+@media (hover: hover) and (pointer: fine) {
+  .bench-player-btn:hover {
+    background: var(--border);
+    border-color: var(--primary);
+  }
 }
 
 .bench-player-btn:active {
@@ -1040,8 +1054,10 @@ textarea,
   padding: var(--spacing-xs) var(--spacing-sm);
 }
 
-.modal-header-with-back .btn-back:hover {
-  color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .modal-header-with-back .btn-back:hover {
+    color: var(--text-primary);
+  }
 }
 
 .modal-header-with-back h3 {
@@ -1077,9 +1093,11 @@ textarea,
   transition: all 0.2s;
 }
 
-.shooter-select-btn:hover {
-  border-color: var(--primary);
-  background: rgba(59, 130, 246, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .shooter-select-btn:hover {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+  }
 }
 
 .shooter-select-btn .shooter-num {

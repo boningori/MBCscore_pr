@@ -72,9 +72,11 @@
     color: inherit !important;
 }
 
-.player-stats-container .btn-back:hover {
-    background: #f8fafc;
-    color: #1e293b;
+@media (hover: hover) and (pointer: fine) {
+  .player-stats-container .btn-back:hover {
+      background: #f8fafc;
+      color: #1e293b;
+  }
 }
 
 .player-stats-container .back-icon {
@@ -154,9 +156,11 @@
     font-size: 0.8rem;
 }
 
-.player-stats-container .btn-reset:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+@media (hover: hover) and (pointer: fine) {
+  .player-stats-container .btn-reset:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+  }
 }
 
 /* チームサマリーカード */
@@ -264,9 +268,11 @@
     position: relative;
 }
 
-.player-stats-container .player-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--stats-card-hover-shadow);
+@media (hover: hover) and (pointer: fine) {
+  .player-stats-container .player-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--stats-card-hover-shadow);
+  }
 }
 
 .player-stats-container .player-card:active {
@@ -411,9 +417,11 @@
     border: 1px solid #e2e8f0;
 }
 
-.player-stats-container .detail-toolbar .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+@media (hover: hover) and (pointer: fine) {
+  .player-stats-container .detail-toolbar .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
 }
 
 /* トグルスイッチ */
@@ -470,8 +478,10 @@
     left: 3px;
 }
 
-.player-stats-container .toggle-switch:hover .toggle-slider {
-    opacity: 0.9;
+@media (hover: hover) and (pointer: fine) {
+  .player-stats-container .toggle-switch:hover .toggle-slider {
+      opacity: 0.9;
+  }
 }
 
 /* 非表示選手トグル */
@@ -533,8 +543,10 @@
     left: 22px;
 }
 
-.player-stats-container .hidden-players-toggle:hover {
-    background: #e2e8f0;
+@media (hover: hover) and (pointer: fine) {
+  .player-stats-container .hidden-players-toggle:hover {
+      background: #e2e8f0;
+  }
 }
 
 /* エクスポート対象エリア */
@@ -969,8 +981,10 @@
     transition: all 0.15s;
 }
 
-.player-stats-container .period-btn:hover {
-    color: #1e293b;
+@media (hover: hover) and (pointer: fine) {
+  .player-stats-container .period-btn:hover {
+      color: #1e293b;
+  }
 }
 
 .player-stats-container .period-btn.active {
@@ -1591,9 +1605,11 @@
         color: #e2e8f0 !important;
     }
 
-    .player-stats-container .btn-back:hover {
-        background: #475569 !important;
-        color: #f8fafc !important;
+    @media (hover: hover) and (pointer: fine) {
+        .player-stats-container .btn-back:hover {
+            background: #475569 !important;
+            color: #f8fafc !important;
+        }
     }
 
     .player-stats-container .field-label {
@@ -1720,8 +1736,10 @@
         color: #94a3b8;
     }
 
-    .player-stats-container .period-btn:hover {
-        color: #f1f5f9;
+    @media (hover: hover) and (pointer: fine) {
+        .player-stats-container .period-btn:hover {
+            color: #f1f5f9;
+        }
     }
 
     .player-stats-container .period-btn.active {
@@ -1801,8 +1819,10 @@
         background: #16a34a;
     }
 
-    .player-stats-container .hidden-players-toggle:hover {
-        background: #475569;
+    @media (hover: hover) and (pointer: fine) {
+        .player-stats-container .hidden-players-toggle:hover {
+            background: #475569;
+        }
     }
 }
 

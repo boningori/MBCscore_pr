@@ -103,8 +103,10 @@
     transition: background 0.2s;
 }
 
-:is(.pending-badge, .pending-action-panel) .pending-action-summary:hover {
-    background: rgba(255, 255, 255, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  :is(.pending-badge, .pending-action-panel) .pending-action-summary:hover {
+      background: rgba(255, 255, 255, 0.1);
+  }
 }
 
 :is(.pending-badge, .pending-action-panel) .pending-index {
@@ -196,10 +198,12 @@
     min-width: 60px;
 }
 
-:is(.pending-badge, .pending-action-panel) .candidate-player-btn:hover {
-    background: #3182ce;
-    border-color: #3182ce;
-    transform: scale(1.02);
+@media (hover: hover) and (pointer: fine) {
+  :is(.pending-badge, .pending-action-panel) .candidate-player-btn:hover {
+      background: #3182ce;
+      border-color: #3182ce;
+      transform: scale(1.02);
+  }
 }
 
 :is(.pending-badge, .pending-action-panel) .candidate-player-btn:active {
@@ -214,9 +218,11 @@
     font-weight: 600;
 }
 
-:is(.pending-badge, .pending-action-panel) .candidate-player-btn.selected:hover {
-    background: #d97706;
-    border-color: #f59e0b;
+@media (hover: hover) and (pointer: fine) {
+  :is(.pending-badge, .pending-action-panel) .candidate-player-btn.selected:hover {
+      background: #d97706;
+      border-color: #f59e0b;
+  }
 }
 
 :is(.pending-badge, .pending-action-panel) .pending-action-buttons {

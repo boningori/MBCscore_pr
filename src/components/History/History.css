@@ -55,11 +55,13 @@
     transition: all 0.2s ease;
 }
 
-.history-container .history-card:hover {
-    background: var(--bg-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 10;
+@media (hover: hover) and (pointer: fine) {
+  .history-container .history-card:hover {
+      background: var(--bg-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+  }
 }
 
 .history-container .history-card-header {
@@ -172,10 +174,12 @@
     border: 1px solid var(--border);
 }
 
-.history-container .export-btn:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
+@media (hover: hover) and (pointer: fine) {
+  .history-container .export-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+  }
 }
 
 /* Detail View */
@@ -282,8 +286,10 @@
     transition: all 0.2s ease;
 }
 
-.history-tabs button:hover {
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .history-tabs button:hover {
+      color: var(--text-primary);
+  }
 }
 
 .history-tabs button.active {

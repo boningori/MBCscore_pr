@@ -122,9 +122,11 @@
     text-align: center;
 }
 
-.home-container .home-menu-item:hover {
-    border-color: var(--primary-light);
-    transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .home-container .home-menu-item:hover {
+      border-color: var(--primary-light);
+      transform: translateY(-2px);
+  }
 }
 
 .home-container .home-menu-item:active {
@@ -208,7 +210,9 @@
     transition: all var(--transition-fast);
 }
 
-.home-container .manual-link:hover {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: var(--primary-light);
+@media (hover: hover) and (pointer: fine) {
+  .home-container .manual-link:hover {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: var(--primary-light);
+  }
 }

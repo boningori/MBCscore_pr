@@ -212,9 +212,11 @@
     transition: all 0.2s;
 }
 
-.swipeable-turnover-wrapper .selector-btn:hover {
-    border-color: #e8503a;
-    background: rgba(232, 80, 58, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .swipeable-turnover-wrapper .selector-btn:hover {
+      border-color: #e8503a;
+      background: rgba(232, 80, 58, 0.1);
+  }
 }
 
 .swipeable-turnover-wrapper .selector-btn:active {

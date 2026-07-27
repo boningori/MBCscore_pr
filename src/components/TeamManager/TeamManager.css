@@ -51,8 +51,10 @@
     transition: border-color var(--transition-fast);
 }
 
-:is(.team-manager, .team-editor) .team-card:hover {
-    border-color: var(--primary-light);
+@media (hover: hover) and (pointer: fine) {
+  :is(.team-manager, .team-editor) .team-card:hover {
+      border-color: var(--primary-light);
+  }
 }
 
 :is(.team-manager, .team-editor) .team-card-info {
