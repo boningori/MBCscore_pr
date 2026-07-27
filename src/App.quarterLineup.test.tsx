@@ -44,34 +44,39 @@ function selectFive(label: string) {
     }
 }
 
+/** 試合設定ウィザードを最後まで進めてQ1スタメン選択画面を表示する */
+async function proceedToLineup() {
+    fireEvent.click(await screen.findByText('新規試合開始'));
+
+    // Step1: 基本情報（日付は自動入力済みなのでそのまま次へ）
+    await screen.findByText('基本情報');
+    fireEvent.click(screen.getByRole('button', { name: '次へ' }));
+
+    // Step2: マイチーム選択
+    await screen.findByText('マイチーム選択');
+    fireEvent.click(screen.getByText('ホームチーム'));
+
+    // Step3: 出場選手確認（5名とも出場のままで次へ）
+    await screen.findByText('出場選手確認');
+    fireEvent.click(screen.getByRole('button', { name: '次へ' }));
+
+    // Step4: 対戦チーム選択（対戦履歴から選択）
+    await screen.findByText('対戦チームを選択');
+    fireEvent.click(screen.getByText('アウェイチーム'));
+
+    // Step5: 設定確認 → スタメン選択へ
+    await screen.findByText('設定確認');
+    fireEvent.click(screen.getByRole('button', { name: 'スタメン選択へ' }));
+    await screen.findByText('スタメン選択');
+}
+
 describe('App: クォーター開始時のスタメン一括反映（白・青どちらからでも登録可）', () => {
     it('青タブから先に5名、続けて白タブで5名選んで開始すると、両チーム5名ずつが1回でコート上に反映される', async () => {
         const { container } = render(<App />);
 
-        fireEvent.click(await screen.findByText('新規試合開始'));
-
-        // Step1: 基本情報（日付は自動入力済みなのでそのまま次へ）
-        await screen.findByText('基本情報');
-        fireEvent.click(screen.getByRole('button', { name: '次へ' }));
-
-        // Step2: マイチーム選択
-        await screen.findByText('マイチーム選択');
-        fireEvent.click(screen.getByText('ホームチーム'));
-
-        // Step3: 出場選手確認（5名とも出場のままで次へ）
-        await screen.findByText('出場選手確認');
-        fireEvent.click(screen.getByRole('button', { name: '次へ' }));
-
-        // Step4: 対戦チーム選択（対戦履歴から選択）
-        await screen.findByText('対戦チームを選択');
-        fireEvent.click(screen.getByText('アウェイチーム'));
-
-        // Step5: 設定確認 → スタメン選択へ
-        await screen.findByText('設定確認');
-        fireEvent.click(screen.getByRole('button', { name: 'スタメン選択へ' }));
+        await proceedToLineup();
 
         // Q1スタメン選択画面。マイチーム(白)が既定タブだが、まず青タブへ切り替えて先に選ぶ
-        await screen.findByText('スタメン選択');
         fireEvent.click(screen.getByRole('tab', { name: /青/ }));
         selectFive('アウェイ');
 
@@ -96,5 +101,35 @@ describe('App: クォーター開始時のスタメン一括反映（白・青�
         expect(screen.getByRole('button', { name: /ホーム5/ })).toBeTruthy();
         expect(screen.getByRole('button', { name: /アウェイ1/ })).toBeTruthy();
         expect(screen.getByRole('button', { name: /アウェイ5/ })).toBeTruthy();
+    });
+});
+
+describe('App: Q終了後にスタメン選択画面から戻ったときの復帰', () => {
+    it('スタメン画面で「戻る」を押しても、ゲーム画面の「スタメン選択へ」で次Qのスタメンを選び直せる', async () => {
+        render(<App />);
+
+        await proceedToLineup();
+
+        // Q1のスタメンを両チーム分そろえて試合開始
+        selectFive('ホーム');
+        fireEvent.click(screen.getByRole('tab', { name: /青/ }));
+        selectFive('アウェイ');
+        fireEvent.click(screen.getByRole('button', { name: '試合開始' }));
+
+        // Q1終了 → 確認モーダル → Q2のスタメン選択画面
+        fireEvent.click(await screen.findByText('Q1終了'));
+        fireEvent.click(screen.getByText('終了する'));
+        await screen.findByText('スタメン選択');
+        expect(screen.getByRole('button', { name: 'Q2 開始' })).toBeTruthy();
+
+        // スコアを確認するつもりで戻る → ゲーム画面（Q2開始待ち）
+        fireEvent.click(screen.getByRole('button', { name: '← 戻る' }));
+        await screen.findByText('Q2へ');
+
+        // ここからスタメン選択画面へ復帰できる
+        fireEvent.click(screen.getByText('スタメン選択へ'));
+
+        await screen.findByText('スタメン選択');
+        expect(screen.getByRole('button', { name: 'Q2 開始' })).toBeTruthy();
     });
 });

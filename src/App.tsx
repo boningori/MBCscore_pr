@@ -1036,6 +1036,7 @@ function AppContent() {
                 <div className="scoreboard-section">
                   <Scoreboard
                     onQuarterEnd={handleQuarterEnd}
+                    onOpenLineup={() => setScreen('quarterLineup')}
                     onTimeout={handleTimeout}
                     mode={gameMode}
                   />
