@@ -80,7 +80,7 @@ function AppContent() {
   const [substitutionTeamId, setSubstitutionTeamId] = useState<'teamA' | 'teamB'>('teamA');
   const [showStats, setShowStats] = useState(false);
   const [activeTab, setActiveTab] = useState<'teamA' | 'teamB'>('teamA');
-  const [lineupTeamId, setLineupTeamId] = useState<'teamA' | 'teamB'>('teamA');
+  const [lineupTab, setLineupTab] = useState<'teamA' | 'teamB'>('teamA');
   const [showFoulSelector, setShowFoulSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; value?: string } | null>(null);
   const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示（保留アクション化用）
@@ -185,8 +185,8 @@ function AppContent() {
     // 対戦チームを履歴に保存（念のため更新）
     saveRecentOpponent(setupData.opponentTeam);
 
-    // Q1スタメン選択画面へ（常に白チーム=teamAから開始）
-    setLineupTeamId('teamA');
+    // Q1スタメン選択画面へ（新規試合は白タブから）
+    setLineupTab('teamA');
     setScreen('quarterLineup');
   };
 
@@ -602,10 +602,10 @@ function AppContent() {
   //   ... 省略 ...
   // }, [state.teamA, state.teamB, dispatch]);
 
-  // クォーター開始時のスタメン確定
-  const handleLineupConfirm = (startingPlayerIds: string[]) => {
+  // クォーター開始時のスタメン確定（白・青まとめて1回で反映）
+  const handleLineupStart = (selected: { teamA: string[]; teamB: string[] }) => {
     // 選択された選手をコート上に、それ以外をベンチに設定
-    const updatePlayers = (team: Team) => ({
+    const updatePlayers = (team: Team, startingPlayerIds: string[]) => ({
       ...team,
       players: team.players.map(p => ({
         ...p,
@@ -617,30 +617,18 @@ function AppContent() {
       })),
     });
 
-    if (lineupTeamId === 'teamA') {
-      dispatch({
-        type: 'SET_TEAMS',
-        payload: {
-          teamA: updatePlayers(state.teamA),
-          teamB: state.teamB,
-        },
-      });
-      // Team Bのスタメン選択へ
-      setLineupTeamId('teamB');
-    } else {
-      dispatch({
-        type: 'SET_TEAMS',
-        payload: {
-          teamA: state.teamA,
-          teamB: updatePlayers(state.teamB),
-        },
-      });
-      // 両チーム完了、ゲーム開始/再開
-      setScreen('game');
-      // phase が 'setup' または 'quarterEnd' の場合、START_GAME を呼び出して playing に遷移
-      if (phase === 'setup' || phase === 'quarterEnd') {
-        dispatch({ type: 'START_GAME' });
-      }
+    dispatch({
+      type: 'SET_TEAMS',
+      payload: {
+        teamA: updatePlayers(state.teamA, selected.teamA),
+        teamB: updatePlayers(state.teamB, selected.teamB),
+      },
+    });
+
+    setScreen('game');
+    // phase が 'setup' または 'quarterEnd' の場合、START_GAME を呼び出して playing に遷移
+    if (phase === 'setup' || phase === 'quarterEnd') {
+      dispatch({ type: 'START_GAME' });
     }
   };
 
@@ -653,7 +641,6 @@ function AppContent() {
       return;
     }
     dispatch({ type: 'END_QUARTER' });
-    setLineupTeamId('teamA');
     setScreen('quarterLineup');
   }, [currentQuarter, dispatch, state.teamA, state.teamB]);
 
@@ -669,7 +656,7 @@ function AppContent() {
   const handleEndGameToOT = useCallback(() => {
     setEndGameConfirmType(null);
     dispatch({ type: 'END_QUARTER' });
-    setLineupTeamId('teamA');
+    setLineupTab('teamA');
     setScreen('quarterLineup');
   }, [dispatch]);
 
@@ -917,20 +904,16 @@ function AppContent() {
 
   // クォーターごとのスタメン選択画面
   if (screen === 'quarterLineup') {
-    const lineupTeam = lineupTeamId === 'teamA' ? state.teamA : state.teamB;
     return (
       <QuarterLineup
         quarter={currentQuarter}
-        teamName={lineupTeam.name}
-        players={lineupTeam.players}
-        onConfirm={handleLineupConfirm}
-        // 戻る先: 1チーム目は試合前なら設定へ・試合中ならゲーム画面へ（Q終了の取り消しが可能）。
-        // 2チーム目は1チーム目のスタメン選択へ戻る
-        onBack={lineupTeamId === 'teamA'
-          ? (phase === 'setup' ? () => setScreen('gameSetup') : () => setScreen('game'))
-          : () => setLineupTeamId('teamA')}
-        // 1チーム目の確定は「次へ」（実際の開始は2チーム目確定時のため）
-        confirmLabel={lineupTeamId === 'teamA' ? `次へ（${state.teamB.name}のスタメン）` : undefined}
+        teamA={state.teamA}
+        teamB={state.teamB}
+        initialTab={lineupTab}
+        onTabChange={setLineupTab}
+        onStart={handleLineupStart}
+        // 戻る先: 試合前なら設定へ・試合中ならゲーム画面へ（Q終了の取り消しが可能）
+        onBack={phase === 'setup' ? () => setScreen('gameSetup') : () => setScreen('game')}
       />
     );
   }
