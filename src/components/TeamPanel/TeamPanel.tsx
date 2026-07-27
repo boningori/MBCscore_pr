@@ -105,6 +105,10 @@ export function TeamPanel({
                   F{player.fouls.length}
                 </span>
               )}
+              {/* 選択中の目印。aria-pressedで状態は伝わるので読み上げからは外す */}
+              {selectedPlayerId === player.id && (
+                <span className="player-check" aria-hidden="true">✓</span>
+              )}
             </button>
           );
         })}

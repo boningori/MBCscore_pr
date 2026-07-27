@@ -68,3 +68,34 @@ describe('TeamPanel: ヘッダーのTF・タイムアウト表示', () => {
         expect(screen.queryByRole('button', { name: 'タイムアウト' })).toBeNull();
     });
 });
+
+describe('TeamPanel: 選択中の選手の強調表示', () => {
+    const onCourtPlayers = [
+        { ...createPlayer('a1', 4, '選手4'), isOnCourt: true },
+        { ...createPlayer('a2', 7, '選手7'), isOnCourt: true },
+    ];
+
+    it('選択中のカードにselectedクラスと✓が付く', () => {
+        renderPanel({ players: onCourtPlayers, selectedPlayerId: 'a1' });
+        const selected = screen.getByRole('button', { name: /選手4/ });
+        expect(selected.className).toContain('selected');
+        expect(selected.getAttribute('aria-pressed')).toBe('true');
+        expect(selected.querySelector('.player-check')).toBeTruthy();
+    });
+
+    it('非選択のカードには✓が付かない', () => {
+        renderPanel({ players: onCourtPlayers, selectedPlayerId: 'a1' });
+        const other = screen.getByRole('button', { name: /選手7/ });
+        expect(other.className).not.toContain('selected');
+        expect(other.getAttribute('aria-pressed')).toBe('false');
+        expect(other.querySelector('.player-check')).toBeNull();
+    });
+
+    it('✓はaria-hiddenで読み上げを二重化しない', () => {
+        renderPanel({ players: onCourtPlayers, selectedPlayerId: 'a1' });
+        const check = screen
+            .getByRole('button', { name: /選手4/ })
+            .querySelector('.player-check');
+        expect(check?.getAttribute('aria-hidden')).toBe('true');
+    });
+});
