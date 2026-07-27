@@ -390,9 +390,9 @@
 }
 
 
+/* 選手カード側がピンクで強調されるため、パネル外周のシャドウは重ねない */
 .app-container .team-panel.active {
   border-color: var(--active-highlight);
-  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.4);
 }
 
 /* チームパネルのカラーライン（内側に配置：左チームは右側、右チームは左側） */
@@ -823,7 +823,8 @@
 
 /* アクション先行選択中: タップ先である選手カードを強調
    (レイアウトに依存せず「どこを押すか」を目的地側で示す) */
-.app-container .game-main-area.action-pending .mini-player-card {
+/* 選択中カードはピンクのリングを持つため、パルスの対象から外す */
+.app-container .game-main-area.action-pending .mini-player-card:not(.selected) {
   border-color: var(--secondary-light);
   animation: player-target-pulse 1.5s ease-in-out infinite;
 }
@@ -841,7 +842,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-container .game-main-area.action-pending .mini-player-card {
+  .app-container .game-main-area.action-pending .mini-player-card:not(.selected) {
     animation: none;
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.45);
   }
