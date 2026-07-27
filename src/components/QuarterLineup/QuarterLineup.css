@@ -292,7 +292,8 @@ button.lineup-player-card {
 }
 
 .quarter-lineup .lineup-team-tab.blue .lineup-team-tab-color {
-    background: var(--team-blue);
+    /* var(--team-blue)は白文字だと4.5:1未満のため、チップのみ濃い青（約6.8:1）に */
+    background: #1d4ed8;
     color: white;
 }
 
