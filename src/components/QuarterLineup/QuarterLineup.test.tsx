@@ -32,6 +32,11 @@ const whiteTeam = (players: Player[] = fivePlayers('白')) =>
 const blueTeam = (players: Player[] = fivePlayers('青')) =>
     team('teamB', '青チーム', 'blue', players);
 
+/** 先頭から順に得点を割り当てた選手配列を返す */
+function withPoints(players: Player[], points: number[]): Player[] {
+    return players.map((p, i) => ({ ...p, stats: { ...p.stats, points: points[i] ?? 0 } }));
+}
+
 /** 選手カード（role=button）をクリックして5名選ぶ */
 function selectFive(label: string) {
     for (let n = 1; n <= 5; n++) {
@@ -209,6 +214,32 @@ describe('QuarterLineup 出場ルールの目安（非強制の警告表示）',
         // 開始ボタンは押下可能（disabledでない）
         const startBtn = screen.getByRole('button', { name: 'Q4 開始' }) as HTMLButtonElement;
         expect(startBtn.disabled).toBe(false);
+    });
+});
+
+describe('QuarterLineup 現在スコアの表示', () => {
+    it('ヘッダーに両チームの現在スコアを表示する（確認のためにゲーム画面へ戻る必要をなくす）', () => {
+        render(
+            <QuarterLineup
+                quarter={2}
+                teamA={whiteTeam(withPoints(fivePlayers('白'), [10, 2, 0, 0, 0]))}
+                teamB={blueTeam(withPoints(fivePlayers('青'), [5, 3, 0, 0, 0]))}
+                onStart={() => {}}
+            />,
+        );
+
+        const score = screen.getByLabelText('現在のスコア');
+        expect(score.textContent).toContain('12');
+        expect(score.textContent).toContain('8');
+    });
+
+    it('得点がまだない場合も 0 を表示する', () => {
+        render(
+            <QuarterLineup quarter={1} teamA={whiteTeam()} teamB={blueTeam()} onStart={() => {}} />,
+        );
+
+        const score = screen.getByLabelText('現在のスコア');
+        expect(score.textContent).toContain('0');
     });
 });
 

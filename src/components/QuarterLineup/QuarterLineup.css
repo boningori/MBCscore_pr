@@ -33,6 +33,68 @@
     color: white;
 }
 
+/* 現在スコア（この画面のままスコアを確認できるようにする） */
+.quarter-lineup .quarter-lineup-score {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.quarter-lineup .lineup-score-team {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.quarter-lineup .lineup-score-team.white {
+    border-color: var(--team-white);
+}
+
+.quarter-lineup .lineup-score-team.blue {
+    border-color: var(--team-blue);
+}
+
+.quarter-lineup .lineup-score-name {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quarter-lineup .lineup-score-color {
+    padding: 0 6px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+}
+
+.quarter-lineup .lineup-score-team.white .lineup-score-color {
+    background: var(--team-white);
+    color: #1f2937;
+}
+
+.quarter-lineup .lineup-score-team.blue .lineup-score-color {
+    /* チームタブと同じく、白文字で4.5:1を満たす濃い青を使う */
+    background: #1d4ed8;
+    color: white;
+}
+
+.quarter-lineup .lineup-score-points {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
 .quarter-lineup .lineup-status {
     text-align: center;
     padding: var(--spacing-md);
