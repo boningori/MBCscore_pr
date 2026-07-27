@@ -234,3 +234,82 @@ button.lineup-player-card {
     color: inherit;
     text-align: left;
 }
+
+/* チームタブ（白/青のどちらからでも登録できる） */
+.quarter-lineup .lineup-team-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.quarter-lineup .lineup-team-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    transition: all var(--transition-fast);
+}
+
+.quarter-lineup .lineup-team-tab:active {
+    transform: scale(0.98);
+}
+
+.quarter-lineup .lineup-team-tab.white.active {
+    border-color: var(--team-white);
+    background: var(--team-white-bg);
+}
+
+.quarter-lineup .lineup-team-tab.blue.active {
+    border-color: var(--team-blue);
+    background: var(--team-blue-bg);
+}
+
+.quarter-lineup .lineup-team-tab-name {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-weight: 700;
+}
+
+.quarter-lineup .lineup-team-tab-color {
+    padding: 0 6px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+}
+
+.quarter-lineup .lineup-team-tab.white .lineup-team-tab-color {
+    background: var(--team-white);
+    color: #1f2937;
+}
+
+.quarter-lineup .lineup-team-tab.blue .lineup-team-tab-color {
+    background: var(--team-blue);
+    color: white;
+}
+
+.quarter-lineup .lineup-team-tab-count {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.quarter-lineup .lineup-team-tab.complete .lineup-team-tab-count {
+    color: var(--secondary-light);
+}
+
+.quarter-lineup .lineup-incomplete-hint {
+    text-align: center;
+    color: var(--warning);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+}
