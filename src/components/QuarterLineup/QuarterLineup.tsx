@@ -1,76 +1,92 @@
 import { useState } from 'react';
-import type { Player } from '../../types/game';
+import type { Player, Team } from '../../types/game';
 import { PLAYERS_ON_COURT } from '../../types/game';
-import { formatPlayerNumber } from '../../utils/playerNumber';
+import { LineupTeamPanel } from './LineupTeamPanel';
 import './QuarterLineup.css';
+
+export type LineupTabId = 'teamA' | 'teamB';
 
 interface QuarterLineupProps {
     quarter: number;
-    teamName: string;
-    players: Player[];
-    onConfirm: (startingPlayerIds: string[]) => void;
+    /** 白チーム（App側で teamA=白 に固定されている） */
+    teamA: Team;
+    /** 青チーム */
+    teamB: Team;
+    /** 初期表示タブ（省略時は teamA） */
+    initialTab?: LineupTabId;
+    /** タブ切替時に呼ばれる。App側が次回の初期タブとして保持する */
+    onTabChange?: (tab: LineupTabId) => void;
+    /** 両チーム5名揃った状態で開始したときに1回だけ呼ばれる */
+    onStart: (selected: { teamA: string[]; teamB: string[] }) => void;
     onBack?: () => void;
-    /** 確定ボタンの文言（未指定時: Q1=試合開始 / Q2以降=Qx 開始）。
-        1チーム目のスタメン選択では「次へ」系を渡し、実際の開始と区別する */
-    confirmLabel?: string;
 }
+
+/** コート上かつ5ファウル未満の選手を初期選択にする */
+const initialSelection = (players: Player[]) =>
+    players.filter(p => p.isOnCourt && p.fouls.length < 5).map(p => p.id);
+
+const TAB_IDS: LineupTabId[] = ['teamA', 'teamB'];
 
 export function QuarterLineup({
     quarter,
-    teamName,
-    players,
-    onConfirm,
+    teamA,
+    teamB,
+    initialTab = 'teamA',
+    onTabChange,
+    onStart,
     onBack,
-    confirmLabel,
 }: QuarterLineupProps) {
-    const computeInitialSelected = () =>
-        players
-            .filter(p => p.isOnCourt && p.fouls.length < 5)
-            .map(p => p.id);
+    const computeInitialSelected = () => ({
+        teamA: initialSelection(teamA.players),
+        teamB: initialSelection(teamB.players),
+    });
 
-    const [selectedIds, setSelectedIds] = useState<string[]>(computeInitialSelected);
+    const [activeTab, setActiveTab] = useState<LineupTabId>(initialTab);
+    const [selected, setSelected] = useState<Record<LineupTabId, string[]>>(computeInitialSelected);
 
-    // チームまたはクォーターが変わったら選択をリセット
+    // クォーターが変わったら両チームの選択をリセット
     // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
-    const [prevLineupKey, setPrevLineupKey] = useState({ teamName, quarter });
-    if (teamName !== prevLineupKey.teamName || quarter !== prevLineupKey.quarter) {
-        setPrevLineupKey({ teamName, quarter });
-        setSelectedIds(computeInitialSelected());
+    const [prevQuarter, setPrevQuarter] = useState(quarter);
+    if (quarter !== prevQuarter) {
+        setPrevQuarter(quarter);
+        setSelected(computeInitialSelected());
     }
 
-    // 出場可能な選手（5ファウル退場していない）
-    const availablePlayers = players.filter(p => p.fouls.length < 5);
+    const teams: Record<LineupTabId, Team> = { teamA, teamB };
+    const colorLabel = (team: Team) => (team.color === 'white' ? '白' : '青');
+    const isComplete = (tab: LineupTabId) => selected[tab].length === PLAYERS_ON_COURT;
 
-    // 前クォーター出場者
-    const previousQuarterPlayers = players.filter(
-        p => !!p.quartersPlayed[quarter - 2] && quarter > 1
-    );
+    const handleToggle = (playerId: string) => {
+        setSelected(prev => {
+            const ids = prev[activeTab];
+            if (ids.includes(playerId)) {
+                return { ...prev, [activeTab]: ids.filter(id => id !== playerId) };
+            }
+            if (ids.length >= PLAYERS_ON_COURT) {
+                return prev;
+            }
+            return { ...prev, [activeTab]: [...ids, playerId] };
+        });
+    };
 
-    // ミニバス出場ルールの「目安」（Q1〜Q4が対象・非強制）
-    const isRegularQuarter = quarter <= 4;
-    // 各選手がこれまでに出場した通常クォーター数（OTは除外）
-    const regularQuartersPlayed = (p: Player) =>
-        p.quartersPlayed.slice(0, 4).filter(Boolean).length;
-    // 全員出場の目安: まだ1度も出場していない選手（背番号）
-    const unplayedNumbers = players
-        .filter(p => regularQuartersPlayed(p) === 0)
-        .map(p => p.number);
+    const handleTabClick = (tab: LineupTabId) => {
+        setActiveTab(tab);
+        onTabChange?.(tab);
+    };
 
-    const handlePlayerToggle = (playerId: string) => {
-        if (selectedIds.includes(playerId)) {
-            setSelectedIds(selectedIds.filter(id => id !== playerId));
-        } else if (selectedIds.length < PLAYERS_ON_COURT) {
-            setSelectedIds([...selectedIds, playerId]);
+    const isValid = isComplete('teamA') && isComplete('teamB');
+
+    const handleStart = () => {
+        if (isValid) {
+            onStart({ teamA: selected.teamA, teamB: selected.teamB });
         }
     };
 
-    const handleConfirm = () => {
-        if (selectedIds.length === PLAYERS_ON_COURT) {
-            onConfirm(selectedIds);
-        }
-    };
-
-    const isValid = selectedIds.length === PLAYERS_ON_COURT;
+    // 未完了チームの案内（開始ボタンが無効な理由）
+    const incompleteMessage = TAB_IDS
+        .filter(tab => !isComplete(tab))
+        .map(tab => `${colorLabel(teams[tab])}のスタメンが未選択です（${selected[tab].length}/${PLAYERS_ON_COURT}）`)
+        .join(' / ');
 
     // クォーター色（1Q/3Qは赤、2Q/4Q/OTは黒）
     const isOT = quarter > 4;
@@ -90,103 +106,54 @@ export function QuarterLineup({
                 <div className={`quarter-badge ${quarterClass}`}>
                     {quarterLabel}
                 </div>
-                <h2>{teamName} スタメン選択</h2>
+                <h2>スタメン選択</h2>
             </div>
 
-            <div className="lineup-status">
-                <span className={selectedIds.length === PLAYERS_ON_COURT ? 'complete' : 'incomplete'}>
-                    {selectedIds.length} / {PLAYERS_ON_COURT} 名選択
-                </span>
-            </div>
-
-            {quarter > 1 && previousQuarterPlayers.length > 0 && (
-                <div className="previous-quarter-info">
-                    <span className="text-muted">前Q出場: </span>
-                    {previousQuarterPlayers.map(p => `#${formatPlayerNumber(p.number)}`).join(', ')}
-                </div>
-            )}
-
-            <div className="player-selection-grid">
-                {availablePlayers.map(player => {
-                    const isSelected = selectedIds.includes(player.id);
-                    const wasOnCourt = player.isOnCourt;
-
-                    // 出場ルールの目安（非強制の警告表示）
-                    const rq = regularQuartersPlayed(player);
-                    const projected = rq + (isSelected && isRegularQuarter ? 1 : 0);
-                    // このQに出すと4Q目になる（最大3Q超過）
-                    const overMax = isRegularQuarter && projected > 3;
-                    // 残りの通常クォーターを全て出ても2Qに届かない（最低2Q未達）
-                    const potentialMax = rq + (isRegularQuarter ? 5 - quarter : 0);
-                    const cannotReachMin = isRegularQuarter && potentialMax < 2;
-
+            {/* 白（teamA）が左・青（teamB）が右で固定。どちらからでも登録できる */}
+            <div className="lineup-team-tabs" role="tablist">
+                {TAB_IDS.map(tab => {
+                    const team = teams[tab];
+                    const count = selected[tab].length;
+                    const done = isComplete(tab);
                     return (
                         <button
+                            key={tab}
                             type="button"
-                            key={player.id}
-                            className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''} ${overMax ? 'rule-over-max' : ''}`}
-                            onClick={() => handlePlayerToggle(player.id)}
-                            aria-pressed={isSelected}
+                            role="tab"
+                            aria-selected={activeTab === tab}
+                            className={`lineup-team-tab ${team.color} ${activeTab === tab ? 'active' : ''} ${done ? 'complete' : ''}`}
+                            onClick={() => handleTabClick(tab)}
                         >
-                            <div className="lineup-player-number">#{formatPlayerNumber(player.number)}</div>
-                            <div className="lineup-player-name">
-                                {player.name}
-                                {player.isCaptain && <span className="captain-badge">C</span>}
-                            </div>
-                            <div className="lineup-player-stats">
-                                <span className="stat-points">{player.stats.points}pts</span>
-                                {player.fouls.length > 0 && (
-                                    <span className={`stat-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
-                                        F{player.fouls.length}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="lineup-player-quarters">
-                                {player.quartersPlayed.map((played, i) => {
-                                    const q = i + 1;
-                                    const label = q <= 4 ? `${q}` : (q === 5 ? 'OT' : `OT${q - 4}`);
-                                    return (
-                                        <span
-                                            key={q}
-                                            className={`quarter-dot ${played ? 'played' : ''} ${q === quarter ? 'current' : ''}`}
-                                        >
-                                            {label}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                            {(overMax || cannotReachMin) && (
-                                <div className="lineup-rule-chips">
-                                    {overMax && <span className="lineup-rule-chip over-max">3Q超</span>}
-                                    {cannotReachMin && <span className="lineup-rule-chip min-risk">2Q未達</span>}
-                                </div>
-                            )}
-                            {isSelected && <div className="selection-check">✓</div>}
+                            <span className="lineup-team-tab-name">
+                                <span className="lineup-team-tab-color">{colorLabel(team)}</span>
+                                {team.name}
+                            </span>
+                            <span className="lineup-team-tab-count">
+                                {count}/{PLAYERS_ON_COURT}{done ? ' ✓' : ''}
+                            </span>
                         </button>
                     );
                 })}
             </div>
 
+            <LineupTeamPanel
+                quarter={quarter}
+                players={teams[activeTab].players}
+                selectedIds={selected[activeTab]}
+                onToggle={handleToggle}
+            />
+
             <div className="quarter-lineup-actions">
                 <button
                     className="btn btn-success btn-large"
-                    onClick={handleConfirm}
+                    onClick={handleStart}
                     disabled={!isValid}
                 >
-                    {confirmLabel ?? (quarter === 1 ? '試合開始' : `${quarterLabel} 開始`)}
+                    {quarter === 1 ? '試合開始' : `${quarterLabel} 開始`}
                 </button>
             </div>
 
-            <div className="quarter-rule-hint">
-                {isRegularQuarter && quarter >= 2 && unplayedNumbers.length > 0 && (
-                    <p className="rule-warn">
-                        ⚠ 未出場（全員出場の目安）: {unplayedNumbers.map(n => `#${formatPlayerNumber(n)}`).join(', ')}
-                    </p>
-                )}
-                <p className="text-muted text-sm">
-                    ※ ミニバスの目安: 各選手 最低2Q・最大3Q・全員出場（強制ではありません）
-                </p>
-            </div>
+            {!isValid && <p className="lineup-incomplete-hint">{incompleteMessage}</p>}
         </div>
     );
 }
