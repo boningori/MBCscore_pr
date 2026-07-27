@@ -673,11 +673,21 @@
 
 <p>
   各クォーター開始前に、両チームの<strong>コート上5名</strong>を選択する画面が表示されます。
-  白チーム（Team A）→ 青チーム（Team B）の順に選択します。
+  画面上部の<strong>白 / 青のタブ</strong>で対象チームを切り替えて選択します。
+  タブは<strong>白（Team A）が左・青（Team B）が右</strong>で固定ですが、
+  <strong>どちらのチームから選んでも構わず</strong>、途中で何度でも切り替えられます。
 </p>
 
 <div class="diagram">┌─────────────────────────────────────────────┐
 │  <span class="warn">Q1</span>  〇〇ミニバスクラブ <span class="highlight">スタメン選択</span>          │
+├─────────────────────────────────────────────┤
+│  <span class="dim">現在のスコア</span>                               │
+│  ┌──────────────────┐ ┌──────────────────┐  │
+│  │ 白 〇〇クラブ <span class="success">32</span> │ │ <span class="highlight">青</span> △△クラブ <span class="success">28</span> │  │
+│  └──────────────────┘ └──────────────────┘  │
+├─────────────────────────────────────────────┤
+│  <span class="dim">チーム切替タブ（どちらからでも選択可）</span>     │
+│  [ 白 〇〇クラブ 3/5 ] [ <span class="highlight">青</span> △△クラブ 5/5<span class="success">✓</span>]│
 ├─────────────────────────────────────────────┤
 │          <span class="success">3 / 5 名選択</span>                       │
 │                                             │
@@ -696,10 +706,31 @@
 └─────────────────────────────────────────────┘</div>
 
 <ol class="steps">
+  <li>上部のタブで <strong>白チーム / 青チーム</strong> を切り替え（どちらからでも構いません）</li>
   <li>出場させる<strong>5名の選手カード</strong>をタップして選択（チェックマーク表示）</li>
-  <li>5名選択したら <span class="btn-sample btn-green">試合開始</span>（1Q）または <span class="btn-sample btn-green">Q○ 開始</span> をタップ</li>
-  <li>白チームの選択後、自動的に青チームの選択画面に切り替わります</li>
+  <li>もう一方のタブに切り替えて、同じように5名を選択</li>
+  <li><strong>両チームとも5名</strong>揃ったら <span class="btn-sample btn-green">試合開始</span>（1Q）または <span class="btn-sample btn-green">Q○ 開始</span> をタップ</li>
 </ol>
+
+<div class="tip-box">
+  <div class="box-title">タブの表示で選択状況がひと目でわかる</div>
+  各タブにはチームカラー（白 / 青）とチーム名に加えて、<strong>「3/5」のように選択人数</strong>が表示されます。
+  5名揃ったタブには <strong>✓</strong> が付くので、タブを切り替えなくても両チームの進み具合を確認できます。
+</div>
+
+<div class="info-box">
+  <div class="box-title">開始ボタンが押せないとき</div>
+  開始ボタンは<strong>両チームとも5名選択されるまで無効</strong>です。
+  ボタンの下に <strong>「白のスタメンが未選択です（3/5）」</strong> のように、
+  どちらのチームが何名足りないかが表示されるので、そのタブに切り替えて選択を完了してください。
+</div>
+
+<div class="tip-box">
+  <div class="box-title">画面上部に現在のスコアを表示</div>
+  ヘッダーのすぐ下に、<strong>白チーム・青チームの現在の得点</strong>が左右に並んで表示されます。
+  第2クォーター以降のスタメン選択でも、<strong>試合画面に戻らずにその場でスコアを確認</strong>しながら
+  出場選手を決められます。得点はチーム名の右側に大きく表示され、チームカラー（白 / 青）のバッジ付きで区別されます。
+</div>
 
 <div class="tip-box">
   <div class="box-title">出場クォーター表示と出場ルールの目安</div>
@@ -711,6 +742,13 @@
   <div class="box-title">警告はあくまで「目安」です</div>
   上記の出場ルール表示は<strong>目安であり、強制ではありません</strong>。
   登録人数が少なく条件を満たせないチームでも、警告が出たまま問題なく試合を開始・記録できます。
+</div>
+
+<div class="info-box">
+  <div class="box-title">試合画面から戻ってきたときは</div>
+  スタメン選択画面から試合画面に戻った場合でも、<span class="btn-sample btn-gray">Q終了</span> 後の
+  スコアボードに表示される <span class="btn-sample btn-gray">スタメン選択へ</span> ボタンで、
+  この画面をもう一度開けます（<strong>7.9 クォーター管理</strong> 参照）。
 </div>
 
 <div class="page-break"></div>
@@ -952,6 +990,21 @@
 </div>
 
 <p>第4クォーター終了時に自動的に試合終了画面が表示されます。</p>
+
+<div class="tip-box">
+  <div class="box-title">スタメン選択画面に戻る</div>
+  <span class="btn-sample btn-gray">Q終了</span> を押した後（次のクォーターが始まるまでの間）、
+  スコアボードに <span class="btn-sample btn-gray">スタメン選択へ</span> ボタンが表示されます。
+  スタメン選択画面から試合画面に戻ってしまった場合でも、このボタンから<strong>次のクォーターのスタメンを選び直せます</strong>。
+  フルモード・シンプルモードのどちらでも表示され、次のクォーターが開始されると自動的に消えます。
+</div>
+
+<div class="diagram">┌─────────────────────────────────────────────┐
+│  <span class="dim">白 32</span>    <span class="warn">Q1 終了</span>    <span class="dim">28 青</span>                  │
+├─────────────────────────────────────────────┤
+│  <span class="success">[ Q2へ ]</span>  <span class="highlight">[ スタメン選択へ ]</span>               │
+│  <span class="dim">[ 終了を取り消す ]</span>                         │
+└─────────────────────────────────────────────┘</div>
 
 <div class="info-box">
   <div class="box-title">同点の場合は延長（オーバータイム）または引き分け終了</div>
