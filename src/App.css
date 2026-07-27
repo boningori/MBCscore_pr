@@ -498,6 +498,8 @@
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
   border: 2px solid transparent;
+  /* 選択時の左バー分を非選択時も確保し、レイアウトのずれを防ぐ */
+  border-left-width: 10px;
   cursor: pointer;
   transition: all var(--transition-fast);
   /* タッチ最適化 */
@@ -517,9 +519,11 @@
   transform: scale(0.98);
 }
 
+/* 選択中は色・面積・形の3方向で示す（枠＋背景＋外側リング＋左バー＋✓） */
 .app-container .mini-player-card.selected {
-  border-color: var(--secondary);
-  background: rgba(5, 150, 105, 0.2);
+  border-color: var(--active-highlight);
+  background: var(--active-highlight-bg);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.45);
 }
 
 .app-container .mini-player-card .player-num {
@@ -542,6 +546,15 @@
 .app-container .mini-player-card .player-fouls.warning {
   color: var(--danger);
   font-weight: 700;
+}
+
+.app-container .mini-player-card .player-check {
+  /* ファウル表示の有無にかかわらず右端に揃える */
+  margin-left: auto;
+  color: var(--active-highlight-light);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  line-height: 1;
 }
 
 .app-container .team-bench {
