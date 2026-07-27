@@ -123,6 +123,11 @@ html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
+  /* 縦スクロールバーの領域を常に確保する。
+     スタメン選択のタブ切替などで内容の高さが変わるとスクロールバーが出入りし、
+     中央寄せ（margin:0 auto）のレイアウトが横に数pxずれて見えるのを防ぐ。
+     オーバーレイ表示のiPad/スマホでは幅0のため影響しない。 */
+  scrollbar-gutter: stable;
 }
 
 body {
