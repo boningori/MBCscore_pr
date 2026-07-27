@@ -934,21 +934,7 @@ git add src/components/QuarterLineup/QuarterLineup.tsx src/components/QuarterLin
 
 - [ ] **Step 2: 開発サーバーで実機確認する**
 
-`.claude/launch.json` に `vite` の設定が無ければ次の内容で作成し、プレビューを起動する:
-
-```json
-{
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "mbcscore-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 5173
-    }
-  ]
-}
-```
+`.claude/launch.json` には既に `dev`（`npm run dev` / port 5173）の設定がある。この `dev` でプレビューを起動する（`launch.json` は変更しない）。
 
 確認する項目:
 1. 試合設定を終えてスタメン選択画面に入ると、白タブが選択されている
@@ -976,7 +962,7 @@ Expected: 成功
 - [ ] **Step 5: コミット**
 
 ```bash
-git add src/components/QuarterLineup/QuarterLineup.css .claude/launch.json && git commit -m "style(lineup): チームタブと未完了ヒントのスタイルを追加"
+git add src/components/QuarterLineup/QuarterLineup.css && git commit -m "style(lineup): チームタブと未完了ヒントのスタイルを追加"
 ```
 
 ---
