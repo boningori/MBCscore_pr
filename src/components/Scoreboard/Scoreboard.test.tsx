@@ -18,17 +18,33 @@ function buildTeams(): { teamA: Team; teamB: Team } {
 }
 
 // マウント時に指定アクションをディスパッチしてScoreboardを描画するハーネス
-function Harness({ initActions, onQuarterEnd }: { initActions: GameAction[]; onQuarterEnd: () => void }) {
+function Harness({ initActions, onQuarterEnd, onOpenLineup, mode }: {
+    initActions: GameAction[];
+    onQuarterEnd: () => void;
+    onOpenLineup?: () => void;
+    mode: 'full' | 'simple';
+}) {
     const { dispatch } = useGame();
     useEffect(() => {
         initActions.forEach(a => dispatch(a));
         // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回のみ
     }, []);
-    return <Scoreboard onQuarterEnd={onQuarterEnd} onTimeout={() => {}} mode="full" />;
+    return (
+        <Scoreboard
+            onQuarterEnd={onQuarterEnd}
+            onOpenLineup={onOpenLineup}
+            onTimeout={() => {}}
+            mode={mode}
+        />
+    );
 }
 
-function renderScoreboard(extraActions: GameAction[] = []) {
+function renderScoreboard(
+    extraActions: GameAction[] = [],
+    { withOpenLineup = false, mode = 'full' as 'full' | 'simple' } = {},
+) {
     const onQuarterEnd = vi.fn();
+    const onOpenLineup = vi.fn();
     const { teamA, teamB } = buildTeams();
     render(
         <GameProvider>
@@ -39,10 +55,12 @@ function renderScoreboard(extraActions: GameAction[] = []) {
                     ...extraActions,
                 ]}
                 onQuarterEnd={onQuarterEnd}
+                onOpenLineup={withOpenLineup ? onOpenLineup : undefined}
+                mode={mode}
             />
         </GameProvider>,
     );
-    return { onQuarterEnd };
+    return { onQuarterEnd, onOpenLineup };
 }
 
 describe('Scoreboard: クォーター終了の確認', () => {
@@ -91,6 +109,39 @@ describe('Scoreboard: フルモードのスコアブロック', () => {
         renderScoreboard();
         expect(screen.queryByRole('button', { name: 'タイムアウト' })).toBeNull();
         expect(screen.queryByText(/^TF /)).toBeNull();
+    });
+});
+
+describe('Scoreboard: スタメン選択画面への復帰', () => {
+    it('quarterEnd中は「スタメン選択へ」が表示され、押すとonOpenLineupが呼ばれる', () => {
+        const { onOpenLineup } = renderScoreboard([{ type: 'END_QUARTER' }], { withOpenLineup: true });
+
+        fireEvent.click(screen.getByText('スタメン選択へ'));
+
+        expect(onOpenLineup).toHaveBeenCalledTimes(1);
+    });
+
+    it('シンプルモードでも quarterEnd 中は「スタメン選択へ」を表示する', () => {
+        const { onOpenLineup } = renderScoreboard([{ type: 'END_QUARTER' }], {
+            withOpenLineup: true,
+            mode: 'simple',
+        });
+
+        fireEvent.click(screen.getByText('スタメン選択へ'));
+
+        expect(onOpenLineup).toHaveBeenCalledTimes(1);
+    });
+
+    it('playing中は「スタメン選択へ」を表示しない', () => {
+        renderScoreboard([], { withOpenLineup: true });
+
+        expect(screen.queryByText('スタメン選択へ')).toBeNull();
+    });
+
+    it('onOpenLineup未指定なら表示しない（既存の呼び出し元を壊さない）', () => {
+        renderScoreboard([{ type: 'END_QUARTER' }]);
+
+        expect(screen.queryByText('スタメン選択へ')).toBeNull();
     });
 });
 

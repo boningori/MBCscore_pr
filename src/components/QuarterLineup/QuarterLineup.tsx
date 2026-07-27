@@ -54,6 +54,7 @@ export function QuarterLineup({
 
     const teams: Record<LineupTabId, Team> = { teamA, teamB };
     const colorLabel = (team: Team) => (team.color === 'white' ? '白' : '青');
+    const teamScore = (team: Team) => team.players.reduce((sum, p) => sum + p.stats.points, 0);
     const isComplete = (tab: LineupTabId) => selected[tab].length === PLAYERS_ON_COURT;
 
     const handleToggle = (playerId: string) => {
@@ -107,6 +108,22 @@ export function QuarterLineup({
                     {quarterLabel}
                 </div>
                 <h2>スタメン選択</h2>
+            </div>
+
+            {/* この画面のままスコアを確認できるようにする（確認のために戻る操作を不要にする） */}
+            <div className="quarter-lineup-score" aria-label="現在のスコア">
+                {TAB_IDS.map(tab => {
+                    const team = teams[tab];
+                    return (
+                        <div key={tab} className={`lineup-score-team ${team.color}`}>
+                            <span className="lineup-score-name">
+                                <span className="lineup-score-color">{colorLabel(team)}</span>
+                                {team.name}
+                            </span>
+                            <span className="lineup-score-points">{teamScore(team)}</span>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* 白（teamA）が左・青（teamB）が右で固定。どちらからでも登録できる */}

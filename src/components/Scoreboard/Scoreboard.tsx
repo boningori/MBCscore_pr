@@ -6,11 +6,13 @@ import './Scoreboard.css';
 
 interface ScoreboardProps {
     onQuarterEnd?: () => void;
+    /** quarterEnd中にスタメン選択画面へ戻る導線（未指定なら表示しない） */
+    onOpenLineup?: () => void;
     onTimeout?: (teamId: 'teamA' | 'teamB', elapsedMinutes: number) => void;
     mode?: 'full' | 'simple';
 }
 
-export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: ScoreboardProps) {
+export function Scoreboard({ onQuarterEnd, onOpenLineup, onTimeout, mode = 'full' }: ScoreboardProps) {
     const { state, dispatch, getTeamScore } = useGame();
 
     // タイムアウト入力モーダルの状態
@@ -99,6 +101,14 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
         </Modal>
     );
 
+    // スタメン選択へ戻る導線（両モード共通・quarterEnd中のみ）。
+    // スタメン画面から戻ったあと、次Qのスタメンを選び直せなくなるのを防ぐ
+    const openLineupButton = phase === 'quarterEnd' && onOpenLineup && (
+        <button className="btn btn-secondary btn-small" onClick={onOpenLineup}>
+            スタメン選択へ
+        </button>
+    );
+
     // 取り消しボタン（両モード共通・quarterEnd中のみ）
     const undoQuarterEndButton = canUndoQuarterEnd && (
         <button className="btn btn-secondary btn-small" onClick={handleUndoQuarterEnd}>
@@ -128,6 +138,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                             <span>{currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}</span>
                         </button>
                     )}
+                    {openLineupButton}
                     {undoQuarterEndButton}
                     {phase === 'setup' && (
                         <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
@@ -233,6 +244,7 @@ export function Scoreboard({ onQuarterEnd, onTimeout, mode = 'full' }: Scoreboar
                                 <span>{currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}</span>
                             </button>
                         )}
+                        {openLineupButton}
                         {undoQuarterEndButton}
                         {phase === 'setup' && (
                             <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
