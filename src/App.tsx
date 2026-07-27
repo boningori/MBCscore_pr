@@ -656,7 +656,6 @@ function AppContent() {
   const handleEndGameToOT = useCallback(() => {
     setEndGameConfirmType(null);
     dispatch({ type: 'END_QUARTER' });
-    setLineupTab('teamA');
     setScreen('quarterLineup');
   }, [dispatch]);
 

@@ -92,6 +92,16 @@ describe('QuarterLineup チームタブ', () => {
         expect(screen.queryByText(/白のスタメンが未選択です/)).toBeNull();
     });
 
+    it('両チームとも未完了のときは両方の案内を並べて表示する', () => {
+        render(
+            <QuarterLineup quarter={2} teamA={whiteTeam()} teamB={blueTeam()} onStart={() => {}} />,
+        );
+
+        expect(
+            screen.getByText('白のスタメンが未選択です（0/5） / 青のスタメンが未選択です（0/5）'),
+        ).toBeTruthy();
+    });
+
     it('initialTab に teamB を渡すと青タブが選択された状態で始まる', () => {
         render(
             <QuarterLineup
