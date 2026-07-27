@@ -301,15 +301,24 @@
     white-space: nowrap;
 }
 
-.game-setup .suggestion-item:hover,
 .game-setup .suggestion-item.active {
     background: rgba(59, 130, 246, 0.16);
     color: var(--primary-light);
 }
 
-.game-setup .suggestion-item:hover .suggestion-item-icon,
 .game-setup .suggestion-item.active .suggestion-item-icon {
     color: var(--primary-light);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .game-setup .suggestion-item:hover {
+        background: rgba(59, 130, 246, 0.16);
+        color: var(--primary-light);
+    }
+
+    .game-setup .suggestion-item:hover .suggestion-item-icon {
+        color: var(--primary-light);
+    }
 }
 
 /* 確認画面: 自動命名バッジ */
@@ -347,8 +356,10 @@
     align-items: center;
 }
 
-.game-setup .select-card:hover {
-    background: var(--bg-hover);
+@media (hover: hover) and (pointer: fine) {
+  .game-setup .select-card:hover {
+      background: var(--bg-hover);
+  }
 }
 
 .game-setup .select-card.selected {
@@ -482,9 +493,11 @@
     transition: all 0.2s ease;
 }
 
-.game-setup .confirm-colors .btn:hover {
-    background-color: var(--bg-hover);
-    border-color: var(--primary);
+@media (hover: hover) and (pointer: fine) {
+  .game-setup .confirm-colors .btn:hover {
+      background-color: var(--bg-hover);
+      border-color: var(--primary);
+  }
 }
 
 .game-setup .number-type-label {
@@ -513,8 +526,10 @@
     transition: all 0.2s ease;
 }
 
-.game-setup .number-type-option:hover {
-    background: var(--bg-hover);
+@media (hover: hover) and (pointer: fine) {
+  .game-setup .number-type-option:hover {
+      background: var(--bg-hover);
+  }
 }
 
 .game-setup .number-type-option.selected {
@@ -573,8 +588,10 @@
     transition: opacity 0.2s ease, background 0.2s ease;
 }
 
-.game-setup .player-check-item:hover {
-    background: var(--bg-hover);
+@media (hover: hover) and (pointer: fine) {
+  .game-setup .player-check-item:hover {
+      background: var(--bg-hover);
+  }
 }
 
 .game-setup .player-check-item.excluded {

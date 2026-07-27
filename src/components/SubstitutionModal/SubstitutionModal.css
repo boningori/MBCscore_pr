@@ -45,8 +45,10 @@
     transition: all var(--transition-fast);
 }
 
-.substitution-modal .sub-player-card:hover {
-    background: var(--border);
+@media (hover: hover) and (pointer: fine) {
+  .substitution-modal .sub-player-card:hover {
+      background: var(--border);
+  }
 }
 
 .substitution-modal .sub-player-card:active {

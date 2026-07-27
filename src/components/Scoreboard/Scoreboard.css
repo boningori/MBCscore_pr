@@ -155,8 +155,10 @@
     white-space: nowrap;
 }
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-quarter-end:hover:not(:disabled) {
-    background: rgba(245, 158, 11, 0.25);
+@media (hover: hover) and (pointer: fine) {
+  :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-quarter-end:hover:not(:disabled) {
+      background: rgba(245, 158, 11, 0.25);
+  }
 }
 
 /* 高さに余裕がある画面ではスコアを主役として大きく表示 */
@@ -317,8 +319,10 @@
     transition: background 0.15s;
 }
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple:hover:not(:disabled) {
-    background: #f3f4f6;
+@media (hover: hover) and (pointer: fine) {
+  :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple:hover:not(:disabled) {
+      background: #f3f4f6;
+  }
 }
 
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple:disabled {

@@ -45,8 +45,10 @@
     padding: var(--spacing-xs) var(--spacing-sm);
 }
 
-.foul-input-flow .btn-back:hover {
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .btn-back:hover {
+      color: var(--text-primary);
+  }
 }
 
 /* チームファウル情報 */
@@ -85,9 +87,11 @@
     transition: all 0.2s;
 }
 
-.foul-input-flow .foul-type-btn:hover:not(.disabled) {
-    border-color: var(--warning);
-    background: rgba(255, 193, 7, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .foul-type-btn:hover:not(.disabled) {
+      border-color: var(--warning);
+      background: rgba(255, 193, 7, 0.1);
+  }
 }
 
 .foul-input-flow .foul-type-btn.disabled {
@@ -139,9 +143,11 @@
     font-size: var(--font-size-md);
 }
 
-.foul-input-flow .shot-situation-btn:hover {
-    border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .shot-situation-btn:hover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+  }
 }
 
 /* シュート結果リスト（成功/失敗選択）*/
@@ -166,18 +172,22 @@
     color: var(--success);
 }
 
-.foul-input-flow .shot-result-btn.success:hover {
-    border-color: var(--success);
-    background: rgba(34, 197, 94, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .shot-result-btn.success:hover {
+      border-color: var(--success);
+      background: rgba(34, 197, 94, 0.2);
+  }
 }
 
 .foul-input-flow .shot-result-btn.fail {
     color: var(--danger);
 }
 
-.foul-input-flow .shot-result-btn.fail:hover {
-    border-color: var(--danger);
-    background: rgba(220, 38, 38, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .shot-result-btn.fail:hover {
+      border-color: var(--danger);
+      background: rgba(220, 38, 38, 0.2);
+  }
 }
 
 /* FT本数選択 */
@@ -211,9 +221,11 @@
     font-weight: 600;
 }
 
-.foul-input-flow .ft-count-btn:hover {
-    border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .ft-count-btn:hover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+  }
 }
 
 .foul-input-flow .ft-count-btn.suggested {
@@ -221,8 +233,10 @@
     background: rgba(34, 197, 94, 0.2);
 }
 
-.foul-input-flow .ft-count-btn.suggested:hover {
-    background: rgba(34, 197, 94, 0.3);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .ft-count-btn.suggested:hover {
+      background: rgba(34, 197, 94, 0.3);
+  }
 }
 
 /* FT結果入力 */
@@ -271,20 +285,32 @@
     color: var(--success);
 }
 
-.foul-input-flow .ft-result-btn.success:hover,
 .foul-input-flow .ft-result-btn.success.selected {
     border-color: var(--success);
     background: rgba(34, 197, 94, 0.2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .foul-input-flow .ft-result-btn.success:hover {
+        border-color: var(--success);
+        background: rgba(34, 197, 94, 0.2);
+    }
 }
 
 .foul-input-flow .ft-result-btn.fail {
     color: var(--danger);
 }
 
-.foul-input-flow .ft-result-btn.fail:hover,
 .foul-input-flow .ft-result-btn.fail.selected {
     border-color: var(--danger);
     background: rgba(220, 38, 38, 0.2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .foul-input-flow .ft-result-btn.fail:hover {
+        border-color: var(--danger);
+        background: rgba(220, 38, 38, 0.2);
+    }
 }
 
 .foul-input-flow .ft-result-summary {
@@ -346,9 +372,11 @@
     transition: all 0.2s;
 }
 
-.foul-input-flow .shooter-btn:hover {
-    border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .shooter-btn:hover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+  }
 }
 
 .foul-input-flow .shooter-btn.selected {
@@ -429,9 +457,11 @@
     border-color: rgba(220, 38, 38, 0.5);
 }
 
-.foul-input-flow .foul-type-btn.warning-context:hover:not(.disabled) {
-    border-color: var(--danger);
-    background: rgba(220, 38, 38, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .foul-input-flow .foul-type-btn.warning-context:hover:not(.disabled) {
+      border-color: var(--danger);
+      background: rgba(220, 38, 38, 0.1);
+  }
 }
 
 /* スマホ向けレスポンシブ対応 */

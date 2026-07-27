@@ -46,8 +46,10 @@
     line-height: 1;
 }
 
-.app-settings-modal .close-btn:hover {
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .app-settings-modal .close-btn:hover {
+      color: var(--text-primary);
+  }
 }
 
 .app-settings-modal .settings-content {
@@ -151,8 +153,10 @@
     font-size: var(--font-size-sm);
 }
 
-.app-settings-modal .toggle-visibility:hover {
-    background: var(--bg-primary);
+@media (hover: hover) and (pointer: fine) {
+  .app-settings-modal .toggle-visibility:hover {
+      background: var(--bg-primary);
+  }
 }
 
 .app-settings-modal .test-connection-section {
@@ -182,8 +186,10 @@
     text-decoration: none;
 }
 
-.app-settings-modal .help-link:hover {
-    text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .app-settings-modal .help-link:hover {
+      text-decoration: underline;
+  }
 }
 
 .app-settings-modal .help-link-large {
@@ -197,10 +203,12 @@
     transition: all 0.2s ease;
 }
 
-.app-settings-modal .help-link-large:hover {
-    background: var(--bg-primary);
-    border-color: var(--primary);
-    text-decoration: none;
+@media (hover: hover) and (pointer: fine) {
+  .app-settings-modal .help-link-large:hover {
+      background: var(--bg-primary);
+      border-color: var(--primary);
+      text-decoration: none;
+  }
 }
 
 .app-settings-modal .contact-info {
@@ -221,8 +229,10 @@
     text-decoration: none;
 }
 
-.app-settings-modal .contact-item a:hover {
-    text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .app-settings-modal .contact-item a:hover {
+      text-decoration: underline;
+  }
 }
 
 .app-settings-modal .settings-footer {
@@ -253,9 +263,11 @@
     transition: all 0.2s ease;
 }
 
-.app-settings-modal .mode-btn:hover {
-    border-color: var(--primary);
-    background: var(--bg-primary);
+@media (hover: hover) and (pointer: fine) {
+  .app-settings-modal .mode-btn:hover {
+      border-color: var(--primary);
+      background: var(--bg-primary);
+  }
 }
 
 .app-settings-modal .mode-btn.active {
@@ -368,8 +380,10 @@
     opacity: 0.7;
 }
 
-.app-settings-modal .status-dismiss:hover {
-    opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .app-settings-modal .status-dismiss:hover {
+      opacity: 1;
+  }
 }
 
 /* インポート確認パネル */

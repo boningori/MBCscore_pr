@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSwipe } from '../../hooks/useSwipe';
 import './SwipeableScoreButton.css';
 
@@ -31,7 +31,22 @@ export function SwipeableScoreButton({
     isActiveMiss = false,
 }: SwipeableScoreButtonProps) {
     const [showSelector, setShowSelector] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const info = SCORE_INFO[scoreType];
+
+    // メニュー外のタップで閉じる。
+    // clickではなくpointerdownで閉じることで、同じタップが下の要素（選手カード）に届く。
+    // clickで閉じると黒幕がタップを吸ってしまい、連続入力時に選手を選べなくなる
+    useEffect(() => {
+        if (!showSelector) return;
+        const handlePointerDown = (e: PointerEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+                setShowSelector(false);
+            }
+        };
+        document.addEventListener('pointerdown', handlePointerDown);
+        return () => document.removeEventListener('pointerdown', handlePointerDown);
+    }, [showSelector]);
 
     const { swipeDirection, onTouchStart, onTouchMove, onTouchEnd, consumeSwipeFlag } = useSwipe(
         useCallback(() => onScore(scoreType), [onScore, scoreType]),
@@ -42,7 +57,8 @@ export function SwipeableScoreButton({
     const handleClick = useCallback(() => {
         // スワイプ後はクリックをスキップ
         if (consumeSwipeFlag()) return;
-        setShowSelector(true);
+        // 黒幕がタップを吸わなくなったぶん、ボタン自身のタップで閉じられるようにする
+        setShowSelector(prev => !prev);
     }, [consumeSwipeFlag]);
 
     const handleSelectScore = () => {
@@ -55,12 +71,8 @@ export function SwipeableScoreButton({
         onMiss(info.missType);
     };
 
-    const handleClickOutside = () => {
-        setShowSelector(false);
-    };
-
     return (
-        <div className="swipeable-score-wrapper">
+        <div className="swipeable-score-wrapper" ref={wrapperRef}>
             <button
                 className={`action-btn swipeable-score-btn btn-${scoreType.toLowerCase()}
                     ${isActiveScore ? 'active-score' : ''} 
@@ -96,7 +108,8 @@ export function SwipeableScoreButton({
             {/* タップ時のセレクター */}
             {showSelector && (
                 <>
-                    <div className="score-selector-backdrop" onClick={handleClickOutside} />
+                    {/* 暗転のみ。タップ判定は持たない（下の選手カードへタップを通すため） */}
+                    <div className="score-selector-backdrop" />
                     <div className="score-selector">
                         <button
                             className="score-option success"

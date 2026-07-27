@@ -115,8 +115,14 @@
   transition: all var(--transition-fast);
 }
 
-.app-container .team-tab:hover {
-  color: var(--text-primary);
+/* ホバー効果はマウス環境のみ。
+   タッチ端末ではタップした要素に:hoverが当たったまま次のタップまで残り、
+   「未選択なのに未選択に見えない」状態を作ってしまうため。
+   タップ時の手応えは:activeが担当する */
+@media (hover: hover) and (pointer: fine) {
+  .app-container .team-tab:hover {
+    color: var(--text-primary);
+  }
 }
 
 .app-container .team-tab.active {
@@ -501,8 +507,10 @@
   -webkit-user-select: none;
 }
 
-.app-container .mini-player-card:hover {
-  background: var(--bg-primary);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .mini-player-card:hover {
+    background: var(--bg-primary);
+  }
 }
 
 .app-container .mini-player-card:active {
@@ -556,9 +564,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.app-container .bench-num:hover {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .bench-num:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
 }
 
 /* ベンチアクションエリア */
@@ -587,8 +597,10 @@
   border-color: #e74c3c;
 }
 
-.app-container .bench-actions .btn-danger:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .bench-actions .btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  }
 }
 
 /* レスポンシブ: スマホ縦向き */
@@ -736,25 +748,31 @@
   transition: all var(--transition-fast);
 }
 
-.app-container .team-select-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .team-select-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
 }
 
 .app-container .team-select-btn.team-a {
   border-color: var(--team-a);
 }
 
-.app-container .team-select-btn.team-a:hover {
-  background: rgba(59, 130, 246, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .team-select-btn.team-a:hover {
+    background: rgba(59, 130, 246, 0.2);
+  }
 }
 
 .app-container .team-select-btn.team-b {
   border-color: var(--team-b);
 }
 
-.app-container .team-select-btn.team-b:hover {
-  background: rgba(34, 197, 94, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .team-select-btn.team-b:hover {
+    background: rgba(34, 197, 94, 0.2);
+  }
 }
 
 /* チームカラーに基づくボーダー（白/青）- 高い詳細度で上書き */
@@ -762,16 +780,20 @@
   border-color: var(--team-white);
 }
 
-.app-container .team-select-btn.color-white:hover {
-  background: rgba(226, 232, 240, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .team-select-btn.color-white:hover {
+    background: rgba(226, 232, 240, 0.2);
+  }
 }
 
 .app-container .team-select-btn.color-blue {
   border-color: var(--team-blue);
 }
 
-.app-container .team-select-btn.color-blue:hover {
-  background: rgba(59, 130, 246, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .team-select-btn.color-blue:hover {
+    background: rgba(59, 130, 246, 0.2);
+  }
 }
 
 .app-container .team-select-btn .team-name {
@@ -1016,10 +1038,12 @@
   box-sizing: border-box;
 }
 
-.app-container .game-main-area.simple-mode .simple-sub-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(59, 130, 246, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .app-container .game-main-area.simple-mode .simple-sub-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+  }
 }
 
 /* シンプルモード：アクションパネル */

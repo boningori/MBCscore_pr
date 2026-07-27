@@ -128,6 +128,9 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.3);
     z-index: 90;
+    /* タップを下の要素（選手カード）へ通す。
+       閉じる処理はdocumentのpointerdownで行うため、黒幕は当たり判定を持たない */
+    pointer-events: none;
 }
 
 .swipeable-score-wrapper .score-selector {
@@ -162,8 +165,10 @@
     box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
 }
 
-.swipeable-score-wrapper .score-option.success:hover {
-    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+@media (hover: hover) and (pointer: fine) {
+  .swipeable-score-wrapper .score-option.success:hover {
+      box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+  }
 }
 
 .swipeable-score-wrapper .score-option.miss {
@@ -171,8 +176,10 @@
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-.swipeable-score-wrapper .score-option.miss:hover {
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+@media (hover: hover) and (pointer: fine) {
+  .swipeable-score-wrapper .score-option.miss:hover {
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  }
 }
 
 .swipeable-score-wrapper .score-option .option-label {

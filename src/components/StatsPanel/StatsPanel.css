@@ -43,8 +43,10 @@
     transition: background var(--transition-fast);
 }
 
-.stats-panel .stats-row:hover {
-    background: var(--bg-tertiary);
+@media (hover: hover) and (pointer: fine) {
+  .stats-panel .stats-row:hover {
+      background: var(--bg-tertiary);
+  }
 }
 
 .stats-panel .stats-row.on-court {

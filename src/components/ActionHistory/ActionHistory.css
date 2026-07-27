@@ -95,8 +95,10 @@
     background: rgba(16, 185, 129, 0.08);
 }
 
-.action-history .history-item:hover {
-    background: var(--bg-hover);
+@media (hover: hover) and (pointer: fine) {
+  .action-history .history-item:hover {
+      background: var(--bg-hover);
+  }
 }
 
 .action-history .history-item.score {

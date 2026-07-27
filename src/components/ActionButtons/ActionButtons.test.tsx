@@ -76,6 +76,20 @@ describe('ActionButtons: アクション先行時のステータスバー', () =
         expect(screen.getByText('キャンセル')).toBeTruthy();
     });
 
+    // この状態では選手タップが「選択」ではなく「即記録」になるため、
+    // 記録待ちであることが一目で分かる必要がある
+    it('activeActionがあるとき「記録待ち」であることが明示される', () => {
+        renderWithActiveAction();
+        expect(screen.getByText(/記録待ち/)).toBeTruthy();
+        expect(screen.getByRole('status').className).toMatch(/\bactive\b/);
+    });
+
+    it('activeActionがないときは「記録待ち」を表示しない', () => {
+        renderButtons(true);
+        expect(screen.queryByText(/記録待ち/)).toBeNull();
+        expect(screen.getByRole('status').className).not.toMatch(/\bactive\b/);
+    });
+
     it('ステータスバーはボタン群より前(上)に配置される', () => {
         renderWithActiveAction();
         const bar = screen.getByRole('status');

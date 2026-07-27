@@ -100,9 +100,11 @@
     position: relative;
 }
 
-.pending-resolver-modal .resolver-player-btn:hover {
-    background: #5a6878;
-    transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .pending-resolver-modal .resolver-player-btn:hover {
+      background: #5a6878;
+      transform: translateY(-2px);
+  }
 }
 
 .pending-resolver-modal .resolver-player-btn.selected {

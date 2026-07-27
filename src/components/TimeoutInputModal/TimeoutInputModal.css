@@ -145,8 +145,10 @@
     color: #666;
 }
 
-.timeout-modal-content .timeout-btn-cancel:hover {
-    background: #e5e5e5;
+@media (hover: hover) and (pointer: fine) {
+  .timeout-modal-content .timeout-btn-cancel:hover {
+      background: #e5e5e5;
+  }
 }
 
 .timeout-modal-content .timeout-btn-confirm {
@@ -154,6 +156,8 @@
     color: #fff;
 }
 
-.timeout-modal-content .timeout-btn-confirm:hover {
-    background: #0056b3;
+@media (hover: hover) and (pointer: fine) {
+  .timeout-modal-content .timeout-btn-confirm:hover {
+      background: #0056b3;
+  }
 }

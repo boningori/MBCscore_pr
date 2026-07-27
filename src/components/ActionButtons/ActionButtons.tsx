@@ -63,6 +63,9 @@ export function ActionButtons({
             <div className={`action-status-bar ${activeAction ? 'active' : ''}`} role="status">
                 {activeAction ? (
                     <>
+                        {/* この状態では選手タップが「選択」ではなく「即記録」になるため、
+                            記録待ちであることを明示する */}
+                        <span className="status-badge">記録待ち</span>
                         <span className="status-text">
                             {activeActionLabel ?? ''} → 選手をタップ
                         </span>
