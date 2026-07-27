@@ -549,12 +549,18 @@
 }
 
 .app-container .mini-player-card .player-check {
-  /* ファウル表示の有無にかかわらず右端に揃える */
+  /* ファウル表示が無い選手でも右端に揃える */
   margin-left: auto;
   color: var(--active-highlight-light);
   font-size: var(--font-size-lg);
   font-weight: 700;
   line-height: 1;
+}
+
+/* ファウル表示がある場合は、そちらのautoだけで余白を吸わせる。
+   両方がautoだと余白が等分され、F表示が中央に浮いてしまう */
+.app-container .mini-player-card .player-fouls + .player-check {
+  margin-left: var(--spacing-sm);
 }
 
 .app-container .team-bench {

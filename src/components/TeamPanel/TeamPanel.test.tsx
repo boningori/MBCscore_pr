@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { TeamPanel } from './TeamPanel';
 import { createPlayer } from '../../types/game';
+import type { FoulEntry } from '../../types/game';
 
 afterEach(cleanup);
 
@@ -97,5 +98,25 @@ describe('TeamPanel: 選択中の選手の強調表示', () => {
             .getByRole('button', { name: /選手4/ })
             .querySelector('.player-check');
         expect(check?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    // ✓の右寄せCSSは .player-fouls + .player-check の隣接セレクタに依存するため、
+    // この並び順が崩れるとファウル表示がカード中央に浮いてしまう
+    it('ファウルがある選手では✓がファウル表示の直後に並ぶ', () => {
+        const foul: FoulEntry = {
+            id: 'f1',
+            teamId: 'teamA',
+            playerId: 'a1',
+            playerNumber: 4,
+            foulType: 'P',
+            quarter: 1,
+            timestamp: 0,
+            isCoachOrBench: false,
+        };
+        const fouled = { ...createPlayer('a1', 4, '選手4'), isOnCourt: true, fouls: [foul] };
+        renderPanel({ players: [fouled], selectedPlayerId: 'a1' });
+        const tail = [...screen.getByRole('button', { name: /選手4/ }).children].slice(-2);
+        expect(tail[0].classList.contains('player-fouls')).toBe(true);
+        expect(tail[1].classList.contains('player-check')).toBe(true);
     });
 });
