@@ -17,7 +17,7 @@
     padding: var(--spacing-xl);
     width: 500px;
     max-width: 95%;
-    max-height: 90vh;
+    max-height: calc(var(--app-vh, 100vh) * 0.9);
     overflow-y: auto;
 }
 
@@ -63,6 +63,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    /* グリッド項目の既定 min-width:auto だと input の固有幅（size=20相当）で
+       列が縮まず、右列の入力欄が枠外へはみ出す */
+    min-width: 0;
 }
 
 .game-info-modal .form-group label {
@@ -72,12 +75,21 @@
 }
 
 .game-info-modal .form-group input {
+    width: 100%;
+    min-width: 0;
     padding: var(--spacing-sm);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--bg-tertiary);
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    /* 16px未満だとiOS Safariがフォーカス時に自動ズームするため固定 */
+    font-size: 16px;
+}
+
+/* 暗背景では既定（ライト）の時計アイコンが黒で潰れるため、
+   このモーダル内のtime入力だけダークUIに切り替える */
+.game-info-modal .form-group input[type="time"] {
+    color-scheme: dark;
 }
 
 .game-info-modal .form-group input:focus {
@@ -85,17 +97,15 @@
     border-color: var(--primary);
 }
 
-.game-info-modal .form-group input.disabled-input {
-    background: var(--bg-primary);
-    color: var(--text-secondary);
-    cursor: not-allowed;
-}
-
 .game-info-modal .modal-actions {
     margin-top: var(--spacing-lg);
     display: flex;
-    justify-content: flex-end;
     gap: var(--spacing-sm);
+}
+
+/* index.css の .modal-actions .btn { flex: 1 } と同じ等幅配置であることを明示 */
+.game-info-modal .modal-actions .btn {
+    flex: 1;
 }
 
 /* Responsive */
