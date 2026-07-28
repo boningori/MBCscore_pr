@@ -313,9 +313,10 @@
 }
 
 .app-container .center-actions-area.active {
-  border-color: var(--primary-light);
+  /* 記録待ちの表現はオレンジに統一する（ステータスバー・選手カードと同色） */
+  border-color: var(--warning);
   /* 少し目立たせるためのシャドウ追加 */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
 }
 
 .app-container .team-panel {
@@ -385,14 +386,14 @@
   }
 
   .app-container .center-actions-area.active .action-buttons-container {
-    border-color: var(--primary-light);
+    border-color: var(--warning);
   }
 }
 
 
+/* 選手カード側がピンクで強調されるため、パネル外周のシャドウは重ねない */
 .app-container .team-panel.active {
   border-color: var(--active-highlight);
-  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.4);
 }
 
 /* チームパネルのカラーライン（内側に配置：左チームは右側、右チームは左側） */
@@ -498,6 +499,8 @@
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
   border: 2px solid transparent;
+  /* 選択時の左バー分を非選択時も確保し、レイアウトのずれを防ぐ */
+  border-left-width: 10px;
   cursor: pointer;
   transition: all var(--transition-fast);
   /* タッチ最適化 */
@@ -517,9 +520,11 @@
   transform: scale(0.98);
 }
 
+/* 選択中は色・面積・形の3方向で示す（枠＋背景＋外側リング＋左バー＋✓） */
 .app-container .mini-player-card.selected {
-  border-color: var(--secondary);
-  background: rgba(5, 150, 105, 0.2);
+  border-color: var(--active-highlight);
+  background: var(--active-highlight-bg);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.45);
 }
 
 .app-container .mini-player-card .player-num {
@@ -542,6 +547,21 @@
 .app-container .mini-player-card .player-fouls.warning {
   color: var(--danger);
   font-weight: 700;
+}
+
+.app-container .mini-player-card .player-check {
+  /* ファウル表示が無い選手でも右端に揃える */
+  margin-left: auto;
+  color: var(--active-highlight-light);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ファウル表示がある場合は、そちらのautoだけで余白を吸わせる。
+   両方がautoだと余白が等分され、F表示が中央に浮いてしまう */
+.app-container .mini-player-card .player-fouls + .player-check {
+  margin-left: var(--spacing-sm);
 }
 
 .app-container .team-bench {
@@ -809,9 +829,12 @@
 }
 
 /* アクション先行選択中: タップ先である選手カードを強調
-   (レイアウトに依存せず「どこを押すか」を目的地側で示す) */
-.app-container .game-main-area.action-pending .mini-player-card {
-  border-color: var(--secondary-light);
+   (レイアウトに依存せず「どこを押すか」を目的地側で示す)
+   色は保留アクションと同じオレンジ。「まだ確定していない入力」を
+   オレンジで括り、緑は「コート上・出場実績」の意味に残す */
+/* 選択中カードはピンクのリングを持つため、パルスの対象から外す */
+.app-container .game-main-area.action-pending .mini-player-card:not(.selected) {
+  border-color: var(--warning);
   animation: player-target-pulse 1.5s ease-in-out infinite;
 }
 
@@ -819,18 +842,18 @@
 
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
   }
 
   50% {
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.45);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-container .game-main-area.action-pending .mini-player-card {
+  .app-container .game-main-area.action-pending .mini-player-card:not(.selected) {
     animation: none;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.45);
   }
 }
 
@@ -989,6 +1012,8 @@
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
+  /* 3列固定で幅が狭いため、左バーは細めにする */
+  border-left-width: 6px;
 }
 
 .app-container .game-main-area.simple-mode .mini-player-card .player-num {

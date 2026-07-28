@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { TeamPanel } from './TeamPanel';
 import { createPlayer } from '../../types/game';
+import type { FoulEntry } from '../../types/game';
 
 afterEach(cleanup);
 
@@ -66,5 +67,56 @@ describe('TeamPanel: ヘッダーのTF・タイムアウト表示', () => {
         renderPanel();
         expect(screen.queryByText(/^TF /)).toBeNull();
         expect(screen.queryByRole('button', { name: 'タイムアウト' })).toBeNull();
+    });
+});
+
+describe('TeamPanel: 選択中の選手の強調表示', () => {
+    const onCourtPlayers = [
+        { ...createPlayer('a1', 4, '選手4'), isOnCourt: true },
+        { ...createPlayer('a2', 7, '選手7'), isOnCourt: true },
+    ];
+
+    it('選択中のカードにselectedクラスと✓が付く', () => {
+        renderPanel({ players: onCourtPlayers, selectedPlayerId: 'a1' });
+        const selected = screen.getByRole('button', { name: /選手4/ });
+        expect(selected.className).toContain('selected');
+        expect(selected.getAttribute('aria-pressed')).toBe('true');
+        expect(selected.querySelector('.player-check')).toBeTruthy();
+    });
+
+    it('非選択のカードには✓が付かない', () => {
+        renderPanel({ players: onCourtPlayers, selectedPlayerId: 'a1' });
+        const other = screen.getByRole('button', { name: /選手7/ });
+        expect(other.className).not.toContain('selected');
+        expect(other.getAttribute('aria-pressed')).toBe('false');
+        expect(other.querySelector('.player-check')).toBeNull();
+    });
+
+    it('✓はaria-hiddenで読み上げを二重化しない', () => {
+        renderPanel({ players: onCourtPlayers, selectedPlayerId: 'a1' });
+        const check = screen
+            .getByRole('button', { name: /選手4/ })
+            .querySelector('.player-check');
+        expect(check?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    // ✓の右寄せCSSは .player-fouls + .player-check の隣接セレクタに依存するため、
+    // この並び順が崩れるとファウル表示がカード中央に浮いてしまう
+    it('ファウルがある選手では✓がファウル表示の直後に並ぶ', () => {
+        const foul: FoulEntry = {
+            id: 'f1',
+            teamId: 'teamA',
+            playerId: 'a1',
+            playerNumber: 4,
+            foulType: 'P',
+            quarter: 1,
+            timestamp: 0,
+            isCoachOrBench: false,
+        };
+        const fouled = { ...createPlayer('a1', 4, '選手4'), isOnCourt: true, fouls: [foul] };
+        renderPanel({ players: [fouled], selectedPlayerId: 'a1' });
+        const tail = [...screen.getByRole('button', { name: /選手4/ }).children].slice(-2);
+        expect(tail[0].classList.contains('player-fouls')).toBe(true);
+        expect(tail[1].classList.contains('player-check')).toBe(true);
     });
 });
