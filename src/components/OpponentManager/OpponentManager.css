@@ -369,6 +369,65 @@
     .opponent-manager-container .team-card-actions {
         flex-wrap: wrap;
     }
+
+    /* 選手追加行: 折り返さないと入力欄と「追加」ボタンが画面外にはみ出す */
+    .opponent-manager-container .add-player-row {
+        flex-wrap: wrap;
+    }
+
+    .opponent-manager-container .add-player-row .player-number-input {
+        width: calc(50% - var(--spacing-sm) / 2);
+    }
+
+    .opponent-manager-container .add-player-row .player-name-input {
+        flex: 1 1 calc(50% - var(--spacing-sm) / 2);
+        min-width: 0;
+    }
+
+    .opponent-manager-container .add-player-row .opponent-player-license-input {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+    }
+
+    .opponent-manager-container .add-player-row .btn {
+        width: 100%;
+    }
+
+    /* 選手一覧の各行も同様に折り返す（表示モード・編集モード共通） */
+    .opponent-manager-container .player-edit-row {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+
+    .opponent-manager-container .player-edit-row .player-number {
+        width: auto;
+    }
+
+    .opponent-manager-container .player-edit-row .player-name {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .opponent-manager-container .player-edit-row .opponent-player-license {
+        min-width: 0;
+        font-size: 0.7rem;
+    }
+
+    .opponent-manager-container .player-edit-row .player-number-input {
+        width: 60px;
+    }
+
+    .opponent-manager-container .player-edit-row .player-name-input {
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .opponent-manager-container .player-edit-row .opponent-player-license-input {
+        flex: 1;
+        width: auto;
+        min-width: 80px;
+    }
 }
 
 /* ステータスメッセージ（success / error） */

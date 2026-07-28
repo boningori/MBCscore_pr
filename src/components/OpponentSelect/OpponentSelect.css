@@ -83,6 +83,8 @@
     :is(.opponent-select, .opponent-editor) .teams-container {
         flex-direction: column;
         gap: var(--spacing-xl);
+        /* 縦並びでは交差軸が横になるため、flex-start だとカードが内容幅に縮む */
+        align-items: stretch;
     }
 
     :is(.opponent-select, .opponent-editor) .saved-opponents-section {
@@ -141,6 +143,79 @@
     padding: var(--spacing-lg);
     max-width: 800px;
     margin: 0 auto;
+}
+
+/* エディタ共通レイアウト。
+   以前は MyTeamManager.css の裸グローバルセレクタを共用していたが、
+   同ファイルが .my-team-* 配下にスコープ化されたため当画面用に定義する。 */
+.opponent-editor .editor-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.opponent-editor .editor-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.opponent-editor .editor-form {
+    background: var(--bg-secondary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+.opponent-editor .form-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.opponent-editor .form-label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* 見出し行の中ではラベル下の余白は不要 */
+.opponent-editor .players-header-row .form-label {
+    margin-bottom: 0;
+}
+
+.opponent-editor .add-player-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.opponent-editor .player-number-input {
+    width: 80px;
+}
+
+.opponent-editor .player-name-input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 決定ボタンと補足文は縦積み。ボタン幅はウィザードの「次へ」に合わせて全幅 */
+.opponent-editor .editor-actions {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border);
+}
+
+:is(.opponent-select, .opponent-editor) .ocr-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-secondary);
 }
 
 :is(.opponent-select, .opponent-editor) .players-list-simple {
@@ -235,6 +310,48 @@
     height: 18px;
     cursor: pointer;
 }
+
+/* スマホ表示: 入力行を折り返して1行あたりの詰まりを解消 */
+@media (max-width: 600px) {
+    .opponent-editor {
+        padding: var(--spacing-sm);
+    }
+
+    .opponent-editor .editor-form {
+        padding: var(--spacing-md);
+    }
+
+    .opponent-editor .opponent-coach-row {
+        flex-direction: column;
+    }
+
+    .opponent-editor .opponent-coach-license-input {
+        width: 100%;
+    }
+
+    .opponent-editor .add-player-row {
+        flex-wrap: wrap;
+    }
+
+    .opponent-editor .add-player-row .player-number-input {
+        width: calc(50% - var(--spacing-sm) / 2);
+    }
+
+    .opponent-editor .add-player-row .player-name-input {
+        flex: 1 1 calc(50% - var(--spacing-sm) / 2);
+        min-width: 0;
+    }
+
+    .opponent-editor .add-player-row .opponent-player-license-input {
+        flex: 1;
+        width: auto;
+    }
+
+    .opponent-editor .add-player-row .btn {
+        width: 100%;
+    }
+}
+
 /* button化に伴うUAスタイルのリセット */
 button.opponent-card {
     width: 100%;
