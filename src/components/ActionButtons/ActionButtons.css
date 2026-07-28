@@ -289,10 +289,10 @@
    この状態では選手タップが「選択」ではなく「即記録」になるため、
    通常時とはっきり区別できる強さで示す */
 .action-buttons-container .action-status-bar.active {
-    background: rgba(5, 150, 105, 0.28);
-    color: var(--secondary-light);
+    background: rgba(245, 158, 11, 0.28);
+    color: var(--warning-light);
     font-weight: 700;
-    border: 2px solid var(--secondary);
+    border: 2px solid var(--warning);
     animation: status-pending-pulse 1.5s ease-in-out infinite;
 }
 
@@ -300,18 +300,18 @@
 
     0%,
     100% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
     }
 
     50% {
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .action-buttons-container .action-status-bar.active {
         animation: none;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
     }
 }
 
