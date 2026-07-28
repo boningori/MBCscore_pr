@@ -313,9 +313,10 @@
 }
 
 .app-container .center-actions-area.active {
-  border-color: var(--primary-light);
+  /* 記録待ちの表現はオレンジに統一する（ステータスバー・選手カードと同色） */
+  border-color: var(--warning);
   /* 少し目立たせるためのシャドウ追加 */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
 }
 
 .app-container .team-panel {
@@ -385,7 +386,7 @@
   }
 
   .app-container .center-actions-area.active .action-buttons-container {
-    border-color: var(--primary-light);
+    border-color: var(--warning);
   }
 }
 
