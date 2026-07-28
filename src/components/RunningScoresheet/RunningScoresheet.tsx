@@ -253,10 +253,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                 <div className="rs-brace">{'{'}</div>
                                 {/* Center Breakdown: Q1-Q4, OT */}
                                 <div className="rs-score-breakdown">
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['1Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['1Q'].B}</span></div>
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['2Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['2Q'].B}</span></div>
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['3Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['3Q'].B}</span></div>
-                                    <div className="rs-sb-row"><span className="val">{scoresByPeriod['4Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['4Q'].B}</span></div>
+                                    {/* 1Q/3Qは赤、2Q/4Q・OTは黒（記入色に合わせる） */}
+                                    <div className="rs-sb-row q-red"><span className="val">{scoresByPeriod['1Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['1Q'].B}</span></div>
+                                    <div className="rs-sb-row q-black"><span className="val">{scoresByPeriod['2Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['2Q'].B}</span></div>
+                                    <div className="rs-sb-row q-red"><span className="val">{scoresByPeriod['3Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['3Q'].B}</span></div>
+                                    <div className="rs-sb-row q-black"><span className="val">{scoresByPeriod['4Q'].A}</span><span className="sep">―</span><span className="val">{scoresByPeriod['4Q'].B}</span></div>
                                     <div className="rs-sb-row"><span className="val">{scoresByPeriod['OT'].A}</span><span className="sep ot-label">(延長)</span><span className="val">{scoresByPeriod['OT'].B}</span></div>
                                 </div>
                                 <div className="rs-brace">{'}'}</div>
@@ -665,7 +666,10 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                 {endTime ? `${new Date(endTime).getHours().toString().padStart(2, '0')}:${new Date(endTime).getMinutes().toString().padStart(2, '0')}` : ''}
                             </span>
                         </div>
-                        <div className="rs-jba-credit">公益財団法人日本バスケットボール協会</div>
+                        <div className="rs-jba-credit">
+                            公益財団法人日本バスケットボール協会 公式様式に準拠
+                            <span className="rs-jba-disclaimer">※本アプリは同協会の公認・提携アプリではありません。</span>
+                        </div>
                     </div>
                 </div>
             </div>

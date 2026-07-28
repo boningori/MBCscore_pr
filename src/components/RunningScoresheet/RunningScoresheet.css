@@ -624,6 +624,12 @@
     border-color: #f00;
 }
 
+/* 1Q/3Qは背番号を赤で記入（得点数字は黒のまま） */
+.running-scoresheet-container .rs-rs-cell.a-no.q-red,
+.running-scoresheet-container .rs-rs-cell.b-no.q-red {
+    color: #f00;
+}
+
 /* Quarter End Underline */
 .running-scoresheet-container .rs-rs-cell.quarter-end {
     border-bottom: 2px solid;
@@ -817,6 +823,11 @@
 .running-scoresheet-container .rs-sb-row .sep {
     font-size: 10pt;
     margin: 0 8px;
+}
+
+/* 1Q/3Qのピリオド得点は赤で記入（「―」は様式の印刷部分なので黒のまま） */
+.running-scoresheet-container .rs-sb-row.q-red .val {
+    color: #f00;
 }
 
 .running-scoresheet-container .rs-sb-row .sep.ot-label {
@@ -1490,6 +1501,12 @@
     margin-top: 4px;
     font-size: 8pt;
     text-align: right;
+}
+
+.running-scoresheet-container .rs-jba-disclaimer {
+    display: block;
+    font-size: 6pt;
+    letter-spacing: 0.3pt;
 }
 
 .running-scoresheet-container .rs-license-note {
