@@ -1,1 +1,0 @@
-export { TeamManager } from './TeamManager';
