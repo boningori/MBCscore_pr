@@ -319,8 +319,9 @@
     flex-shrink: 0;
     padding: 2px 8px;
     border-radius: var(--radius-sm);
-    background: var(--secondary);
-    color: white;
+    /* 選手カードのパルス・保留アクションと同じオレンジで「未確定」を示す */
+    background: var(--warning);
+    color: var(--bg-primary);
     font-size: var(--font-size-sm);
     font-weight: 700;
     white-space: nowrap;

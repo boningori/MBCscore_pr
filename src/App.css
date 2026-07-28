@@ -828,10 +828,12 @@
 }
 
 /* アクション先行選択中: タップ先である選手カードを強調
-   (レイアウトに依存せず「どこを押すか」を目的地側で示す) */
+   (レイアウトに依存せず「どこを押すか」を目的地側で示す)
+   色は保留アクションと同じオレンジ。「まだ確定していない入力」を
+   オレンジで括り、緑は「コート上・出場実績」の意味に残す */
 /* 選択中カードはピンクのリングを持つため、パルスの対象から外す */
 .app-container .game-main-area.action-pending .mini-player-card:not(.selected) {
-  border-color: var(--secondary-light);
+  border-color: var(--warning);
   animation: player-target-pulse 1.5s ease-in-out infinite;
 }
 
@@ -839,18 +841,18 @@
 
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
   }
 
   50% {
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.45);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-container .game-main-area.action-pending .mini-player-card:not(.selected) {
     animation: none;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.45);
   }
 }
 
