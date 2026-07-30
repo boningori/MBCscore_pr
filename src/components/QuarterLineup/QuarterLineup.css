@@ -50,6 +50,9 @@
     background: var(--bg-secondary);
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
+    /* グリッドアイテムの既定 min-width:auto だと長いチーム名の分だけ
+       列が広がり、狭い画面で右側のチームが画面外へはみ出す */
+    min-width: 0;
 }
 
 .quarter-lineup .lineup-score-team.white {
@@ -66,6 +69,14 @@
     gap: var(--spacing-xs);
     font-weight: 600;
     font-size: var(--font-size-sm);
+    /* 白/青バッジとスコアを優先し、余った幅だけをチーム名に与える */
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* 省略記号はフレックスコンテナ自身では効かないため、チーム名専用の箱で処理する */
+.quarter-lineup .lineup-score-team-name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -76,6 +87,7 @@
     border-radius: var(--radius-full);
     font-size: var(--font-size-xs);
     font-weight: 800;
+    flex-shrink: 0;
 }
 
 .quarter-lineup .lineup-score-team.white .lineup-score-color {
@@ -93,6 +105,8 @@
     font-size: var(--font-size-xl);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
+    /* 得点は常に読めること。チーム名より優先して幅を確保する */
+    flex-shrink: 0;
 }
 
 .quarter-lineup .lineup-status {

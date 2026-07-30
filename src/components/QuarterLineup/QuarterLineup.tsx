@@ -118,7 +118,7 @@ export function QuarterLineup({
                         <div key={tab} className={`lineup-score-team ${team.color}`}>
                             <span className="lineup-score-name">
                                 <span className="lineup-score-color">{colorLabel(team)}</span>
-                                {team.name}
+                                <span className="lineup-score-team-name">{team.name}</span>
                             </span>
                             <span className="lineup-score-points">{teamScore(team)}</span>
                         </div>
