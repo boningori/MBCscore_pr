@@ -122,9 +122,11 @@
     font-weight: 800;
     font-size: var(--font-size-xl);
     text-align: center;
-    /* 高さも下のボタン(44px)に合わせる。
-       paddingがvh基準のため、指定しないと低い画面で38pxまで縮んで不揃いになる */
-    min-height: 44px;
+    /* 高さも下のQ終了ボタンに合わせる。
+       paddingがvh基準のため、指定しないと低い画面で38pxまで縮んで不揃いになる。
+       固定44pxではなく --touch-target を使うのは、ボタン側の文字(--font-size-sm)も
+       vh連動で伸びるため。画面高890px超でボタンだけ45.6pxに膨らんでいた */
+    min-height: var(--touch-target);
     min-width: 0;
     display: flex;
     align-items: center;
@@ -185,6 +187,9 @@
     /* 中央列は幅上限があるため、1行(約150px)を要求せず折り返す */
     white-space: normal;
     line-height: 1.2;
+    /* .btn-small の固定44pxを上書きし、上のバッジと同じ基準に揃える。
+       「Q1終了」が2行に折り返した高さ(最大45.6px)は --touch-target が常に上回る */
+    min-height: var(--touch-target);
 }
 
 @media (hover: hover) and (pointer: fine) {
