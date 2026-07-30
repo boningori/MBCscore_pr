@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useGame } from '../../context/GameContext';
-import { TimeoutInputModal } from '../TimeoutInputModal/TimeoutInputModal';
 import { Modal } from '../Modal';
 import './Scoreboard.css';
 
@@ -8,35 +7,15 @@ interface ScoreboardProps {
     onQuarterEnd?: () => void;
     /** quarterEnd中にスタメン選択画面へ戻る導線（未指定なら表示しない） */
     onOpenLineup?: () => void;
-    onTimeout?: (teamId: 'teamA' | 'teamB', elapsedMinutes: number) => void;
-    mode?: 'full' | 'simple';
 }
 
-export function Scoreboard({ onQuarterEnd, onOpenLineup, onTimeout, mode = 'full' }: ScoreboardProps) {
+// TF・タイムアウトはフル/シンプルとも TeamPanel のヘッダーが担当する。
+// 「そのチームの状態はそのチームのパネルを見る」に統一するため、
+// スコアボードはチーム名・得点・クォーターだけを扱う。
+// レイアウトもモードで分岐せず1本。狭い画面への対応は幅のメディアクエリが担当する
+export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
     const { state, dispatch, getTeamScore } = useGame();
 
-    // タイムアウト入力モーダルの状態
-    const [timeoutModalOpen, setTimeoutModalOpen] = useState(false);
-    const [timeoutTeamId, setTimeoutTeamId] = useState<'teamA' | 'teamB'>('teamA');
-
-    // タイムアウトボタン押下時
-    const handleTimeoutClick = (teamId: 'teamA' | 'teamB') => {
-        setTimeoutTeamId(teamId);
-        setTimeoutModalOpen(true);
-    };
-
-    // モーダルで確定時
-    const handleTimeoutConfirm = (elapsedMinutes: number) => {
-        setTimeoutModalOpen(false);
-        if (onTimeout) {
-            onTimeout(timeoutTeamId, elapsedMinutes);
-        }
-    };
-
-    // モーダルでキャンセル時
-    const handleTimeoutCancel = () => {
-        setTimeoutModalOpen(false);
-    };
     const { currentQuarter, phase } = state;
 
     const quarterLabel = currentQuarter <= 4
@@ -119,95 +98,6 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup, onTimeout, mode = 'full
     const scoreA = getTeamScore('teamA');
     const scoreB = getTeamScore('teamB');
 
-    // シンプルモード用のコンパクトレイアウト
-    if (mode === 'simple') {
-        return (
-            <div className="scoreboard-new scoreboard-simple">
-                {/* クォーター表示（上部に1セット） */}
-                <div className="simple-quarter-row">
-                    <span className={`quarter-badge ${currentQuarter <= 4 ? `q${currentQuarter}` : 'ot'}`}>{quarterLabel}</span>
-                    {phase === 'playing' && (
-                        <button className="btn btn-quarter-end btn-small" onClick={handleQuarterManagement}>
-                            <span aria-hidden="true">🏁</span>
-                            <span>{quarterLabel}終了</span>
-                        </button>
-                    )}
-                    {phase === 'quarterEnd' && (
-                        <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
-                            <span aria-hidden="true">▶</span>
-                            <span>{currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}</span>
-                        </button>
-                    )}
-                    {openLineupButton}
-                    {undoQuarterEndButton}
-                    {phase === 'setup' && (
-                        <button className="btn btn-primary btn-small" onClick={() => dispatch({ type: 'START_GAME' })}>
-                            開始
-                        </button>
-                    )}
-                </div>
-
-                {/* チーム得点カード */}
-                <div className="scoreboard-simple-grid">
-                    {/* チームA */}
-                    <div className={`simple-team-card color-${state.teamA.color}`}>
-                        <div className="simple-team-header">
-                            <span className="simple-team-name">{state.teamA.name}</span>
-                            <span className="simple-team-score">{scoreA}</span>
-                        </div>
-                        <div className="simple-team-footer">
-                            <span className={`tf-badge ${(state.teamA.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
-                                TF {(state.teamA.teamFouls[currentQuarter - 1] || 0)}
-                            </span>
-                            {phase === 'playing' && onTimeout && (
-                                <button
-                                    className="btn-timeout-simple"
-                                    onClick={() => handleTimeoutClick('teamA')}
-                                    disabled={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
-                                >
-                                    タイムアウト
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* チームB */}
-                    <div className={`simple-team-card color-${state.teamB.color}`}>
-                        <div className="simple-team-header">
-                            <span className="simple-team-name">{state.teamB.name}</span>
-                            <span className="simple-team-score">{scoreB}</span>
-                        </div>
-                        <div className="simple-team-footer">
-                            <span className={`tf-badge ${(state.teamB.teamFouls[currentQuarter - 1] || 0) >= 4 ? 'bonus' : ''}`}>
-                                TF {(state.teamB.teamFouls[currentQuarter - 1] || 0)}
-                            </span>
-                            {phase === 'playing' && onTimeout && (
-                                <button
-                                    className="btn-timeout-simple"
-                                    onClick={() => handleTimeoutClick('teamB')}
-                                    disabled={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
-                                >
-                                    タイムアウト
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* タイムアウト入力モーダル */}
-                <TimeoutInputModal
-                    isOpen={timeoutModalOpen}
-                    teamName={timeoutTeamId === 'teamA' ? state.teamA.name : state.teamB.name}
-                    teamColor={timeoutTeamId === 'teamA' ? state.teamA.color : state.teamB.color}
-                    currentQuarter={currentQuarter}
-                    onConfirm={handleTimeoutConfirm}
-                    onCancel={handleTimeoutCancel}
-                />
-                {quarterEndConfirmModal}
-            </div>
-        );
-    }
-
     // チームスコアブロック（チーム名 + スコア。TF/タイムアウトはTeamPanel側に表示）
     const renderTeamBlock = (teamId: 'teamA' | 'teamB') => {
         const team = teamId === 'teamA' ? state.teamA : state.teamB;
@@ -257,15 +147,6 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup, onTimeout, mode = 'full
                 {renderTeamBlock('teamB')}
             </div>
 
-            {/* タイムアウト入力モーダル */}
-            <TimeoutInputModal
-                isOpen={timeoutModalOpen}
-                teamName={timeoutTeamId === 'teamA' ? state.teamA.name : state.teamB.name}
-                teamColor={timeoutTeamId === 'teamA' ? state.teamA.color : state.teamB.color}
-                currentQuarter={currentQuarter}
-                onConfirm={handleTimeoutConfirm}
-                onCancel={handleTimeoutCancel}
-            />
             {quarterEndConfirmModal}
         </div>
     );

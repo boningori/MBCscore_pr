@@ -100,11 +100,15 @@ export function TeamPanel({
                   : ''}
               </span>
               <span className="player-pts">{player.stats.points}</span>
-              {player.fouls.length > 0 && (
-                <span className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
-                  F{player.fouls.length}
-                </span>
-              )}
+              {/* ファウル0でも要素は残す。条件描画にすると、この要素が持つ margin-left:auto が
+                  消えてカード内の余白配分が変わり、ファウル発生や選手選択のたびに
+                  得点の表示位置が最大32px動いてしまう（記録中に視線が迷う） */}
+              <span
+                className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}
+                aria-hidden={player.fouls.length === 0}
+              >
+                {player.fouls.length > 0 ? `F${player.fouls.length}` : ''}
+              </span>
               {/* 選択中の目印。aria-pressedで状態は伝わるので読み上げからは外す */}
               {selectedPlayerId === player.id && (
                 <span className="player-check" aria-hidden="true">✓</span>

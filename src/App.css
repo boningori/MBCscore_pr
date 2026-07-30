@@ -348,10 +348,23 @@
     flex: none;
   }
 
-  /* グリッドauto行ではheight:100%が潰れるため内容基準にする */
+  /* グリッドauto行ではheight:100%が潰れるため内容基準にする。
+     高さの上限は設けない。上限を付けると、固定高の操作系（選手カード・交代/ベンチファウル）と
+     可変長のアクション履歴がまとめて1つのスクロール箱に押し込まれ、
+     すぐ上のコメントと同じ「交代ボタンがタップ不能」状態が再発する。
+     縦の収まりは、可変長である履歴側だけを縛って解決する（下記 .action-history） */
   .app-container .team-panel {
     height: auto;
-    max-height: 280px;
+    /* 基底の overflow-y:auto を解除する。スクロール箱のままだと選択カードの
+       外周リング（box-shadow）が切られ、overflow-xもautoに落ちて横揺れの原因になる */
+    overflow-y: visible;
+  }
+
+  /* パネル内で唯一伸縮するのはアクション履歴。ここに上限を与えることで
+     パネル全体の高さが予測可能になり、履歴は内部スクロール（.history-list）で読める。
+     スマホのフルモードでは履歴ポップアップボタンを隠しているため、この履歴が唯一の閲覧手段 */
+  .app-container .team-panel .action-history {
+    max-height: clamp(120px, 22vh, 220px);
   }
 
   /* 中央列（Scoreboard + Actions）を全幅で下に配置 */
@@ -466,7 +479,9 @@
 .app-container .team-panel-status {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  /* 横方向の間隔なので、画面の高さで縮む --spacing-xs（低い画面で2.3px）は使わない。
+     44pxのチップ2つが隣接するため、固定8pxで分離を確保する */
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -541,7 +556,8 @@
 .app-container .mini-player-card .player-fouls {
   margin-left: auto;
   color: var(--text-muted);
-  font-size: var(--font-size-sm);
+  /* ファウル数は退場(5個)に直結する重要情報なので、基準サイズより20%大きくする */
+  font-size: calc(var(--font-size-sm) * 1.2);
 }
 
 .app-container .mini-player-card .player-fouls.warning {
@@ -642,11 +658,8 @@
     width: 100%;
   }
 
-  /* チームパネルをコンパクトに */
-  .app-container .team-panel {
-    max-height: 280px;
-    overflow-y: auto;
-  }
+  /* チームパネル自体はスクロールさせない（上限は800px側で撤去済み）。
+     入れ子スクロールにすると、記録中に一番使う交代ボタンが箱の外に隠れる */
 
   /* 選手カードを2列グリッドに変更（タップしやすく） */
   .app-container .team-players {
@@ -675,7 +688,7 @@
   }
 
   .app-container .mini-player-card .player-fouls {
-    font-size: var(--font-size-xs);
+    font-size: calc(var(--font-size-xs) * 1.2);
   }
 
   /* ベンチエリアをコンパクトに */
@@ -959,32 +972,28 @@
   display: none !important;
 }
 
-/* シンプルモード：スコアボードの左右配置を維持 */
-.app-container .app-main:has(.simple-mode) .scoreboard-main {
-  grid-template-columns: 1fr auto 1fr !important;
-  gap: var(--spacing-sm);
-}
-
-.app-container .app-main:has(.simple-mode) .team-score-block {
-  flex-direction: row !important;
-  justify-content: space-between;
-  padding: var(--spacing-xs) var(--spacing-sm);
-}
-
-.app-container .app-main:has(.simple-mode) .score-display {
-  font-size: var(--font-size-2xl);
-}
-
-.app-container .app-main:has(.simple-mode) .quarter-section {
-  padding: var(--spacing-xs) var(--spacing-sm);
-}
+/* スコアボードはフル/シンプルで同一レイアウト（TeamA | Q | TeamB の1段）。
+   以前ここにあったシンプルモード専用の上書きは、
+   - .scoreboard-main の列指定 … 基底と同値で不要
+   - .team-score-block の flex-direction:row … チーム名と得点は縦並びに統一するため不採用
+   - .score-display / .quarter-section … 幅のメディアクエリ（Scoreboard.css）が担当
+   のためすべて削除した */
 
 /* シンプルモード：チームパネルの余白を減らしてフィット */
+/* 余白は固定値で持つ。--spacing-xs/sm は画面の高さ連動のため、
+   低い端末ほど上下2.3px・左右4.5pxまで詰まり、TF/タイムアウトが枠に張り付いて見えた。
+   上6px に対して下は .team-panel の gap(6.8px) が担うので、
+   ヘッダー側の margin-bottom は持たせない（下記で0に上書き） */
 .app-container .game-main-area.simple-mode .team-panel {
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: 6px 10px;
   margin-bottom: var(--spacing-xs);
   flex: none !important;
   height: auto !important;
+}
+
+.app-container .game-main-area.simple-mode .team-panel-header {
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .app-container .game-main-area.simple-mode .team-players {
@@ -998,12 +1007,16 @@
   flex: none !important;
 }
 
-/* シンプルモード：選手カードを3列配置でコンパクトに */
+/* シンプルモード：選手カードを3列配置でコンパクトに。
+   幅は「コンテナ幅から実際のgap2つ分を引いて3等分」で求める。
+   旧実装の calc(33.33% - 4px) は、カード1枚ごとに4px（計12px）引く一方で
+   必要なgapは2つ（--spacing-xs × 2 = 約6.8px）しかないため、
+   行の右端がパネル内側より約5px手前で止まり、ヘッダーのTF/タイムアウトと右端がずれていた */
 .app-container .game-main-area.simple-mode .mini-player-card {
-  flex: 0 0 calc(33.33% - 4px) !important;
-  width: calc(33.33% - 4px) !important;
+  flex: 0 0 calc((100% - 2 * var(--spacing-xs)) / 3) !important;
+  width: calc((100% - 2 * var(--spacing-xs)) / 3) !important;
   min-width: 0 !important;
-  max-width: calc(33.33% - 4px) !important;
+  max-width: calc((100% - 2 * var(--spacing-xs)) / 3) !important;
   height: auto !important;
   min-height: clamp(55px, 8vh, 70px);
   font-size: var(--font-size-sm);
@@ -1042,12 +1055,12 @@
   min-height: auto !important;
 }
 
-/* シンプルモード：チームパネル内の交代ボタン（選手カードと同じグリッド内） */
+/* シンプルモード：チームパネル内の交代ボタン（選手カードと同じ3列に並ぶため幅も同じ式） */
 .app-container .game-main-area.simple-mode .simple-sub-btn {
-  flex: 0 0 calc(33.33% - 4px);
-  width: calc(33.33% - 4px);
+  flex: 0 0 calc((100% - 2 * var(--spacing-xs)) / 3);
+  width: calc((100% - 2 * var(--spacing-xs)) / 3);
   min-width: 0;
-  max-width: calc(33.33% - 4px);
+  max-width: calc((100% - 2 * var(--spacing-xs)) / 3);
   min-height: clamp(55px, 8vh, 70px);
   display: flex;
   align-items: center;

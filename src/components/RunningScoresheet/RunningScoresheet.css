@@ -6,6 +6,10 @@
     background: var(--bg-primary);
     min-height: 100vh;
     min-height: var(--app-vh, 100vh);
+    /* スコアシート本体はA4固定幅(210mm)で、画面幅より広くなることがある。
+       bodyがoverflow-x:hiddenのため、ここで横スクロールを受け持たないと
+       右半分(ランニングスコア・ファウル欄)へ到達する手段がなくなる */
+    overflow-x: auto;
 }
 
 .running-scoresheet-container .scoresheet-toolbar {
@@ -14,6 +18,9 @@
     padding: var(--spacing-md);
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
+    /* 横スクロール中もツールバー（閉じる・出力）を画面内に留める */
+    position: sticky;
+    left: 0;
 }
 
 /* スコアシート本体 - 印刷用スタイル */
@@ -1555,28 +1562,12 @@
     width: 96.5mm;
 }
 
-/* レスポンシブ */
-@media (max-width: 768px) {
-    .running-scoresheet-container .rs-top-header {
-        display: none;
-    }
-
-    .running-scoresheet-container .rs-header-grid {
-        display: none;
-    }
-
-    .running-scoresheet-container .rs-center-section {
-        display: none;
-    }
-
-    .running-scoresheet-container .rs-main-content {
-        flex-direction: column;
-    }
-
-    .running-scoresheet-container .rs-teams-section {
-        flex: none;
-    }
-}
+/* レスポンシブ
+   狭い画面でもスコアシートはA4様式のまま横スクロールで全体を確認できるようにする。
+   以前はここでヘッダー・中央欄を display:none にして縦積みにしていたが、
+   本体が210mm固定である以上それでは幅の問題は解決せず、
+   会場・審判・タイムアウト欄が確認できない不完全なシートになるだけだった。
+   （PDF/JPEG出力は windowWidth:1280 で描画するため、いずれにせよ出力物には影響しない） */
 
 .running-scoresheet-container .rs-unofficial-note {
     font-size: 0.75rem;

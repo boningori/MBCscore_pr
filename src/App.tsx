@@ -8,7 +8,6 @@ import { createPendingAction } from './types/pendingAction';
 import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
 import { saveGameResult } from './utils/gameHistoryStorage';
 import { loadGameSession, clearGameSession, hasGameSession } from './utils/gameSessionStorage';
-import { getDefaultGameMode } from './utils/appSettings';
 import { Home } from './components/Home';
 import { MyTeamManager } from './components/MyTeamManager';
 import { GameSetup } from './components/GameSetup';
@@ -43,6 +42,7 @@ import { isBackupDue } from './utils/lastBackupStorage';
 import { shareBackup } from './utils/dataBackup';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import { useFullscreen } from './hooks/useFullscreen';
+import { useGameMode } from './hooks/useGameMode';
 import { useGameAutoSave } from './hooks/useGameAutoSave';
 import { useScreenHistorySync } from './hooks/useScreenHistorySync';
 import './App.css';
@@ -768,8 +768,8 @@ function AppContent() {
   // フルスクリーン制御
   const { isFullScreen, toggleFullScreen } = useFullscreen();
 
-  // ゲームモード（フル/シンプル） - アプリ設定からデフォルト値を読み込み
-  const [gameMode, setGameMode] = useState<'full' | 'simple'>(getDefaultGameMode);
+  // ゲームモード（フル/シンプル） - アプリ設定の既定値・画面幅・手動切り替えを束ねて管理
+  const { gameMode, toggleGameMode } = useGameMode();
 
   // 履歴ポップアップ（シンプルモード用）
   const [showHistoryPopup, setShowHistoryPopup] = useState(false);
@@ -941,7 +941,7 @@ function AppContent() {
           </button>
           <button
             className={`btn btn-small ${gameMode === 'simple' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setGameMode(gameMode === 'full' ? 'simple' : 'full')}
+            onClick={toggleGameMode}
             style={{ marginLeft: '8px' }}
             aria-label={gameMode === 'full' ? 'シンプルモードに切り替え' : 'フルモードに切り替え'}
           >
@@ -1023,11 +1023,9 @@ function AppContent() {
                 onSubstitute={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamA')}
                 actionHistoryHandlers={actionHistoryHandlers}
-                {...(gameMode === 'full' ? {
-                  teamFouls: state.teamA.teamFouls[currentQuarter - 1] || 0,
-                  timeoutUsed: state.teamA.timeouts.some(t => t.quarter === currentQuarter),
-                  onTimeoutRequest: phase === 'playing' ? () => setTimeoutModalTeam('teamA') : undefined,
-                } : {})}
+                teamFouls={state.teamA.teamFouls[currentQuarter - 1] || 0}
+                timeoutUsed={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
+                onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamA') : undefined}
               />
 
               {/* Center: Scoreboard + Action Buttons */}
@@ -1037,8 +1035,6 @@ function AppContent() {
                   <Scoreboard
                     onQuarterEnd={handleQuarterEnd}
                     onOpenLineup={() => setScreen('quarterLineup')}
-                    onTimeout={handleTimeout}
-                    mode={gameMode}
                   />
                 </div>
 
@@ -1085,11 +1081,9 @@ function AppContent() {
                 onSubstitute={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamB')}
                 actionHistoryHandlers={actionHistoryHandlers}
-                {...(gameMode === 'full' ? {
-                  teamFouls: state.teamB.teamFouls[currentQuarter - 1] || 0,
-                  timeoutUsed: state.teamB.timeouts.some(t => t.quarter === currentQuarter),
-                  onTimeoutRequest: phase === 'playing' ? () => setTimeoutModalTeam('teamB') : undefined,
-                } : {})}
+                teamFouls={state.teamB.teamFouls[currentQuarter - 1] || 0}
+                timeoutUsed={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
+                onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamB') : undefined}
               />
             </div>
           </>
@@ -1524,7 +1518,7 @@ function AppContent() {
         </Modal>
       )}
 
-      {/* フルモード: TeamPanelのタイムアウトチップから開く入力モーダル */}
+      {/* TeamPanelのタイムアウトチップから開く入力モーダル（フル・シンプル共通） */}
       <TimeoutInputModal
         isOpen={timeoutModalTeam !== null}
         teamName={timeoutModalTeam === 'teamB' ? state.teamB.name : state.teamA.name}

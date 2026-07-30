@@ -795,16 +795,19 @@ textarea,
   animation: fadeIn 0.3s ease;
 }
 
-/* ===== チーム状態チップ（TeamPanelヘッダー・シンプルモードカードで共用） =====
+/* ===== チーム状態チップ（TeamPanelヘッダー） =====
    TFバッジは隣のタイムアウトボタンと高さ44px・角丸12pxを揃える。
-   押せない情報表示であることはフラットな暗色背景(枠線なし)で区別する */
+   押せない情報表示であることはフラットな暗色背景(枠線なし)で区別する。
+   左右paddingは高さ44pxに対して窮屈に見えない量を確保する（320px幅の最長チーム名でも
+   名前が省略されない範囲での上限が12px） */
 .tf-badge {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 2px 10px;
+  padding: 2px 12px;
   border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  /* 体育館で離れた位置からも読めるよう、44pxの箱に見合う字送りにする */
+  font-size: var(--font-size-md);
   font-weight: 600;
   background: var(--bg-primary);
   color: var(--text-secondary);
@@ -816,14 +819,21 @@ textarea,
   color: white;
 }
 
+/* 隣のTFバッジ（押せない情報表示）と違い、これは試合中に素早く押す実ボタン。
+   高さ44pxは規格上の下限なので、タップ精度は横幅で稼ぐ。
+   min-widthにしているのは、残数表示が「残1」→「済」と短くなってもボタンの
+   大きさと位置が変わらないようにするため */
 .btn-timeout-chip {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px 10px;
+  justify-content: center;
+  /* アイコンと残数の間。2pxだと詰まって1語に見える */
+  gap: 4px;
+  padding: 2px 12px;
   min-height: 44px;
+  min-width: 80px;
   border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   font-weight: 600;
   white-space: nowrap;
   background: #ffffff;
