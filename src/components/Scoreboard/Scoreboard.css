@@ -14,7 +14,10 @@
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .scoreboard-main {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    align-items: center;
+    /* 行の高さは中央のQ列（バッジ44px+ボタン44pxの縦積み）が決める。
+       centerだとチームブロックがその中に浮き、上下に約39pxの死んだ空間ができるため、
+       高さいっぱいに伸ばして得点の表示域に充てる */
+    align-items: stretch;
     gap: var(--spacing-sm);
 }
 
@@ -23,6 +26,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* 行いっぱいに伸びるため、チーム名と得点は縦方向の中央に置く */
+    justify-content: center;
     /* 横paddingを削減してスコア表示域を確保 */
     padding: var(--spacing-sm) var(--spacing-xs);
     background: var(--bg-tertiary);
@@ -93,15 +98,22 @@
     /* クリッピングなし・テキストをそのまま表示 */
 }
 
-/* クォーターセクション */
+/* クォーターセクション
+   Qバッジと操作ボタンを縦積みにし、中央列の幅を明示的に決める。
+   幅を内容任せにすると、ボタンのラベル長（「Q1終了」「終了を取り消す」等）で
+   中央列が最大296pxまで広がり、左右のチーム名が潰れる。
+   上限を設けることで、バッジとボタンのサイズも全画面幅で一致する */
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-section {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-sm);
+    /* 子を列幅いっぱいに伸ばして、バッジとボタンの幅を揃える */
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--spacing-xs);
     /* Q終了ボタンの44px化に伴い縦paddingを圧縮（720px高でもフィットさせる）。
        横paddingは控えめにして左右のチーム名表示域を確保 */
     padding: var(--spacing-xs) var(--spacing-sm);
+    width: clamp(84px, 23vw, 104px);
 }
 
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large {
@@ -109,9 +121,20 @@
     border-radius: var(--radius-md);
     font-weight: 800;
     font-size: var(--font-size-xl);
-    /* 最小幅を画面サイズに応じてスケール */
-    min-width: clamp(48px, 5vw, 60px);
     text-align: center;
+    /* 高さも下のボタン(44px)に合わせる。
+       paddingがvh基準のため、指定しないと低い画面で38pxまで縮んで不揃いになる */
+    min-height: 44px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ボタン側も列幅に合わせる（min-widthの既定値が残ると列からはみ出す） */
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-controls .btn {
+    width: 100%;
+    min-width: 0;
 }
 
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q1 {
@@ -138,9 +161,15 @@
     color: white;
 }
 
+/* ボタンは常に縦積み。横並びだと quarterEnd フェーズ（Qへ・スタメン選択へ・終了を取り消す）で
+   中央列が広がり、scoreboard-mainの `1fr auto 1fr` の1fr側が食われて
+   左右のチーム名が0pxまで潰れる。
+   align-items:stretch（既定）により、ボタンの幅も自動的に揃う */
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-controls {
     display: flex;
+    flex-direction: column;
     gap: var(--spacing-sm);
+    min-width: 0;
 }
 
 /* クォーター終了ボタン: ゲーム進行のアクションであることを
@@ -148,11 +177,14 @@
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-quarter-end {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     background: rgba(245, 158, 11, 0.12);
     border: 2px solid var(--warning);
     color: var(--warning-light);
-    white-space: nowrap;
+    /* 中央列は幅上限があるため、1行(約150px)を要求せず折り返す */
+    white-space: normal;
+    line-height: 1.2;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -183,91 +215,19 @@
 @media (max-width: 600px) {
     /* scoreboard-main は常に横並び（TeamA | Q | TeamB）を維持するため変更しない */
 
+    /* Q列の縦積みで確保された高さを得点に使う。
+       スコアボードで最も見たい数字なので、空けておくより大きく出す */
     :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .score-display {
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-3xl);
     }
 
-    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-section {
-        flex-direction: row;
-        justify-content: center;
-    }
-
-    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-chip {
-        padding: 2px 8px;
-        font-size: var(--font-size-xs);
-    }
+    /* タイムアウトチップの縮小指定は削除した。
+       チップは TeamPanel ヘッダーへ移したため、この :is(...) の配下には存在しない */
 }
 
-.scoreboard-simple {
-    /* Q終了ボタンの44px化に伴い縦paddingを圧縮（スマホでのフィット維持） */
-    padding: var(--spacing-xs) var(--spacing-sm);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-quarter-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xs);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-quarter-row .btn-small {
-    padding: 6px 12px;
-    font-size: var(--font-size-sm);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .scoreboard-simple-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-sm);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-card {
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm);
-    border-left: 4px solid var(--border);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-card.color-white {
-    border-left-color: var(--team-white);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-card.color-blue {
-    border-left-color: var(--team-blue);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-xs);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-name {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    /* 画面幅に応じた最大幅（固定値からvwベースに変更） */
-    max-width: clamp(60px, 10vw, 120px);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-score {
-    /* 3桁スコアも枝内に収まるようclampで制御 */
-    font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-2xl));
-    font-weight: 800;
-    color: var(--text-primary);
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .simple-team-footer {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    flex-wrap: wrap;
-}
+/* シンプルモード専用だった2段レイアウト（.scoreboard-simple / .simple-quarter-row /
+   .scoreboard-simple-grid / .simple-team-*）は、スコアボードをフルモードの
+   1段レイアウトに一本化したため廃止した */
 
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge {
     padding: 6px 12px;
@@ -301,31 +261,6 @@
     color: white;
 }
 
-/* .tf-badge は index.css の共有定義を使用 */
-
-/* シンプルモード用タイムアウトボタン */
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple {
-    padding: 2px 10px;
-    /* タッチターゲット確保（従来23pxで押しにくかった） */
-    min-height: 44px;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    line-height: 1.4;
-    background: #ffffff;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple:hover:not(:disabled) {
-      background: #f3f4f6;
-  }
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .btn-timeout-simple:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
+/* .tf-badge・タイムアウトボタン(.btn-timeout-chip)は TeamPanel ヘッダー側の
+   index.css 共有定義を使用する。シンプルモード専用だった .simple-team-footer /
+   .btn-timeout-simple は、TF・タイムアウトをパネルへ集約したため廃止した */
