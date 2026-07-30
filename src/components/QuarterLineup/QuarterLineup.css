@@ -157,8 +157,11 @@
     min-height: 120px;
 }
 
-.quarter-lineup .lineup-player-card:hover {
-    border-color: var(--primary-light);
+/* タッチ端末ではタップ後もホバー状態が残り、未選択のカードが選択済みに見えるため隔離する */
+@media (hover: hover) and (pointer: fine) {
+    .quarter-lineup .lineup-player-card:hover {
+        border-color: var(--primary-light);
+    }
 }
 
 .quarter-lineup .lineup-player-card:active {
