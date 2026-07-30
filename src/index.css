@@ -61,8 +61,10 @@
   --border-light: #475569;
   --bg-hover: #475569;
 
-  /* タッチ最適化 - 画面サイズに応じてスケール */
-  --touch-target: clamp(40px, 5vh, 48px);
+  /* タッチ最適化 - 画面サイズに応じてスケール。
+     下限は44px（WCAG 2.5.8 / iOS・Androidの推奨最小タップ領域）を下回らせない。
+     5vh が44pxに達するのは画面高880px以上のため、スマホではほぼ常に下限が効く */
+  --touch-target: clamp(44px, 5vh, 48px);
   --touch-target-large: clamp(52px, 7vh, 64px);
 
   /* スペーシング - 画面サイズに応じてスケール */
@@ -266,8 +268,10 @@ button.player-card {
 }
 
 .btn-small {
-  min-width: auto;
-  /* タッチターゲット44px・角丸はボタン標準(radius-md)に統一 */
+  /* タッチターゲット44px・角丸はボタン標準(radius-md)に統一。
+     min-width:auto だとアイコン1文字のボタン（ヘッダーの🏠・⚙など）が
+     グリフ幅まで縮み、768px幅で36〜43pxしかなかった */
+  min-width: 44px;
   min-height: 44px;
   padding: 4px 12px;
   font-size: var(--font-size-sm);
@@ -929,8 +933,11 @@ textarea,
 }
 
 .modal-close {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  /* .modal-header は space-between のflexなので、タイトルが長いと
+     この閉じるボタンが縮んで320px幅では27pxまで潰れていた */
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1175,17 +1182,6 @@ textarea,
   }
 }
 
-/* 横向きタブレット最適化 */
-@media (min-width: 768px) and (orientation: landscape) {
-  .app-layout {
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    gap: var(--spacing-md);
-    height: 100vh;
-    padding: var(--spacing-md);
-  }
-
-  .app-layout>* {
-    overflow-y: auto;
-  }
-}
+/* 横向きタブレット最適化の指定がここにあったが、対象の .app-layout は
+   どのコンポーネントも描画していない死にコードだったため削除した。
+   実際の3カラムは App.css の .app-main / .game-layout が担当している */

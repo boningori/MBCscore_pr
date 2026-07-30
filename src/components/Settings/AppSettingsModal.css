@@ -44,6 +44,13 @@
     cursor: pointer;
     padding: 0;
     line-height: 1;
+    /* ×のグリフ幅しかなく14×24pxだった。中央寄せしてタップ領域を44px角にする */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    flex-shrink: 0;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -130,6 +137,9 @@
 
 .app-settings-modal .password-wrapper input {
     flex: 1;
+    /* 共通の .input クラスを使っていないため、ここでタップ領域を確保する */
+    min-height: var(--touch-target);
+    min-width: 0;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -144,6 +154,9 @@
 }
 
 .app-settings-modal .toggle-visibility {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    flex-shrink: 0;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -192,8 +205,12 @@
   }
 }
 
+/* 本文中のインラインリンク(.help-link)は WCAG 2.5.8 のインライン例外に当たるので触らない。
+   ボタン状に見えるこちらは44pxを確保する */
 .app-settings-modal .help-link-large {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
     padding: var(--spacing-md) var(--spacing-lg);
     background: var(--bg-tertiary);
     border: 1px solid var(--border);

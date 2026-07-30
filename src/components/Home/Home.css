@@ -199,6 +199,8 @@
 .home-container .manual-link {
     display: inline-flex;
     align-items: center;
+    /* padding だけでは34.4pxで基準を下回る */
+    min-height: var(--touch-target);
     gap: 4px;
     color: var(--primary-light);
     text-decoration: none;

@@ -1540,27 +1540,10 @@
     }
 }
 
-/* エクスポート時はA4レイアウトを強制（デバイス非依存） */
-.running-scoresheet-container .running-scoresheet.exporting .rs-top-header {
-    display: flex;
-}
-
-.running-scoresheet-container .running-scoresheet.exporting .rs-header-grid {
-    display: flex;
-}
-
-.running-scoresheet-container .running-scoresheet.exporting .rs-center-section {
-    display: flex;
-}
-
-.running-scoresheet-container .running-scoresheet.exporting .rs-main-content {
-    flex-direction: row;
-}
-
-.running-scoresheet-container .running-scoresheet.exporting .rs-teams-section {
-    flex: none;
-    width: 96.5mm;
-}
+/* エクスポート時にA4レイアウトを強制する .exporting の上書きがここにあったが、
+   これは狭い画面でヘッダーを非表示・縦積みにしていた頃の打ち消し用だった。
+   その@media指定を廃止した結果、5つとも基底値と同値の完全なno-opになったため削除した
+   （出力は html2canvas の windowWidth:1280 でA4幅として描画される） */
 
 /* レスポンシブ
    狭い画面でもスコアシートはA4様式のまま横スクロールで全体を確認できるようにする。

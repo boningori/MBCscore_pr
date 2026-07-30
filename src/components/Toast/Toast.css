@@ -58,6 +58,21 @@
     line-height: 1;
     opacity: 0.8;
     flex-shrink: 0;
+    position: relative;
+}
+
+/* ✕の実寸は24×19pxしかなく、そのままではタップ領域が基準を満たさない。
+   min-width/min-heightで44pxにするとトースト自体が41px→64pxに膨らむため、
+   見た目は変えずに擬似要素でタップ領域だけ44px角に広げる（WCAG 2.5.8 は
+   可視領域より広いターゲットを認めている） */
+.toast-container .toast-dismiss::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -82,8 +97,16 @@
 /* モバイル対応 */
 @media (max-width: 600px) {
     .toast-container {
-        bottom: 16px;
-        width: calc(100vw - 32px);
+        /* セーフエリアを足し忘れると、基底の calc(24px + safe-bottom) を打ち消して
+           standalone PWA でホームインジケータにトーストが重なる */
+        bottom: calc(16px + var(--safe-bottom, 0px));
+        /* 100vw基準ではノッチ側のインセットを跨いでしまうため、左右を直接指定する。
+           translateX(-50%)での中央寄せは左右非対称なインセット（横向き時）を扱えない */
+        left: calc(16px + var(--safe-left, 0px));
+        right: calc(16px + var(--safe-right, 0px));
+        transform: none;
+        width: auto;
+        max-width: none;
     }
 
     .toast-container .toast {
