@@ -17,7 +17,8 @@
     border-radius: var(--radius-lg);
     width: 90%;
     max-width: 500px;
-    max-height: 90vh;
+    /* セーフエリアを除いた実表示高基準（オーバーレイはbodyのpaddingが効かない） */
+    max-height: calc(var(--app-vh, 100vh) * 0.9);
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }

@@ -178,7 +178,7 @@
     padding: var(--spacing-xl);
     min-width: 320px;
     max-width: 90%;
-    max-height: 90vh;
+    max-height: calc(var(--app-vh, 100vh) * 0.9);
     overflow-y: auto;
 }
 

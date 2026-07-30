@@ -14,7 +14,8 @@
     border-radius: var(--radius-md);
     max-width: 640px;
     width: calc(100% - 32px);
-    max-height: 85vh;
+    /* セーフエリアを除いた実表示高基準（オーバーレイはbodyのpaddingが効かない） */
+    max-height: calc(var(--app-vh, 100vh) * 0.85);
     display: flex;
     flex-direction: column;
 }

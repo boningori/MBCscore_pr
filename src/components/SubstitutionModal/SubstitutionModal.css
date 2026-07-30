@@ -175,7 +175,7 @@
     .substitution-modal {
         max-width: 100%;
         margin: var(--spacing-sm);
-        max-height: 90vh;
+        max-height: calc(var(--app-vh, 100vh) * 0.9);
         overflow-y: auto;
     }
 
