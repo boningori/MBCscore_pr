@@ -589,23 +589,10 @@
   flex-wrap: wrap;
 }
 
-.app-container .bench-num {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  padding: 4px 8px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .app-container .bench-num:hover {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-  }
-}
+/* .bench-num（ベンチ選手の背番号チップ）の指定がここにあったが、
+   TeamPanel はベンチ選手を一覧描画しないため参照されていなかった。
+   タップ領域が36pxで基準を満たしていなかったが、生きたUIではないため
+   サイズ調整ではなく削除した */
 
 /* ベンチアクションエリア */
 .app-container .bench-actions {
@@ -695,12 +682,6 @@
   .app-container .team-bench {
     flex-wrap: wrap;
     gap: var(--spacing-xs);
-  }
-
-  .app-container .bench-num {
-    padding: 6px 10px;
-    font-size: var(--font-size-sm);
-    min-height: 36px;
   }
 
   /* ターゲットハイライト（コーチボタン等） */
@@ -966,11 +947,9 @@
   max-width: 100%;
 }
 
-/* シンプルモード：タイムアウト関連ボタンを非表示 */
-.app-container .app-main:has(.simple-mode) .to-count,
-.app-container .app-main:has(.simple-mode) .btn-game-action {
-  display: none !important;
-}
+/* シンプルモード用に .to-count / .btn-game-action を隠す指定がここにあったが、
+   どちらのクラスも描画されていない死にコードだったため削除した。
+   タイムアウトはフル/シンプル共通でチームパネルの⏱チップが担当する */
 
 /* スコアボードはフル/シンプルで同一レイアウト（TeamA | Q | TeamB の1段）。
    以前ここにあったシンプルモード専用の上書きは、
