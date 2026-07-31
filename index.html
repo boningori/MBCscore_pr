@@ -13,6 +13,19 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: https://generativelanguage.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'" />
     <link rel="icon" type="image/png" href="/MBCscore_pr/icon-192.png" />
     <link rel="apple-touch-icon" href="/MBCscore_pr/icon-192.png" />
+    <!--
+      maximum-scale=1.0 / user-scalable=no は意図的な制約。
+      試合中は片手で連続タップするため、ピンチやダブルタップの誤検知で画面が
+      拡大するとレイアウトがずれ、得点ボタンを押し直す間に記録が遅れる。
+      スコア記録専用端末としての操作確実性を優先し、ズームを止めている。
+
+      トレードオフとして WCAG 1.4.4（テキストの拡大縮小）/ 1.4.10（リフロー）を
+      満たさない。あわせて全タイポグラフィが clamp(px, vh, px) のため、
+      OSの文字サイズ設定も反映されない（src/index.css の --font-size-*）。
+      可読性は最小サイズ側で担保する方針とし、各画面の下限を10〜12pxに揃えている。
+      この判断を見直す場合は、ズーム解禁と --font-size-* の rem 化を
+      セットで行う必要がある（片方だけでは文字が拡大できない）。
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#1e293b" />
     <meta name="description" content="ミニバスケットボール用スコアシートアプリ - オフライン対応" />
@@ -20,10 +33,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MBCscore" />
     <title>MBCscore - ミニバス スコアシート</title>
-    <script type="module" crossorigin src="/MBCscore_pr/assets/index-J8cIz1M7.js"></script>
+    <script type="module" crossorigin src="/MBCscore_pr/assets/index-0xgd1Zqq.js"></script>
     <link rel="modulepreload" crossorigin href="/MBCscore_pr/assets/vendor-react-CaS04JnI.js">
     <link rel="modulepreload" crossorigin href="/MBCscore_pr/assets/vendor-utils-DJGzVUA8.js">
-    <link rel="stylesheet" crossorigin href="/MBCscore_pr/assets/index-DOZhcFM9.css">
+    <link rel="stylesheet" crossorigin href="/MBCscore_pr/assets/index-DOQ10W3s.css">
   <link rel="manifest" href="/MBCscore_pr/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/MBCscore_pr/registerSW.js"></script></head>
   <body>
     <div id="root"></div>
