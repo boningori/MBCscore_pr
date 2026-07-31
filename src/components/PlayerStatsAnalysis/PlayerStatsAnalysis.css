@@ -342,7 +342,7 @@
 }
 
 .player-stats-container .stat-box .stat-label {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -659,7 +659,7 @@
 }
 
 .player-stats-container .section-title .title-note {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     font-weight: 400;
 }
@@ -736,7 +736,7 @@
 }
 
 .player-stats-container .pie-label {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     margin-top: 2px;
 }
@@ -837,7 +837,7 @@
 }
 
 .player-stats-container .perf-header span {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     font-weight: 500;
 }
@@ -853,7 +853,7 @@
 }
 
 .player-stats-container .card-note {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 400;
     color: #94a3b8;
 }
@@ -1038,7 +1038,7 @@
 }
 
 .player-stats-container .bar-label {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #64748b;
     margin-top: 6px;
     white-space: nowrap;
@@ -1046,7 +1046,7 @@
 }
 
 .player-stats-container .bar-games {
-    font-size: 0.55rem;
+    font-size: 0.75rem;
     color: #94a3b8;
 }
 
@@ -1078,7 +1078,7 @@
     gap: 6px;
     align-items: center;
     padding: 4px 8px;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     font-weight: 600;
 }
@@ -1091,7 +1091,7 @@
 .player-stats-container .game-history-header .stats-header span {
     flex: 1;
     text-align: center;
-    font-size: 0.6rem;
+    font-size: 0.75rem;
 }
 
 .player-stats-container .game-history-header .to-header {
@@ -1102,12 +1102,12 @@
 .player-stats-container .game-history-header .to-header span {
     flex: 1;
     text-align: center;
-    font-size: 0.6rem;
+    font-size: 0.75rem;
 }
 
 .player-stats-container .game-history-header .to-header .to-sub {
     color: #cbd5e1;
-    font-size: 0.5rem;
+    font-size: 0.75rem;
 }
 
 .player-stats-container .game-row {
@@ -1138,7 +1138,7 @@
 }
 
 .player-stats-container .game-row .game-date {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: #64748b;
     font-weight: 500;
 }
@@ -1227,7 +1227,7 @@
     flex: 1;
     text-align: center;
     font-weight: 600;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     padding: 2px 2px;
     border-radius: 2px;
 }
@@ -1244,7 +1244,7 @@
 .player-stats-container .game-to-compact .to-cm {
     background: rgba(239, 68, 68, 0.08);
     color: #f87171;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
 }
 
 /* 成長推移比較セクション */
@@ -1329,6 +1329,8 @@
 }
 
 .player-stats-container .period-select-simple {
+    /* padding だけでは34pxで基準を下回る（.team-select と同じ扱い） */
+    min-height: 44px;
     padding: 6px 12px;
     font-size: 0.85rem;
     font-weight: 500;
@@ -1388,13 +1390,13 @@
 }
 
 .player-stats-container .standard-chart .chart-unit {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     font-weight: 400;
 }
 
 .player-stats-container .standard-chart .chart-subtitle {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     margin-left: auto;
 }
@@ -1413,7 +1415,7 @@
     width: 36px;
     min-width: 36px;
     height: 100px;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     padding-right: 4px;
     border-right: 1px solid #cbd5e1;
@@ -1480,7 +1482,7 @@
 .player-stats-container .standard-chart .bar-value {
     position: absolute;
     top: -14px;
-    font-size: 0.55rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #475569;
     white-space: nowrap;
@@ -1498,7 +1500,10 @@
     width: 20px;
     min-width: 20px;
     text-align: center;
-    font-size: 0.5rem;
+    /* ここだけ他より小さい10px。目盛り枠はバー幅(20px)と揃える必要があり、
+       12pxにすると「6/10」が24pxになって枠から4px切れる。
+       アプリ共通の --font-size-xs の下限(10px)と同値なので下回ってはいない */
+    font-size: 0.625rem;
     color: #64748b;
     white-space: nowrap;
     overflow: hidden;
