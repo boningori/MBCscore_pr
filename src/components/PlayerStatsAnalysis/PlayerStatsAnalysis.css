@@ -1983,3 +1983,64 @@
     color: #94a3b8;
     text-align: center;
 }
+
+/* ===========================================
+   試合別詳細テーブル: スマホ幅では2行に折り返す
+   ===========================================
+   6列グリッド（44px 12px 1fr 56px 100px 100px）は固定幅だけで312pxあり、
+   PTS/REB/AST/STL と TO/DD/TR/PM/CM の各100px枠には5セルが入るため
+   min-content が100pxを超える。グリッド列は min-content 未満に縮まないので、
+   スマホ幅では列が縮まずテーブルごと横にはみ出していた
+   （実測 390px幅で36px・320px幅で72px、ページ自体も横スクロールしていた）。
+
+   幅600px以下では flex-wrap に切り替え、
+     1行目: 日付 | 勝敗ドット | 対戦相手 | スコア
+     2行目: PTS/REB/AST/STL | TO/DD/TR/PM/CM
+   の2行に分ける。列を削らないので情報量は変わらない。
+
+   PDF/JPEG出力は html2canvas を windowWidth:827 で描画する（DetailView.tsx）ため、
+   このメディアクエリは出力物には適用されず、A4向けの6列レイアウトのまま出る。 */
+@media (max-width: 600px) {
+
+    .player-stats-container .game-history-header,
+    .player-stats-container .game-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        column-gap: 6px;
+        row-gap: 4px;
+    }
+
+    /* 1行目 */
+    .player-stats-container .game-history-header>span:nth-child(1),
+    .player-stats-container .game-row .game-date {
+        flex: 0 0 44px;
+    }
+
+    .player-stats-container .game-history-header>span:nth-child(2),
+    .player-stats-container .game-row .result-dot {
+        flex: 0 0 8px;
+    }
+
+    .player-stats-container .game-history-header>span:nth-child(3),
+    .player-stats-container .game-row .game-opponent {
+        /* min-width:0 がないと flex アイテムが内容幅を下限にして
+           ellipsis が効かず、長いチーム名がそのまま溢れる */
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .player-stats-container .game-history-header>span:nth-child(4),
+    .player-stats-container .game-row .game-score {
+        flex: 0 0 auto;
+    }
+
+    /* 2行目: basis を50%にして必ず1行目から折り返させ、2つで1行を分け合う */
+    .player-stats-container .game-history-header .stats-header,
+    .player-stats-container .game-history-header .to-header,
+    .player-stats-container .game-row .game-stats-compact,
+    .player-stats-container .game-row .game-to-compact {
+        flex: 1 1 calc(50% - 3px);
+        min-width: 0;
+    }
+}
