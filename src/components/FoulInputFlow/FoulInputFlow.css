@@ -20,7 +20,8 @@
     /* 最小幅を画面サイズに応じてスケール */
     min-width: clamp(280px, 40vw, 320px);
     max-width: 90%;
-    max-height: 85vh;
+    /* セーフエリアを除いた実表示高基準（オーバーレイはbodyのpaddingが効かない） */
+    max-height: calc(var(--app-vh, 100vh) * 0.85);
     overflow-y: auto;
 }
 

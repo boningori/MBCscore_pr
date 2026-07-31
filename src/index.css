@@ -107,9 +107,23 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  /* bodyのsafe-areaパディングを除いた実表示高（全画面レイアウト用） */
-  --app-vh: calc(100vh - var(--safe-top, 0px) - var(--safe-bottom, 0px));
-  --app-dvh: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  /* 1vh相当の単位トークン。下の @supports で dvh に差し替わる。
+     height: var(--app-dvh) のように dvh 入りのcalcを直接書くと、非対応環境では
+     「計算値時に不正」となって直前の宣言ではなく初期値(height:auto)へ落ちるため、
+     フォールバックは単位側で切り替える。
+     --font-size-* / --spacing-* / --touch-target は意図的に vh のまま。
+     dvhにするとURLバーの出入りで文字やボタンの寸法が動いてしまう */
+  --vh-unit: 1vh;
+  /* bodyのsafe-areaパディングを除いた実表示高（全画面レイアウト・モーダル高の基準） */
+  --app-vh: calc(100 * var(--vh-unit) - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+}
+
+/* dvh対応環境ではURLバーの出入りに追従させる。
+   iOSでURLバー表示中に 100vh を使うと、画面下端のボタンがバーの裏に隠れる */
+@supports (height: 1dvh) {
+  :root {
+    --vh-unit: 1dvh;
+  }
 }
 
 /* リセット */
@@ -878,7 +892,10 @@ textarea,
   padding: var(--spacing-lg);
   max-width: 500px;
   width: 100%;
-  max-height: 90vh;
+  /* 90vh ではなくセーフエリアを除いた実表示高基準にする。
+     オーバーレイは position:fixed でビューポート基準に貼られるため
+     bodyのsafe-areaパディングが効かず、ノッチ側で本体の端が隠れていた */
+  max-height: calc(var(--app-vh, 100vh) * 0.9);
   overflow-y: auto;
 }
 

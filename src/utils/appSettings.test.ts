@@ -5,13 +5,27 @@ beforeEach(() => {
     localStorage.clear();
 });
 
-// jsdomのmatchMediaは幅を評価しないため、(max-width: Npx)を解釈するスタブを入れる
-const setWidth = (w: number) => {
+// jsdomのmatchMediaは画面条件を評価しないため、カンマ区切りの各節を
+// (max-width: Npx) / (max-height: Npx) / (orientation: …) の組み合わせとして解釈するスタブを入れる
+const setViewport = (w: number, h = 900) => {
     Object.defineProperty(window, 'innerWidth', { value: w, configurable: true, writable: true });
+    Object.defineProperty(window, 'innerHeight', { value: h, configurable: true, writable: true });
     window.matchMedia = ((query: string) => {
-        const maxWidth = /\(max-width:\s*(\d+)px\)/.exec(query);
+        const clauseMatches = (clause: string) => {
+            const conditions = clause.match(/\([^)]+\)/g) ?? [];
+            if (conditions.length === 0) return false;
+            return conditions.every(cond => {
+                const maxWidth = /max-width:\s*(\d+)px/.exec(cond);
+                if (maxWidth) return w <= Number(maxWidth[1]);
+                const maxHeight = /max-height:\s*(\d+)px/.exec(cond);
+                if (maxHeight) return h <= Number(maxHeight[1]);
+                const orientation = /orientation:\s*(landscape|portrait)/.exec(cond);
+                if (orientation) return orientation[1] === (w >= h ? 'landscape' : 'portrait');
+                return false;
+            });
+        };
         return {
-            matches: maxWidth ? w <= Number(maxWidth[1]) : false,
+            matches: query.split(',').some(clause => clauseMatches(clause)),
             media: query,
             onchange: null,
             addEventListener: () => { },
@@ -22,6 +36,8 @@ const setWidth = (w: number) => {
         } as unknown as MediaQueryList;
     }) as typeof window.matchMedia;
 };
+
+const setWidth = (w: number) => setViewport(w);
 
 describe('getDefaultGameMode: 未設定時は画面幅で自動選択', () => {
     it('未設定かつスマホ幅ならシンプルモード', () => {
@@ -55,6 +71,40 @@ describe('getDefaultGameMode: 未設定時は画面幅で自動選択', () => {
         setWidth(375);
         saveDefaultGameMode('full');
         expect(getDefaultGameMode()).toBe('full');
+    });
+});
+
+// 横向きスマホは幅が801px以上でも高さが足りず、フルモードでは
+// 操作ボタン・交代・履歴が列内スクロールに埋もれる
+describe('getDefaultGameMode: 横向きで高さが足りない場合', () => {
+    it('iPhone X以降の横向き(812x375)は幅801px以上でもシンプルモード', () => {
+        setViewport(812, 375);
+        expect(getDefaultGameMode()).toBe('simple');
+    });
+
+    it('iPhone 14 Pro Maxの横向き(932x430)もシンプルモード', () => {
+        setViewport(932, 430);
+        expect(getDefaultGameMode()).toBe('simple');
+    });
+
+    it('iPad Proの横向き(1366x1024)は高さが足りるのでフルモード', () => {
+        setViewport(1366, 1024);
+        expect(getDefaultGameMode()).toBe('full');
+    });
+
+    it('iPad Air縦向き(834x1112)はフルモード（横向き条件に該当しない）', () => {
+        setViewport(834, 1112);
+        expect(getDefaultGameMode()).toBe('full');
+    });
+
+    it('高さ501pxの横向きはフルモード（境界の外側）', () => {
+        setViewport(1024, 501);
+        expect(getDefaultGameMode()).toBe('full');
+    });
+
+    it('高さ500pxちょうどの横向きはシンプルモード', () => {
+        setViewport(1024, 500);
+        expect(getDefaultGameMode()).toBe('simple');
     });
 });
 
