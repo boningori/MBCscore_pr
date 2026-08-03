@@ -1,0 +1,55 @@
+/* ホーム画面下部に置く案内カード。記録操作を邪魔しないよう固定配置にはしない */
+.install-prompt {
+    position: relative;
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    text-align: left;
+}
+
+.install-prompt-close {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.install-prompt-title {
+    margin: 0 var(--touch-target) var(--spacing-xs) 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+}
+
+.install-prompt-body {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.install-prompt-action {
+    width: 100%;
+    min-height: var(--touch-target);
+}
+
+.install-prompt-steps {
+    margin: 0;
+    padding-left: 1.25em;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.8;
+}

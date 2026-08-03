@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SavedTeam } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { hasGameSession } from '../../utils/gameSessionStorage';
+import { InstallPrompt, useInstallPrompt } from '../InstallPrompt';
 import './Home.css';
 
 
@@ -22,6 +23,7 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
     const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
     // 初回マウント時のみ判定（遅延初期化）
     const [canResume] = useState(() => hasGameSession());
+    const install = useInstallPrompt();
 
     const hasMyTeams = myTeams.length > 0;
 
@@ -95,6 +97,13 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                     </div>
                 )}
 
+                {install.mode !== 'none' && (
+                    <InstallPrompt
+                        mode={install.mode}
+                        onInstall={install.install}
+                        onDismiss={install.dismiss}
+                    />
+                )}
             </div>
 
             <div className="home-footer">
