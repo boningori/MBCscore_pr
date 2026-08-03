@@ -36,6 +36,7 @@ import { UndoSnackbar } from './components/UndoSnackbar/UndoSnackbar';
 import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
 import { UpdatePrompt, useAppUpdate } from './components/UpdatePrompt';
+import { consumeLaunchShortcut } from './utils/launchShortcut';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
@@ -72,9 +73,25 @@ const STAT_UNDO_LABELS: Record<string, string> = {
   FTA: 'FTミス',
 };
 
+// manifestのショートカット（アイコン長押しメニュー）から起動されたかを、
+// モジュール読み込み時に一度だけ確定させる。
+// URLのクエリを消す副作用を伴うため、レンダー中（useStateの初期化関数）で
+// 呼ぶとStrictModeの二重実行で結果を取りこぼす。Reactのライフサイクルの外で
+// 1回だけ評価する。
+const LAUNCH_TARGET = consumeLaunchShortcut();
+
+/** ショートカット起動時の初期画面。新規試合は進行中セッションの有無で分岐する */
+function initialScreen(): AppScreen {
+  if (LAUNCH_TARGET === 'history') return 'history';
+  if (LAUNCH_TARGET === 'playerStats') return 'playerStats';
+  // 進行中の試合がある場合はホームに留まり、警告モーダルで選ばせる
+  if (LAUNCH_TARGET === 'newGame' && !hasGameSession()) return 'gameSetup';
+  return 'home';
+}
+
 function AppContent() {
   const { state, dispatch } = useGame();
-  const [screen, setScreen] = useState<AppScreen>('home');
+  const [screen, setScreen] = useState<AppScreen>(initialScreen);
   const [gameName, setGameName] = useState('');
   const [date, setDate] = useState(new Date().toISOString().substring(0, 10));
   const [showSubstitutionModal, setShowSubstitutionModal] = useState(false);
@@ -90,7 +107,12 @@ function AppContent() {
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [endGameConfirmType, setEndGameConfirmType] = useState<'tied' | 'notTied' | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false); // 保存せず破棄の確認
-  const [showNewGameWarning, setShowNewGameWarning] = useState(false); // 進行中セッションがある状態での新規開始警告
+  // 進行中セッションがある状態での新規開始警告。
+  // 新規試合ショートカットから起動した場合も、ホームのボタンと同じ警告を通す
+  // （ショートカットだけ素通りさせて記録を消さない）
+  const [showNewGameWarning, setShowNewGameWarning] = useState(
+    () => LAUNCH_TARGET === 'newGame' && hasGameSession(),
+  );
   // 記録直後のワンタップUndo（得点/スタッツのみ。ファウルは専用フローがあるため対象外）
   const [undoInfo, setUndoInfo] = useState<{ message: string; kind: 'score' | 'stat'; entryId: string } | null>(null);
 

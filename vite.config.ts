@@ -36,9 +36,16 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['icon-512.png'],
       manifest: {
+        // idを固定しないと start_url から導出され、将来 start_url を変えた際に
+        // 別アプリ扱いになる（インストール済みの端末で重複する）
+        id: '/MBCscore_pr/',
         name: 'MBCscore - ミニバス スコアシート',
         short_name: 'MBCscore',
         description: 'ミニバスケットボール用スコアシートアプリ',
+        // 既定では 'en' が入る。UIも記録内容も日本語なので明示する
+        lang: 'ja',
+        dir: 'ltr',
+        categories: ['sports', 'utilities'],
         theme_color: '#1e293b',
         background_color: '#0f172a',
         display: 'standalone',
@@ -49,13 +56,48 @@ export default defineConfig({
           {
             src: 'icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            // maskableは端末が任意の形に切り抜くため中央80%しか保証されない。
+            // icon-512.pngは絵柄が端まであり円形クロップで炎とボールが欠けるので、
+            // 余白を足した専用画像を使う（scripts/generate-maskable-icon.mjs）
+            src: 'icon-512-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ],
+        // アイコン長押しメニュー。URLルーティングを持たないため、
+        // start_urlにクエリを付けて src/utils/launchShortcut.ts で解釈する
+        shortcuts: [
+          {
+            name: '新規試合開始',
+            short_name: '新規試合',
+            description: '試合記録をすぐに開始する',
+            url: '/MBCscore_pr/?s=newGame',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }]
+          },
+          {
+            name: '試合履歴',
+            short_name: '履歴',
+            description: '過去の試合記録を見る',
+            url: '/MBCscore_pr/?s=history',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }]
+          },
+          {
+            name: '選手スタッツ分析',
+            short_name: 'スタッツ',
+            description: '選手の成長を可視化する',
+            url: '/MBCscore_pr/?s=playerStats',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }]
           }
         ]
       },
