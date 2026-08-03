@@ -78,6 +78,25 @@ export default defineConfig({
             purpose: 'maskable'
           }
         ],
+        // Androidのリッチなインストール画面に出る紹介画像。
+        // 同じ form_factor どうしは縦横比を揃える必要がある（Chromeの制約）。
+        // 縦横比は 1:2.3〜2.3:1 の範囲内であること。
+        screenshots: [
+          {
+            src: 'screenshots/game-wide.png',
+            sizes: '1920x1291',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'タブレット横向きのフルモード。両チームの選手と記録ボタンを一画面に表示'
+          },
+          {
+            src: 'screenshots/game-narrow.png',
+            sizes: '971x1601',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'スマートフォンのシンプルモード。片手で押せる大きさに絞った記録画面'
+          }
+        ],
         // アイコン長押しメニュー。URLルーティングを持たないため、
         // start_urlにクエリを付けて src/utils/launchShortcut.ts で解釈する
         shortcuts: [
@@ -110,7 +129,9 @@ export default defineConfig({
         // 配布物ではあるがアプリの動作に不要なものはオフラインキャッシュから外す。
         // FLYER/SNS_CARDSは販促用、vite.svgはテンプレートの名残で参照されていない。
         // manual.htmlはホームからリンクする使用説明書なのでオフラインでも要るため残す。
-        globIgnores: ['FLYER.html', 'SNS_CARDS.html', 'vite.svg'],
+        // 紹介画像(screenshots/)もオフラインキャッシュから外す。インストール画面は
+        // ブラウザがオンラインで取得するもので、アプリの動作には要らない。
+        globIgnores: ['FLYER.html', 'SNS_CARDS.html', 'vite.svg', 'screenshots/**'],
         // wasmコア(.wasm.js)は約3.9MBあり、既定の2MB上限では除外されてしまうため引き上げる
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
