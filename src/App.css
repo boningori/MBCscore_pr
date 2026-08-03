@@ -1124,6 +1124,12 @@
 /* ファウルグループ（最後のグループ）は幅を狭くする (3:1の比率) */
 .app-container .game-main-area.simple-mode .action-buttons-container .action-group:last-child {
   flex: 1;
+  /* 3:1の比率だけだと、横向きスマホ(812x375)のように親が狭い場面で
+     この列が53pxまで縮む一方、中の「⚠️ ファウル」ボタンは文字が折り返せず
+     70pxを下回れないため17pxはみ出していた。
+     min-content を下限にして、足りない分はスコア側（min-width:0で縮められる）
+     から先に削る。ボタンが切れるより2P/FTが少し細くなる方が実害が小さい。 */
+  min-width: min-content;
 }
 
 .app-container .game-main-area.simple-mode .action-buttons-container .action-group-title {
