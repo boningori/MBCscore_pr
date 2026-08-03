@@ -15,9 +15,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // html2canvas / jspdf は manualChunks に列挙しない。
+        // 明示するとエントリからの静的エッジが残り、pdfExport.ts で動的importに
+        // しても index.html に modulepreload されて初回起動に乗ってしまう。
+        // 列挙を外すとRollupが動的importの位置で自然に切り出す。
         manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-utils': ['html2canvas', 'jspdf']
+          'vendor-react': ['react', 'react-dom']
         }
       }
     },

@@ -1,5 +1,6 @@
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+// html2canvas と jspdf は合わせて約590KB(gzip 174KB)あり、
+// 使うのはスコアシート/選手詳細のエクスポート時だけ。静的importだと
+// 全画面の初回起動に乗ってしまうため、実行時に動的importする。
 
 /**
  * SVG斜線の位置情報を収集
@@ -83,6 +84,8 @@ export async function exportElement(
     // SVG斜線の位置情報を収集（html2canvasがSVGを正しくレンダリングしないため）
     const slashPositions = collectSlashLinePositions(element);
 
+    const { default: html2canvas } = await import('html2canvas');
+
     let canvas: HTMLCanvasElement;
     try {
         // html2canvasでキャンバスに変換
@@ -117,7 +120,9 @@ export async function exportElement(
         const dataUrl = finalCanvas.toDataURL('image/jpeg', quality);
         downloadDataUrl(dataUrl, `${filename}.jpg`);
     } else {
-        exportFitToPagePDF(finalCanvas, filename);
+        // jspdfの読み込みを待たずに戻ると、呼び出し側が完了と誤認して
+        // 「出力しました」を先に出してしまうためawaitする
+        await exportFitToPagePDF(finalCanvas, filename);
     }
 }
 
@@ -158,7 +163,9 @@ function addTitleToCanvas(canvas: HTMLCanvasElement, title: string): HTMLCanvasE
 /**
  * 1ページPDF出力（A4にマージン付きで収める）
  */
-function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): void {
+async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+    const { jsPDF } = await import('jspdf');
+
     const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',

@@ -37,6 +37,7 @@ import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
 import { UpdatePrompt, useAppUpdate } from './components/UpdatePrompt';
 import { consumeLaunchShortcut } from './utils/launchShortcut';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
@@ -1579,6 +1580,7 @@ function App() {
   return (
     <GameProvider>
       <AppContent />
+      <OfflineIndicator />
       <AppUpdateBanner />
       <ToastContainer />
     </GameProvider>
