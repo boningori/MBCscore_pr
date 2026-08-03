@@ -19,6 +19,14 @@ function isAfter(a: Element, b: Element): boolean {
     return (b.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 }
 
+/**
+ * 設定画面のセクションは既定で閉じているので、データ管理を開いてから操作する。
+ * 実際の利用手順と同じ。
+ */
+function openDataSection() {
+    fireEvent.click(screen.getByRole('button', { name: /データ管理/ }));
+}
+
 const BACKUP_JSON = JSON.stringify({
     version: '2.0',
     exportDate: new Date().toISOString(),
@@ -31,6 +39,7 @@ const BACKUP_JSON = JSON.stringify({
 describe('AppSettingsModal 復元UIの配置', () => {
     it('ファイル選択後、インポート確認パネルは「ファイルから復元」ボタンより後ろに出る', async () => {
         const { container } = render(<AppSettingsModal isOpen onClose={() => { }} />);
+        openDataSection();
 
         const fileBtn = screen.getByRole('button', { name: /ファイルから復元/ });
         const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
@@ -46,6 +55,7 @@ describe('AppSettingsModal 復元UIの配置', () => {
 
     it('「データを貼り付けて復元」押下後、貼り付けパネルはボタンより後ろに出る', async () => {
         const { container } = render(<AppSettingsModal isOpen onClose={() => { }} />);
+        openDataSection();
 
         const pasteBtn = screen.getByRole('button', { name: /データを貼り付けて復元/ });
         fireEvent.click(pasteBtn);
@@ -60,6 +70,7 @@ describe('AppSettingsModal 復元UIの配置', () => {
         const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
 
         const { container } = render(<AppSettingsModal isOpen onClose={() => { }} />);
+        openDataSection();
         const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
         const file = new File([BACKUP_JSON], 'MBCscore_backup.json', { type: 'application/json' });
 
@@ -82,6 +93,7 @@ describe('AppSettingsModal フッターの「保存」', () => {
         const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
         const { container } = render(<AppSettingsModal isOpen onClose={onClose} />);
+        openDataSection();
         const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
         const file = new File([BACKUP_JSON], 'MBCscore_backup.json', { type: 'application/json' });
         fireEvent.change(input, { target: { files: [file] } });

@@ -20,7 +20,10 @@ import type { ErrorLogEntry } from '../../utils/errorLog';
 import { LegalModal } from '../Legal';
 import type { LegalTab } from '../Legal';
 import { Modal } from '../Modal';
+import { SettingsSection } from './SettingsSection';
 import './AppSettingsModal.css';
+
+type SectionId = 'mode' | 'ai' | 'data' | 'help' | 'errors' | 'about';
 
 interface AppSettingsModalProps {
     isOpen: boolean;
@@ -45,6 +48,12 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [showErrorDetail, setShowErrorDetail] = useState(false);
     const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
     const [lastBackupText, setLastBackupText] = useState<string>('未バックアップ');
+    // 開いているセクション（同時に1つだけ）。既定は全て閉じ、見出しの一覧から選ばせる
+    const [openSection, setOpenSection] = useState<SectionId | null>(null);
+
+    const toggleSection = (id: SectionId) => {
+        setOpenSection(prev => (prev === id ? null : id));
+    };
 
     // isOpenがfalse→trueに変化した際にフォーム状態をリセットする
     // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
@@ -61,6 +70,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setImportText('');
             setErrorLog(getErrorLog());
             setShowErrorDetail(false);
+            setOpenSection(null);
             const lb = loadLastBackup();
             setLastBackupText(lb ? new Date(lb.timestamp).toLocaleString('ja-JP') : '未バックアップ');
         }
@@ -284,8 +294,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
                 <div className="settings-content">
                     {/* デフォルトゲームモード設定 */}
-                    <section className="settings-section">
-                        <h3>デフォルトゲームモード</h3>
+                    <SettingsSection id="mode" title="デフォルトゲームモード" isOpen={openSection === 'mode'} onToggle={() => toggleSection('mode')}>
                         <p className="section-description">
                             試合開始時に使用するモードを選択します。スマホではシンプルモード、タブレットではフルモードがおすすめです。
                         </p>
@@ -307,11 +316,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <span className="mode-desc">コンパクト表示（スマホ向け）</span>
                             </button>
                         </div>
-                    </section>
+                    </SettingsSection>
 
                     {/* AI設定セクション */}
-                    <section className="settings-section">
-                        <h3>AI機能 (Google Gemini API)</h3>
+                    <SettingsSection id="ai" title="AI機能 (Google Gemini API)" hint={hasApiKey ? 'AI有効' : '標準モード'} isOpen={openSection === 'ai'} onToggle={() => toggleSection('ai')}>
                         <p className="section-description">
                             Gemini APIキーを設定すると、写真読み込みの精度が向上します。
                         </p>
@@ -373,7 +381,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 APIキーを削除
                             </button>
                         )}
-                    </section>
+                    </SettingsSection>
 
                     {/* 将来の拡張用セクション */}
                     {/*
@@ -384,8 +392,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                     */}
 
                     {/* データ管理セクション */}
-                    <section className="settings-section">
-                        <h3>📊 データ管理</h3>
+                    <SettingsSection id="data" title="📊 データ管理" hint={`最終: ${lastBackupText}`} isOpen={openSection === 'data'} onToggle={() => toggleSection('data')}>
                         <p className="section-description">
                             試合履歴・チーム情報などをバックアップ・復元できます。
                         </p>
@@ -563,11 +570,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <li>バックアップには選手名などの個人情報が含まれます</li>
                             </ul>
                         </div>
-                    </section>
+                    </SettingsSection>
 
                     {/* ヘルプセクション */}
-                    <section className="settings-section">
-                        <h3>ヘルプ</h3>
+                    <SettingsSection id="help" title="ヘルプ" isOpen={openSection === 'help'} onToggle={() => toggleSection('help')}>
                         <a
                             href="https://github.com/boningori/MBCscore_pr#readme"
                             target="_blank"
@@ -591,11 +597,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 >GitHub</a>
                             </p>
                         </div>
-                    </section>
+                    </SettingsSection>
 
                     {/* エラーログセクション */}
-                    <section className="settings-section">
-                        <h3>エラーログ</h3>
+                    <SettingsSection id="errors" title="エラーログ" hint={`${errorLog.length}件`} isOpen={openSection === 'errors'} onToggle={() => toggleSection('errors')}>
                         <p className="section-description">
                             アプリ内で発生したエラーの記録です（端末内にのみ保存。外部送信はされません）。
                             不具合報告の際は「コピー」した内容を mbcscore@gmail.com にお送りください。
@@ -623,11 +628,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 )}
                             </>
                         )}
-                    </section>
+                    </SettingsSection>
 
                     {/* アプリについてセクション */}
-                    <section className="settings-section">
-                        <h3>アプリについて</h3>
+                    <SettingsSection id="about" title="アプリについて" hint={`v${__APP_VERSION__}`} isOpen={openSection === 'about'} onToggle={() => toggleSection('about')}>
                         <p className="section-description">MBCscore バージョン {__APP_VERSION__}</p>
                         <div className="backup-buttons">
                             <button className="btn btn-secondary" onClick={() => setLegalTab('terms')}>
@@ -643,7 +647,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <p className="section-description">
                             ※本アプリはJBA公式スコアシートに準拠したレイアウトを提供しますが、JBA公認製品ではありません。
                         </p>
-                    </section>
+                    </SettingsSection>
                 </div>
 
                 {/*
