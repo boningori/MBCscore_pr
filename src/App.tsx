@@ -35,6 +35,7 @@ import { Modal } from './components/Modal';
 import { UndoSnackbar } from './components/UndoSnackbar/UndoSnackbar';
 import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
+import { UpdatePrompt, useAppUpdate } from './components/UpdatePrompt';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
@@ -1535,10 +1536,28 @@ function AppContent() {
   );
 }
 
+/**
+ * アプリ更新の案内バー。
+ * AppContentは画面ごとに早期returnするため、どの画面でも出せるよう
+ * 固定配置の要素として兄弟に置く。
+ * 更新はリロードを伴うので、記録中（試合が進行中）は出さずに保留し、
+ * 試合が終わる/ホームに戻ってから表示する。
+ */
+function AppUpdateBanner() {
+  const { state } = useGame();
+  const isGameInProgress =
+    state.phase === 'playing' || state.phase === 'paused' || state.phase === 'quarterEnd';
+  const { show, apply, dismiss } = useAppUpdate(isGameInProgress);
+
+  if (!show) return null;
+  return <UpdatePrompt onUpdate={apply} onDismiss={dismiss} />;
+}
+
 function App() {
   return (
     <GameProvider>
       <AppContent />
+      <AppUpdateBanner />
       <ToastContainer />
     </GameProvider>
   );

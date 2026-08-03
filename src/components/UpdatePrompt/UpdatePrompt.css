@@ -1,0 +1,90 @@
+/*
+  更新バー。試合中は表示されない（useAppUpdateが抑止する）ため、
+  ホーム・履歴などの閲覧系画面で下部に出る想定。
+  トースト(z-index 10000)より奥、モーダル(1000)より奥に置き、
+  記録UIより手前に来ないようにする。
+*/
+.update-prompt {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--spacing-md) + var(--safe-bottom, 0px));
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 900;
+    max-width: min(92vw, 420px);
+    animation: update-prompt-in 150ms ease;
+}
+
+@keyframes update-prompt-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.update-prompt-message {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.update-prompt-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.update-prompt-btn {
+    min-height: var(--touch-target);
+    padding: 0 var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.update-prompt-btn.primary {
+    border: none;
+    background: var(--primary);
+    color: white;
+}
+
+.update-prompt-btn.primary:active {
+    background: var(--primary-dark);
+}
+
+.update-prompt-btn.secondary {
+    border: 1px solid var(--border-light);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+/* 狭い画面では縦積みにして、文言とボタンが潰れないようにする */
+@media (max-width: 380px) {
+    .update-prompt {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-sm);
+    }
+
+    .update-prompt-actions {
+        justify-content: flex-end;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .update-prompt {
+        animation: none;
+    }
+}

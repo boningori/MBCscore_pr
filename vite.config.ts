@@ -26,7 +26,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'autoUpdate' はデプロイを検知した瞬間に skipWaiting + clientsClaim で
+      // 新SWへ切り替え、cleanupOutdatedCaches が旧プリキャッシュを消す。
+      // 開いたままのページは旧ハッシュのチャンクを参照し続けるため、jspdfが
+      // 実行時に動的importする assets/index.es-*.js が404になり、試合終了後の
+      // PDF出力だけが失敗する（vendor-utils内の import("./index.es-*.js") ）。
+      // 'prompt' なら新SWは waiting で待機し、旧キャッシュは利用者が更新を
+      // 選ぶまで消えない。試合中に足元が入れ替わらないことを優先する。
+      registerType: 'prompt',
       includeAssets: ['icon-512.png'],
       manifest: {
         name: 'MBCscore - ミニバス スコアシート',
