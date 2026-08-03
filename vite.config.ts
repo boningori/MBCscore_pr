@@ -62,6 +62,10 @@ export default defineConfig({
       workbox: {
         // Tesseractのwasmコア(.wasm.js)・言語データ(.gz)も含めてプリキャッシュし完全オフライン動作を保証
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,gz}'],
+        // 配布物ではあるがアプリの動作に不要なものはオフラインキャッシュから外す。
+        // FLYER/SNS_CARDSは販促用、vite.svgはテンプレートの名残で参照されていない。
+        // manual.htmlはホームからリンクする使用説明書なのでオフラインでも要るため残す。
+        globIgnores: ['FLYER.html', 'SNS_CARDS.html', 'vite.svg'],
         // wasmコア(.wasm.js)は約3.9MBあり、既定の2MB上限では除外されてしまうため引き上げる
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
