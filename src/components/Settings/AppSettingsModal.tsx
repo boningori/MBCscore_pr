@@ -51,8 +51,18 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     // 開いているセクション（同時に1つだけ）。既定は全て閉じ、見出しの一覧から選ばせる
     const [openSection, setOpenSection] = useState<SectionId | null>(null);
 
+    // セクションは同時に1つしか開かない。データ管理から離れると復元パネルも
+    // 消えるため、読み込み待ちのデータを持ったままにすると「画面には何も無いのに
+    // 閉じるときだけ破棄確認が出る」状態になる。離れる時点で破棄して知らせる。
     const toggleSection = (id: SectionId) => {
-        setOpenSection(prev => (prev === id ? null : id));
+        const next = openSection === id ? null : id;
+        if (next !== 'data' && (pendingImport || showTextImport)) {
+            setPendingImport(null);
+            setShowTextImport(false);
+            setImportText('');
+            if (pendingImport) showToast('読み込んだデータを破棄しました', 'success');
+        }
+        setOpenSection(next);
     };
 
     // isOpenがfalse→trueに変化した際にフォーム状態をリセットする
@@ -106,14 +116,21 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     }, [importText]);
 
     // 復元パネルが出たら必ず視界に入れる。
-    // 設定モーダルは縦2000px超の一本スクロールで、パネルが開いた位置が
-    // たまたま画面外だと「押しても何も起こらない」ように見えてしまう。
+    // パネルが開いた位置がたまたま画面外だと「押しても何も起こらない」ように
+    // 見えてしまう。
+    //
+    // block は 'start'。横向き(812x375)ではスクロール領域が200pxしかないのに
+    // パネルは314pxあり、領域に収まりきらない。'center' だと下端の
+    // インポート実行ボタンが、'nearest' だと上端の見出しが、それぞれ
+    // 見切れていた（いずれも実測）。'start' なら必ず見出しから読み始められ、
+    // 下へスクロールすればボタンに届く、という素直な順序になる。
+    //
     // behavior: 'smooth' はパネル挿入直後のレイアウト変化でアニメーションが
     // 打ち消され、実測でスクロール位置が動かなかった。即時スクロールにする
     // （prefers-reduced-motion を尊重する方針とも一致する）。
     useEffect(() => {
         const panel = importPanelRef.current ?? textImportPanelRef.current;
-        panel?.scrollIntoView({ block: 'center' });
+        panel?.scrollIntoView({ block: 'start' });
     }, [pendingImport, showTextImport]);
 
     const showStatus = (text: string, type: 'success' | 'error') => {
