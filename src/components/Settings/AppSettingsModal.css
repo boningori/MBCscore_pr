@@ -253,12 +253,21 @@
   }
 }
 
+/*
+  設定モーダルの中身は縦2000px超（スマホ縦で約3画面、横向きで約5画面）ある。
+  フッターが一緒に流れると「保存」に到達するまで延々スクロールが必要なため、
+  スクロール領域の下端に貼り付ける。背景は下の内容が透けないよう不透明にする。
+*/
 .app-settings-modal .settings-footer {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-sm);
     padding: var(--spacing-lg);
     border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+    z-index: 1;
 }
 
 /* デフォルトゲームモード選択 */
