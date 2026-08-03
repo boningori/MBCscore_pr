@@ -20,7 +20,10 @@ import type { ErrorLogEntry } from '../../utils/errorLog';
 import { LegalModal } from '../Legal';
 import type { LegalTab } from '../Legal';
 import { Modal } from '../Modal';
+import { SettingsSection } from './SettingsSection';
 import './AppSettingsModal.css';
+
+type SectionId = 'mode' | 'ai' | 'data' | 'help' | 'errors' | 'about';
 
 interface AppSettingsModalProps {
     isOpen: boolean;
@@ -39,10 +42,18 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [importText, setImportText] = useState('');
     const [textValidation, setTextValidation] = useState<{ valid: boolean; message: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const importPanelRef = useRef<HTMLDivElement>(null);
+    const textImportPanelRef = useRef<HTMLDivElement>(null);
     const [errorLog, setErrorLog] = useState<ErrorLogEntry[]>([]);
     const [showErrorDetail, setShowErrorDetail] = useState(false);
     const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
     const [lastBackupText, setLastBackupText] = useState<string>('未バックアップ');
+    // 開いているセクション（同時に1つだけ）。既定は全て閉じ、見出しの一覧から選ばせる
+    const [openSection, setOpenSection] = useState<SectionId | null>(null);
+
+    const toggleSection = (id: SectionId) => {
+        setOpenSection(prev => (prev === id ? null : id));
+    };
 
     // isOpenがfalse→trueに変化した際にフォーム状態をリセットする
     // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
@@ -59,6 +70,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setImportText('');
             setErrorLog(getErrorLog());
             setShowErrorDetail(false);
+            setOpenSection(null);
             const lb = loadLastBackup();
             setLastBackupText(lb ? new Date(lb.timestamp).toLocaleString('ja-JP') : '未バックアップ');
         }
@@ -93,8 +105,28 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
         return () => clearTimeout(timer);
     }, [importText]);
 
+    // 復元パネルが出たら必ず視界に入れる。
+    // 設定モーダルは縦2000px超の一本スクロールで、パネルが開いた位置が
+    // たまたま画面外だと「押しても何も起こらない」ように見えてしまう。
+    // behavior: 'smooth' はパネル挿入直後のレイアウト変化でアニメーションが
+    // 打ち消され、実測でスクロール位置が動かなかった。即時スクロールにする
+    // （prefers-reduced-motion を尊重する方針とも一致する）。
+    useEffect(() => {
+        const panel = importPanelRef.current ?? textImportPanelRef.current;
+        panel?.scrollIntoView({ block: 'center' });
+    }, [pendingImport, showTextImport]);
+
     const showStatus = (text: string, type: 'success' | 'error') => {
         showToast(text, type);
+    };
+
+    // インポート確認中に閉じると、選んだファイルの内容が黙って捨てられる。
+    // 破棄してよいか確認してから閉じる（Escape・オーバーレイクリックも含む）。
+    const handleRequestClose = () => {
+        if (pendingImport && !window.confirm('読み込んだデータはまだ復元されていません。破棄して閉じますか？')) {
+            return;
+        }
+        onClose();
     };
 
     const handleSave = () => {
@@ -250,20 +282,19 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
     return (
         <Modal
-            onClose={onClose}
+            onClose={handleRequestClose}
             overlayClassName="app-settings-overlay"
             contentClassName="app-settings-modal"
             labelledBy="app-settings-title"
         >
                 <div className="settings-header">
                     <h2 id="app-settings-title">アプリ設定</h2>
-                    <button className="close-btn" onClick={onClose} aria-label="閉じる">×</button>
+                    <button className="close-btn" onClick={handleRequestClose} aria-label="閉じる">×</button>
                 </div>
 
                 <div className="settings-content">
                     {/* デフォルトゲームモード設定 */}
-                    <section className="settings-section">
-                        <h3>デフォルトゲームモード</h3>
+                    <SettingsSection id="mode" title="デフォルトゲームモード" isOpen={openSection === 'mode'} onToggle={() => toggleSection('mode')}>
                         <p className="section-description">
                             試合開始時に使用するモードを選択します。スマホではシンプルモード、タブレットではフルモードがおすすめです。
                         </p>
@@ -285,11 +316,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <span className="mode-desc">コンパクト表示（スマホ向け）</span>
                             </button>
                         </div>
-                    </section>
+                    </SettingsSection>
 
                     {/* AI設定セクション */}
-                    <section className="settings-section">
-                        <h3>AI機能 (Google Gemini API)</h3>
+                    <SettingsSection id="ai" title="AI機能 (Google Gemini API)" hint={hasApiKey ? 'AI有効' : '標準モード'} isOpen={openSection === 'ai'} onToggle={() => toggleSection('ai')}>
                         <p className="section-description">
                             Gemini APIキーを設定すると、写真読み込みの精度が向上します。
                         </p>
@@ -351,7 +381,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 APIキーを削除
                             </button>
                         )}
-                    </section>
+                    </SettingsSection>
 
                     {/* 将来の拡張用セクション */}
                     {/*
@@ -362,95 +392,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                     */}
 
                     {/* データ管理セクション */}
-                    <section className="settings-section">
-                        <h3>📊 データ管理</h3>
+                    <SettingsSection id="data" title="📊 データ管理" hint={`最終: ${lastBackupText}`} isOpen={openSection === 'data'} onToggle={() => toggleSection('data')}>
                         <p className="section-description">
                             試合履歴・チーム情報などをバックアップ・復元できます。
                         </p>
-
-
-
-                        {/* インポート確認UI */}
-                        {pendingImport && (
-                            <div className={`import-confirm-panel ${pendingImport.hasDuplicates ? 'has-duplicates' : ''}`}>
-                                <h4>📋 インポート内容の確認</h4>
-                                <p className="import-summary">{pendingImport.summary}</p>
-                                {pendingImport.preview && pendingImport.preview.length > 0 && (
-                                    <div className="import-preview">
-                                        {pendingImport.preview.map((line, i) => (
-                                            <p key={i} className="import-preview-line">{line}</p>
-                                        ))}
-                                    </div>
-                                )}
-                                {pendingImport.hasDuplicates && (
-                                    <p className="import-warning">⚠️ {pendingImport.duplicateDetails}</p>
-                                )}
-                                {pendingImport.type === 'team' && (
-                                    <>
-                                        <p className="import-info">📌 同じIDのチームが既にある場合、インポートしたデータで上書きされます。</p>
-                                        <div className="import-target-selector">
-                                            <label>インポート先：</label>
-                                            <select value={importTarget} onChange={e => setImportTarget(e.target.value as 'myTeam' | 'opponent')}>
-                                                <option value="myTeam">マイチーム</option>
-                                                <option value="opponent">対戦チーム</option>
-                                            </select>
-                                        </div>
-                                    </>
-                                )}
-                                {pendingImport.type === 'backup' && (
-                                    <>
-                                        <div className="import-danger-warning">
-                                            <p className="import-warning-title">⚠️ 重要な警告</p>
-                                            <p className="import-warning-text">
-                                                これは全データバックアップファイルです。<br />
-                                                インポートすると、<strong>試合履歴・マイチーム・対戦チーム・設定</strong>が上書きされます。
-                                            </p>
-                                        </div>
-                                        <div className="import-merge-info">
-                                            <p className="import-info">
-                                                📌 復元ルール:<br />
-                                                • 同じデータがあれば新しい方に更新されます<br />
-                                                • 新しいデータは追加されます<br />
-                                                • 既存データが削除されることはありません
-                                            </p>
-                                        </div>
-                                    </>
-                                )}
-                                <div className="import-confirm-actions">
-                                    <button className="btn btn-secondary" onClick={handleCancelImport}>キャンセル</button>
-                                    {pendingImport.type === 'backup' ? (
-                                        <button className="btn btn-danger" onClick={handleConfirmImport}>全データをインポート（上書き）</button>
-                                    ) : (
-                                        <button className="btn btn-primary" onClick={handleConfirmImport}>インポート実行</button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* テキスト貼り付けUI */}
-                        {showTextImport && (
-                            <div className="text-import-panel">
-                                <h4>📝 JSONデータの貼り付け</h4>
-                                <p className="text-import-hint">MBCscoreの「エクスポート」や「クリップボードにコピー」で取得したJSONデータを貼り付けてください。</p>
-                                <textarea
-                                    className="text-import-textarea"
-                                    value={importText}
-                                    onChange={e => setImportText(e.target.value)}
-                                    placeholder='ここにコピーしたデータを貼り付けてください'
-                                    rows={10}
-                                    style={{ minHeight: '200px' }}
-                                />
-                                {textValidation && (
-                                    <p className={`text-validation ${textValidation.valid ? 'valid' : 'invalid'}`}>
-                                        {textValidation.message}
-                                    </p>
-                                )}
-                                <div className="text-import-actions">
-                                    <button className="btn btn-secondary" onClick={() => { setShowTextImport(false); setImportText(''); }}>キャンセル</button>
-                                    <button className="btn btn-primary" onClick={handleImportTextSubmit} disabled={!importText.trim()}>読み込む</button>
-                                </div>
-                            </div>
-                        )}
 
                         <div className="data-management-buttons">
                             <div className="data-section-card">
@@ -461,14 +406,14 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <button
                                     className="btn btn-primary btn-block"
                                     onClick={handleExportAll}
-                                    aria-label="全データをクラウドまたはファイルに保存"
+                                    aria-label="今すぐクラウド/ファイルに保存"
                                 >
                                     💾 今すぐクラウド/ファイルに保存
                                 </button>
                                 <button
                                     className="btn btn-secondary btn-block"
                                     onClick={handleExportCSV}
-                                    aria-label="試合履歴サマリーをCSVでエクスポート"
+                                    aria-label="試合履歴（サマリー）CSVをエクスポート"
                                 >
                                     📊 試合履歴（サマリー）CSV
                                     <span className="btn-description">
@@ -480,7 +425,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <button
                                     className="btn btn-secondary btn-block"
                                     onClick={handleExportDetailCSV}
-                                    aria-label="選手スタッツ詳細をCSVでエクスポート"
+                                    aria-label="選手スタッツ詳細CSVをエクスポート"
                                 >
                                     📈 選手スタッツ詳細CSV
                                     <span className="btn-description">
@@ -492,7 +437,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <button
                                     className="btn btn-secondary btn-block"
                                     onClick={handleCopyBackup}
-                                    aria-label="全データをクリップボードにコピー"
+                                    aria-label="クリップボードにコピー"
                                 >
                                     📋 クリップボードにコピー
                                     <span className="btn-description">他のデバイスに貼り付けて復元できます</span>
@@ -504,17 +449,107 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <button
                                     className="btn btn-primary btn-block"
                                     onClick={handleImportFile}
-                                    aria-label="JSONファイルからデータを復元"
+                                    aria-label="ファイルから復元"
                                 >
                                     📂 ファイルから復元
                                 </button>
                                 <button
                                     className="btn btn-secondary btn-block"
                                     onClick={() => setShowTextImport(true)}
-                                    aria-label="JSONデータを貼り付けて復元"
+                                    aria-label="データを貼り付けて復元"
                                 >
                                     📝 データを貼り付けて復元
                                 </button>
+
+                                {/*
+                                  確認パネル・貼り付けパネルは必ず「復元」ボタンの直後に置く。
+                                  以前は データ管理セクションの先頭（復元ボタンの約440px上）にあり、
+                                  スマホ幅ではパネルが画面外の上に挿入されていた。挿入分は
+                                  スクロールアンカリングが吸収するためボタンも動かず、
+                                  「押しても何も起こらない」ように見えていた。
+                                */}
+                                {showTextImport && (
+                                    <div className="text-import-panel" ref={textImportPanelRef}>
+                                        <h4>📝 JSONデータの貼り付け</h4>
+                                        <p className="text-import-hint">MBCscoreの「エクスポート」や「クリップボードにコピー」で取得したJSONデータを貼り付けてください。</p>
+                                        <textarea
+                                            className="text-import-textarea"
+                                            value={importText}
+                                            onChange={e => setImportText(e.target.value)}
+                                            placeholder='ここにコピーしたデータを貼り付けてください'
+                                            rows={10}
+                                            style={{ minHeight: '200px' }}
+                                        />
+                                        {textValidation && (
+                                            <p className={`text-validation ${textValidation.valid ? 'valid' : 'invalid'}`}>
+                                                {textValidation.message}
+                                            </p>
+                                        )}
+                                        <div className="text-import-actions">
+                                            <button className="btn btn-secondary" onClick={() => { setShowTextImport(false); setImportText(''); }}>キャンセル</button>
+                                            <button className="btn btn-primary" onClick={handleImportTextSubmit} disabled={!importText.trim()}>読み込む</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {pendingImport && (
+                                    <div
+                                        className={`import-confirm-panel ${pendingImport.hasDuplicates ? 'has-duplicates' : ''}`}
+                                        ref={importPanelRef}
+                                    >
+                                        <h4>📋 インポート内容の確認</h4>
+                                        <p className="import-summary">{pendingImport.summary}</p>
+                                        {pendingImport.preview && pendingImport.preview.length > 0 && (
+                                            <div className="import-preview">
+                                                {pendingImport.preview.map((line, i) => (
+                                                    <p key={i} className="import-preview-line">{line}</p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {pendingImport.hasDuplicates && (
+                                            <p className="import-warning">⚠️ {pendingImport.duplicateDetails}</p>
+                                        )}
+                                        {pendingImport.type === 'team' && (
+                                            <>
+                                                <p className="import-info">📌 同じIDのチームが既にある場合、インポートしたデータで上書きされます。</p>
+                                                <div className="import-target-selector">
+                                                    <label>インポート先：</label>
+                                                    <select value={importTarget} onChange={e => setImportTarget(e.target.value as 'myTeam' | 'opponent')}>
+                                                        <option value="myTeam">マイチーム</option>
+                                                        <option value="opponent">対戦チーム</option>
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
+                                        {pendingImport.type === 'backup' && (
+                                            <>
+                                                <div className="import-danger-warning">
+                                                    <p className="import-warning-title">⚠️ 重要な警告</p>
+                                                    <p className="import-warning-text">
+                                                        これは全データバックアップファイルです。<br />
+                                                        インポートすると、<strong>試合履歴・マイチーム・対戦チーム・設定</strong>が上書きされます。
+                                                    </p>
+                                                </div>
+                                                <div className="import-merge-info">
+                                                    <p className="import-info">
+                                                        📌 復元ルール:<br />
+                                                        • 同じデータがあれば新しい方に更新されます<br />
+                                                        • 新しいデータは追加されます<br />
+                                                        • 既存データが削除されることはありません
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div className="import-confirm-actions">
+                                            <button className="btn btn-secondary" onClick={handleCancelImport}>キャンセル</button>
+                                            {pendingImport.type === 'backup' ? (
+                                                <button className="btn btn-danger" onClick={handleConfirmImport}>全データをインポート（上書き）</button>
+                                            ) : (
+                                                <button className="btn btn-primary" onClick={handleConfirmImport}>インポート実行</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <input
@@ -535,11 +570,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 <li>バックアップには選手名などの個人情報が含まれます</li>
                             </ul>
                         </div>
-                    </section>
+                    </SettingsSection>
 
                     {/* ヘルプセクション */}
-                    <section className="settings-section">
-                        <h3>ヘルプ</h3>
+                    <SettingsSection id="help" title="ヘルプ" isOpen={openSection === 'help'} onToggle={() => toggleSection('help')}>
                         <a
                             href="https://github.com/boningori/MBCscore_pr#readme"
                             target="_blank"
@@ -563,11 +597,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 >GitHub</a>
                             </p>
                         </div>
-                    </section>
+                    </SettingsSection>
 
                     {/* エラーログセクション */}
-                    <section className="settings-section">
-                        <h3>エラーログ</h3>
+                    <SettingsSection id="errors" title="エラーログ" hint={`${errorLog.length}件`} isOpen={openSection === 'errors'} onToggle={() => toggleSection('errors')}>
                         <p className="section-description">
                             アプリ内で発生したエラーの記録です（端末内にのみ保存。外部送信はされません）。
                             不具合報告の際は「コピー」した内容を mbcscore@gmail.com にお送りください。
@@ -595,11 +628,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 )}
                             </>
                         )}
-                    </section>
+                    </SettingsSection>
 
                     {/* アプリについてセクション */}
-                    <section className="settings-section">
-                        <h3>アプリについて</h3>
+                    <SettingsSection id="about" title="アプリについて" hint={`v${__APP_VERSION__}`} isOpen={openSection === 'about'} onToggle={() => toggleSection('about')}>
                         <p className="section-description">MBCscore バージョン {__APP_VERSION__}</p>
                         <div className="backup-buttons">
                             <button className="btn btn-secondary" onClick={() => setLegalTab('terms')}>
@@ -615,12 +647,17 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <p className="section-description">
                             ※本アプリはJBA公式スコアシートに準拠したレイアウトを提供しますが、JBA公認製品ではありません。
                         </p>
-                    </section>
+                    </SettingsSection>
                 </div>
 
+                {/*
+                  「保存」はAPIキーと既定ゲームモードだけを保存する。
+                  復元の確定ボタンと誤読されないよう対象を名前に含め、
+                  スクロールしなくても押せるよう画面下部に固定する（CSSのsticky）。
+                */}
                 <div className="settings-footer">
-                    <button className="btn btn-secondary" onClick={onClose}>キャンセル</button>
-                    <button className="btn btn-primary" onClick={handleSave}>保存</button>
+                    <button className="btn btn-secondary" onClick={handleRequestClose}>キャンセル</button>
+                    <button className="btn btn-primary" onClick={handleSave}>設定を保存</button>
                 </div>
 
                 <LegalModal

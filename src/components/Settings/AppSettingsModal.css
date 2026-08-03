@@ -64,12 +64,62 @@
     padding: var(--spacing-lg);
 }
 
+/*
+  折りたたみセクション。既定では全て閉じ、見出しだけの一覧にする。
+  全項目を並べると縦2000px超（スマホ縦で約3画面、横向きで約5画面）あり、
+  目的の項目まで延々スクロールする必要があった。
+*/
 .app-settings-modal .settings-section {
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
 }
 
 .app-settings-modal .settings-section:last-child {
     margin-bottom: 0;
+}
+
+.app-settings-modal .settings-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    /* 見出し自体がタップ対象なので下限44pxを確保する */
+    min-height: var(--touch-target);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.app-settings-modal .settings-section.is-open .settings-section-header {
+    border-bottom: 1px solid var(--border);
+}
+
+.app-settings-modal .settings-section-title {
+    flex: 1;
+}
+
+/* 開かなくても現在値が分かるようにする（最終バックアップ日時・件数・版など） */
+.app-settings-modal .settings-section-hint {
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    text-align: right;
+}
+
+.app-settings-modal .settings-section-chevron {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.app-settings-modal .settings-section-body {
+    padding: var(--spacing-md);
 }
 
 .app-settings-modal .settings-section h3 {
@@ -253,12 +303,21 @@
   }
 }
 
+/*
+  設定モーダルの中身は縦2000px超（スマホ縦で約3画面、横向きで約5画面）ある。
+  フッターが一緒に流れると「保存」に到達するまで延々スクロールが必要なため、
+  スクロール領域の下端に貼り付ける。背景は下の内容が透けないよう不透明にする。
+*/
 .app-settings-modal .settings-footer {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-sm);
     padding: var(--spacing-lg);
     border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+    z-index: 1;
 }
 
 /* デフォルトゲームモード選択 */

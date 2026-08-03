@@ -46,7 +46,10 @@
 }
 
 .swipeable-score-wrapper .swipeable-score-btn .action-hint {
-    font-size: 0.6rem;
+    /* 0.6rem = 9.6px だった。ズームを禁止しているため利用者が拡大できず、
+       index.html に記した「各画面の下限10〜12px」を唯一破っていた箇所。
+       トークン（clamp(10px, 1.2vh, 12px)）に合わせる */
+    font-size: var(--font-size-xs);
     opacity: 0.6;
     margin-top: 2px;
     line-height: 1;
@@ -198,9 +201,5 @@
     }
 }
 
-/* モバイル調整 */
-@media (max-width: 768px) {
-    .swipeable-score-wrapper .swipeable-score-btn .action-hint {
-        font-size: 0.6rem;
-    }
-}
+/* モバイル調整の font-size 上書きは、基底と同じ値になったため削除した
+   （--font-size-xs は clamp で画面高に追従するのでモバイル個別指定は不要） */

@@ -3,10 +3,7 @@
 
 import type { SavedPlayer } from './teamStorage';
 import { createWorker } from 'tesseract.js';
-
-// Tesseractアセットの自己ホストパス（オフライン動作のためCDNではなく同梱物を参照）
-// import.meta.env.BASE_URL はViteのbase（GitHub Pagesのサブパス）に追従する
-const TESSERACT_BASE = `${import.meta.env.BASE_URL}tesseract`;
+import { TESSERACT_PATHS } from './tesseractAssets';
 
 // API設定
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
@@ -189,10 +186,9 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
     try {
         if (import.meta.env.DEV) console.log('Using OCR Engine: Tesseract.js (self-hosted)');
         // worker・wasmコア・言語データすべてを同梱物から読み込む（第三者CDN依存なし＝完全オフライン対応）
+        // corePathはディレクトリではなくファイルを直指定する。詳細は tesseractAssets.ts。
         worker = await createWorker('jpn', 1, {
-            workerPath: `${TESSERACT_BASE}/worker.min.js`,
-            corePath: `${TESSERACT_BASE}/`,
-            langPath: `${TESSERACT_BASE}/tessdata`,
+            ...TESSERACT_PATHS,
             logger: m => { if (import.meta.env.DEV) console.log(m); },
         });
 
