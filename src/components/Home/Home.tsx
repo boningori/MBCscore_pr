@@ -31,7 +31,14 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
         <div className="home-container">
             <div className="home-header">
                 <div className="header-left">
-                    <button className="btn btn-secondary btn-icon" onClick={onToggleFullScreen} title={isFullScreen ? '画面縮小' : '全画面'}>
+                    {/* 絵文字だけだとアクセシブル名が絵文字自体になり「四角」等と読まれる。
+                        試合画面の同種ボタンに合わせて aria-label を付ける */}
+                    <button
+                        className="btn btn-secondary btn-icon"
+                        onClick={onToggleFullScreen}
+                        title={isFullScreen ? '画面縮小' : '全画面'}
+                        aria-label={isFullScreen ? '画面縮小' : '全画面表示'}
+                    >
                         {isFullScreen ? '⊟' : '⊞'}
                     </button>
                 </div>
@@ -40,7 +47,12 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                     <p className="home-tagline">ミニバス用スコアシートアプリ</p>
                 </div>
                 <div className="header-right">
-                    <button className="btn btn-secondary btn-icon" onClick={onOpenSettings} title="設定">
+                    <button
+                        className="btn btn-secondary btn-icon"
+                        onClick={onOpenSettings}
+                        title="設定"
+                        aria-label="設定"
+                    >
                         ⚙️
                     </button>
                 </div>
