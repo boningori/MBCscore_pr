@@ -37,7 +37,7 @@ import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
 import { UpdatePrompt, useAppUpdate } from './components/UpdatePrompt';
 import { consumeLaunchShortcut } from './utils/launchShortcut';
-import { OfflineIndicator } from './components/OfflineIndicator';
+import { useOfflineToast } from './hooks/useOfflineToast';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
@@ -118,6 +118,10 @@ function AppContent() {
   const [undoInfo, setUndoInfo] = useState<{ message: string; kind: 'score' | 'stat'; entryId: string } | null>(null);
 
   const { phase, selectedPlayerId, selectedTeamId, currentQuarter, pendingActions } = state;
+
+  // 通信が切れた瞬間に「記録は続けられます」と伝える（常設バッジは操作要素に
+  // 重なるため置かない。詳細は useOfflineToast のコメント）
+  useOfflineToast();
 
   const [restoreCandidate, setRestoreCandidate] = useState<MirrorSnapshot | null>(null);
   const [showBackupPrompt, setShowBackupPrompt] = useState(false);
@@ -1580,7 +1584,6 @@ function App() {
   return (
     <GameProvider>
       <AppContent />
-      <OfflineIndicator />
       <AppUpdateBanner />
       <ToastContainer />
     </GameProvider>

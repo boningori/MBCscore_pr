@@ -12,6 +12,13 @@
     touch-action: none;
 }
 
+/*
+  モーダル全体ではなく本文だけをスクロールさせる。
+  以前はモーダル全体をスクロールさせ、フッターを sticky で貼り付けていたが、
+  横向き(812x375、モーダル高338px)ではフッターが本文の上に重なり、
+  インポート実行ボタンがフッターの裏に隠れていた（実測: ボタンtop292 /
+  フッターtop287）。フッターをスクロール領域の外に出せば構造的に重ならない。
+*/
 .app-settings-modal {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
@@ -19,7 +26,9 @@
     max-width: 500px;
     /* セーフエリアを除いた実表示高基準（オーバーレイはbodyのpaddingが効かない） */
     max-height: calc(var(--app-vh, 100vh) * 0.9);
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
@@ -29,6 +38,8 @@
     align-items: center;
     padding: var(--spacing-lg);
     border-bottom: 1px solid var(--border);
+    /* ヘッダー・フッターは縮めず、余った高さは本文に渡す */
+    flex-shrink: 0;
 }
 
 .app-settings-modal .settings-header h2 {
@@ -62,6 +73,11 @@
 
 .app-settings-modal .settings-content {
     padding: var(--spacing-lg);
+    /* スクロールするのはここだけ。min-height:0 が無いとflex子要素が
+       縮まずモーダルからはみ出す */
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 /*
@@ -304,9 +320,8 @@
 }
 
 /*
-  設定モーダルの中身は縦2000px超（スマホ縦で約3画面、横向きで約5画面）ある。
-  フッターが一緒に流れると「保存」に到達するまで延々スクロールが必要なため、
-  スクロール領域の下端に貼り付ける。背景は下の内容が透けないよう不透明にする。
+  フッターはスクロール領域の外。常に見えるうえ、本文の上に重なることがない。
+  （sticky で貼り付けていた頃は、横向きでインポート実行ボタンを覆っていた）
 */
 .app-settings-modal .settings-footer {
     display: flex;
@@ -314,10 +329,8 @@
     gap: var(--spacing-sm);
     padding: var(--spacing-lg);
     border-top: 1px solid var(--border);
-    position: sticky;
-    bottom: 0;
     background: var(--bg-secondary);
-    z-index: 1;
+    flex-shrink: 0;
 }
 
 /* デフォルトゲームモード選択 */

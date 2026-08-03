@@ -81,6 +81,60 @@ describe('AppSettingsModal 復元UIの配置', () => {
     });
 });
 
+describe('読み込み待ちのデータを見えないまま残さない', () => {
+    /**
+     * セクションは同時に1つしか開かないため、確認パネルを出したまま別セクションを
+     * 開くとパネルだけが消える。その状態で閉じようとすると「破棄しますか？」だけが
+     * 出て、何を破棄するのか画面から分からなくなっていた。
+     */
+    async function choosePendingImport(container: HTMLElement) {
+        const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+        const file = new File([BACKUP_JSON], 'MBCscore_backup.json', { type: 'application/json' });
+        fireEvent.change(input, { target: { files: [file] } });
+        await screen.findByText('📋 インポート内容の確認');
+    }
+
+    it('別セクションを開いたら読み込み待ちを破棄する', async () => {
+        const { container } = render(<AppSettingsModal isOpen onClose={() => { }} />);
+        openDataSection();
+        await choosePendingImport(container);
+
+        fireEvent.click(screen.getByRole('button', { name: /ヘルプ/ }));
+
+        // データ管理に戻っても復活しない＝状態が残っていない
+        openDataSection();
+        expect(screen.queryByText('📋 インポート内容の確認')).toBeNull();
+    });
+
+    it('破棄したあとは閉じるときに確認を出さない', async () => {
+        const onClose = vi.fn();
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+        const { container } = render(<AppSettingsModal isOpen onClose={onClose} />);
+        openDataSection();
+        await choosePendingImport(container);
+        fireEvent.click(screen.getByRole('button', { name: /ヘルプ/ }));
+
+        fireEvent.click(screen.getByRole('button', { name: '閉じる' }));
+
+        // 見えていないものについて警告しない
+        expect(confirmSpy).not.toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalledTimes(1);
+        confirmSpy.mockRestore();
+    });
+
+    it('データ管理自体を閉じたときも破棄する', async () => {
+        const { container } = render(<AppSettingsModal isOpen onClose={() => { }} />);
+        openDataSection();
+        await choosePendingImport(container);
+
+        // 同じ見出しをもう一度押して畳む
+        openDataSection();
+        openDataSection();
+        expect(screen.queryByText('📋 インポート内容の確認')).toBeNull();
+    });
+});
+
 describe('AppSettingsModal フッターの「保存」', () => {
     it('インポートと無関係であることが分かるラベルになっている', () => {
         render(<AppSettingsModal isOpen onClose={() => { }} />);
