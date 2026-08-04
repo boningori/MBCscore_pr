@@ -1595,246 +1595,252 @@
     }
 }
 
-/* ダークモード対応 */
-@media (prefers-color-scheme: dark) {
-    .player-stats-container {
-        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-    }
+/*
+  この画面はもともとライト基調で書かれ、prefers-color-scheme: dark で
+  上書きする構造だった。しかしアプリ本体は無条件ダーク（--bg-primary: #0f172a）で
+  ライト用の配色を持たないため、OSがライト設定の利用者にはこの画面だけが
+  明るくなり、本体と地続きに見えなかった（実測: 本体body #0f172a に対し
+  この画面は #f1f5f9→#e2e8f0 のグラデーション、カードは白）。
+  ダーク時の指定を無条件に適用し、OS設定によらず本体と同じ配色にする。
+*/
+.player-stats-container {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+}
 
-    .player-stats-container .player-stats-header h2 {
-        color: #f1f5f9;
-    }
+.player-stats-container .player-stats-header h2 {
+    color: #f1f5f9;
+}
 
-    .player-stats-container .detail-player-title {
-        color: #f1f5f9;
-    }
+.player-stats-container .detail-player-title {
+    color: #f1f5f9;
+}
 
-    .player-stats-container .btn-back {
-        background: #334155 !important;
-        border-color: #475569;
-        color: #e2e8f0 !important;
-    }
+.player-stats-container .btn-back {
+    background: #334155 !important;
+    border-color: #475569;
+    color: #e2e8f0 !important;
+}
 
-    @media (hover: hover) and (pointer: fine) {
-        .player-stats-container .btn-back:hover {
-            background: #475569 !important;
-            color: #f8fafc !important;
-        }
-    }
-
-    .player-stats-container .field-label {
-        color: #94a3b8;
-    }
-
-    .player-stats-container .team-select {
-        background: #334155;
-        border-color: #475569;
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .date-range {
-        background: #334155;
-        border-color: #475569;
-    }
-
-    .player-stats-container .date-range input[type="date"] {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .empty-state {
-        background: #334155;
-    }
-
-    .player-stats-container .empty-state h3 {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .player-card {
-        background: #334155;
-    }
-
-    .player-stats-container .player-info .player-name {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .stat-box {
-        background: #475569;
-    }
-
-    .player-stats-container .stat-box .stat-label {
-        color: #94a3b8;
-    }
-
-    .player-stats-container .stat-box .stat-value {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .card-arrow {
-        color: #475569;
-    }
-
-    .player-stats-container .highlight-stat {
-        background: #475569;
-        border-color: #64748b;
-    }
-
-    .player-stats-container .highlight-stat .highlight-label {
-        color: #e2e8f0;
-    }
-
-    .player-stats-container .highlight-stat .highlight-value {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .highlight-stat .highlight-std {
-        color: #cbd5e1;
-    }
-
-    .player-stats-container .highlight-stat.primary .highlight-value {
-        color: white;
-    }
-
-    .player-stats-container .highlight-stat.primary .highlight-std {
-        color: rgba(255, 255, 255, 0.8);
-    }
-
-    .player-stats-container .stats-card {
-        background: #334155;
-    }
-
-    .player-stats-container .stats-card h4 {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .shooting-bar-container {
-        background: #475569;
-    }
-
-    .player-stats-container .shooting-percent {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .perf-row {
-        background: #475569;
-    }
-
-    .player-stats-container .perf-row.negative {
-        background: rgba(239, 68, 68, 0.15);
-    }
-
-    .player-stats-container .perf-value {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .total-stat .value {
-        color: var(--stats-primary-light);
-    }
-
-    .player-stats-container .growth-section {
-        background: #334155;
-    }
-
-    .player-stats-container .section-header h4 {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .period-selector {
-        background: #475569;
-    }
-
-    .player-stats-container .period-btn {
-        color: #94a3b8;
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-        .player-stats-container .period-btn:hover {
-            color: #f1f5f9;
-        }
-    }
-
-    .player-stats-container .period-btn.active {
-        background: #1e293b;
-        color: var(--stats-primary-light);
-    }
-
-    .player-stats-container .bar-value {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .bar-label {
-        color: #94a3b8;
-    }
-
-    .player-stats-container .game-history-section {
-        background: #334155;
-    }
-
-    .player-stats-container .game-history-section h4 {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .game-card {
-        background: #475569;
-    }
-
-    .player-stats-container .opponent,
-    .player-stats-container .score {
-        color: #f1f5f9;
-    }
-
-    .player-stats-container .detail-toolbar {
-        background: #334155;
-    }
-
-    .player-stats-container .detail-toolbar .btn-secondary {
-        background: #475569;
-        color: #f1f5f9;
-        border-color: #64748b;
-    }
-
-    .player-stats-container .toggle-switch .toggle-label {
-        color: #86efac;
-    }
-
-    .player-stats-container .toggle-switch.hidden-state .toggle-label {
-        color: #fca5a5;
-    }
-
-    .player-stats-container .toggle-switch .toggle-slider {
-        background: #16a34a;
-    }
-
-    .player-stats-container .toggle-switch.hidden-state .toggle-slider {
-        background: #dc2626;
-    }
-
-    .player-stats-container .hidden-players-toggle {
-        background: #334155;
-        border-color: #475569;
-    }
-
-    .player-stats-container .hidden-players-toggle .toggle-label {
-        color: #94a3b8;
-    }
-
-    .player-stats-container .hidden-players-toggle.active .toggle-label {
-        color: #86efac;
-    }
-
-    .player-stats-container .hidden-players-toggle .toggle-slider {
-        background: #64748b;
-    }
-
-    .player-stats-container .hidden-players-toggle.active .toggle-slider {
-        background: #16a34a;
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-        .player-stats-container .hidden-players-toggle:hover {
-            background: #475569;
-        }
+@media (hover: hover) and (pointer: fine) {
+    .player-stats-container .btn-back:hover {
+        background: #475569 !important;
+        color: #f8fafc !important;
     }
 }
+
+.player-stats-container .field-label {
+    color: #94a3b8;
+}
+
+.player-stats-container .team-select {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+
+.player-stats-container .date-range {
+    background: #334155;
+    border-color: #475569;
+}
+
+.player-stats-container .date-range input[type="date"] {
+    color: #f1f5f9;
+}
+
+.player-stats-container .empty-state {
+    background: #334155;
+}
+
+.player-stats-container .empty-state h3 {
+    color: #f1f5f9;
+}
+
+.player-stats-container .player-card {
+    background: #334155;
+}
+
+.player-stats-container .player-info .player-name {
+    color: #f1f5f9;
+}
+
+.player-stats-container .stat-box {
+    background: #475569;
+}
+
+.player-stats-container .stat-box .stat-label {
+    color: #94a3b8;
+}
+
+.player-stats-container .stat-box .stat-value {
+    color: #f1f5f9;
+}
+
+.player-stats-container .card-arrow {
+    color: #475569;
+}
+
+.player-stats-container .highlight-stat {
+    background: #475569;
+    border-color: #64748b;
+}
+
+.player-stats-container .highlight-stat .highlight-label {
+    color: #e2e8f0;
+}
+
+.player-stats-container .highlight-stat .highlight-value {
+    color: #f1f5f9;
+}
+
+.player-stats-container .highlight-stat .highlight-std {
+    color: #cbd5e1;
+}
+
+.player-stats-container .highlight-stat.primary .highlight-value {
+    color: white;
+}
+
+.player-stats-container .highlight-stat.primary .highlight-std {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.player-stats-container .stats-card {
+    background: #334155;
+}
+
+.player-stats-container .stats-card h4 {
+    color: #f1f5f9;
+}
+
+.player-stats-container .shooting-bar-container {
+    background: #475569;
+}
+
+.player-stats-container .shooting-percent {
+    color: #f1f5f9;
+}
+
+.player-stats-container .perf-row {
+    background: #475569;
+}
+
+.player-stats-container .perf-row.negative {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.player-stats-container .perf-value {
+    color: #f1f5f9;
+}
+
+.player-stats-container .total-stat .value {
+    color: var(--stats-primary-light);
+}
+
+.player-stats-container .growth-section {
+    background: #334155;
+}
+
+.player-stats-container .section-header h4 {
+    color: #f1f5f9;
+}
+
+.player-stats-container .period-selector {
+    background: #475569;
+}
+
+.player-stats-container .period-btn {
+    color: #94a3b8;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .player-stats-container .period-btn:hover {
+        color: #f1f5f9;
+    }
+}
+
+.player-stats-container .period-btn.active {
+    background: #1e293b;
+    color: var(--stats-primary-light);
+}
+
+.player-stats-container .bar-value {
+    color: #f1f5f9;
+}
+
+.player-stats-container .bar-label {
+    color: #94a3b8;
+}
+
+.player-stats-container .game-history-section {
+    background: #334155;
+}
+
+.player-stats-container .game-history-section h4 {
+    color: #f1f5f9;
+}
+
+.player-stats-container .game-card {
+    background: #475569;
+}
+
+.player-stats-container .opponent,
+.player-stats-container .score {
+    color: #f1f5f9;
+}
+
+.player-stats-container .detail-toolbar {
+    background: #334155;
+}
+
+.player-stats-container .detail-toolbar .btn-secondary {
+    background: #475569;
+    color: #f1f5f9;
+    border-color: #64748b;
+}
+
+.player-stats-container .toggle-switch .toggle-label {
+    color: #86efac;
+}
+
+.player-stats-container .toggle-switch.hidden-state .toggle-label {
+    color: #fca5a5;
+}
+
+.player-stats-container .toggle-switch .toggle-slider {
+    background: #16a34a;
+}
+
+.player-stats-container .toggle-switch.hidden-state .toggle-slider {
+    background: #dc2626;
+}
+
+.player-stats-container .hidden-players-toggle {
+    background: #334155;
+    border-color: #475569;
+}
+
+.player-stats-container .hidden-players-toggle .toggle-label {
+    color: #94a3b8;
+}
+
+.player-stats-container .hidden-players-toggle.active .toggle-label {
+    color: #86efac;
+}
+
+.player-stats-container .hidden-players-toggle .toggle-slider {
+    background: #64748b;
+}
+
+.player-stats-container .hidden-players-toggle.active .toggle-slider {
+    background: #16a34a;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .player-stats-container .hidden-players-toggle:hover {
+        background: #475569;
+    }
+}
+
 
 /* 印刷用スタイル */
 @media print {
