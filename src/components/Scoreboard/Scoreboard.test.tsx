@@ -159,3 +159,49 @@ describe('Scoreboard: クォーター終了の取り消し', () => {
         expect(screen.queryByText('Q2へ')).toBeNull();
     });
 });
+
+// クォーター色はJBA様式の「赤=1Q/3Q・黒=2Q/4Q」に統一する。
+// RunningScoresheet と QuarterLineup が既にこの規約に従っており、
+// スコアボードだけが緑グラデーションで食い違っていた。
+describe('Scoreboard: Qバッジのクォーター色クラス', () => {
+    const badgeClass = () =>
+        document.querySelector('.quarter-badge-large')!.className;
+
+    const advance = (times: number) =>
+        Array.from({ length: times }, () => [
+            { type: 'END_QUARTER' } as const,
+            { type: 'START_GAME' } as const,
+        ]).flat();
+
+    it('Q1は q-odd', () => {
+        renderScoreboard();
+        expect(badgeClass()).toContain('q-odd');
+    });
+
+    it('Q2は q-even', () => {
+        renderScoreboard(advance(1));
+        expect(badgeClass()).toContain('q-even');
+    });
+
+    it('Q3は q-odd', () => {
+        renderScoreboard(advance(2));
+        expect(badgeClass()).toContain('q-odd');
+    });
+
+    it('Q4は q-even', () => {
+        renderScoreboard(advance(3));
+        expect(badgeClass()).toContain('q-even');
+    });
+
+    it('OTは q-even（QuarterLineupと同じ扱い）', () => {
+        renderScoreboard(advance(4));
+        expect(badgeClass()).toContain('q-even');
+    });
+
+    it('旧クラス（q1〜q4 / ot）は残っていない', () => {
+        renderScoreboard();
+        const cls = badgeClass().split(/\s+/);
+        expect(cls).not.toContain('q1');
+        expect(cls).not.toContain('ot');
+    });
+});
