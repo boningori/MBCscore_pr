@@ -120,3 +120,20 @@ describe('TeamPanel: 選択中の選手の強調表示', () => {
         expect(tail[1].classList.contains('player-check')).toBe(true);
     });
 });
+
+// .btn は border:none だけを指定し背景色を持たないため、色バリアントクラスが
+// 無いとブラウザ既定の buttonface（ライトグレー・黒文字）で描画される。
+// ダークUIの中に素のボタンが出る不具合の再発を検知する。
+describe('TeamPanel: ベンチ操作ボタンの色バリアント', () => {
+    it('交代ボタンは btn-secondary を持つ', () => {
+        renderPanel();
+        const sub = screen.getByRole('button', { name: '交代' });
+        expect(sub.className).toContain('btn-secondary');
+    });
+
+    it('ベンチファウルボタンは btn-danger を持つ（破壊的操作として交代と色で区別する）', () => {
+        renderPanel();
+        const foul = screen.getByRole('button', { name: /ベンチ\s*ファウル/ });
+        expect(foul.className).toContain('btn-danger');
+    });
+});
