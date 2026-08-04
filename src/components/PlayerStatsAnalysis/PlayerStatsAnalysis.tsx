@@ -127,8 +127,9 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                 </div>
                 <div className="controls-bar">
                     <div className="field-group">
-                        <label className="field-label">マイチーム選択：</label>
+                        <label className="field-label" htmlFor="stats-team-select">マイチーム選択：</label>
                         <select
+                            id="stats-team-select"
                             value={selectedTeam?.id || ''}
                             onChange={e => handleTeamChange(e.target.value)}
                             className="team-select"
@@ -162,8 +163,9 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                 <>
                     <div className="controls-bar">
                         <div className="field-group">
-                            <label className="field-label">マイチーム選択：</label>
+                            <label className="field-label" htmlFor="stats-team-select-detail">マイチーム選択：</label>
                             <select
+                                id="stats-team-select-detail"
                                 value={selectedTeam?.id || ''}
                                 onChange={e => handleTeamChange(e.target.value)}
                                 className="team-select"
@@ -175,16 +177,19 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                         </div>
 
                         <div className="field-group">
-                            <label className="field-label">データ表示期間：</label>
+                            <label className="field-label" htmlFor="stats-date-start">データ表示期間：</label>
                             <div className="date-range">
                             <input
+                                id="stats-date-start"
                                 type="date"
+                                aria-label="データ表示期間の開始日"
                                 value={dateRange.start || ''}
                                 onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                             />
                             <span className="date-separator">〜</span>
                             <input
                                 type="date"
+                                aria-label="データ表示期間の終了日"
                                 value={dateRange.end || ''}
                                 onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                             />

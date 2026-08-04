@@ -1,6 +1,7 @@
 // 成長比較コンポーネント
 
 import { useState, useMemo } from 'react';
+import { buildAxisTicks, TICK_COUNT } from './chartAxis';
 import {
     aggregateByPeriod,
     type PeriodStats,
@@ -13,21 +14,6 @@ import {
     type StatType,
     type GrowthComparisonProps,
 } from './types';
-
-// Y軸のきりの良い最大値を計算（目盛り間隔は最低0.5）
-function getNiceMaxValue(rawMax: number): number {
-    if (rawMax <= 0) return 2;
-    const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
-    const normalized = rawMax / magnitude;
-    let niceStep: number;
-    if (normalized <= 1) niceStep = 0.25 * magnitude;
-    else if (normalized <= 2) niceStep = 0.5 * magnitude;
-    else if (normalized <= 5) niceStep = 1 * magnitude;
-    else niceStep = 2 * magnitude;
-    const result = Math.ceil(rawMax / niceStep) * niceStep;
-    // 目盛り間隔（result / 4）が0.5未満にならないように最低2を確保
-    return Math.max(result, 2);
-}
 
 // Y軸目盛りラベルのフォーマット
 function formatTick(value: number): string {
@@ -94,10 +80,10 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
         chartIndex: number
     ) => {
         const reversed = periods.slice().reverse();
-        const rawMax = Math.max(...reversed.map(p => getStatValue(p, statType)), 1);
-        const niceMax = getNiceMaxValue(rawMax);
-        const tickCount = 5;
-        const ticks = Array.from({ length: tickCount }, (_, i) => niceMax - (niceMax / (tickCount - 1)) * i);
+        const values = reversed.map(p => getStatValue(p, statType));
+        const ticks = buildAxisTicks(values);
+        const niceMax = ticks[0];
+        const tickCount = TICK_COUNT;
 
         return (
             <div className="standard-chart" key={statType}>

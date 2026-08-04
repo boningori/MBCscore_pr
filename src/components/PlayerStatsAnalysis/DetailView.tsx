@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { exportElement } from '../../utils/pdfExport';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { splitPercent } from '../../utils/percentSplit';
 import { GrowthComparison } from './GrowthComparison';
 import { RecentForm } from './RecentForm';
 import { WinLossSplit } from './WinLossSplit';
@@ -43,12 +44,19 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                 <button className="btn btn-secondary" onClick={handleExportJPEG}>
                     JPEG出力
                 </button>
+                {/*
+                  「表示中／非表示中」だけでは何が表示されるのか分からないため、
+                  対象（この選手を一覧に出すか）をアクセシブル名に含める。
+                */}
                 <label className={`toggle-switch ${isHidden ? 'hidden-state' : ''}`}>
-                    <span className="toggle-label">{isHidden ? '非表示中' : '表示中'}</span>
+                    <span className="toggle-label">
+                        一覧に{isHidden ? '非表示' : '表示'}
+                    </span>
                     <input
                         type="checkbox"
                         checked={!isHidden}
                         onChange={onToggleHidden}
+                        aria-label={`${player.name}を選手一覧に表示する`}
                     />
                     <span className="toggle-slider"></span>
                 </label>
@@ -250,7 +258,9 @@ function ShootingBar({ label, made, attempt }: { label: string; made: number; at
 // リバウンド比率パイチャート
 function ReboundPieChart({ off, def }: { off: number; def: number }) {
     const total = off + def;
+    // 円グラフの角度は丸めない生の割合、凡例の表示は合計100%になる整数を使う
     const offPercent = total > 0 ? (off / total) * 100 : 0;
+    const { part: offLabel, rest: defLabel } = splitPercent(off, total);
 
     return (
         <div className="rebound-pie-container">
@@ -273,13 +283,13 @@ function ReboundPieChart({ off, def }: { off: number; def: number }) {
                     <span className="legend-dot off"></span>
                     <span className="legend-label">OFF</span>
                     <span className="legend-value">{off}</span>
-                    <span className="legend-percent">({offPercent.toFixed(0)}%)</span>
+                    <span className="legend-percent">({offLabel}%)</span>
                 </div>
                 <div className="legend-item">
                     <span className="legend-dot def"></span>
                     <span className="legend-label">DEF</span>
                     <span className="legend-value">{def}</span>
-                    <span className="legend-percent">({total > 0 ? (100 - offPercent).toFixed(0) : 0}%)</span>
+                    <span className="legend-percent">({defLabel}%)</span>
                 </div>
             </div>
         </div>
