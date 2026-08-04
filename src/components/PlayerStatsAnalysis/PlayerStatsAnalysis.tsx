@@ -140,11 +140,38 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                         </select>
                     </div>
                 </div>
-                <div className="empty-state">
-                    <div className="empty-icon">📋</div>
-                    <h3>試合データがありません</h3>
-                    <p>試合を記録すると選手スタッツが表示されます</p>
-                </div>
+                {/*
+                  非表示にした結果として0件になった場合と、そもそも試合データが
+                  無い場合を区別する。前者で「試合データがありません」と出すと
+                  事実と違ううえ、戻すためのトグルも描画されず袋小路になる。
+                */}
+                {hiddenPlayerCount > 0 ? (
+                    <>
+                        <div className="empty-state">
+                            <div className="empty-icon">🙈</div>
+                            <h3>表示できる選手がいません</h3>
+                            <p>{hiddenPlayerCount}人を選手スタッツ一覧に非表示にしています</p>
+                        </div>
+                        <label className={`hidden-players-toggle ${showHiddenPlayers ? 'active' : ''}`}>
+                            <span className="toggle-label">
+                                {showHiddenPlayers ? '全選手表示中' : `非表示選手 (${hiddenPlayerCount}人)`}
+                            </span>
+                            <input
+                                type="checkbox"
+                                checked={showHiddenPlayers}
+                                onChange={e => setShowHiddenPlayers(e.target.checked)}
+                                aria-label="非表示にした選手も一覧に表示する"
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                    </>
+                ) : (
+                    <div className="empty-state">
+                        <div className="empty-icon">📋</div>
+                        <h3>試合データがありません</h3>
+                        <p>試合を記録すると選手スタッツが表示されます</p>
+                    </div>
+                )}
             </div>
         );
     }

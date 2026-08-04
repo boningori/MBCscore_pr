@@ -45,18 +45,19 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                     JPEG出力
                 </button>
                 {/*
-                  「表示中／非表示中」だけでは何が表示されるのか分からないため、
-                  対象（この選手を一覧に出すか）をアクセシブル名に含める。
+                  「表示中／非表示中」だけでは何が表示されるのか分からない。
+                  この切り替えが効くのは選手スタッツ分析の一覧と集計だけで、
+                  試合記録やマイチームの名簿には影響しないため、対象を明示する。
                 */}
                 <label className={`toggle-switch ${isHidden ? 'hidden-state' : ''}`}>
                     <span className="toggle-label">
-                        一覧に{isHidden ? '非表示' : '表示'}
+                        選手スタッツ一覧に{isHidden ? '非表示' : '表示'}
                     </span>
                     <input
                         type="checkbox"
                         checked={!isHidden}
                         onChange={onToggleHidden}
-                        aria-label={`${player.name}を選手一覧に表示する`}
+                        aria-label={`${player.name}を選手スタッツ一覧に表示する`}
                     />
                     <span className="toggle-slider"></span>
                 </label>
