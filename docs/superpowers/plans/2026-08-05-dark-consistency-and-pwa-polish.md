@@ -12,12 +12,15 @@
 
 - **`src/index.css` の `:root` にあるトークンの値を変更してはならない。** `--text-secondary` などが明るい面の上で WCAG AA を満たさない問題は後続設計の担当。本計画は「トークン経由にする」ことだけを行い、見た目の改善は目的としない
 - 新しいカラートークンを追加してはならない。既存トークンで表現できない色（hover の明暗差など）は `filter: brightness()` で表現する
-- 追加する色リテラルは禁止。既存の `rgba(255,255,255,…)` / `rgba(0,0,0,…)` の構造的オーバーレイと影は palette ではないため対象外
+- 追加する **16進の色リテラル**（`#rrggbb`）は禁止。次は対象外:
+  - 既存の `rgba(255,255,255,…)` / `rgba(0,0,0,…)` の構造的オーバーレイと影（palette ではない）
+  - ベタ塗りのボタン・バッジの上に載る `color: white`。`index.css` の `.btn-primary` / `.btn-danger` / `.btn-success` と `QuarterLineup` の `.quarter-badge.q-odd` が既にこの書き方であり、揃えるほうが一貫する
 - タップ領域は最小 44px（WCAG 2.5.8）。既存箇所を下回らせない
 - コミットメッセージは日本語、`種別(スコープ): 内容を〜する` 形式（例 `fix(ui): …を直す`）。末尾に `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>` を入れる
 - 作業ブランチは `fix/dark-consistency-and-pwa-polish`（作成済み）
 - 各タスクの最後に `npm run lint` と `npm test` が通ること
 - **正規表現を含むスクリプトファイルは、シェルのヒアドキュメント（`cat > file <<'EOF'`）ではなくファイル書き込みツールで作ること。** この環境ではヒアドキュメント経由でバックスラッシュが失われ、`\s` が `s`、`\b` が `b` に化ける（検証済み）。置換が黙って何もしない状態になる。Task 5 の置換スクリプトが該当する
+- **ブラウザ検証の制約**（過去ブランチで確認済み・`.superpowers/sdd/progress.md` 参照）: Browser ペインが非表示のため **screenshot は取得できない**。検証は `getComputedStyle` と a11y ツリーで行う。またペイン非合成のタブでは CSS transition が t=0 で停止するため、**状態変化後の値を読む場合は対象に `transition: none` を当ててから読むこと**（初期状態を読むだけなら不要）。ビューポートを変えたあとは必ずリロードする
 
 ---
 
