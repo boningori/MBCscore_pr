@@ -233,37 +233,10 @@
    .scoreboard-simple-grid / .simple-team-*）は、スコアボードをフルモードの
    1段レイアウトに一本化したため廃止した */
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge {
-    padding: 6px 12px;
-    /* 隣のQ終了ボタンと高さ44px・角丸12pxを揃える */
-    border-radius: var(--radius-md);
-    font-weight: 700;
-    font-size: var(--font-size-sm);
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q1 {
-    background: #86efac;
-    color: #166534;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q2 {
-    background: #4ade80;
-    color: white;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q3 {
-    background: #16a34a;
-    color: white;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q4 {
-    background: #14532d;
-    color: white;
-}
+/* .quarter-badge（-large なし）のスコアボード用スタイルがここにあったが、
+   このスコープ内では一度も描画されない死にコードだったため削除した。
+   実際に描画しているのは QuarterLineup で、スタイルは QuarterLineup.css の
+   .quarter-lineup .quarter-badge が担当している。 */
 
 /* .tf-badge・タイムアウトボタン(.btn-timeout-chip)は TeamPanel ヘッダー側の
    index.css 共有定義を使用する。シンプルモード専用だった .simple-team-footer /
