@@ -1,39 +1,61 @@
 /* 選手スタッツ分析画面 - モダンダッシュボードUI */
 
 :root {
-    --stats-primary: #3b82f6;
-    --stats-primary-light: #60a5fa;
-    --stats-primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
-    --stats-success: #22c55e;
-    --stats-danger: #ef4444;
-    --stats-warning: #f59e0b;
-    --stats-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --stats-card-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    --stats-font-scale: 1.15;
-    /* 文字サイズ拡大係数 */
+    /*
+      方針: UI部品の色はアプリ本体のトークンに揃える。
+      6種のスタッツを見分ける必要があるチャートの系列色だけは、識別性を優先して
+      独自の多色を維持する（src/components/PlayerStatsAnalysis/types.ts の STAT_COLORS）。
 
-    /* この画面固有の色。直書きを1箇所に集約する */
-    --stats-text-bright: #f1f5f9;
-    --stats-text-muted: #64748b;
-    --stats-text-dim: #cbd5e1;
-    --stats-primary-deep: #2563eb;
-    --stats-success-deep: #16a34a;
-    --stats-success-soft: #86efac;
-    --stats-success-pale: #dcfce7;
-    --stats-success-pale-2: #bbf7d0;
-    --stats-success-dark: #166534;
-    --stats-success-bg: #f0fdf4;
-    --stats-danger-soft: #fca5a5;
-    --stats-danger-bg: #fef2f2;
-    --stats-danger-dark: #991b1b;
-    --stats-accent: #7c3aed;
-    --stats-accent-light: #8b5cf6;
-    --stats-accent-bg: #f5f3ff;
-    --stats-pink: #db2777;
-    --stats-pink-bg: #fdf2f8;
-    --stats-orange-soft: #fdba74;
-    --stats-orange-deep: #d97706;
-    --stats-on-color: #fff;
+      ここは「役割 → 本体トークン」の対応表。実際の色はすべて src/index.css が持つ。
+    */
+
+    /* 主要アクセント（数値の強調・選択中の枠） */
+    --stats-primary: var(--primary);
+    --stats-primary-light: var(--primary-light);
+    /* 濃紺(--primary-dark)は暗い背景に沈むため、文字用途は明るい側を使う */
+    --stats-primary-deep: var(--primary-light);
+    --stats-primary-gradient: linear-gradient(135deg, var(--primary-light), var(--primary));
+
+    /* 勝ち・プラス方向 */
+    --stats-success: var(--secondary);
+    --stats-success-deep: var(--secondary-light);
+    --stats-success-soft: var(--secondary-light);
+    /* 円グラフのDEF側と凡例ドット。面として見える必要があるので中立の明るい色 */
+    --stats-success-pale: var(--text-secondary);
+    --stats-success-pale-2: rgba(5, 150, 105, 0.35);
+    --stats-success-bg: rgba(5, 150, 105, 0.15);
+
+    /* 負け・マイナス方向 */
+    --stats-danger: var(--danger);
+    --stats-danger-soft: var(--danger-light);
+    --stats-danger-bg: rgba(220, 38, 38, 0.15);
+
+    /* 引分・注意 */
+    --stats-warning: var(--warning);
+    --stats-orange-soft: var(--warning-light);
+    --stats-orange-deep: var(--warning);
+
+    /* スティール・ブロックの行。本体に紫は無いため青とピンクへ寄せる */
+    --stats-accent: var(--primary-light);
+    --stats-accent-light: var(--primary-light);
+    --stats-accent-bg: rgba(59, 130, 246, 0.15);
+    --stats-pink: var(--active-highlight);
+    --stats-pink-bg: rgba(236, 72, 153, 0.15);
+
+    /* 文字 */
+    --stats-text-bright: var(--text-primary);
+    --stats-text-dim: var(--text-secondary);
+    --stats-text-muted: var(--text-muted);
+
+    /* カード面。白のままだと暗い画面に白い板が浮く */
+    --stats-surface: var(--bg-tertiary);
+
+    /* 影。0.08の黒は暗い背景では見えないため本体のダーク用に合わせる */
+    --stats-card-shadow: var(--shadow-sm);
+    --stats-card-hover-shadow: var(--shadow-md);
+
+    /* 文字サイズ拡大係数 */
+    --stats-font-scale: 1.15;
 }
 
 .player-stats-container {
@@ -95,8 +117,8 @@
 
 @media (hover: hover) and (pointer: fine) {
   .player-stats-container .btn-back:hover {
-      background: var(--text-primary);
-      color: var(--bg-secondary);
+      background: var(--bg-hover);
+      color: var(--text-primary);
   }
 }
 
@@ -162,18 +184,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--stats-text-bright);
+    background: var(--bg-tertiary);
     border: none;
     border-radius: 50%;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 0.8rem;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .player-stats-container .btn-reset:hover {
-      background: var(--team-white);
-      color: var(--bg-secondary);
+      background: var(--bg-hover);
+      color: var(--text-primary);
   }
 }
 
@@ -241,7 +263,7 @@
 .player-stats-container .empty-state {
     text-align: center;
     padding: 60px 24px;
-    background: white;
+    background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     margin-top: 20px;
 }
@@ -257,7 +279,7 @@
 
 .player-stats-container .empty-state p {
     margin: 0;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
 }
 
 /* 選手カードリスト */
@@ -374,7 +396,7 @@
     margin: 0;
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .player-stats-container .detail-player-title .player-number {
@@ -391,7 +413,7 @@
     display: flex;
     gap: 12px;
     padding: 12px 16px;
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 10px;
     box-shadow: var(--stats-card-shadow);
 }
@@ -475,7 +497,7 @@
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
-    background: var(--stats-text-bright);
+    background: var(--bg-tertiary);
     border: 1px solid var(--stats-text-dim);
     border-radius: 10px;
     cursor: pointer;
@@ -518,7 +540,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .player-stats-container .hidden-players-toggle:hover {
-      background: var(--team-white);
+      background: var(--bg-hover);
   }
 }
 
@@ -544,8 +566,8 @@
 
 .player-stats-container .period-badge {
     display: inline-block;
-    background: linear-gradient(135deg, var(--stats-success-bg), var(--stats-success-pale));
-    color: var(--stats-success-deep);
+    background: var(--stats-success-bg);
+    color: var(--text-primary);
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -582,7 +604,7 @@
 .player-stats-container .highlight-label {
     font-size: 0.9rem;
     margin-top: 4px;
-    color: var(--bg-tertiary);
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -592,7 +614,7 @@
 
 /* ハイライトセクション */
 .player-stats-container .highlight-section {
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 14px;
     padding: 16px 20px;
     box-shadow: var(--stats-card-shadow);
@@ -609,7 +631,7 @@
 .player-stats-container .section-title .title-text {
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .player-stats-container .section-title .title-note {
@@ -670,7 +692,7 @@
     transform: translate(-50%, -50%);
     width: 90px;
     height: 90px;
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 50%;
     display: flex;
     flex-direction: column;
@@ -681,7 +703,7 @@
 .player-stats-container .pie-total {
     font-size: 1.2rem;
     font-weight: 800;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
     line-height: 1;
 }
 
@@ -703,7 +725,7 @@
     align-items: center;
     gap: 6px;
     font-size: 0.8rem;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
 }
 
 .player-stats-container .legend-dot {
@@ -722,7 +744,7 @@
 
 .player-stats-container .legend-value {
     font-weight: 700;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
     margin-left: 2px;
 }
 
@@ -741,7 +763,7 @@
 .player-stats-container .shooting-label {
     font-weight: 600;
     font-size: 0.85rem;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
 }
 
 .player-stats-container .shooting-bar-container {
@@ -823,14 +845,14 @@
 
 .player-stats-container .perf-row.to {
     background: var(--stats-danger-bg);
-    border-left-color: var(--stats-danger);
+    border-left-color: var(--danger-light);
 }
 
 .player-stats-container .perf-label {
     flex: 1;
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--border-light);
+    color: var(--text-secondary);
 }
 
 .player-stats-container .perf-value {
@@ -840,15 +862,15 @@
     text-align: right;}
 
 .player-stats-container .perf-row.stl .perf-value {
-    color: var(--stats-accent);
+    color: var(--team-blue-light);
 }
 
 .player-stats-container .perf-row.blk .perf-value {
-    color: var(--stats-pink);
+    color: var(--active-highlight-light);
 }
 
 .player-stats-container .perf-row.to .perf-value {
-    color: var(--danger);
+    color: var(--danger-light);
 }
 
 .player-stats-container .perf-total {
@@ -879,13 +901,13 @@
 
 .player-stats-container .total-stat .label {
     font-size: 0.75rem;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
     margin-top: 4px;
 }
 
 /* 成長セクション */
 .player-stats-container .growth-section {
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 14px;
     padding: 16px 20px;
     box-shadow: var(--stats-card-shadow);
@@ -922,7 +944,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .player-stats-container .period-btn:hover {
-      color: var(--bg-secondary);
+      color: var(--text-primary);
   }
 }
 
@@ -979,7 +1001,7 @@
 
 /* 試合別詳細 */
 .player-stats-container .game-history-section {
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 14px;
     padding: 16px 20px;
     box-shadow: var(--stats-card-shadow);
@@ -1042,12 +1064,12 @@
     align-items: center;
     padding: 6px 8px;
     border-radius: var(--radius-sm);
-    background: var(--text-primary);
+    background: var(--bg-secondary);
     font-size: 0.8rem;
 }
 
 .player-stats-container .game-row:nth-child(odd) {
-    background: var(--stats-text-bright);
+    background: var(--bg-tertiary);
 }
 
 .player-stats-container .game-row.win {
@@ -1064,7 +1086,7 @@
 
 .player-stats-container .game-row .game-date {
     font-size: 0.75rem;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
@@ -1089,7 +1111,7 @@
 
 .player-stats-container .game-opponent {
     font-weight: 500;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
     font-size: 0.8rem;
     white-space: nowrap;
     overflow: hidden;
@@ -1098,7 +1120,7 @@
 
 .player-stats-container .game-score {
     font-weight: 700;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
     font-size: 0.85rem;
     text-align: center;
 }
@@ -1119,27 +1141,27 @@
 
 .player-stats-container .stat-pts {
     background: rgba(59, 130, 246, 0.15);
-    color: var(--stats-primary-deep);
+    color: var(--team-blue-light);
 }
 
 .player-stats-container .stat-reb {
     background: rgba(34, 197, 94, 0.15);
-    color: var(--stats-success-deep);
+    color: var(--secondary-light);
 }
 
 .player-stats-container .stat-ast {
     background: rgba(245, 158, 11, 0.15);
-    color: var(--stats-orange-deep);
+    color: var(--warning-light);
 }
 
 .player-stats-container .stat-stl {
     background: rgba(139, 92, 246, 0.15);
-    color: var(--stats-accent);
+    color: var(--team-blue-light);
 }
 
 .player-stats-container .stat-to {
     background: rgba(239, 68, 68, 0.15);
-    color: var(--danger);
+    color: var(--danger-light);
 }
 
 /* ターンオーバー詳細 */
@@ -1159,7 +1181,7 @@
 
 .player-stats-container .game-to-compact .to-total {
     background: rgba(239, 68, 68, 0.2);
-    color: var(--danger);
+    color: var(--danger-light);
     font-weight: 700;
 }
 
@@ -1174,7 +1196,7 @@
 
 /* 成長推移比較セクション */
 .player-stats-container .growth-comparison-section {
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 14px;
     padding: 16px 20px;
     box-shadow: var(--stats-card-shadow);
@@ -1184,7 +1206,7 @@
     margin: 0 0 16px;
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .player-stats-container .comparison-controls {
@@ -1198,7 +1220,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--text-primary);
+    background: var(--bg-tertiary);
     padding: 8px 12px;
     border-radius: 10px;
     flex: 1;
@@ -1208,7 +1230,7 @@
 .player-stats-container .control-group label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
     white-space: nowrap;
 }
 
@@ -1219,8 +1241,8 @@
     font-weight: 500;
     border: 2px solid var(--team-white);
     border-radius: var(--radius-sm);
-    background: white;
-    color: var(--bg-secondary);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     cursor: pointer;
     transition: border-color 0.2s;
 }
@@ -1233,7 +1255,7 @@
 .player-stats-container .stat-select:focus,
 .player-stats-container .period-select:focus {
     outline: none;
-    border-color: var(--stats-primary);
+    border-color: var(--team-blue-light);
 }
 
 /* 成長推移比較セクション */
@@ -1261,15 +1283,15 @@
     font-weight: 500;
     border: 2px solid var(--team-white);
     border-radius: var(--radius-sm);
-    background: white;
-    color: var(--bg-secondary);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .player-stats-container .period-select-simple:focus {
     outline: none;
-    border-color: var(--stats-primary);
+    border-color: var(--team-blue-light);
 }
 
 .player-stats-container .comparison-charts-grid {
@@ -1297,7 +1319,7 @@
 
 /* 標準グラフ */
 .player-stats-container .standard-chart {
-    background: var(--text-primary);
+    background: var(--bg-secondary);
     border-radius: 10px;
     padding: 12px;
 }
@@ -1409,7 +1431,7 @@
     top: -14px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--border-light);
+    color: var(--text-secondary);
     white-space: nowrap;
 }
 
@@ -1429,7 +1451,7 @@
        12pxにすると「6/10」が24pxになって枠から4px切れる。
        アプリ共通の --font-size-xs の下限(10px)と同値なので下回ってはいない */
     font-size: 0.625rem;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1601,12 +1623,12 @@
 }
 
 .player-stats-container .card-arrow {
-    color: var(--border-light);
+    color: var(--text-secondary);
 }
 
 .player-stats-container .highlight-stat {
     background: var(--bg-hover);
-    border-color: var(--stats-text-muted);
+    border-color: var(--text-secondary);
 }
 
 .player-stats-container .highlight-stat .highlight-label {
@@ -1618,7 +1640,7 @@
 }
 
 .player-stats-container .highlight-stat .highlight-std {
-    color: var(--stats-text-dim);
+    color: var(--text-primary);
 }
 
 .player-stats-container .highlight-stat.primary .highlight-value {
@@ -1658,7 +1680,7 @@
 }
 
 .player-stats-container .total-stat .value {
-    color: var(--stats-primary-light);
+    color: var(--team-blue-light);
 }
 
 .player-stats-container .growth-section {
@@ -1685,7 +1707,7 @@
 
 .player-stats-container .period-btn.active {
     background: var(--bg-secondary);
-    color: var(--stats-primary-light);
+    color: var(--team-blue-light);
 }
 
 .player-stats-container .bar-value {
@@ -1720,7 +1742,7 @@
 .player-stats-container .detail-toolbar .btn-secondary {
     background: var(--bg-hover);
     color: var(--stats-text-bright);
-    border-color: var(--stats-text-muted);
+    border-color: var(--text-secondary);
 }
 
 .player-stats-container .toggle-switch .toggle-label {
@@ -1771,7 +1793,7 @@
 @media print {
     .player-stats-container {
         padding: 0;
-        background: var(--stats-on-color);
+        background: var(--stats-surface);
     }
 
     .player-stats-container .detail-toolbar {
@@ -1830,7 +1852,7 @@
     align-items: center;
     gap: 4px;
     padding: 12px 8px;
-    background: var(--stats-on-color);
+    background: var(--stats-surface);
     border: 1px solid var(--team-white);
     border-radius: 10px;
     box-shadow: var(--stats-card-shadow);
@@ -1839,7 +1861,7 @@
 .player-stats-container .recent-form-card .rf-value {
     font-size: 1.6rem;
     font-weight: 700;
-    color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .player-stats-container .recent-form-card .rf-delta {
@@ -1848,11 +1870,11 @@
 }
 
 .player-stats-container .recent-form-card .rf-delta.up {
-    color: var(--stats-success);
+    color: var(--secondary-light);
 }
 
 .player-stats-container .recent-form-card .rf-delta.down {
-    color: var(--stats-danger);
+    color: var(--danger-light);
 }
 
 .player-stats-container .recent-form-card .rf-delta.flat {
@@ -1861,7 +1883,7 @@
 
 .player-stats-container .recent-form-card .rf-label {
     font-size: 0.8rem;
-    color: var(--stats-text-muted);
+    color: var(--text-secondary);
 }
 
 /* 勝敗別スプリット */
@@ -1873,7 +1895,7 @@
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
-    background: var(--stats-on-color);
+    background: var(--stats-surface);
     border-radius: 10px;
     overflow: hidden;
     box-shadow: var(--stats-card-shadow);
@@ -1886,26 +1908,26 @@
     font-size: 0.9rem;
     border-bottom: 1px solid var(--stats-text-bright);
     /* bodyのダーク用文字色(#f8fafc)を白背景セルに継承させない */
-    color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .player-stats-container .win-loss-table th {
     font-weight: 700;
-    background: var(--text-primary);
+    background: var(--bg-secondary);
 }
 
 .player-stats-container .win-loss-table th.win-col {
-    color: var(--stats-success);
+    color: var(--secondary-light);
 }
 
 .player-stats-container .win-loss-table th.loss-col {
-    color: var(--stats-danger);
+    color: var(--danger-light);
 }
 
 .player-stats-container .win-loss-table .wl-label {
     text-align: left;
     font-weight: 600;
-    color: var(--border-light);
+    color: var(--text-secondary);
 }
 
 .player-stats-container .wl-note {

@@ -267,9 +267,11 @@ function ReboundPieChart({ off, def }: { off: number; def: number }) {
             <div
                 className="rebound-pie"
                 style={{
+                    // DEF側は面として見える中立色。淡い緑(#dcfce7)は暗い画面で浮くため
+                    // 凡例ドットと同じ --stats-success-pale を使う
                     background: `conic-gradient(
                         var(--stats-success) 0% ${offPercent}%,
-                        #dcfce7 ${offPercent}% 100%
+                        var(--stats-success-pale) ${offPercent}% 100%
                     )`
                 }}
             >
