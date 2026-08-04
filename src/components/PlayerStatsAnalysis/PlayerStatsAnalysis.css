@@ -56,9 +56,7 @@
 .player-stats-container .player-stats-header h2 {
     margin: 0;
     font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--bg-secondary);
-}
+    font-weight: 700;}
 
 .player-stats-container .player-title {
     display: flex;
@@ -83,16 +81,13 @@
     min-height: 44px;
     gap: 6px;
     padding: 8px 14px;
-    background: white !important;
     border: 1px solid var(--team-white);
     border-radius: 10px;
-    color: var(--border-light) !important;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: var(--stats-card-shadow);
-}
+    box-shadow: var(--stats-card-shadow);}
 
 .player-stats-container .btn-back span {
     color: inherit !important;
@@ -129,9 +124,7 @@
 .player-stats-container .field-label {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--border-light);
-    white-space: nowrap;
-}
+    white-space: nowrap;}
 
 .player-stats-container .team-select {
     /* padding だけでは41pxで基準を下回る */
@@ -141,30 +134,23 @@
     font-weight: 500;
     border: 1px solid var(--team-white);
     border-radius: 10px;
-    background: white;
-    color: var(--bg-secondary);
     min-width: 160px;
-    box-shadow: var(--stats-card-shadow);
-}
+    box-shadow: var(--stats-card-shadow);}
 
 .player-stats-container .date-range {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: white;
     padding: 6px 12px;
     border-radius: 10px;
     border: 1px solid var(--team-white);
-    box-shadow: var(--stats-card-shadow);
-}
+    box-shadow: var(--stats-card-shadow);}
 
 .player-stats-container .date-range input[type="date"] {
     padding: 6px 8px;
     font-size: 0.85rem;
     border: none;
-    background: transparent;
-    color: var(--bg-secondary);
-}
+    background: transparent;}
 
 .player-stats-container .date-separator {
     color: var(--text-secondary);
@@ -267,9 +253,7 @@
 
 .player-stats-container .empty-state h3 {
     margin: 0 0 8px;
-    font-size: 1.2rem;
-    color: var(--bg-secondary);
-}
+    font-size: 1.2rem;}
 
 .player-stats-container .empty-state p {
     margin: 0;
@@ -284,7 +268,6 @@
 }
 
 .player-stats-container .player-card {
-    background: white;
     border-radius: 14px;
     padding: 16px 20px;
     display: flex;
@@ -293,8 +276,7 @@
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: var(--stats-card-shadow);
-    position: relative;
-}
+    position: relative;}
 
 @media (hover: hover) and (pointer: fine) {
   .player-stats-container .player-card:hover {
@@ -326,9 +308,7 @@
 
 .player-stats-container .player-info .player-name {
     font-size: 1rem;
-    font-weight: 600;
-    color: var(--bg-secondary);
-}
+    font-weight: 600;}
 
 .player-stats-container .player-info .player-games {
     font-size: 0.75rem;
@@ -347,10 +327,8 @@
     flex-direction: column;
     align-items: center;
     padding: 8px 12px;
-    background: var(--text-primary);
     border-radius: 10px;
-    min-width: 52px;
-}
+    min-width: 52px;}
 
 .player-stats-container .stat-box.primary {
     background: var(--stats-primary);
@@ -360,16 +338,12 @@
 .player-stats-container .stat-box .stat-value {
     font-size: 1.1rem;
     font-weight: 700;
-    line-height: 1.2;
-    color: var(--bg-secondary);
-}
+    line-height: 1.2;}
 
 .player-stats-container .stat-box .stat-label {
     font-size: 0.75rem;
-    color: var(--stats-text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+    letter-spacing: 0.5px;}
 
 .player-stats-container .stat-box.primary .stat-value {
     color: white;
@@ -383,9 +357,7 @@
     position: absolute;
     right: 16px;
     font-size: 1.5rem;
-    color: var(--stats-text-dim);
-    font-weight: 300;
-}
+    font-weight: 300;}
 
 /* 詳細ビュー */
 .player-stats-container .player-detail-view {
@@ -440,10 +412,7 @@
 }
 
 .player-stats-container .detail-toolbar .btn-secondary {
-    background: var(--stats-text-bright);
-    color: var(--border-light);
-    border: 1px solid var(--team-white);
-}
+    border: 1px solid var(--team-white);}
 
 @media (hover: hover) and (pointer: fine) {
   .player-stats-container .detail-toolbar .btn:hover {
@@ -464,13 +433,7 @@
 
 .player-stats-container .toggle-switch .toggle-label {
     font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--stats-success-dark);
-}
-
-.player-stats-container .toggle-switch.hidden-state .toggle-label {
-    color: var(--stats-danger-dark);
-}
+    font-weight: 600;}
 
 .player-stats-container .toggle-switch input[type="checkbox"] {
     display: none;
@@ -480,10 +443,8 @@
     position: relative;
     width: 50px;
     height: 26px;
-    background: var(--stats-success);
     border-radius: 13px;
-    transition: all 0.3s ease;
-}
+    transition: all 0.3s ease;}
 
 .player-stats-container .toggle-switch .toggle-slider::after {
     content: '';
@@ -496,10 +457,6 @@
     border-radius: 50%;
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.player-stats-container .toggle-switch.hidden-state .toggle-slider {
-    background: var(--stats-danger);
 }
 
 .player-stats-container .toggle-switch.hidden-state .toggle-slider::after {
@@ -529,13 +486,7 @@
 .player-stats-container .hidden-players-toggle .toggle-label {
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--stats-text-muted);
-    transition: color 0.3s ease;
-}
-
-.player-stats-container .hidden-players-toggle.active .toggle-label {
-    color: var(--stats-success-dark);
-}
+    transition: color 0.3s ease;}
 
 .player-stats-container .hidden-players-toggle input[type="checkbox"] {
     display: none;
@@ -545,10 +496,8 @@
     position: relative;
     width: 44px;
     height: 24px;
-    background: var(--text-secondary);
     border-radius: var(--radius-md);
-    transition: all 0.3s ease;
-}
+    transition: all 0.3s ease;}
 
 .player-stats-container .hidden-players-toggle .toggle-slider::after {
     content: '';
@@ -561,10 +510,6 @@
     border-radius: 50%;
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.player-stats-container .hidden-players-toggle.active .toggle-slider {
-    background: var(--stats-success);
 }
 
 .player-stats-container .hidden-players-toggle.active .toggle-slider::after {
@@ -611,15 +556,13 @@
 .player-stats-container .highlight-stat {
     flex: 1;
     min-width: 100px;
-    background: var(--stats-text-bright);
     border-radius: 14px;
     padding: 16px;
     text-align: center;
     border: 1px solid var(--team-white);
     display: flex;
     flex-direction: column;
-    gap: 2px;
-}
+    gap: 2px;}
 
 .player-stats-container .highlight-stat.primary {
     background: var(--stats-primary-gradient);
@@ -630,15 +573,11 @@
 .player-stats-container .highlight-stat .highlight-value {
     font-size: 2.4rem;
     font-weight: 800;
-    line-height: 1;
-    color: var(--bg-secondary);
-}
+    line-height: 1;}
 
 .player-stats-container .highlight-stat .highlight-std {
     font-size: 0.9rem;
-    color: var(--border-light);
-    font-weight: 500;
-}
+    font-weight: 500;}
 
 .player-stats-container .highlight-label {
     font-size: 0.9rem;
@@ -649,14 +588,6 @@
 
 .player-stats-container .highlight-stat.primary .highlight-label {
     opacity: 0.9;
-}
-
-.player-stats-container .highlight-stat.primary .highlight-value {
-    color: white;
-}
-
-.player-stats-container .highlight-stat.primary .highlight-std {
-    color: rgba(255, 255, 255, 0.8);
 }
 
 /* ハイライトセクション */
@@ -695,11 +626,9 @@
 }
 
 .player-stats-container .stats-card {
-    background: white;
     border-radius: 14px;
     padding: 16px 20px;
-    box-shadow: var(--stats-card-shadow);
-}
+    box-shadow: var(--stats-card-shadow);}
 
 .player-stats-container .stats-card.wide {
     grid-column: 1 / -1;
@@ -708,9 +637,7 @@
 .player-stats-container .stats-card h4 {
     margin: 0 0 14px;
     font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--bg-secondary);
-}
+    font-weight: 600;}
 
 /* シューティングスタッツ */
 .player-stats-container .shooting-stats {
@@ -819,10 +746,8 @@
 
 .player-stats-container .shooting-bar-container {
     height: 10px;
-    background: var(--team-white);
     border-radius: 5px;
-    overflow: hidden;
-}
+    overflow: hidden;}
 
 .player-stats-container .shooting-bar-fill {
     height: 100%;
@@ -834,9 +759,7 @@
 .player-stats-container .shooting-percent {
     font-weight: 700;
     font-size: 0.95rem;
-    color: var(--bg-secondary);
-    text-align: right;
-}
+    text-align: right;}
 
 .player-stats-container .shooting-made {
     font-size: 0.8rem;
@@ -885,10 +808,8 @@
     display: flex;
     align-items: center;
     padding: 8px 12px;
-    background: var(--text-primary);
     border-radius: 8px;
-    border-left: 3px solid transparent;
-}
+    border-left: 3px solid transparent;}
 
 .player-stats-container .perf-row.stl {
     background: var(--stats-accent-bg);
@@ -915,10 +836,8 @@
 .player-stats-container .perf-value {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--bg-secondary);
     min-width: 55px;
-    text-align: right;
-}
+    text-align: right;}
 
 .player-stats-container .perf-row.stl .perf-value {
     color: var(--stats-accent);
@@ -956,9 +875,7 @@
 .player-stats-container .total-stat .value {
     font-size: 1.6rem;
     font-weight: 800;
-    color: var(--stats-primary);
-    line-height: 1;
-}
+    line-height: 1;}
 
 .player-stats-container .total-stat .label {
     font-size: 0.75rem;
@@ -986,16 +903,12 @@
 .player-stats-container .section-header h4 {
     margin: 0;
     font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--bg-secondary);
-}
+    font-weight: 600;}
 
 .player-stats-container .period-selector {
     display: flex;
-    background: var(--stats-text-bright);
     border-radius: 8px;
-    padding: 4px;
-}
+    padding: 4px;}
 
 .player-stats-container .period-btn {
     padding: 6px 14px;
@@ -1004,10 +917,8 @@
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--stats-text-muted);
     cursor: pointer;
-    transition: all 0.15s;
-}
+    transition: all 0.15s;}
 
 @media (hover: hover) and (pointer: fine) {
   .player-stats-container .period-btn:hover {
@@ -1016,10 +927,7 @@
 }
 
 .player-stats-container .period-btn.active {
-    background: white;
-    color: var(--stats-primary);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);}
 
 /* チャート */
 .player-stats-container .chart-container {
@@ -1056,17 +964,13 @@
     top: -22px;
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--bg-secondary);
-    white-space: nowrap;
-}
+    white-space: nowrap;}
 
 .player-stats-container .bar-label {
     font-size: 0.75rem;
-    color: var(--stats-text-muted);
     margin-top: 6px;
     white-space: nowrap;
-    text-align: center;
-}
+    text-align: center;}
 
 .player-stats-container .bar-games {
     font-size: 0.75rem;
@@ -1084,9 +988,7 @@
 .player-stats-container .game-history-section h4 {
     margin: 0 0 12px;
     font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--bg-secondary);
-}
+    font-weight: 600;}
 
 .player-stats-container .game-history-compact {
     display: flex;
