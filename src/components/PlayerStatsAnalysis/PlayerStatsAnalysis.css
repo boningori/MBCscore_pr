@@ -67,6 +67,25 @@
     font-size: calc(1rem * var(--stats-font-scale));
 }
 
+/* 内容の横幅上限。
+   他の画面は「外側=全幅の背景 / 内側=上限つきで中央寄せ」の2層になっているが
+   （ホーム・履歴 500px、試合設定 800px、スタメン選択 700px）、この画面だけ
+   内側の層が無く、13インチ横向き(1366px)では内容が1319pxまで広がっていた。
+   その幅で repeat(3, 1fr) のカードが1枚429pxになり間延びする。
+
+   内側のラッパを足すのではなく左右paddingで挟むのは、直下の子に
+   margin: 16px 0 を持つもの（.recent-form-section 等）があり、
+   `> *` に margin:auto を当てても詳細度で負けて中央寄せにならないため。
+   この書き方なら子には一切触れず、背景は全幅のまま保てる。
+
+   上限1100pxは、3列を2列に落とすブレークポイント(max-width:1024px)を
+   下回らせないための値。下回ると「狭い箱に3列」でかえって窮屈になる。
+   1366px幅で内容1100px、カード1枚は約356pxになる。 */
+.player-stats-container {
+    padding-left: max(16px, calc((100% - 1100px) / 2));
+    padding-right: max(16px, calc((100% - 1100px) / 2));
+}
+
 /* ヘッダー */
 .player-stats-container .player-stats-header {
     display: flex;
