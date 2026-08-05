@@ -55,6 +55,11 @@ export default defineConfig({
         // タブレット横向き(フルモード3カラム)を推奨しているため向きは固定しない
         orientation: 'any',
         start_url: '/MBCscore_pr/',
+        // アイコン長押しのショートカットを試合中に押しても、新しいインスタンスを
+        // 開かず既存のウィンドウにフォーカスを戻す。記録中の画面から離れさせない
+        launch_handler: {
+          client_mode: 'focus-existing'
+        },
         icons: [
           {
             src: 'icon-192.png',
@@ -131,7 +136,9 @@ export default defineConfig({
         // manual.htmlはホームからリンクする使用説明書なのでオフラインでも要るため残す。
         // 紹介画像(screenshots/)もオフラインキャッシュから外す。インストール画面は
         // ブラウザがオンラインで取得するもので、アプリの動作には要らない。
-        globIgnores: ['FLYER.html', 'SNS_CARDS.html', 'vite.svg', 'screenshots/**'],
+        // 起動画像(splash/)もオフラインキャッシュから外す。iOSが起動時に読むもので、
+        // アプリの動作には要らない（screenshots/と同じ理由）
+        globIgnores: ['FLYER.html', 'SNS_CARDS.html', 'vite.svg', 'screenshots/**', 'splash/**'],
         // wasmコア(.wasm.js)は約3.9MBあり、既定の2MB上限では除外されてしまうため引き上げる
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
