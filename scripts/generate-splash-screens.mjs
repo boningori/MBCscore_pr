@@ -40,11 +40,14 @@ export const SPLASH_TARGETS = [
     { w: 1024, h: 1366, dpr: 2 }, // iPad Pro 12.9"
 ];
 
-/** 1枚生成する。orientation は 'portrait' | 'landscape' */
-async function generate(source, { w, h, dpr }, orientation) {
+/** 1枚生成する。orientation は 'portrait' | 'landscape'、sourceWidth は元画像の幅 */
+async function generate(source, sourceWidth, { w, h, dpr }, orientation) {
     const width = (orientation === 'portrait' ? w : h) * dpr;
     const height = (orientation === 'portrait' ? h : w) * dpr;
-    const artworkSize = Math.round(Math.min(width, height) * ARTWORK_RATIO);
+
+    // 元解像度を超えて拡大すると、補間で生じたグラデーションが256色パレットPNGで
+    // ディザリングされてファイルが膨らみ、かつ絵柄もぼやけるため、拡大を元画像の幅に制限
+    const artworkSize = Math.round(Math.min(Math.min(width, height) * ARTWORK_RATIO, sourceWidth));
 
     const artwork = await sharp(source)
         .resize(artworkSize, artworkSize, { fit: 'contain', background: BACKGROUND })
@@ -63,12 +66,17 @@ async function generate(source, { w, h, dpr }, orientation) {
 
 async function main() {
     const source = path.join(publicDir, 'icon-512.png');
+
+    // 元画像の解像度を取得（将来icon-512.pngが差し替えられたときに自動で追従するため）
+    const sourceMetadata = await sharp(source).metadata();
+    const sourceWidth = sourceMetadata.width;
+
     await fs.mkdir(outDir, { recursive: true });
 
     const made = [];
     for (const target of SPLASH_TARGETS) {
-        made.push(await generate(source, target, 'portrait'));
-        made.push(await generate(source, target, 'landscape'));
+        made.push(await generate(source, sourceWidth, target, 'portrait'));
+        made.push(await generate(source, sourceWidth, target, 'landscape'));
     }
 
     console.log(`✅ public/splash/ に ${made.length} 枚生成しました`);
