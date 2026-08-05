@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import type { FoulType, FreeThrowResult, ShotSituation, Player } from '../../types/game';
 import { MAX_PERSONAL_FOULS, suggestFreeThrowCount } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { Modal } from '../Modal';
 import './FoulInputFlow.css';
 
 type Step = 'foulType' | 'shotSituation' | 'shotResult' | 'ftCount' | 'shooter' | 'ftResult';
@@ -298,23 +299,20 @@ export function FoulInputFlow({
     // コート上の選手のみフィルタリング
     const availableShooters = opponentPlayers.filter(p => p.isOnCourt);
 
-    // すべてのイベントを止める
-    const stopAllEvents = (e: React.MouseEvent | React.TouchEvent) => {
-        e.stopPropagation();
-    };
-
     return (
-        <div
-            className="foul-input-flow-overlay"
-            onClick={onCancel}
-            onTouchStart={stopAllEvents}
-            onTouchEnd={stopAllEvents}
-            onTouchMove={stopAllEvents}
+        // 共通のModalに載せる。ここは試合中いちばん深い階層のオーバーレイで、
+        // 開いている間は背後のスコアボードや選手カードを触らせてはいけない。
+        // dialog / フォーカストラップ / フォーカス復帰 / Escape をModalに任せる
+        <Modal
+            onClose={onCancel}
+            overlayClassName="foul-input-flow-overlay"
+            contentClassName="foul-input-flow"
+            labelledBy="foul-input-title"
         >
-            <div className="foul-input-flow" onClick={e => e.stopPropagation()}>
+            <>
                 {/* ヘッダー */}
                 <div className="foul-input-header">
-                    <h3>{stepTitles[step]}</h3>
+                    <h3 id="foul-input-title">{stepTitles[step]}</h3>
                     {(step !== 'foulType' || benchFoulMode) && (
                         <button className="btn-back" onClick={handleBack}>
                             ← 戻る
@@ -523,7 +521,7 @@ export function FoulInputFlow({
                         キャンセル
                     </button>
                 </div>
-            </div>
-        </div>
+            </>
+        </Modal>
     );
 }

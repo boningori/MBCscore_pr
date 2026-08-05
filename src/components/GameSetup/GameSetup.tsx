@@ -452,8 +452,11 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                             </div>
 
                             <div className="confirm-number-type">
-                                <span className="number-type-label">マイチームの使用番号</span>
-                                <div className="number-type-options">
+                                {/* 見出しがただのspanだと読み上げで「ビブス番号 ラジオボタン」としか
+                                    聞こえず、何を選ぶグループなのか分からない。
+                                    radiogroup にして見出しを名前として結び付ける */}
+                                <span className="number-type-label" id="number-type-label">マイチームの使用番号</span>
+                                <div className="number-type-options" role="radiogroup" aria-labelledby="number-type-label">
                                     <label className={`number-type-option ${numberType === 'bib' ? 'selected' : ''}`}>
                                         <input
                                             type="radio"
@@ -478,8 +481,8 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                             </div>
 
                             <div className="confirm-number-type">
-                                <span className="number-type-label">3Pシュート</span>
-                                <div className="number-type-options">
+                                <span className="number-type-label" id="three-point-label">3Pシュート</span>
+                                <div className="number-type-options" role="radiogroup" aria-labelledby="three-point-label">
                                     <label className={`number-type-option three-point-option ${!showThreePoint ? 'selected' : ''}`}>
                                         <input
                                             type="radio"
@@ -502,8 +505,8 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                             </div>
 
                             <div className="confirm-number-type">
-                                <span className="number-type-label">クォーター時間</span>
-                                <div className="number-type-options">
+                                <span className="number-type-label" id="quarter-minutes-label">クォーター時間</span>
+                                <div className="number-type-options" role="radiogroup" aria-labelledby="quarter-minutes-label">
                                     <label className={`number-type-option ${quarterMinutes === 6 ? 'selected' : ''}`}>
                                         <input
                                             type="radio"

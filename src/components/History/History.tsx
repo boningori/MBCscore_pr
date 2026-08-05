@@ -12,6 +12,7 @@ import {
     generateGameFilename,
 } from '../../utils/dataBackup';
 import { showToast } from '../Toast/toastApi';
+import { DeleteConfirmModal } from '../TeamShared';
 import './History.css';
 
 interface HistoryProps {
@@ -205,23 +206,17 @@ export function History({ onBack }: HistoryProps) {
                 )}
             </div>
 
-            {/* 削除確認モーダル */}
+            {/* 削除確認モーダル。素のオーバーレイを手書きしていたため
+                dialog・フォーカストラップ・Escapeが無かった。
+                他画面の削除確認と同じ ConfirmModal に揃える */}
             {deleteTargetId && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h3>試合記録の削除</h3>
-                        <p>この試合記録を削除してもよろしいですか？</p>
-                        <p className="text-muted text-sm my-2">※この操作は取り消せません</p>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={cancelDelete}>
-                                キャンセル
-                            </button>
-                            <button className="btn btn-danger" onClick={confirmDelete}>
-                                削除する
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <DeleteConfirmModal
+                    title="試合記録の削除"
+                    message="この試合記録を削除してもよろしいですか？"
+                    note="※この操作は取り消せません"
+                    onConfirm={confirmDelete}
+                    onCancel={cancelDelete}
+                />
             )}
         </div>
     );

@@ -556,7 +556,9 @@
 
 .app-container .mini-player-card .player-fouls {
   margin-left: auto;
-  color: var(--text-muted);
+  /* カード地は --bg-tertiary。--text-muted はこの面で3.41:1しか出ない。
+     ファウル数は退場(5個)に直結する情報なので薄くしてはいけない */
+  color: var(--text-secondary);
   /* ファウル数は退場(5個)に直結する重要情報なので、基準サイズより20%大きくする */
   font-size: calc(var(--font-size-sm) * 1.2);
 }
