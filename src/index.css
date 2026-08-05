@@ -12,12 +12,28 @@
   --primary: #1e40af;
   --primary-light: #3b82f6;
   --primary-dark: #1e3a8a;
+  /* 青を「文字色」に使うとき用。--primary / --primary-light は枠線・背景の明度で、
+     文字にするとダーク地の上でAAに届かない（実測: --primary は --bg-secondary 上で
+     1.68:1、--primary-light は --bg-tertiary 上で2.82:1）。
+     枠線・背景に使う分には非文字の3:1基準で足りるため、元の2本は据え置く。
+     文字色として var(--primary) / var(--primary-light) を新たに書かないこと */
+  --primary-text: #8ab6fd;
 
   --secondary: #059669;
   --secondary-light: #10b981;
+  /* 緑を「文字色」に使うとき用（--secondary は --bg-tertiary 上で2.75:1）。
+     背景としての --secondary は白文字を載せると3.77:1しか出ないため、
+     .btn-success の地には --secondary-dark を使う */
+  --secondary-text: #6ee7b7;
+  --secondary-dark: #047857;
 
   --danger: #dc2626;
   --danger-light: #f87171;
+  /* 赤を「文字色」に使うとき用。--danger は選手カード地(--bg-tertiary)の上で
+     2.14:1、--danger-light でも3.74:1しか出ない。
+     ファウル数は退場(5個)に直結する情報で、いちばん読み違えてはいけない値のため
+     専用に持ち上げる。枠線・背景としての --danger / --danger-light は据え置く */
+  --danger-text: #fb9494;
 
   --warning: #f59e0b;
   --warning-light: #fbbf24;
@@ -60,9 +76,13 @@
   --bg-card: #1e293b;
 
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #7d8da5;
-  /* 旧 #64748b は暗背景で4.5:1を下回るため引き上げ */
+  /* --bg-tertiary（選手カード・履歴行の地）の上でも4.5:1を満たす明度にする。
+     旧 #94a3b8 はこの面で4.04:1だった */
+  --text-secondary: #a3b1c4;
+  /* 旧 #64748b → #7d8da5 と上げてきたが、#7d8da5 でも --bg-secondary の上で
+     4.34:1 と AA をわずかに下回っていたため再度引き上げた。
+     --bg-tertiary より明るい面では使わない（そこでは --text-secondary 以上を使う） */
+  --text-muted: #8695ad;
 
   --border: #334155;
   --border-light: #475569;
@@ -146,6 +166,14 @@ html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
+  /* 引っ張って更新（pull-to-refresh）とスクロール連鎖を止める。
+     このアプリの主要ジェスチャは得点ボタンの「↓スワイプ＝ミス」で、
+     下方向のドラッグを常用する。スクロール可能な .app-main が先頭にある状態で
+     ボタンをわずかに外して下へ引くと、連鎖が親へ抜けてリロードが走り、
+     記録中にアプリが再起動される。
+     上の touch-action: manipulation はダブルタップズームを止めるだけで、
+     こちらは防げないため別に指定する。 */
+  overscroll-behavior-y: contain;
   /* 縦スクロールバーの領域を常に確保する。
      スタメン選択のタブ切替などで内容の高さが変わるとスクロールバーが出入りし、
      中央寄せ（margin:0 auto）のレイアウトが横に数pxずれて見えるのを防ぐ。
@@ -160,6 +188,8 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   overflow-x: hidden;
+  /* Chromeは引っ張って更新の判定にbody側の指定も見るため、htmlと両方に置く */
+  overscroll-behavior-y: contain;
   /* ノッチ・ホームインジケータを避ける（viewport-fit=cover + standalone表示時） */
   padding: var(--safe-top, 0px) var(--safe-right, 0px) var(--safe-bottom, 0px) var(--safe-left, 0px);
   -webkit-font-smoothing: antialiased;
@@ -271,7 +301,7 @@ button.player-card {
 }
 
 .btn-success {
-  background: var(--secondary);
+  background: var(--secondary-dark);
   color: white;
 }
 
@@ -578,7 +608,7 @@ textarea,
 }
 
 .timer-value.ended {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 .quarter-indicator {
@@ -621,7 +651,7 @@ textarea,
 }
 
 .voice-icon.active {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 @keyframes pulse {
@@ -655,7 +685,7 @@ textarea,
 .alert-danger {
   background: rgba(220, 38, 38, 0.2);
   border: 1px solid var(--danger);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 .alert-success {
@@ -1149,7 +1179,7 @@ textarea,
 
 .ft-shooter-info {
   text-align: center;
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: var(--font-size-md);
   font-weight: 600;
   padding: var(--spacing-sm);

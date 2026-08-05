@@ -293,7 +293,7 @@
 }
 
 .history-tabs button.active {
-    color: var(--primary);
+    color: var(--primary-text);
     border-bottom-color: var(--primary);
 }
 

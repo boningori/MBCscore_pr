@@ -48,6 +48,8 @@ import { shareBackup } from './utils/dataBackup';
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameMode } from './hooks/useGameMode';
 import { useGameAutoSave } from './hooks/useGameAutoSave';
+import { useWakeLock } from './hooks/useWakeLock';
+
 import { useScreenHistorySync } from './hooks/useScreenHistorySync';
 import './App.css';
 
@@ -204,6 +206,12 @@ function AppContent() {
 
   // 試合状態が変更されたらセッション保存（デバウンス付き）
   useGameAutoSave(state, screen, gameName, date, phase);
+
+  // 記録中は画面を消させない。入力の間隔が数十秒あくため、自動ロックが効くと
+  // 得点のたびに復帰操作が要る。全画面表示はスリープを止めないので別立てで押さえる。
+  // 試合が終わったら解放し、結果画面を開いたまま放置しても電池を使わせない
+  useWakeLock(screen === 'game' && phase !== 'finished');
+
 
   // 試合設定完了
   const handleGameSetupComplete = (setupData: {

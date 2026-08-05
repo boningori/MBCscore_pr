@@ -80,7 +80,7 @@
 
 .stats-panel .stats-points {
     font-weight: 700;
-    color: var(--primary-light);
+    color: var(--primary-text);
 }
 
 /* TO列の後の縦線セパレーター */

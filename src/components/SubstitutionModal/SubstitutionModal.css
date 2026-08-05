@@ -157,7 +157,7 @@
 }
 
 .substitution-modal .add-player-error {
-    color: var(--danger);
+    color: var(--danger-text);
     font-size: var(--font-size-sm);
     padding: var(--spacing-xs) var(--spacing-sm);
     background: rgba(220, 38, 38, 0.1);

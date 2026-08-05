@@ -254,7 +254,7 @@
 
 .action-buttons-container .action-hint.active {
     background: rgba(5, 150, 105, 0.15);
-    color: var(--secondary);
+    color: var(--secondary-text);
     font-weight: 600;
     animation: pulse 2s infinite;
 }

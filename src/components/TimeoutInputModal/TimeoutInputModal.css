@@ -129,7 +129,7 @@
 .timeout-modal-content .timeout-result-value {
     font-size: var(--font-size-2xl);
     font-weight: 700;
-    color: var(--primary-light);
+    color: var(--primary-text);
     min-width: 40px;
     text-align: center;
 }

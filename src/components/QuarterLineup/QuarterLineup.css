@@ -206,7 +206,7 @@
 }
 
 .quarter-lineup .lineup-player-stats .stat-points {
-    color: var(--primary-light);
+    color: var(--primary-text);
     font-weight: 600;
 }
 
@@ -215,7 +215,7 @@
 }
 
 .quarter-lineup .lineup-player-stats .stat-fouls.warning {
-    color: var(--danger);
+    color: var(--danger-text);
     font-weight: 700;
 }
 
@@ -287,7 +287,7 @@
 }
 
 .quarter-lineup .lineup-rule-chip.over-max {
-    color: var(--danger);
+    color: var(--danger-text);
     background: rgba(220, 38, 38, 0.15);
 }
 

@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { exportElement } from '../../utils/pdfExport';
+import { useExportAction } from '../../hooks/useExportAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { splitPercent } from '../../utils/percentSplit';
 import { GrowthComparison } from './GrowthComparison';
@@ -11,6 +12,7 @@ import { formatDate, type DetailViewProps } from './types';
 
 export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps) {
     const detailRef = useRef<HTMLDivElement>(null);
+    const { isExporting, runExport } = useExportAction();
     const totalRebounds = player.totalStats.offensiveRebounds + player.totalStats.defensiveRebounds;
     const avgRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
     const stdDevRebounds = player.stdDevStats.offensiveRebounds + player.stdDevStats.defensiveRebounds;
@@ -19,31 +21,37 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
     const title = `#${formatPlayerNumber(player.number)} ${player.name}（${player.gamesPlayed}試合）`;
     const filename = `stats_${playerName}_${player.gamesPlayed}games`;
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = () => {
         if (!detailRef.current) return;
-        await exportElement(detailRef.current, {
+        const element = detailRef.current;
+        return runExport(() => exportElement(element, {
             filename, format: 'pdf',
             windowWidth: 827, scale: 3, title,
-        });
+        }), 'PDF');
     };
 
-    const handleExportJPEG = async () => {
+    const handleExportJPEG = () => {
         if (!detailRef.current) return;
-        await exportElement(detailRef.current, {
+        const element = detailRef.current;
+        return runExport(() => exportElement(element, {
             filename, format: 'jpeg',
             windowWidth: 827, scale: 3, title,
-        });
+        }), 'JPEG');
     };
 
     return (
         <div className="player-detail-view">
             <div className="detail-toolbar">
-                <button className="btn btn-primary" onClick={handleExportPDF}>
+                <button className="btn btn-primary" onClick={handleExportPDF} disabled={isExporting}>
                     PDF出力
                 </button>
-                <button className="btn btn-secondary" onClick={handleExportJPEG}>
+                <button className="btn btn-secondary" onClick={handleExportJPEG} disabled={isExporting}>
                     JPEG出力
                 </button>
+                {/* ボタンのラベルは差し替えず別領域で知らせ、読み上げ名を保つ */}
+                <span className="detail-export-status" role="status">
+                    {isExporting ? '出力中… そのままお待ちください' : ''}
+                </span>
                 {/*
                   「表示中／非表示中」だけでは何が表示されるのか分からない。
                   この切り替えが効くのは選手スタッツ分析の一覧と集計だけで、

@@ -65,7 +65,7 @@
 }
 
 .foul-input-flow .penalty-warning {
-    color: var(--danger);
+    color: var(--danger-text);
     font-weight: 600;
 }
 
@@ -183,7 +183,7 @@
 }
 
 .foul-input-flow .shot-result-btn.fail {
-    color: var(--danger);
+    color: var(--danger-text);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -301,7 +301,7 @@
 }
 
 .foul-input-flow .ft-result-btn.fail {
-    color: var(--danger);
+    color: var(--danger-text);
 }
 
 .foul-input-flow .ft-result-btn.fail.selected {
@@ -333,7 +333,7 @@
 /* シューター情報表示 */
 .foul-input-flow .shooter-info {
     text-align: center;
-    color: var(--primary);
+    color: var(--primary-text);
     font-size: var(--font-size-md);
     font-weight: 600;
     padding: var(--spacing-sm);
@@ -422,7 +422,7 @@
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-md);
     text-align: center;
-    color: var(--danger);
+    color: var(--danger-text);
     font-weight: 600;
     animation: warning-pulse 1.5s infinite;
 }

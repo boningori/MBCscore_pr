@@ -76,7 +76,8 @@
 }
 
 .legal-modal .legal-modal-body a {
-    color: var(--primary, #3b82f6);
+    /* 素の --primary はダーク地の上で1.7〜2.1:1しか出ず、リンクが読めない */
+    color: var(--primary-text);
 }
 
 .legal-modal .license-list {
