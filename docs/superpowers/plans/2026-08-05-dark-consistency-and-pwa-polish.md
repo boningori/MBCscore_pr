@@ -119,7 +119,9 @@ EOF
 
 赤=1Q/3Q はこのアプリの本物の規約である。`RunningScoresheet.css` が JBA 様式に沿って背番号・ピリオド得点・個人ファウル・斜線など15箇所以上で実装しており、`--quarter-1-3` / `--quarter-2-4` トークンと `QuarterLineup` もこれに従う。`Scoreboard` の緑グラデーションだけが食い違っており、最初の実装コミット（`ab6984c`）から変わっていない。
 
-単純適用は成立しない。スコアボードの背景は `linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%)` であり、`--quarter-2-4` #1f2937 は `--bg-secondary` #1e293b に対し **1.00:1**（完全に同一色）、`--bg-primary` #0f172a に対しても 1.22:1 でしかない。塗りは変えずに `--text-secondary` の枠線で輪郭を出す。
+単純適用は成立しない。バッジが載る `.scoreboard-new` の背景は `--bg-secondary` #1e293b のベタ塗りで、`--quarter-2-4` #1f2937 はこれに対し **1.00:1**（輝度が完全に一致）。塗りは変えずに `--text-secondary` の枠線で輪郭を出す。
+
+（当初この計画は背景を `linear-gradient(180deg, var(--bg-secondary), var(--bg-primary))` と記載していたが、実装後の実測で誤りと判明した。そのグラデーションは `index.css` の旧 `.scoreboard` のもので、この要素には効いていない。問題は「グラデーションの上端で」ではなく一律に起きる。）
 
 **Files:**
 - Modify: `src/components/Scoreboard/Scoreboard.tsx:21-23`（`quarterClass` の追加）, `src/components/Scoreboard/Scoreboard.tsx:123`
@@ -257,13 +259,13 @@ Expected: 新規6件のうち「Q1は q-odd」「Q2は q-even」…「旧クラ�
 ```css
 /* クォーター色はJBA様式に合わせ 1Q/3Q=赤・2Q/4Q=黒 に統一する
    （RunningScoresheet・QuarterLineup と同じ規約）。
-   ただし --quarter-2-4 #1f2937 はスコアボード背景のグラデーション
-   （--bg-secondary #1e293b → --bg-primary #0f172a）の上端に対し 1.00:1、
-   下端に対しても 1.22:1 しかなく、塗りだけでは輪郭が出ない。
-   枠線 --text-secondary #94a3b8 は背景に対し 5.71〜6.96、黒塗りに対し 5.72 で、
-   グラデーションのどちらの端でも読める。
-   赤は塗り単体で 3.03〜3.70 あり WCAG 1.4.11 を満たすが、片方だけ枠を付けると
-   Q1 と Q2 が別部品に見えるため両方に付ける。 */
+   ただし黒の --quarter-2-4 #1f2937 は、このバッジが載る .scoreboard-new の
+   背景 --bg-secondary #1e293b に対して実測 1.00:1 ＝ 輝度が完全に一致する。
+   塗りだけでは輪郭が一切出ず、バッジが消える。
+   そこで枠線 --text-secondary #94a3b8 を入れる。背景に対し 5.71、黒塗りに
+   対し 5.72 で、どちらの側からも輪郭が立つ（いずれも実測値）。
+   赤は塗り単体でも背景に対し 3.03 あり WCAG 1.4.11 の 3:1 を満たすため枠は
+   不要だが、片方だけ枠を付けると Q1 と Q2 が別部品に見えるため両方に付ける。 */
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q-odd,
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q-even {
     border: 2px solid var(--text-secondary);
@@ -306,8 +308,8 @@ fix(ui): スコアボードのQ色をJBA様式の赤/黒に統一する
 --quarter-2-4 トークンと QuarterLineup もこれに従う。一方 Scoreboard
 だけが緑グラデーションで、最初の実装コミットから変わっていなかった。
 
-ただし --quarter-2-4 #1f2937 はスコアボード背景のグラデーション上端
-(--bg-secondary #1e293b) に対し 1.00:1 で完全に同一色になる。塗りは
+ただし --quarter-2-4 #1f2937 は、バッジが載る .scoreboard-new の背景
+(--bg-secondary #1e293b) に対し 1.00:1 で輝度が完全に一致する。塗りは
 変えず（白文字の 4.83 / 14.68 を保持）、両バリアントに --text-secondary
 の枠線を付けて輪郭を出す。赤側は塗り単体で足りるが、片方だけ枠を付けると
 Q1とQ2が別部品に見えるため揃える。
@@ -1233,3 +1235,5 @@ vite.config.ts
 加えて `.btn-success`（`--secondary` #059669・白文字 3.77）が主要CTAに使われている点、`.action-hint`（記録ボタン上の「↑成功 ↓ミス」が 1.51〜1.54）、`.player-pts`（2.82）、`.item-count`（2.25）、ウィザードの `.step-label`（2.05）。
 
 Task 5 でトークン化を済ませてあるため、この再設計は `PendingActionPanel` 系にも自動的に波及する。
+
+**ただし、トークンの値を直すだけでは届かない箇所が残る。後続のスコープには「残存リテラルの掃除」も明示的に含めること。** 代表例は `src/App.css` のベンチファウルボタンの `linear-gradient(135deg, #e74c3c 0%, #ec7063 100%)` で、**トークンを経由しない直書き**（白文字 3.82、`--danger` #dc2626 とは別の第2の赤）。トークンではないため値を直しても波及しない。同種の直書きが他に無いか、後続の冒頭で棚卸しすること。
