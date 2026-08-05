@@ -252,7 +252,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   :is(.opponent-select, .opponent-editor) .remove-btn:hover {
-      color: var(--danger);
+      color: var(--danger-text);
   }
 }
 

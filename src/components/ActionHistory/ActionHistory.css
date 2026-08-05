@@ -30,7 +30,11 @@
 
 .action-history .history-header .item-count {
     font-size: var(--font-size-xs);
-    color: var(--text-muted);
+    /* このヘッダーだけ地色が --bg-hover(#475569) と明るく、
+       --text-muted でも --text-secondary でも4.5:1に届かない（実測2.25 / 2.96）。
+       隣の .team-name と同じ --text-primary を使い、
+       主従はフォントサイズと太さ（team-nameのみ600）で付ける */
+    color: var(--text-primary);
 }
 
 .action-history .history-body {
@@ -192,7 +196,9 @@
 
 .action-history .dial-arrow {
     font-size: 10px;
-    color: #64748b;
+    /* ダイヤルの回せる向きを示す▲▼。旧 #64748b はダイヤル地の上で
+       2.2〜3.8:1しか出ず、操作できることが読み取れなかった */
+    color: var(--text-secondary);
     user-select: none;
     pointer-events: none;
 }

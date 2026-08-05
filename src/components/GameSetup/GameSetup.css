@@ -77,7 +77,7 @@
 }
 
 .game-setup .step-item.active .step-label {
-    color: var(--primary);
+    color: var(--primary-text);
     font-weight: 700;
 }
 
@@ -303,21 +303,21 @@
 
 .game-setup .suggestion-item.active {
     background: rgba(59, 130, 246, 0.16);
-    color: var(--primary-light);
+    color: var(--primary-text);
 }
 
 .game-setup .suggestion-item.active .suggestion-item-icon {
-    color: var(--primary-light);
+    color: var(--primary-text);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .game-setup .suggestion-item:hover {
         background: rgba(59, 130, 246, 0.16);
-        color: var(--primary-light);
+        color: var(--primary-text);
     }
 
     .game-setup .suggestion-item:hover .suggestion-item-icon {
-        color: var(--primary-light);
+        color: var(--primary-text);
     }
 }
 
@@ -327,7 +327,7 @@
     margin-left: var(--spacing-sm);
     font-size: var(--font-size-xs);
     font-weight: 600;
-    color: var(--primary-light);
+    color: var(--primary-text);
     background: rgba(59, 130, 246, 0.15);
     border-radius: var(--radius-full);
     padding: 1px 8px;
@@ -458,7 +458,7 @@
 
 .game-setup .vs-mark {
     font-weight: 900;
-    color: var(--danger);
+    color: var(--danger-text);
     font-size: var(--font-size-xl);
     padding: 0 var(--spacing-md);
 }
@@ -565,7 +565,7 @@
 }
 
 .game-setup .player-count-warning {
-    color: var(--danger);
+    color: var(--danger-text);
     font-weight: 600;
     margin-left: var(--spacing-xs);
 }

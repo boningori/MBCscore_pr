@@ -64,7 +64,7 @@
 
 :is(.my-team-manager, .my-team-editor) .team-card-name {
     margin: 0 0 var(--spacing-xs);
-    color: var(--primary);
+    color: var(--primary-text);
 }
 
 :is(.my-team-manager, .my-team-editor) .team-card-detail {
@@ -191,7 +191,7 @@
 :is(.my-team-manager, .my-team-editor) .player-number {
     font-weight: 800;
     width: 40px;
-    color: var(--primary);
+    color: var(--primary-text);
 }
 
 :is(.my-team-manager, .my-team-editor) .player-name {
@@ -199,7 +199,9 @@
 }
 
 :is(.my-team-manager, .my-team-editor) .player-courtname {
-    color: var(--text-muted);
+    /* 選手行の地は --bg-tertiary。--text-muted はこの面で3.41:1しか出ないため
+       --text-secondary を使う（本文より一段弱い扱いは維持できる） */
+    color: var(--text-secondary);
     font-size: var(--font-size-sm);
     flex: 0.8;
 }
@@ -218,7 +220,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   :is(.my-team-manager, .my-team-editor) .clickable:hover {
-      color: var(--primary);
+      color: var(--primary-text);
       background: var(--bg-hover);
       border-radius: var(--radius-sm);
       padding: 2px 4px;
@@ -445,7 +447,7 @@
 
 :is(.my-team-manager, .my-team-editor) .status-message.error {
     background: rgba(239, 68, 68, 0.2);
-    color: var(--danger);
+    color: var(--danger-text);
     border: 1px solid var(--danger);
 }
 
@@ -524,7 +526,7 @@
 }
 
 :is(.my-team-manager, .my-team-editor) .import-warning-title {
-    color: var(--danger);
+    color: var(--danger-text);
     font-size: var(--font-size-md);
     font-weight: 700;
     margin: 0 0 var(--spacing-xs) 0;
@@ -538,7 +540,7 @@
 }
 
 :is(.my-team-manager, .my-team-editor) .import-info {
-    color: var(--primary-light);
+    color: var(--primary-text);
     font-size: var(--font-size-sm);
     margin: 0 0 var(--spacing-sm) 0;
     padding: var(--spacing-sm) var(--spacing-md);

@@ -82,7 +82,7 @@
 
 :is(.voice-input-offline, .voice-input-unsupported, .voice-input-container) .voice-error {
     font-size: var(--font-size-sm);
-    color: var(--danger);
+    color: var(--danger-text);
     padding: var(--spacing-xs) var(--spacing-sm);
     background: rgba(220, 38, 38, 0.1);
     border-radius: var(--radius-sm);
@@ -108,7 +108,7 @@
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: var(--radius-full);
-    color: var(--danger);
+    color: var(--danger-text);
     font-size: var(--font-size-sm);
 }
 

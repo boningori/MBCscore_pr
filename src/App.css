@@ -489,7 +489,7 @@
 .app-container .team-panel-header .team-score {
   font-size: var(--font-size-2xl);
   font-weight: 800;
-  color: var(--primary-light);
+  color: var(--primary-text);
 }
 
 .app-container .team-players {
@@ -551,7 +551,7 @@
 
 .app-container .mini-player-card .player-pts {
   font-weight: 600;
-  color: var(--primary-light);
+  color: var(--primary-text);
 }
 
 .app-container .mini-player-card .player-fouls {
@@ -562,7 +562,7 @@
 }
 
 .app-container .mini-player-card .player-fouls.warning {
-  color: var(--danger);
+  color: var(--danger-text);
   font-weight: 700;
 }
 
@@ -739,7 +739,7 @@
 .app-container .team-selector-action {
   font-size: var(--font-size-lg);
   font-weight: 700;
-  color: var(--primary-light);
+  color: var(--primary-text);
   margin-bottom: var(--spacing-lg);
 }
 
@@ -1061,7 +1061,7 @@
   background: rgba(59, 130, 246, 0.2);
   border: 2px solid var(--primary);
   border-radius: var(--radius-md);
-  color: var(--primary-light);
+  color: var(--primary-text);
   font-size: var(--font-size-md);
   font-weight: 600;
   cursor: pointer;
@@ -1072,7 +1072,7 @@
 @media (hover: hover) and (pointer: fine) {
   .app-container .game-main-area.simple-mode .simple-sub-btn:hover {
     border-color: var(--primary);
-    color: var(--primary);
+    color: var(--primary-text);
     background: rgba(59, 130, 246, 0.1);
   }
 }
