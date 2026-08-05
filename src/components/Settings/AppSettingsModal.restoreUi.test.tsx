@@ -144,7 +144,6 @@ describe('AppSettingsModal フッターの「保存」', () => {
 
     it('インポート確認中に閉じようとすると破棄確認を出す', async () => {
         const onClose = vi.fn();
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
         const { container } = render(<AppSettingsModal isOpen onClose={onClose} />);
         openDataSection();
@@ -155,8 +154,9 @@ describe('AppSettingsModal フッターの「保存」', () => {
 
         fireEvent.click(screen.getByRole('button', { name: '閉じる' }));
 
-        expect(confirmSpy).toHaveBeenCalled();
+        // 確認はアプリ内のモーダルで出す（旧実装は window.confirm だった）。
+        // 出し方そのものは AppSettingsModal.discardConfirm.test.tsx が見ている
+        expect(screen.getByText(/破棄して閉じますか/)).toBeTruthy();
         expect(onClose).not.toHaveBeenCalled();
-        confirmSpy.mockRestore();
     });
 });

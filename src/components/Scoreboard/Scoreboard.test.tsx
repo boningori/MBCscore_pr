@@ -78,6 +78,14 @@ describe('Scoreboard: クォーター終了の確認', () => {
         expect(onQuarterEnd).toHaveBeenCalledTimes(1);
     });
 
+    it('開いた直後のフォーカスは打ち消し側にある', () => {
+        // 試合中は片手で連打しているため、確認が出た瞬間にもう一度指が触れる。
+        // 素直に先頭（終了する）へフォーカスが乗ると、その一打で確定してしまう
+        renderScoreboard();
+        fireEvent.click(screen.getByText('Q1終了'));
+        expect(document.activeElement?.textContent).toBe('キャンセル');
+    });
+
     it('確認モーダルで「キャンセル」を押すと閉じて何も起きない', () => {
         const { onQuarterEnd } = renderScoreboard();
         fireEvent.click(screen.getByText('Q1終了'));

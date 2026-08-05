@@ -916,7 +916,7 @@ function AppContent() {
               >
                 新規試合を開始
               </button>
-              <button className="btn btn-secondary btn-large" onClick={() => setShowNewGameWarning(false)}>
+              <button className="btn btn-secondary btn-large" data-autofocus onClick={() => setShowNewGameWarning(false)}>
                 キャンセル
               </button>
             </div>
@@ -1341,7 +1341,7 @@ function AppContent() {
             <button className="btn btn-danger btn-large" onClick={handleEndGameConfirm}>
               試合を終了する
             </button>
-            <button className="btn btn-secondary btn-large" onClick={() => setEndGameConfirmType(null)}>
+            <button className="btn btn-secondary btn-large" data-autofocus onClick={() => setEndGameConfirmType(null)}>
               戻る
             </button>
           </div>
@@ -1399,7 +1399,7 @@ function AppContent() {
             >
               保存せずに戻る
             </button>
-            <button className="btn btn-secondary btn-large" onClick={() => setShowDiscardConfirm(false)}>
+            <button className="btn btn-secondary btn-large" data-autofocus onClick={() => setShowDiscardConfirm(false)}>
               キャンセル
             </button>
           </div>

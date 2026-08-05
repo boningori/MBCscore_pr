@@ -33,6 +33,13 @@
     padding: 0 24px;
 }
 
+.error-boundary .error-boundary-notice {
+    margin: 12px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--warning-light, #fbbf24);
+}
+
 .error-boundary .error-boundary-contact {
     font-size: 0.85rem;
     color: var(--text-muted, #94a3b8);

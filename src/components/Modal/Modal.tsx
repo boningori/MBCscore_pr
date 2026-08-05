@@ -50,11 +50,15 @@ export function Modal({
     useEffect(() => {
         previouslyFocused.current = document.activeElement as HTMLElement | null;
 
-        // 最初のフォーカス可能要素、無ければコンテナ自体へフォーカス
+        // data-autofocus 指定 → 最初のフォーカス可能要素 → コンテナ自体 の順。
+        // 確認ダイアログは肯定側（終了する・削除する）を先頭に置く構成が多く、
+        // 素直に先頭へ当てると開いた直後のEnterがそのまま実行になってしまう。
+        // 打ち消し側に data-autofocus を付けて逃がせるようにする
         const content = contentRef.current;
         if (content) {
+            const preferred = content.querySelector<HTMLElement>('[data-autofocus]');
             const first = content.querySelector<HTMLElement>(FOCUSABLE);
-            (first ?? content).focus();
+            (preferred ?? first ?? content).focus();
         }
 
         return () => {
