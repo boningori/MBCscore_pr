@@ -2,7 +2,7 @@
 
 import type { GameRecord } from './gameHistoryStorage';
 import type { QuarterPlayType } from '../types/game';
-import { loadGameHistory } from './gameHistoryStorage';
+import { loadGameHistory, createGameId } from './gameHistoryStorage';
 import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
 import { loadMyTeams, loadOpponents, loadRecentOpponents } from './teamStorage';
@@ -589,6 +589,81 @@ function sanitizeImportedGameSession(raw: unknown): GameSession | null {
     } as unknown as GameSession;
 }
 
+// ===== 試合データのマージ =====
+
+/**
+ * 2つの試合レコードが同じ試合かどうかを判定する。
+ *
+ * 旧バージョンは試合IDを試合日だけから生成していたため、同じ日の試合はIDが重複する。
+ * IDだけで名寄せすると別々の試合が1件に統合されて消えるので、保存時刻である
+ * createdAt（ミリ秒精度・試合ごとに一意）を優先して突き合わせる。
+ * createdAt を持たない古い/手書きデータのみIDにフォールバックする。
+ */
+function isSameGameRecord(a: GameRecord, b: GameRecord): boolean {
+    if (a.createdAt && b.createdAt) return a.createdAt === b.createdAt;
+    return a.id === b.id;
+}
+
+/**
+ * 既存の試合履歴にインポート分をマージする。
+ *
+ * - 同じ試合（isSameGameRecord）は既存レコードを更新し、端末側の一意なIDを維持する
+ * - 別の試合はIDが衝突していても新しいIDを振って必ず別レコードとして残す
+ *   （重複IDのまま保存された旧バックアップからの取りこぼしを防ぐ）
+ *
+ * 履歴は新しい順に並ぶため、単一試合の取り込み（prepend）では先頭に追加する。
+ */
+function mergeGameRecords(
+    existing: GameRecord[],
+    imported: GameRecord[],
+    options?: { prepend?: boolean }
+): { merged: GameRecord[]; newGames: number; updatedGames: number } {
+    const merged = [...existing];
+    const existingCount = merged.length;
+    const claimed = new Set<number>();
+    const usedIds = new Set(merged.map(g => g.id));
+    let newGames = 0;
+    let updatedGames = 0;
+
+    for (const game of imported) {
+        const index = merged.findIndex((e, i) => !claimed.has(i) && isSameGameRecord(e, game));
+        if (index >= 0) {
+            claimed.add(index);
+            merged[index] = { ...game, id: merged[index].id };
+            updatedGames++;
+            continue;
+        }
+
+        let id = game.id;
+        while (usedIds.has(id)) {
+            const date = new Date(game.date);
+            id = createGameId(Number.isNaN(date.getTime()) ? new Date() : date);
+        }
+        usedIds.add(id);
+        merged.push({ ...game, id });
+        newGames++;
+    }
+
+    const result = options?.prepend
+        ? [...merged.slice(existingCount), ...merged.slice(0, existingCount)]
+        : merged;
+
+    return { merged: result, newGames, updatedGames };
+}
+
+/**
+ * インポート対象の試合配列を検証・矯正する。不正なレコードは errors に報告して除外する。
+ */
+function sanitizeImportedGames(raw: unknown[], errors: string[]): GameRecord[] {
+    const games: GameRecord[] = [];
+    for (const g of raw) {
+        const clean = sanitizeImportedGame(g);
+        if (clean) games.push(clean);
+        else errors.push('不正な試合データを1件スキップしました（idが不足）');
+    }
+    return games;
+}
+
 // ===== インポート機能 =====
 
 /**
@@ -634,7 +709,7 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
     if (data.type === 'game' && data.game) {
         const game = data.game as GameRecord;
         const existing = loadGameHistory();
-        const isDuplicate = existing.some(g => g.id === game.id);
+        const isDuplicate = existing.some(g => isSameGameRecord(g, game));
         const dateStr = game.date ? new Date(game.date).toLocaleDateString('ja-JP') : '不明';
         const score = game.finalScore ? `${game.finalScore.teamA} - ${game.finalScore.teamB}` : '';
         const preview: string[] = [
@@ -701,11 +776,11 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
         const preview: string[] = [];
         let hasDuplicates = false;
         if (bd.data.gameHistory?.length) {
-            const existing = loadGameHistory();
-            const newCount = bd.data.gameHistory.filter(g => !existing.some(e => e.id === g.id)).length;
-            const updateCount = bd.data.gameHistory.length - newCount;
-            preview.push(`試合: 新規${newCount}件${updateCount > 0 ? `、上書き${updateCount}件` : ''}`);
-            if (updateCount > 0) hasDuplicates = true;
+            // 実際のインポートと同じ突き合わせで内訳を出す（プレビューと結果を一致させる）
+            const games = sanitizeImportedGames(bd.data.gameHistory, []);
+            const { newGames, updatedGames } = mergeGameRecords(loadGameHistory(), games);
+            preview.push(`試合: 新規${newGames}件${updatedGames > 0 ? `、上書き${updatedGames}件` : ''}`);
+            if (updatedGames > 0) hasDuplicates = true;
         }
         if (bd.data.myTeams?.length) {
             const existing = loadMyTeams();
@@ -777,19 +852,11 @@ function importSingleGame(data: GameExportData): ImportResult {
             };
         }
 
-        const gameHistory = loadGameHistory();
+        // 既存の試合と突き合わせる（IDが衝突していても別の試合なら新規追加になる）
+        const { merged, updatedGames } = mergeGameRecords(loadGameHistory(), [game], { prepend: true });
+        const isUpdate = updatedGames > 0;
 
-        // 既存の試合と重複チェック
-        const existingIndex = gameHistory.findIndex(g => g.id === game.id);
-        const isUpdate = existingIndex >= 0;
-
-        if (isUpdate) {
-            gameHistory[existingIndex] = game;
-        } else {
-            gameHistory.unshift(game);
-        }
-
-        localStorage.setItem('minibasket-game-history', JSON.stringify(gameHistory));
+        localStorage.setItem('minibasket-game-history', JSON.stringify(merged));
 
         return {
             success: true,
@@ -905,19 +972,11 @@ function importFullBackup(data: BackupData): ImportResult {
 
         // 試合履歴のインポート
         if (data.data.gameHistory && Array.isArray(data.data.gameHistory)) {
-            const games: GameRecord[] = [];
-            for (const g of data.data.gameHistory) {
-                const clean = sanitizeImportedGame(g);
-                if (clean) games.push(clean);
-                else errors.push('不正な試合データを1件スキップしました（idが不足）');
-            }
-            const existingGames = loadGameHistory();
-            for (const g of games) {
-                if (existingGames.some(e => e.id === g.id)) details.updatedGames++;
-                else details.newGames++;
-            }
-            const mergedGames = mergeArrayById(existingGames, games);
-            localStorage.setItem('minibasket-game-history', JSON.stringify(mergedGames));
+            const games = sanitizeImportedGames(data.data.gameHistory, errors);
+            const { merged, newGames, updatedGames } = mergeGameRecords(loadGameHistory(), games);
+            details.newGames = newGames;
+            details.updatedGames = updatedGames;
+            localStorage.setItem('minibasket-game-history', JSON.stringify(merged));
             imported.games = games.length;
         }
 

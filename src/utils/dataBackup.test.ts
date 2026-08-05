@@ -139,6 +139,134 @@ describe('インポートのスキーマ検証', () => {
     });
 });
 
+describe('重複IDを含む旧バックアップの復元（救済）', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    // 旧バージョンが書き出した、同日の試合が同一IDになっているバックアップ
+    function legacyGame(gameName: string, dateStr: string, createdAt: string) {
+        return {
+            id: `game-${new Date(dateStr).getTime()}`,
+            date: new Date(dateStr).toISOString(),
+            gameName,
+            createdAt,
+            teamA: { name: 'マイチーム', players: [] },
+            teamB: { name: gameName, players: [] },
+            finalScore: { teamA: 10, teamB: 8 },
+            scoreHistory: [], statHistory: [], foulHistory: [],
+        };
+    }
+
+    function legacyBackupJson() {
+        return JSON.stringify({
+            version: '2.0',
+            appName: 'MBCscore',
+            exportDate: '2026-07-06T00:00:00.000Z',
+            data: {
+                gameHistory: [
+                    legacyGame('2日目 第1試合', '2026-07-05', '2026-07-05T02:00:00.000Z'),
+                    legacyGame('2日目 第2試合', '2026-07-05', '2026-07-05T04:00:00.000Z'),
+                    legacyGame('1日目 第1試合', '2026-07-04', '2026-07-04T02:00:00.000Z'),
+                    legacyGame('1日目 第2試合', '2026-07-04', '2026-07-04T04:00:00.000Z'),
+                ],
+            },
+        });
+    }
+
+    it('IDが重複した4試合を、新しい端末に4試合とも復元する', () => {
+        const result = executeImport(parseImportJSON(legacyBackupJson()));
+
+        expect(result.success).toBe(true);
+        const history = loadGameHistory();
+        expect(history).toHaveLength(4);
+        expect(history.map(g => g.gameName).sort()).toEqual([
+            '1日目 第1試合', '1日目 第2試合', '2日目 第1試合', '2日目 第2試合',
+        ]);
+        expect(new Set(history.map(g => g.id)).size).toBe(4);
+    });
+
+    it('同じバックアップを2回復元しても試合が増えない', () => {
+        executeImport(parseImportJSON(legacyBackupJson()));
+        const idsAfterFirst = loadGameHistory().map(g => g.id);
+
+        executeImport(parseImportJSON(legacyBackupJson()));
+
+        const history = loadGameHistory();
+        expect(history).toHaveLength(4);
+        expect(history.map(g => g.id)).toEqual(idsAfterFirst);
+    });
+
+    it('復元件数の内訳が実際の取り込み結果と一致する', () => {
+        const parsed = parseImportJSON(legacyBackupJson());
+        expect(parsed.preview).toContain('試合: 新規4件');
+
+        const result = executeImport(parsed);
+        expect(result.details?.newGames).toBe(4);
+        expect(result.details?.updatedGames).toBe(0);
+    });
+
+    it('復元済みの端末に同じファイルを読み込むと全件が更新扱いになる', () => {
+        executeImport(parseImportJSON(legacyBackupJson()));
+
+        const parsed = parseImportJSON(legacyBackupJson());
+        expect(parsed.preview).toContain('試合: 新規0件、上書き4件');
+
+        const result = executeImport(parsed);
+        expect(result.details?.updatedGames).toBe(4);
+        expect(result.details?.newGames).toBe(0);
+    });
+
+    it('取り込んだ単一試合は履歴の先頭に入る', () => {
+        executeImport(parseImportJSON(legacyBackupJson()));
+
+        const singleGame = JSON.stringify({
+            type: 'game',
+            version: '2.0',
+            exportDate: '2026-07-06T00:00:00.000Z',
+            game: legacyGame('2日目 第3試合', '2026-07-05', '2026-07-05T06:00:00.000Z'),
+        });
+        executeImport(parseImportJSON(singleGame));
+
+        expect(loadGameHistory()[0].gameName).toBe('2日目 第3試合');
+    });
+
+    it('復元に失敗して2試合しか入っていない端末でも、読み直せば4試合に復旧する', () => {
+        // 修正前の挙動を再現: IDで名寄せされて2試合だけが残っている状態
+        const collapsed = JSON.parse(legacyBackupJson()).data.gameHistory
+            .filter((_: unknown, i: number) => i === 1 || i === 3);
+        localStorage.setItem('minibasket-game-history', JSON.stringify(collapsed));
+        expect(loadGameHistory()).toHaveLength(2);
+
+        const result = executeImport(parseImportJSON(legacyBackupJson()));
+
+        expect(result.success).toBe(true);
+        const history = loadGameHistory();
+        expect(history).toHaveLength(4);
+        expect(history.map(g => g.gameName).sort()).toEqual([
+            '1日目 第1試合', '1日目 第2試合', '2日目 第1試合', '2日目 第2試合',
+        ]);
+    });
+
+    it('単一試合エクスポートの取り込みが同日の別試合を上書きしない', () => {
+        executeImport(parseImportJSON(legacyBackupJson()));
+        const before = loadGameHistory();
+
+        const singleGame = JSON.stringify({
+            type: 'game',
+            version: '2.0',
+            exportDate: '2026-07-06T00:00:00.000Z',
+            game: legacyGame('2日目 第3試合', '2026-07-05', '2026-07-05T06:00:00.000Z'),
+        });
+        const result = executeImport(parseImportJSON(singleGame));
+
+        expect(result.success).toBe(true);
+        const after = loadGameHistory();
+        expect(after).toHaveLength(before.length + 1);
+        expect(after.map(g => g.gameName)).toContain('2日目 第2試合');
+    });
+});
+
 describe('escapeCsvCell', () => {
     it('通常の値は二重引用符で囲む', () => {
         expect(escapeCsvCell('田中太郎')).toBe('"田中太郎"');
