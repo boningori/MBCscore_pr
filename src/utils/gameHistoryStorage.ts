@@ -3,8 +3,11 @@ import { createJsonStorage } from './createStorage';
 
 const GAME_HISTORY_KEY = 'minibasket-game-history';
 
-const historyStorage = createJsonStorage<GameRecord[]>(GAME_HISTORY_KEY, [], 'game result');
-const recordStorage = createJsonStorage<GameRecord[]>(GAME_HISTORY_KEY, [], 'game record');
+// 配列以外が入っていたら捨てる（詳細は teamStorage の同名コメント参照）
+const isRecordArray = (v: unknown): v is GameRecord[] => Array.isArray(v);
+
+const historyStorage = createJsonStorage<GameRecord[]>(GAME_HISTORY_KEY, [], 'game result', isRecordArray);
+const recordStorage = createJsonStorage<GameRecord[]>(GAME_HISTORY_KEY, [], 'game record', isRecordArray);
 
 export interface GameRecord {
     id: string;

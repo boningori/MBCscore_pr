@@ -9,14 +9,30 @@ export interface JsonStorage<T> {
     clear(): void;
 }
 
-export function createJsonStorage<T>(key: string, fallback: T, errorContext?: string): JsonStorage<T> {
+/**
+ * @param isValid 読み込んだ値の形を検査する。JSONとして読めても中身が別物という
+ *   ことは起きる（旧バージョンの形・他アプリとのキー衝突・手で編集したバックアップ）。
+ *   そのまま通すと描画時にundefinedを触って落ちるため、読み込みの時点で捨てる。
+ *   省略すると従来どおり素通しする。
+ */
+export function createJsonStorage<T>(
+    key: string,
+    fallback: T,
+    errorContext?: string,
+    isValid?: (value: unknown) => value is T,
+): JsonStorage<T> {
     const context = errorContext ?? key;
     return {
         load(): T {
             try {
                 const data = localStorage.getItem(key);
                 if (!data) return structuredClone(fallback);
-                return JSON.parse(data) as T;
+                const parsed: unknown = JSON.parse(data);
+                if (isValid && !isValid(parsed)) {
+                    console.warn(`Discarded malformed ${context} in localStorage`);
+                    return structuredClone(fallback);
+                }
+                return parsed as T;
             } catch (error) {
                 console.error(`Failed to load ${context}:`, error);
                 return structuredClone(fallback);

@@ -8,9 +8,14 @@ const MY_TEAMS_KEY = 'minibasket-my-teams';
 const OPPONENT_TEAMS_KEY = 'minibasket-opponent-teams';
 const SAVED_OPPONENTS_KEY = 'minibasket-saved-opponents';
 
-const myTeamsStorage = createJsonStorage<SavedTeam[]>(MY_TEAMS_KEY, [], 'my team');
-const recentOpponentsStorage = createJsonStorage<SavedTeam[]>(OPPONENT_TEAMS_KEY, [], 'recent opponent');
-const opponentsStorage = createJsonStorage<SavedTeam[]>(SAVED_OPPONENTS_KEY, [], 'opponent');
+// 配列を期待している所に配列以外が入ると、最初の .map で画面が落ちる。
+// 旧バージョンの形が残る・別アプリとキーが衝突する・バックアップJSONを
+// 手で編集して取り込む、といった経路で現実に起きうるため読み込み時に捨てる
+const isTeamArray = (v: unknown): v is SavedTeam[] => Array.isArray(v);
+
+const myTeamsStorage = createJsonStorage<SavedTeam[]>(MY_TEAMS_KEY, [], 'my team', isTeamArray);
+const recentOpponentsStorage = createJsonStorage<SavedTeam[]>(OPPONENT_TEAMS_KEY, [], 'recent opponent', isTeamArray);
+const opponentsStorage = createJsonStorage<SavedTeam[]>(SAVED_OPPONENTS_KEY, [], 'opponent', isTeamArray);
 
 // 保存用チームデータ（試合データを含まない軽量版）
 export interface SavedTeam {
