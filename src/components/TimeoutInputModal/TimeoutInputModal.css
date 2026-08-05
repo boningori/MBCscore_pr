@@ -147,6 +147,9 @@
     border: none;
     cursor: pointer;
     transition: background-color var(--transition-fast);
+    /* padding/font-sizeがvh連動のため、低い画面(375×667)では44px未満(39px)まで
+       潰れる。.timeout-selectと同じく44px下限を明示する */
+    min-height: 44px;
 }
 
 .timeout-modal-content .timeout-btn-cancel {
