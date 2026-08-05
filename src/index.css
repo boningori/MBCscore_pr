@@ -4,8 +4,8 @@
   /* ネイティブ部品（selectのドロップダウン、date/timeのピッカー、
      スクロールバー、フォーム自動補完）をダーク側で描画させる。
      指定しないと --bg-primary の暗い画面の上にOS既定のライトUIが出る。
-     白地の RunningScoresheet / OfficialScoresheet には input/select/textarea が
-     無いため、紙面の見た目には影響しない。 */
+     白地のスコアシート紙面（RunningScoresheet が試合中／終了後の両方を描く）には
+     input/select/textarea が無いため、紙面の見た目には影響しない。 */
   color-scheme: dark;
 
   /* カラーパレット */
