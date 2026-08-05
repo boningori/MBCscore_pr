@@ -21,6 +21,16 @@
     /* 横スクロール中もツールバー（閉じる・出力）を画面内に留める */
     position: sticky;
     left: 0;
+    align-items: center;
+}
+
+/* 出力中の表示。空文字のときも高さを持たせず、
+   出た瞬間にボタンが横に押し出されないよう幅は内容任せにする */
+.running-scoresheet-container .scoresheet-export-status:not(:empty) {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--warning-light);
+    white-space: nowrap;
 }
 
 /* スコアシート本体 - 印刷用スタイル */

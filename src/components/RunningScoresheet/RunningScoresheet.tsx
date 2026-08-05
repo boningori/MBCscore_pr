@@ -3,6 +3,7 @@ import type { Game, GameInfo } from '../../types/game';
 import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
+import { useExportAction } from '../../hooks/useExportAction';
 import { GameInfoModal } from '../GameInfoModal';
 import './RunningScoresheet.css';
 
@@ -18,6 +19,7 @@ interface RunningScoresheetProps {
 export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo, onEndTimeChange }: RunningScoresheetProps) {
     const scoresheetRef = useRef<HTMLDivElement>(null);
     const [showGameInfoModal, setShowGameInfoModal] = useState(false);
+    const { isExporting, runExport } = useExportAction();
 
     const { teamA, teamB, scoreHistory, foulHistory, currentQuarter, phase, endTime } = game;
     const gameInfo = game.gameInfo || createInitialGameInfo();
@@ -27,17 +29,19 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
     const isHalfFinished = currentQuarter > 2 || isGameFinished; // 前半終了（2Q以降に進んでいる）
 
     // PDF出力
-    const handleExportPDF = async () => {
+    const handleExportPDF = () => {
         if (!scoresheetRef.current) return;
+        const element = scoresheetRef.current;
         const filename = generateScoresheetFilename(gameName, date, teamA.name, teamB.name);
-        await exportElement(scoresheetRef.current, { filename, format: 'pdf' });
+        return runExport(() => exportElement(element, { filename, format: 'pdf' }), 'PDF');
     };
 
     // JPEG出力
-    const handleExportJPEG = async () => {
+    const handleExportJPEG = () => {
         if (!scoresheetRef.current) return;
+        const element = scoresheetRef.current;
         const filename = generateScoresheetFilename(gameName, date, teamA.name, teamB.name);
-        await exportElement(scoresheetRef.current, { filename, format: 'jpeg' });
+        return runExport(() => exportElement(element, { filename, format: 'jpeg' }), 'JPEG');
     };
 
     // 最終スコア
@@ -160,13 +164,13 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
         <div className="running-scoresheet-container">
             {/* ツールバー */}
             <div className="scoresheet-toolbar">
-                <button className="btn btn-primary" onClick={handleExportPDF}>
+                <button className="btn btn-primary" onClick={handleExportPDF} disabled={isExporting}>
                     PDF出力
                 </button>
-                <button className="btn btn-secondary" onClick={handleExportJPEG}>
+                <button className="btn btn-secondary" onClick={handleExportJPEG} disabled={isExporting}>
                     JPEG出力
                 </button>
-                <button className="btn btn-secondary" onClick={() => setShowGameInfoModal(true)}>
+                <button className="btn btn-secondary" onClick={() => setShowGameInfoModal(true)} disabled={isExporting}>
                     試合情報編集
                 </button>
                 {onClose && (
@@ -174,6 +178,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                         閉じる
                     </button>
                 )}
+                {/* 出力は端末によっては十数秒かかる。ボタンのラベルを差し替えず
+                    別領域で知らせることで、読み上げ名（PDF出力/JPEG出力）を保つ */}
+                <span className="scoresheet-export-status" role="status">
+                    {isExporting ? '出力中… そのままお待ちください' : ''}
+                </span>
             </div>
 
             <p className="rs-unofficial-note">

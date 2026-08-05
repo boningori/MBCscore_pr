@@ -447,6 +447,13 @@
     box-shadow: var(--stats-card-shadow);
 }
 
+/* 出力中の表示。空のときは幅を持たせず、トグルの折り返し位置を変えない */
+.player-stats-container .detail-export-status:not(:empty) {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--warning-light);
+}
+
 .player-stats-container .detail-toolbar .btn {
     padding: 8px 16px;
     border: none;
