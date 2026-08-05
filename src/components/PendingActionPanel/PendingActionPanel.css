@@ -13,12 +13,14 @@
     0%,
     100% {
         border-color: var(--warning-light);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 0 8px rgba(251, 191, 36, 0.3);
+        /* rgba(251, 191, 36, ...) は --warning-light(#fbbf24) の実体。
+           color-mix経由にしてトークン値の変更が自動で波及するようにする */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 0 8px color-mix(in srgb, var(--warning-light) 30%, transparent);
     }
 
     50% {
         border-color: var(--warning);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 0 16px rgba(251, 191, 36, 0.6);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 0 16px color-mix(in srgb, var(--warning-light) 60%, transparent);
     }
 }
 

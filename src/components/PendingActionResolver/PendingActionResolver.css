@@ -113,7 +113,9 @@
     background: var(--primary-light);
     border-color: var(--team-blue-light);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.4);
+    /* rgba(49, 130, 206, ...) は旧Chakraブルー #3182ce の残骸（塗りは既に
+       --primary-light に置換済み）。トークン経由にして値変更が波及するようにする */
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-light) 40%, transparent);
 }
 
 .pending-resolver-modal .resolver-player-btn.candidate {
