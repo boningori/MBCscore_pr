@@ -24,6 +24,25 @@ export interface GameRecord {
     createdAt: string;
 }
 
+// 試合IDのランダムサフィックス（同一ミリ秒での衝突を防ぐ）
+function randomSuffix(): string {
+    const c = globalThis.crypto;
+    if (c && typeof c.randomUUID === 'function') return c.randomUUID().slice(0, 8);
+    return Math.random().toString(36).slice(2, 10);
+}
+
+/**
+ * 試合IDを生成する。
+ *
+ * 試合日は <input type="date"> 由来の YYYY-MM-DD（＝常に 00:00:00）なので、
+ * 日付の getTime() だけではその日の全試合が同一IDになる。ランダムサフィックスを
+ * 付けて必ず一意にする。IDが重複すると、バックアップ復元時のID名寄せで試合が
+ * 統合されて消える・1件削除で同日の全試合が消える等のデータ欠損につながる。
+ */
+export function createGameId(date: Date): string {
+    return `game-${date.getTime()}-${randomSuffix()}`;
+}
+
 // 試合結果を保存
 export function saveGameResult(
     gameName: string,
@@ -36,7 +55,7 @@ export function saveGameResult(
     gameInfo?: GameInfo
 ): GameRecord {
     const record: GameRecord = {
-        id: `game-${date.getTime()}`,
+        id: createGameId(date),
         date: date.toISOString(),
         gameName,
         teamA,
@@ -59,9 +78,45 @@ export function saveGameResult(
     return record;
 }
 
-// 試合履歴一覧取得
+/**
+ * 履歴内の重複IDを解消した配列を返す（変更が不要なら null）。
+ *
+ * 旧バージョンは試合IDを試合日だけから作っていたため、同じ日に記録した試合は
+ * 全て同一IDになっている。IDで名寄せする処理（バックアップ復元・削除・更新）が
+ * 試合を取り違えるので、読み込み時に後続の重複分へ新しいIDを振り直す。
+ * 先頭の1件は既存IDを保持し、他データからの参照ずれを最小限にする。
+ */
+export function dedupeGameIds(records: GameRecord[]): GameRecord[] | null {
+    const used = new Set<string>();
+    let changed = false;
+
+    const result = records.map(record => {
+        if (typeof record?.id === 'string' && !used.has(record.id)) {
+            used.add(record.id);
+            return record;
+        }
+        let id = createGameId(record?.date ? new Date(record.date) : new Date());
+        while (used.has(id)) {
+            id = createGameId(record?.date ? new Date(record.date) : new Date());
+        }
+        used.add(id);
+        changed = true;
+        return { ...record, id };
+    });
+
+    return changed ? result : null;
+}
+
+// 試合履歴一覧取得（旧バージョン由来の重複IDはこの時点で修復する）
 export function loadGameHistory(): GameRecord[] {
-    return historyStorage.load();
+    const history = historyStorage.load();
+    if (!Array.isArray(history)) return [];
+
+    const deduped = dedupeGameIds(history);
+    if (!deduped) return history;
+
+    historyStorage.save(deduped);
+    return deduped;
 }
 
 // 試合詳細取得
