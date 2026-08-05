@@ -39,6 +39,7 @@ import { UpdatePrompt, useAppUpdate } from './components/UpdatePrompt';
 import { consumeLaunchShortcut, parseLaunchShortcut } from './utils/launchShortcut';
 import type { ShortcutTarget } from './utils/launchShortcut';
 import { useOfflineToast } from './hooks/useOfflineToast';
+import { useFoulOutNotice } from './hooks/useFoulOutNotice';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
@@ -161,6 +162,9 @@ function AppContent() {
   // 通信が切れた瞬間に「記録は続けられます」と伝える（常設バッジは操作要素に
   // 重なるため置かない。詳細は useOfflineToast のコメント）
   useOfflineToast();
+
+  // 5ファウル到達を記録した瞬間に知らせる（出場は止めない。詳細はフック側のコメント）
+  useFoulOutNotice(state);
 
   const [restoreCandidate, setRestoreCandidate] = useState<MirrorSnapshot | null>(null);
   const [showBackupPrompt, setShowBackupPrompt] = useState(false);

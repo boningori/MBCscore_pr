@@ -69,6 +69,19 @@
     background: rgba(5, 150, 105, 0.1);
 }
 
+/* 退場者もIN候補に残す（練習試合では同意のうえで出続ける運用がある）。
+   選べてしまうこと自体は意図どおりなので、無効化ではなく併記で伝える。
+   白文字 on --danger は 4.83:1 でAAを満たす */
+.substitution-modal .sub-player-fouled-out {
+    color: #fff;
+    background: var(--danger);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    padding: 0 6px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
 .substitution-modal .sub-player-number {
     font-weight: 700;
     font-size: var(--font-size-lg);

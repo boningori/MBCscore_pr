@@ -1,4 +1,5 @@
 import type { Player, ScoreEntry, StatEntry, FoulEntry } from '../../types/game';
+import { MAX_PERSONAL_FOULS } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { ActionHistory } from '../ActionHistory';
 
@@ -84,6 +85,9 @@ export function TeamPanel({
       <div className="team-players">
         {players.filter(p => p.isOnCourt).map(player => {
           const displayName = player.courtName || player.name;
+          // 5個目は審判へ即時に伝える必要がある。4個目と同じ見た目だと気づけない。
+          // ただしコートからは外さない（練習試合では同意のうえで続行する運用がある）
+          const fouledOut = player.fouls.length >= MAX_PERSONAL_FOULS;
           return (
             <button
               type="button"
@@ -91,7 +95,7 @@ export function TeamPanel({
               className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
               onClick={() => onPlayerSelect(player.id, teamId)}
               aria-pressed={selectedPlayerId === player.id}
-              aria-label={`#${formatPlayerNumber(player.number)} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}`}
+              aria-label={`#${formatPlayerNumber(player.number)} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}${fouledOut ? ' 退場' : ''}`}
             >
               <span className="player-num">
                 #{formatPlayerNumber(player.number)}
@@ -104,7 +108,7 @@ export function TeamPanel({
                   消えてカード内の余白配分が変わり、ファウル発生や選手選択のたびに
                   得点の表示位置が最大32px動いてしまう（記録中に視線が迷う） */}
               <span
-                className={`player-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}
+                className={`player-fouls ${fouledOut ? 'fouled-out' : player.fouls.length >= 4 ? 'warning' : ''}`}
                 aria-hidden={player.fouls.length === 0}
               >
                 {player.fouls.length > 0 ? `F${player.fouls.length}` : ''}

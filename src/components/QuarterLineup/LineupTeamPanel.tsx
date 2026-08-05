@@ -1,5 +1,5 @@
 import type { Player } from '../../types/game';
-import { PLAYERS_ON_COURT } from '../../types/game';
+import { PLAYERS_ON_COURT, MAX_PERSONAL_FOULS } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 
 interface LineupTeamPanelProps {
@@ -11,8 +11,13 @@ interface LineupTeamPanelProps {
 
 /** 1チーム分のスタメン選択パネル。状態を持たない表示専用コンポーネント */
 export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: LineupTeamPanelProps) {
-    // 出場可能な選手（5ファウル退場していない）
-    const availablePlayers = players.filter(p => p.fouls.length < 5);
+    // 5ファウルの選手も一覧に残し、選択も妨げない。
+    // 練習試合では相手チームの同意のうえで退場者が出続けることがあり、除外すると
+    // コートに戻す手段がなくなる。人数の少ない編成では残り5名を割って
+    // 「開始」が永久に押せなくなる（実測: 6人編成で2名退場すると4/5で固定）。
+    // このファイル下部の「最低2Q・最大3Q」と同じく、退場も表示で伝えて判断は任せる。
+    // 既定の選択からは外す（QuarterLineupのinitialSelection）ので、
+    // 公式戦では手を加えなければ正しい運用になる。
 
     // 前クォーター出場者
     const previousQuarterPlayers = players.filter(
@@ -45,9 +50,10 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
             )}
 
             <div className="player-selection-grid">
-                {availablePlayers.map(player => {
+                {players.map(player => {
                     const isSelected = selectedIds.includes(player.id);
                     const wasOnCourt = player.isOnCourt;
+                    const fouledOut = player.fouls.length >= MAX_PERSONAL_FOULS;
 
                     // 出場ルールの目安（非強制の警告表示）
                     const rq = regularQuartersPlayed(player);
@@ -62,7 +68,7 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                         <button
                             type="button"
                             key={player.id}
-                            className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''} ${overMax ? 'rule-over-max' : ''}`}
+                            className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''} ${overMax ? 'rule-over-max' : ''} ${fouledOut ? 'fouled-out' : ''}`}
                             onClick={() => onToggle(player.id)}
                             aria-pressed={isSelected}
                         >
@@ -74,7 +80,7 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                             <div className="lineup-player-stats">
                                 <span className="stat-points">{player.stats.points}pts</span>
                                 {player.fouls.length > 0 && (
-                                    <span className={`stat-fouls ${player.fouls.length >= 4 ? 'warning' : ''}`}>
+                                    <span className={`stat-fouls ${fouledOut ? 'fouled-out' : player.fouls.length >= 4 ? 'warning' : ''}`}>
                                         F{player.fouls.length}
                                     </span>
                                 )}
@@ -93,8 +99,9 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                                     );
                                 })}
                             </div>
-                            {(overMax || cannotReachMin) && (
+                            {(fouledOut || overMax || cannotReachMin) && (
                                 <div className="lineup-rule-chips">
+                                    {fouledOut && <span className="lineup-rule-chip fouled-out">退場</span>}
                                     {overMax && <span className="lineup-rule-chip over-max">3Q超</span>}
                                     {cannotReachMin && <span className="lineup-rule-chip min-risk">2Q未達</span>}
                                 </div>

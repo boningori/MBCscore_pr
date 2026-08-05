@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '../Modal';
 import type { Player } from '../../types/game';
+import { MAX_PERSONAL_FOULS } from '../../types/game';
 import {
     formatPlayerNumber,
     parsePlayerNumber,
@@ -34,7 +35,11 @@ export function SubstitutionModal({
     const [addError, setAddError] = useState<string | null>(null);
 
     const onCourtPlayers = players.filter(p => p.isOnCourt);
-    const benchPlayers = players.filter(p => !p.isOnCourt && p.fouls.length < 5);
+    // 5ファウルの選手もIN候補に残す。練習試合では相手チームの同意で出続けることが
+    // あり、除外するとコートに戻す手段がなくなる。除外したままだとベンチ全員が
+    // 退場した際に「ベンチに選手がいません」と誤って表示されもする。
+    // 判断は記録者に任せ、カード上に「退場」と併記して見落としを防ぐ
+    const benchPlayers = players.filter(p => !p.isOnCourt);
 
     const handleConfirm = () => {
         if (playerOut && playerIn) {
@@ -114,21 +119,25 @@ export function SubstitutionModal({
                     <div className="substitution-column">
                         <h3 className="sub-column-title">ベンチ (IN)</h3>
                         <div className="sub-player-list">
-                            {benchPlayers.map(player => (
-                                <button
-                                    type="button"
-                                    key={player.id}
-                                    className={`sub-player-card ${playerIn === player.id ? 'selected in' : ''}`}
-                                    onClick={() => setPlayerIn(player.id)}
-                                    aria-pressed={playerIn === player.id}
-                                >
-                                    <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
-                                    <span className="sub-player-name">{player.name}</span>
-                                    <span className="sub-player-quarters">
-                                        Q: {player.quartersPlayed.map((q, i) => q ? i + 1 : '').filter(Boolean).join(',') || '-'}
-                                    </span>
-                                </button>
-                            ))}
+                            {benchPlayers.map(player => {
+                                const fouledOut = player.fouls.length >= MAX_PERSONAL_FOULS;
+                                return (
+                                    <button
+                                        type="button"
+                                        key={player.id}
+                                        className={`sub-player-card ${playerIn === player.id ? 'selected in' : ''} ${fouledOut ? 'fouled-out' : ''}`}
+                                        onClick={() => setPlayerIn(player.id)}
+                                        aria-pressed={playerIn === player.id}
+                                    >
+                                        <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
+                                        <span className="sub-player-name">{player.name}</span>
+                                        {fouledOut && <span className="sub-player-fouled-out">退場</span>}
+                                        <span className="sub-player-quarters">
+                                            Q: {player.quartersPlayed.map((q, i) => q ? i + 1 : '').filter(Boolean).join(',') || '-'}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                             {benchPlayers.length === 0 && (
                                 <div className="sub-empty">ベンチに選手がいません</div>
                             )}

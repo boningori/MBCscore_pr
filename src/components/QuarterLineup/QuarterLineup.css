@@ -219,6 +219,16 @@
     font-weight: 700;
 }
 
+/* 退場(5個)は4個目と同じ赤文字では区別が付かないため塗りで一段強くする。
+   白文字 on --danger は 4.83:1 でAAを満たす */
+.quarter-lineup .lineup-player-stats .stat-fouls.fouled-out {
+    color: #fff;
+    background: var(--danger);
+    font-weight: 700;
+    padding: 0 6px;
+    border-radius: var(--radius-full);
+}
+
 .quarter-lineup .lineup-player-quarters {
     display: flex;
     gap: 4px;
@@ -294,6 +304,13 @@
 .quarter-lineup .lineup-rule-chip.min-risk {
     color: var(--warning);
     background: rgba(217, 119, 6, 0.15);
+}
+
+/* 退場は「3Q超」「2Q未達」と同じ非強制の注意書きだが、重さが違うので塗りで区別する。
+   選択自体は妨げない（練習試合では同意のうえで出続ける運用がある） */
+.quarter-lineup .lineup-rule-chip.fouled-out {
+    color: #fff;
+    background: var(--danger);
 }
 
 .quarter-lineup .quarter-rule-hint {

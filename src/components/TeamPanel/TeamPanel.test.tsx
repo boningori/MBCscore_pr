@@ -121,6 +121,45 @@ describe('TeamPanel: 選択中の選手の強調表示', () => {
     });
 });
 
+// 5個目のファウルは審判へ即座に伝える必要がある。F4と同じ見た目のままだと
+// 記録者が気づけないため、F5だけを別扱いにしていることを固定する。
+// （出続けること自体は妨げない。練習試合では同意のうえで続行する運用がある）
+describe('TeamPanel: ファウルアウトの表示', () => {
+    const withFouls = (n: number) => ({
+        ...createPlayer('a1', 4, '選手4'),
+        isOnCourt: true,
+        fouls: Array.from({ length: n }, () => 'P' as const),
+    });
+
+    it('5ファウルの選手のファウル表示に fouled-out が付く', () => {
+        renderPanel({ players: [withFouls(5)] });
+        const badge = screen.getByRole('button', { name: /選手4/ }).querySelector('.player-fouls');
+        expect(badge?.className).toContain('fouled-out');
+    });
+
+    it('4ファウルは warning のままで fouled-out にはならない', () => {
+        renderPanel({ players: [withFouls(4)] });
+        const badge = screen.getByRole('button', { name: /選手4/ }).querySelector('.player-fouls');
+        expect(badge?.className).toContain('warning');
+        expect(badge?.className).not.toContain('fouled-out');
+    });
+
+    it('5ファウルは読み上げでも「退場」と分かる', () => {
+        renderPanel({ players: [withFouls(5)] });
+        const label = screen.getByRole('button', { name: /選手4/ }).getAttribute('aria-label');
+        expect(label).toContain('退場');
+    });
+
+    it('5ファウルでもカードは押せる（コートから外さない）', () => {
+        const onPlayerSelect = vi.fn();
+        renderPanel({ players: [withFouls(5)], onPlayerSelect });
+        const card = screen.getByRole('button', { name: /選手4/ }) as HTMLButtonElement;
+        expect(card.disabled).toBe(false);
+        fireEvent.click(card);
+        expect(onPlayerSelect).toHaveBeenCalledWith('a1', 'teamA');
+    });
+});
+
 // .btn は border:none だけを指定し背景色を持たないため、色バリアントクラスが
 // 無いとブラウザ既定の buttonface（ライトグレー・黒文字）で描画される。
 // ダークUIの中に素のボタンが出る不具合の再発を検知する。
