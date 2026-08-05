@@ -78,7 +78,7 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
                 >
                     終了する
                 </button>
-                <button className="btn btn-secondary btn-large" onClick={() => setShowQuarterEndConfirm(false)}>
+                <button className="btn btn-secondary btn-large" data-autofocus onClick={() => setShowQuarterEndConfirm(false)}>
                     キャンセル
                 </button>
             </div>

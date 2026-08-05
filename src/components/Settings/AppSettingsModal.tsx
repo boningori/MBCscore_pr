@@ -19,7 +19,7 @@ import { getErrorLog, clearErrorLog, formatErrorLog } from '../../utils/errorLog
 import type { ErrorLogEntry } from '../../utils/errorLog';
 import { LegalModal } from '../Legal';
 import type { LegalTab } from '../Legal';
-import { Modal } from '../Modal';
+import { Modal, ConfirmModal } from '../Modal';
 import { SettingsSection } from './SettingsSection';
 import './AppSettingsModal.css';
 
@@ -37,6 +37,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [defaultMode, setDefaultMode] = useState<GameMode>('full');
 
     const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
     const [importTarget, setImportTarget] = useState<'myTeam' | 'opponent'>('myTeam');
     const [showTextImport, setShowTextImport] = useState(false);
     const [importText, setImportText] = useState('');
@@ -139,8 +140,11 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
     // インポート確認中に閉じると、選んだファイルの内容が黙って捨てられる。
     // 破棄してよいか確認してから閉じる（Escape・オーバーレイクリックも含む）。
+    // 確認はアプリ内のモーダルで出す。window.confirm は他の確認
+    // （DeleteConfirmModal 等）と作法が違ううえ、PWAでは出方が端末任せになる
     const handleRequestClose = () => {
-        if (pendingImport && !window.confirm('読み込んだデータはまだ復元されていません。破棄して閉じますか？')) {
+        if (pendingImport) {
+            setShowDiscardConfirm(true);
             return;
         }
         onClose();
@@ -682,6 +686,17 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                     initialTab={legalTab ?? 'terms'}
                     onClose={() => setLegalTab(null)}
                 />
+
+                {showDiscardConfirm && (
+                    <ConfirmModal
+                        title="確認"
+                        message="読み込んだデータはまだ復元されていません。破棄して閉じますか？"
+                        confirmLabel="破棄して閉じる"
+                        cancelLabel="編集に戻る"
+                        onConfirm={() => { setShowDiscardConfirm(false); onClose(); }}
+                        onCancel={() => setShowDiscardConfirm(false)}
+                    />
+                )}
         </Modal>
     );
 };

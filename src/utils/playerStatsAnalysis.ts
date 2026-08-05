@@ -6,8 +6,12 @@ import { loadGameHistory } from './gameHistoryStorage';
 import { loadMyTeams, type SavedTeam } from './teamStorage';
 import { createJsonStorage } from './createStorage';
 
-// 非表示選手ストレージ
-const hiddenStorage = createJsonStorage<Record<string, string[]>>('minibasket-hidden-players', {}, 'hidden players');
+// 非表示選手ストレージ。
+// 配列やnullが入っているとチームIDでの索引が壊れるため、素のオブジェクトのみ受ける
+const hiddenStorage = createJsonStorage<Record<string, string[]>>(
+    'minibasket-hidden-players', {}, 'hidden players',
+    (v): v is Record<string, string[]> => typeof v === 'object' && v !== null && !Array.isArray(v),
+);
 
 // チームごとの非表示選手キーを保存
 export function saveHiddenPlayers(teamId: string, playerKeys: string[]): void {

@@ -13,7 +13,13 @@ export interface GameSession {
     savedAt: string;
 }
 
-const sessionStorage_ = createJsonStorage<GameSession | null>(GAME_SESSION_KEY, null, 'game session');
+// 中断した試合の復元元。game を持たない形が入っていると復元直後に落ちるため、
+// 最低限そこだけ確かめる（無効なら「中断中の試合なし」として扱われる）
+const sessionStorage_ = createJsonStorage<GameSession | null>(
+    GAME_SESSION_KEY, null, 'game session',
+    (v): v is GameSession | null =>
+        v === null || (typeof v === 'object' && !Array.isArray(v) && typeof (v as GameSession).game === 'object' && (v as GameSession).game !== null),
+);
 
 // 試合セッションを保存
 export function saveGameSession(game: Game, gameName: string, date: string): void {
