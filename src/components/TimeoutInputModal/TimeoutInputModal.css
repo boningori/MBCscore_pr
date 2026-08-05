@@ -1,10 +1,16 @@
+/* タイムアウト入力モーダル。
+   もともとBootstrap既定色のライトテーマで書かれており、ダーク一色のアプリの
+   中でここだけ白背景だった。暗い体育館の試合中に画面中央が白く光るため、
+   本体と同じトークン（--bg-secondary / --bg-tertiary）に統一している。 */
+
 .timeout-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    /* 他のモーダル（.modal-overlay）と同じ濃さに揃える */
+    background-color: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -12,74 +18,77 @@
 }
 
 .timeout-modal-content {
-    background: #fff;
+    background: var(--bg-secondary);
     border-radius: var(--radius-md);
     width: 90%;
     max-width: 320px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
 }
 
 .timeout-modal-content .timeout-modal-header {
-    background: #333;
-    color: #fff;
-    padding: 16px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--spacing-xs);
 }
 
 .timeout-modal-content .timeout-modal-title {
-    font-size: 18px;
-    font-weight: bold;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
 }
 
 .timeout-modal-content .timeout-modal-team {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 .timeout-modal-content .timeout-modal-team.white {
-    color: #eee;
+    color: var(--team-white);
 }
 
 .timeout-modal-content .timeout-modal-team.blue {
-    color: #6af;
+    color: var(--team-blue-light);
 }
 
 .timeout-modal-content .timeout-modal-quarter {
-    font-size: 12px;
-    opacity: 0.8;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
 }
 
 .timeout-modal-content .timeout-modal-body {
-    padding: 20px;
+    padding: var(--spacing-lg);
 }
 
 .timeout-modal-content .timeout-input-section {
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-lg);
 }
 
 .timeout-modal-content .timeout-input-label {
     display: block;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
-    margin-bottom: 10px;
-    color: #333;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
 }
 
 .timeout-modal-content .timeout-time-inputs {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
     justify-content: center;
 }
 
 .timeout-modal-content .timeout-select {
-    font-size: 20px;
-    padding: 8px 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    background: #fff;
+    font-size: var(--font-size-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    /* アプリ全体が守っている44px下限に合わせる（変更前は42pxだった） */
+    min-height: 44px;
     min-width: 70px;
     text-align: center;
     appearance: none;
@@ -88,76 +97,77 @@
 }
 
 .timeout-modal-content .timeout-select:focus {
-    border-color: #007bff;
+    border-color: var(--primary-light);
     outline: none;
 }
 
 .timeout-modal-content .timeout-time-separator {
-    font-size: 16px;
-    color: #666;
+    font-size: var(--font-size-md);
+    color: var(--text-secondary);
 }
 
 .timeout-modal-content .timeout-result-section {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 16px;
-    background: #f5f5f5;
-    border-radius: 8px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
 }
 
 .timeout-modal-content .timeout-result-arrow {
-    font-size: 18px;
-    color: #666;
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
 }
 
 .timeout-modal-content .timeout-result-label {
-    font-size: 14px;
-    color: #666;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
 }
 
 .timeout-modal-content .timeout-result-value {
-    font-size: 32px;
-    font-weight: bold;
-    color: #007bff;
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--primary-light);
     min-width: 40px;
     text-align: center;
 }
 
 .timeout-modal-content .timeout-modal-actions {
     display: flex;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border);
 }
 
 .timeout-modal-content .timeout-btn {
     flex: 1;
-    padding: 16px;
-    font-size: 16px;
+    padding: var(--spacing-md);
+    font-size: var(--font-size-md);
     font-weight: 600;
     border: none;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-fast);
 }
 
 .timeout-modal-content .timeout-btn-cancel {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .timeout-modal-content .timeout-btn-cancel:hover {
-      background: #e5e5e5;
+      background: var(--bg-hover);
   }
 }
 
+/* 変更前は #007bff（白文字 3.98:1）。--primary は白文字で 8.72:1 */
 .timeout-modal-content .timeout-btn-confirm {
-    background: #007bff;
-    color: #fff;
+    background: var(--primary);
+    color: white;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .timeout-modal-content .timeout-btn-confirm:hover {
-      background: #0056b3;
+      background: var(--primary-light);
   }
 }
