@@ -36,7 +36,8 @@ import { UndoSnackbar } from './components/UndoSnackbar/UndoSnackbar';
 import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
 import { UpdatePrompt, useAppUpdate } from './components/UpdatePrompt';
-import { consumeLaunchShortcut } from './utils/launchShortcut';
+import { consumeLaunchShortcut, parseLaunchShortcut } from './utils/launchShortcut';
+import type { ShortcutTarget } from './utils/launchShortcut';
 import { useOfflineToast } from './hooks/useOfflineToast';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
@@ -81,13 +82,30 @@ const STAT_UNDO_LABELS: Record<string, string> = {
 // 1回だけ評価する。
 const LAUNCH_TARGET = consumeLaunchShortcut();
 
+/**
+ * ショートカットの遷移先から、行き先の画面と新規開始警告の要否を決める。
+ *
+ * コールドスタート（initialScreen）と、起動中に launchQueue で受け取る経路の
+ * 両方がこれを使う。分かれて書くと、片方だけ挙動が変わってドリフトするため。
+ */
+function resolveShortcut(
+  target: ShortcutTarget | null,
+): { screen: AppScreen; warnNewGame: boolean } {
+  if (target === 'history') return { screen: 'history', warnNewGame: false };
+  if (target === 'playerStats') return { screen: 'playerStats', warnNewGame: false };
+  // 進行中の試合がある場合はホームに留まり、警告モーダルで選ばせる
+  // （ショートカットだけ素通りさせて記録を消さない）
+  if (target === 'newGame') {
+    return hasGameSession()
+      ? { screen: 'home', warnNewGame: true }
+      : { screen: 'gameSetup', warnNewGame: false };
+  }
+  return { screen: 'home', warnNewGame: false };
+}
+
 /** ショートカット起動時の初期画面。新規試合は進行中セッションの有無で分岐する */
 function initialScreen(): AppScreen {
-  if (LAUNCH_TARGET === 'history') return 'history';
-  if (LAUNCH_TARGET === 'playerStats') return 'playerStats';
-  // 進行中の試合がある場合はホームに留まり、警告モーダルで選ばせる
-  if (LAUNCH_TARGET === 'newGame' && !hasGameSession()) return 'gameSetup';
-  return 'home';
+  return resolveShortcut(LAUNCH_TARGET).screen;
 }
 
 function AppContent() {
@@ -112,8 +130,27 @@ function AppContent() {
   // 新規試合ショートカットから起動した場合も、ホームのボタンと同じ警告を通す
   // （ショートカットだけ素通りさせて記録を消さない）
   const [showNewGameWarning, setShowNewGameWarning] = useState(
-    () => LAUNCH_TARGET === 'newGame' && hasGameSession(),
+    () => resolveShortcut(LAUNCH_TARGET).warnNewGame,
   );
+
+  // アプリが起動している状態でアイコン長押しショートカットを押したときの遷移。
+  //
+  // manifest の launch_handler は 'focus-existing'（vite.config.ts）で、これは
+  // 既存ウィンドウにフォーカスを戻すだけで navigate しない。ターゲットURLは
+  // launchQueue に積まれるだけなので、ここで受け取らないとショートカットが
+  // 完全な無反応になる（?s= が読まれないまま画面が変わらない）。
+  // 遷移規則は resolveShortcut でコールドスタートと共有する。
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.launchQueue) return;
+    window.launchQueue.setConsumer(({ targetURL }) => {
+      const target = parseLaunchShortcut(targetURL);
+      if (target === null) return;
+      const { screen: next, warnNewGame } = resolveShortcut(target);
+      setScreen(next);
+      // 別のショートカットで移動したときに、前回の警告が残らないようにする
+      setShowNewGameWarning(warnNewGame);
+    });
+  }, []);
   // 記録直後のワンタップUndo（得点/スタッツのみ。ファウルは専用フローがあるため対象外）
   const [undoInfo, setUndoInfo] = useState<{ message: string; kind: 'score' | 'stat'; entryId: string } | null>(null);
 

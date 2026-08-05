@@ -139,28 +139,27 @@
     min-width: 0;
 }
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q1 {
-    background: #86efac;
-    /* とても明るい緑 */
-    color: #166534;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q2 {
-    background: #4ade80;
-    /* 明るい緑 */
+/* クォーター色はJBA様式に合わせ 1Q/3Q=赤・2Q/4Q=黒 に統一する
+   （RunningScoresheet・QuarterLineup と同じ規約）。
+   ただし黒の --quarter-2-4 #1f2937 は、このバッジが載る .scoreboard-new の
+   背景 --bg-secondary #1e293b に対して実測 1.00:1 ＝ 輝度が完全に一致する。
+   塗りだけでは輪郭が一切出ず、バッジが消える。
+   そこで枠線 --text-secondary #94a3b8 を入れる。背景に対し 5.71、黒塗りに
+   対し 5.72 で、どちらの側からも輪郭が立つ（いずれも実測値）。
+   赤は塗り単体でも背景に対し 3.03 あり WCAG 1.4.11 の 3:1 を満たすため枠は
+   不要だが、片方だけ枠を付けると Q1 と Q2 が別部品に見えるため両方に付ける。 */
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q-odd,
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q-even {
+    border: 2px solid var(--text-secondary);
     color: white;
 }
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q3 {
-    background: #16a34a;
-    /* 中間緑 */
-    color: white;
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q-odd {
+    background: var(--quarter-1-3);
 }
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q4 {
-    background: #14532d;
-    /* とても濃い緑 */
-    color: white;
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge-large.q-even {
+    background: var(--quarter-2-4);
 }
 
 /* ボタンは常に縦積み。横並びだと quarterEnd フェーズ（Qへ・スタメン選択へ・終了を取り消す）で
@@ -234,37 +233,10 @@
    .scoreboard-simple-grid / .simple-team-*）は、スコアボードをフルモードの
    1段レイアウトに一本化したため廃止した */
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge {
-    padding: 6px 12px;
-    /* 隣のQ終了ボタンと高さ44px・角丸12pxを揃える */
-    border-radius: var(--radius-md);
-    font-weight: 700;
-    font-size: var(--font-size-sm);
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q1 {
-    background: #86efac;
-    color: #166534;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q2 {
-    background: #4ade80;
-    color: white;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q3 {
-    background: #16a34a;
-    color: white;
-}
-
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-badge.q4 {
-    background: #14532d;
-    color: white;
-}
+/* .quarter-badge（-large なし）のスコアボード用スタイルがここにあったが、
+   このスコープ内では一度も描画されない死にコードだったため削除した。
+   実際に描画しているのは QuarterLineup で、スタイルは QuarterLineup.css の
+   .quarter-lineup .quarter-badge が担当している。 */
 
 /* .tf-badge・タイムアウトボタン(.btn-timeout-chip)は TeamPanel ヘッダー側の
    index.css 共有定義を使用する。シンプルモード専用だった .simple-team-footer /

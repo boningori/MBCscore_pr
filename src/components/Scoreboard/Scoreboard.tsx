@@ -22,6 +22,11 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
         ? `Q${currentQuarter}`
         : currentQuarter === 5 ? 'OT' : `OT${currentQuarter - 4}`;
 
+    // クォーター色（1Q/3Qは赤、2Q/4Q/OTは黒）。QuarterLineup.tsx と同じ規則。
+    const quarterClass = currentQuarter > 4
+        ? 'q-even'
+        : (currentQuarter === 1 || currentQuarter === 3 ? 'q-odd' : 'q-even');
+
     // クォーター終了の確認モーダル（Q1〜Q3のみ。Q4以降はApp側の試合終了確認が兼ねる）
     const [showQuarterEndConfirm, setShowQuarterEndConfirm] = useState(false);
 
@@ -120,7 +125,7 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
 
                 {/* クォーター表示 */}
                 <div className="quarter-section">
-                    <span className={`quarter-badge-large ${currentQuarter <= 4 ? `q${currentQuarter}` : 'ot'}`}>{quarterLabel}</span>
+                    <span className={`quarter-badge-large ${quarterClass}`}>{quarterLabel}</span>
                     <div className="quarter-controls">
                         {phase === 'playing' && (
                             <button className="btn btn-quarter-end btn-small" onClick={handleQuarterManagement}>

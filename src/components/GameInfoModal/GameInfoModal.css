@@ -86,12 +86,6 @@
     font-size: 16px;
 }
 
-/* 暗背景では既定（ライト）の時計アイコンが黒で潰れるため、
-   このモーダル内のtime入力だけダークUIに切り替える */
-.game-info-modal .form-group input[type="time"] {
-    color-scheme: dark;
-}
-
 .game-info-modal .form-group input:focus {
     outline: none;
     border-color: var(--primary);

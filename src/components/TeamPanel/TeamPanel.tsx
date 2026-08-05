@@ -124,7 +124,7 @@ export function TeamPanel({
       </div>
       <div className="team-bench">
         <div className="bench-actions">
-          <button className="btn btn-small" onClick={onSubstitute}>
+          <button className="btn btn-small btn-secondary" onClick={onSubstitute}>
             交代
           </button>
           <button className="btn btn-small btn-danger" onClick={onCoachFoul}>

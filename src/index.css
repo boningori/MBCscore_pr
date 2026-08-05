@@ -1,6 +1,13 @@
 /* ミニバスケットボール スコアシートアプリ - グローバルスタイル */
 
 :root {
+  /* ネイティブ部品（selectのドロップダウン、date/timeのピッカー、
+     スクロールバー、フォーム自動補完）をダーク側で描画させる。
+     指定しないと --bg-primary の暗い画面の上にOS既定のライトUIが出る。
+     白地のスコアシート紙面（RunningScoresheet が試合中／終了後の両方を描く）には
+     input/select/textarea が無いため、紙面の見た目には影響しない。 */
+  color-scheme: dark;
+
   /* カラーパレット */
   --primary: #1e40af;
   --primary-light: #3b82f6;
@@ -582,23 +589,12 @@ textarea,
   font-weight: 600;
 }
 
-.quarter-badge {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-weight: 700;
-}
-
-.quarter-badge.q1,
-.quarter-badge.q3 {
-  background: var(--quarter-1-3);
-  color: white;
-}
-
-.quarter-badge.q2,
-.quarter-badge.q4 {
-  background: var(--quarter-2-4);
-  color: white;
-}
+/* .quarter-badge の基底ルール + .q1/.q2/.q3/.q4 の色規則（旧17行）は削除した。
+   描画箇所は QuarterLineup.tsx のみで、そこが付けるクラスは q-odd/q-even
+   （q1〜q4ではない）ため色規則は一度もマッチせず、padding/border-radius/
+   font-weightも QuarterLineup.css の .quarter-lineup .quarter-badge が
+   全て上書きしていて到達不能だった。Scoreboard.css 側の同種の死にコードを
+   削除したのと同じ理由。 */
 
 /* 音声入力 */
 .voice-indicator {

@@ -13,7 +13,7 @@
 }
 
 .pending-resolver-modal {
-    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%);
     border-radius: var(--radius-lg);
     padding: 24px;
     max-width: 400px;
@@ -27,7 +27,7 @@
 }
 
 .pending-resolver-modal .resolver-header h3 {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 1.25rem;
     margin: 0;
 }
@@ -43,7 +43,7 @@
 .pending-resolver-modal .resolver-action-type {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #fbbf24;
+    color: var(--warning-light);
     margin-bottom: 8px;
 }
 
@@ -54,26 +54,26 @@
 }
 
 .pending-resolver-modal .resolver-quarter {
-    background: #4a5568;
-    color: #e2e8f0;
+    background: var(--border-light);
+    color: var(--text-primary);
     padding: 4px 12px;
     border-radius: var(--radius-xs);
     font-size: 0.9rem;
 }
 
 .pending-resolver-modal .resolver-time {
-    color: #a0aec0;
+    color: var(--text-secondary);
     font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .pending-resolver-modal .resolver-instruction {
-    color: #a0aec0;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     margin-bottom: 8px;
 }
 
 .pending-resolver-modal .resolver-candidates-hint {
-    color: #fbbf24;
+    color: var(--warning-light);
     font-size: 0.85rem;
     margin-bottom: 12px;
 }
@@ -93,29 +93,33 @@
     padding: 12px 8px;
     border-radius: var(--radius-md);
     border: 2px solid transparent;
-    background: #4a5568;
-    color: #fff;
+    background: var(--border-light);
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
 }
 
+/* --border-light より明るい面色のトークンが無いため、hoverの明るさは
+   filter で出す。トークンの値が変わっても関係が保たれる */
 @media (hover: hover) and (pointer: fine) {
   .pending-resolver-modal .resolver-player-btn:hover {
-      background: #5a6878;
+      filter: brightness(1.15);
       transform: translateY(-2px);
   }
 }
 
 .pending-resolver-modal .resolver-player-btn.selected {
-    background: #3182ce;
-    border-color: #63b3ed;
+    background: var(--primary-light);
+    border-color: var(--team-blue-light);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.4);
+    /* rgba(49, 130, 206, ...) は旧Chakraブルー #3182ce の残骸（塗りは既に
+       --primary-light に置換済み）。トークン経由にして値変更が波及するようにする */
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-light) 40%, transparent);
 }
 
 .pending-resolver-modal .resolver-player-btn.candidate {
-    border-color: #fbbf24;
+    border-color: var(--warning-light);
 }
 
 .pending-resolver-modal .resolver-player-btn .player-number {
@@ -125,7 +129,7 @@
 
 .pending-resolver-modal .resolver-player-btn .player-name {
     font-size: 0.75rem;
-    color: #a0aec0;
+    color: var(--text-secondary);
     margin-top: 2px;
     max-width: 80px;
     overflow: hidden;
@@ -134,14 +138,14 @@
 }
 
 .pending-resolver-modal .resolver-player-btn.selected .player-name {
-    color: #bee3f8;
+    color: var(--text-primary);
 }
 
 .pending-resolver-modal .candidate-star {
     position: absolute;
     top: 4px;
     right: 4px;
-    color: #fbbf24;
+    color: var(--warning-light);
     font-size: 0.9rem;
 }
 
