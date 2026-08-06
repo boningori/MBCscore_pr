@@ -43,6 +43,22 @@ async function openFinishedGame() {
     return screen.findByText('保存して終了');
 }
 
+/** 進行中（Q2プレイ中）の中断セッションを仕込む */
+function seedPlayingSession() {
+    const game = createInitialGame();
+    game.phase = 'playing';
+    game.currentQuarter = 2;
+    game.teamA = { ...createTeam('teamA', 'テストチーム', 'コーチ'), players: [
+        { ...createPlayer('teamA-player-0', 4, '選手4'), isOnCourt: true },
+    ] };
+    game.teamB = { ...createTeam('teamB', '相手チーム', '相手コーチ'), players: [
+        { ...createPlayer('teamB-player-0', 5, '選手5'), isOnCourt: true },
+    ] };
+    localStorage.setItem('minibasket-game-session', JSON.stringify({
+        game, gameName: '練習試合', date: '2026-08-06', savedAt: new Date().toISOString(),
+    }));
+}
+
 /** localStorage への書き込みを失敗させる */
 function failStorageWrites() {
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -126,5 +142,44 @@ describe('App: 試合終了時の保存', () => {
         expect(await screen.findByText('新規試合開始')).toBeTruthy();
         expect(localStorage.getItem('minibasket-game-session')).toBeNull();
         expect(JSON.parse(localStorage.getItem('minibasket-game-history') ?? '[]')).toHaveLength(1);
+    });
+});
+
+describe('App: 保存せずに破棄', () => {
+    // 確認ダイアログが「※この操作は取り消せません」と言う以上、
+    // 中断セッションも消して本当に戻せなくする。残っていると
+    // ホームの「試合を再開」から復活し、文言と挙動が食い違う
+    it('破棄を確定したら中断セッションも消える', async () => {
+        await openFinishedGame();
+
+        fireEvent.click(screen.getByText('保存せずにホームへ'));
+        fireEvent.click(await screen.findByText('保存せずに戻る'));
+
+        expect(await screen.findByText('新規試合開始')).toBeTruthy();
+        expect(localStorage.getItem('minibasket-game-session')).toBeNull();
+        expect(JSON.parse(localStorage.getItem('minibasket-game-history') ?? '[]')).toHaveLength(0);
+    });
+
+    it('破棄をキャンセルしたら中断セッションは残る', async () => {
+        await openFinishedGame();
+
+        fireEvent.click(screen.getByText('保存せずにホームへ'));
+        fireEvent.click(await screen.findByText('キャンセル'));
+
+        expect(screen.getByText('保存して終了')).toBeTruthy();
+        expect(localStorage.getItem('minibasket-game-session')).not.toBeNull();
+    });
+
+    // 破棄と違い、試合中のホームボタンは「中断」であって「破棄」ではない。
+    // handleBackToHome は両方から呼ばれるので、消す処理を共通化しないこと
+    it('試合中にホームボタンで戻っても中断セッションは残る', async () => {
+        seedPlayingSession();
+        render(<App />);
+        fireEvent.click(await screen.findByText('試合を再開'));
+
+        fireEvent.click(await screen.findByRole('button', { name: 'ホームへ戻る' }));
+
+        expect(await screen.findByText('試合を再開')).toBeTruthy();
+        expect(localStorage.getItem('minibasket-game-session')).not.toBeNull();
     });
 });
