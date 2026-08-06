@@ -563,6 +563,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 type="text"
                                                 inputMode="numeric"
                                                 className="player-number-input"
+                                                aria-label="背番号"
                                                 value={editNumber}
                                                 onChange={e => setEditNumber(e.target.value)}
                                                 maxLength={2}
