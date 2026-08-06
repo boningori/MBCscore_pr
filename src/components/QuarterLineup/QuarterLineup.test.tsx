@@ -23,6 +23,11 @@ function fivePlayers(label: string): Player[] {
     );
 }
 
+/** 指定数のパーソナルファウルを持たせる */
+function withFouls(p: Player, count: number): Player {
+    return { ...p, fouls: Array.from({ length: count }, () => 'P' as const) };
+}
+
 function team(id: string, name: string, color: 'white' | 'blue', players: Player[]): Team {
     return { ...createTeam(id, name, ''), color, players };
 }
@@ -214,6 +219,83 @@ describe('QuarterLineup 出場ルールの目安（非強制の警告表示）',
         // 開始ボタンは押下可能（disabledでない）
         const startBtn = screen.getByRole('button', { name: 'Q4 開始' }) as HTMLButtonElement;
         expect(startBtn.disabled).toBe(false);
+    });
+});
+
+describe('QuarterLineup ファウルアウト（非強制・練習試合での続行に対応）', () => {
+    it('5ファウルの選手もカードに表示され、選択できる', () => {
+        const players = [
+            withFouls(player('out', 9, '退場者', [true, false, false, false], false), 5),
+            ...fivePlayers('白'),
+        ];
+        render(
+            <QuarterLineup quarter={2} teamA={whiteTeam(players)} teamB={blueTeam()} onStart={() => {}} />,
+        );
+
+        const card = screen.getByRole('button', { name: /退場者/ });
+        expect(card).toBeTruthy();
+
+        fireEvent.click(card);
+        expect(card.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('5ファウルの選手には「退場」チップを出し、4ファウルには出さない', () => {
+        const players = [
+            withFouls(player('out', 9, '退場者', [true, false, false, false], false), 5),
+            withFouls(player('trouble', 8, 'トラブル', [true, false, false, false], false), 4),
+            ...fivePlayers('白'),
+        ];
+        render(
+            <QuarterLineup quarter={2} teamA={whiteTeam(players)} teamB={blueTeam()} onStart={() => {}} />,
+        );
+
+        expect(screen.getAllByText('退場')).toHaveLength(1);
+        expect(screen.getByRole('button', { name: /退場者/ }).textContent).toContain('退場');
+        expect(screen.getByRole('button', { name: /トラブル/ }).textContent).not.toContain('退場');
+    });
+
+    it('退場者を含めないと5名に届かない編成でも、選べば開始できる（進行不能にならない）', () => {
+        // 6人編成で2人が5ファウル。除外すると4人しか残らず、従来は開始不能だった
+        const players = [
+            withFouls(player('o1', 1, '白1', [true, false, false, false], false), 5),
+            withFouls(player('o2', 2, '白2', [true, false, false, false], false), 5),
+            player('p3', 3, '白3', [true, false, false, false], false),
+            player('p4', 4, '白4', [true, false, false, false], false),
+            player('p5', 5, '白5', [true, false, false, false], false),
+            player('p6', 6, '白6', [true, false, false, false], false),
+        ];
+        const onStart = vi.fn();
+        const bluePlayers = fivePlayers('青').map(p => ({ ...p, isOnCourt: true }));
+        render(
+            <QuarterLineup
+                quarter={2}
+                teamA={whiteTeam(players)}
+                teamB={blueTeam(bluePlayers)}
+                onStart={onStart}
+            />,
+        );
+
+        for (const n of [1, 2, 3, 4, 5]) {
+            fireEvent.click(screen.getByRole('button', { name: new RegExp(`白${n}`) }));
+        }
+
+        const startBtn = screen.getByRole('button', { name: 'Q2 開始' }) as HTMLButtonElement;
+        expect(startBtn.disabled).toBe(false);
+        fireEvent.click(startBtn);
+        expect(onStart.mock.calls[0][0].teamA).toEqual(['o1', 'o2', 'p3', 'p4', 'p5']);
+    });
+
+    it('初期選択には退場者を含めない（既定は公式ルール寄り・必要なら手で選び直せる）', () => {
+        const players = [
+            withFouls(player('out', 1, '白1', [true, false, false, false], true), 5),
+            ...fivePlayers('白').slice(1).map(p => ({ ...p, isOnCourt: true })),
+        ];
+        render(
+            <QuarterLineup quarter={2} teamA={whiteTeam(players)} teamB={blueTeam()} onStart={() => {}} />,
+        );
+
+        expect(screen.getByRole('button', { name: /白1/ }).getAttribute('aria-pressed')).toBe('false');
+        expect(screen.getByRole('button', { name: /白2/ }).getAttribute('aria-pressed')).toBe('true');
     });
 });
 

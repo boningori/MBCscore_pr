@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createJsonStorage } from './createStorage';
 import { STORAGE_ERROR_EVENT } from './storageError';
 
@@ -10,6 +10,10 @@ describe('createJsonStorage', () => {
     beforeEach(() => {
         localStorage.clear();
     });
+
+    // setItem のスパイを張ったテストが途中で落ちると、復元されないまま
+    // 後続へ漏れて無関係なテストを巻き込む
+    afterEach(() => vi.restoreAllMocks());
 
     it('未保存ならfallbackを返す', () => {
         expect(storage.load()).toEqual({ count: 0, items: [] });
@@ -67,6 +71,21 @@ describe('createJsonStorage', () => {
         storage.save({ count: 1, items: [] });
         storage.clear();
         expect(localStorage.getItem('mbc-test-demo')).toBeNull();
+    });
+
+    // 呼び出し側が「保存できたか」で分岐できないと、保存に失敗したのに
+    // 元データを消す、という取り返しのつかない順序を書けてしまう
+    it('save成功でtrueを返す', () => {
+        expect(storage.save({ count: 1, items: [] })).toBe(true);
+    });
+
+    it('save失敗でfalseを返す', () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+
+        expect(storage.save({ count: 1, items: [] })).toBe(false);
     });
 
     it('save失敗時はstorage-errorイベントが飛ぶ', () => {

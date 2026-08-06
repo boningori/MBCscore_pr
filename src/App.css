@@ -568,6 +568,18 @@
   font-weight: 700;
 }
 
+/* 5個目（退場）は4個目と区別が付かないといけない。同じ赤文字では気づけないため、
+   塗りつぶしのバッジにして一段強くする。
+   白文字 on --danger(#dc2626) は 4.83:1 でAAを満たす（--danger-text は
+   文字色用に持ち上げた色なので、地に敷くと今度は白が乗らない） */
+.app-container .mini-player-card .player-fouls.fouled-out {
+  color: #fff;
+  background: var(--danger);
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+}
+
 .app-container .mini-player-card .player-check {
   /* ファウル表示が無い選手でも右端に揃える */
   margin-left: auto;
