@@ -671,6 +671,93 @@
     }
 }
 
+/* 使用容量の表示。試合履歴は伸び続けるので、壁に当たる前に気づかせる */
+.app-settings-modal .storage-usage {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.app-settings-modal .storage-usage.is-warning {
+    border-color: var(--warning);
+}
+
+.app-settings-modal .storage-usage-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.app-settings-modal .storage-usage-value {
+    color: var(--text-primary);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.app-settings-modal .storage-usage-bar {
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.app-settings-modal .storage-usage-fill {
+    height: 100%;
+    background: var(--secondary);
+    border-radius: var(--radius-full);
+}
+
+.app-settings-modal .storage-usage.is-warning .storage-usage-fill {
+    background: var(--warning);
+}
+
+.app-settings-modal .storage-usage-warning {
+    margin: var(--spacing-sm) 0 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--warning);
+    line-height: 1.5;
+}
+
+/* 端末内の自動バックアップ（IndexedDBの世代）一覧 */
+.app-settings-modal .mirror-backup-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.app-settings-modal .mirror-backup-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+
+.app-settings-modal .mirror-backup-when {
+    color: var(--text-primary);
+    flex: 1 1 auto;
+}
+
+.app-settings-modal .mirror-backup-count {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.app-settings-modal .mirror-backup-item .btn {
+    margin-left: auto;
+}
+
 .app-settings-modal .backup-notice {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);

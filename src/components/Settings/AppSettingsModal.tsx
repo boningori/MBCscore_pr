@@ -21,6 +21,8 @@ import { LegalModal } from '../Legal';
 import type { LegalTab } from '../Legal';
 import { Modal, ConfirmModal } from '../Modal';
 import { SettingsSection } from './SettingsSection';
+import { MirrorBackupList } from './MirrorBackupList';
+import { estimateStorageUsage, formatBytes } from '../../utils/storageUsage';
 import './AppSettingsModal.css';
 
 type SectionId = 'mode' | 'ai' | 'data' | 'help' | 'errors' | 'about';
@@ -49,6 +51,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [showErrorDetail, setShowErrorDetail] = useState(false);
     const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
     const [lastBackupText, setLastBackupText] = useState<string>('未バックアップ');
+    const [usage, setUsage] = useState(() => estimateStorageUsage());
     // 開いているセクション（同時に1つだけ）。既定は全て閉じ、見出しの一覧から選ばせる
     const [openSection, setOpenSection] = useState<SectionId | null>(null);
 
@@ -84,6 +87,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setOpenSection(null);
             const lb = loadLastBackup();
             setLastBackupText(lb ? new Date(lb.timestamp).toLocaleString('ja-JP') : '未バックアップ');
+            setUsage(estimateStorageUsage());
         }
     }
 
@@ -418,6 +422,39 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                             試合履歴・チーム情報などをバックアップ・復元できます。
                         </p>
 
+                        {/*
+                          使用容量。試合履歴は上限も枝刈りも無く伸び続けるので、
+                          壁（保存失敗）に当たる前に気づけるようにする。
+                          データを勝手に消すことはしない。消えて困るのは記録そのもの
+                        */}
+                        <div className={`storage-usage ${usage.nearlyFull ? 'is-warning' : ''}`}>
+                            <div className="storage-usage-head">
+                                <span>端末内の使用容量</span>
+                                <span className="storage-usage-value">
+                                    {formatBytes(usage.usedBytes)} / 約{formatBytes(usage.limitBytes)}
+                                </span>
+                            </div>
+                            <div
+                                className="storage-usage-bar"
+                                role="progressbar"
+                                aria-label="端末内の使用容量"
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={Math.round(usage.ratio * 100)}
+                            >
+                                <div
+                                    className="storage-usage-fill"
+                                    style={{ width: `${Math.max(usage.ratio * 100, 1)}%` }}
+                                />
+                            </div>
+                            {usage.nearlyFull && (
+                                <p className="storage-usage-warning">
+                                    ⚠️ 空きが少なくなっています。バックアップを保存し、
+                                    試合履歴から古い試合を削除してください。
+                                </p>
+                            )}
+                        </div>
+
                         <div className="data-management-buttons">
                             <div className="data-section-card">
                                 <h4 className="subsection-title">📤 バックアップ</h4>
@@ -580,6 +617,22 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 onChange={handleFileChange}
                                 style={{ display: 'none' }}
                             />
+
+                            {/*
+                              端末内の自動バックアップ（IndexedDBの世代）。
+                              10世代を保持しているのに、これまで辿れるのは
+                              「localStorageが空のときに最新1件を復元するか聞く」
+                              プロンプトだけだった。誤削除・不正なインポートでの
+                              上書き・保存失敗はどれも救えないままだった
+                            */}
+                            <div className="data-section-card">
+                                <h4 className="subsection-title">🕒 端末内の自動バックアップ</h4>
+                                <p className="section-description">
+                                    記録中に自動で作られる控えです（最大10世代）。
+                                    誤って消した・取り込みで上書きしたときに戻せます。
+                                </p>
+                                <MirrorBackupList onRestored={() => window.location.reload()} />
+                            </div>
                         </div>
 
                         <div className="backup-notice">

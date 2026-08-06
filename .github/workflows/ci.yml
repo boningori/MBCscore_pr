@@ -18,3 +18,46 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      # デプロイジョブは再ビルドせずこの成果物を配る。
+      # 「テストが通ったもの」と「公開されるもの」を同一にするため
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  # main への push だけ公開する。以前は手元の npm run deploy だったため、
+  # 作業ツリーが汚れたままの成果物が出る余地があった。
+  # Pages の配信元は gh-pages ブランチのままにしてある（リポジトリ設定を
+  # 変えずに済ませるため）。
+  deploy:
+    needs: test-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: deploy-gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      # devDependency の gh-pages をそのまま使う（手元の手順と同じ道具）。
+      # サードパーティのactionを増やさない
+      - name: Publish to gh-pages
+        env:
+          GIT_USER: github-actions[bot]
+          GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          git config --global user.name "$GIT_USER"
+          git config --global user.email "$GIT_EMAIL"
+          npx gh-pages -d dist -u "$GIT_USER <$GIT_EMAIL>" \
+            -m "Deploy ${{ github.sha }}"
