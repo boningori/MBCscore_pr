@@ -46,7 +46,20 @@ export function createGameId(date: Date): string {
     return `game-${date.getTime()}-${randomSuffix()}`;
 }
 
-// 試合結果を保存
+/** 試合結果の保存結果。saved が false なら履歴に残っていない */
+export interface SaveGameResult {
+    record: GameRecord;
+    saved: boolean;
+}
+
+/**
+ * 試合結果を履歴に保存する。
+ *
+ * 保存の成否を返す。呼び出し側はこれを見てから中断セッションを消すこと。
+ * 以前は成否を返さず、容量超過などで保存に失敗しても呼び出し側が
+ * セッションを無条件に消していたため、履歴にもセッションにも残らない
+ * 試合が生まれる経路があった。
+ */
 export function saveGameResult(
     gameName: string,
     teamA: Team,
@@ -56,7 +69,7 @@ export function saveGameResult(
     foulHistory: FoulEntry[],
     date: Date = new Date(),
     gameInfo?: GameInfo
-): GameRecord {
+): SaveGameResult {
     const record: GameRecord = {
         id: createGameId(date),
         date: date.toISOString(),
@@ -76,9 +89,9 @@ export function saveGameResult(
 
     const history = loadGameHistory();
     history.unshift(record); // 新しい順
-    historyStorage.save(history);
+    const saved = historyStorage.save(history);
 
-    return record;
+    return { record, saved };
 }
 
 /**

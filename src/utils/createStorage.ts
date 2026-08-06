@@ -5,7 +5,15 @@ import { notifyStorageError } from './storageError';
 
 export interface JsonStorage<T> {
     load(): T;
-    save(value: T): void;
+    /**
+     * 保存できたら true。失敗したら false（通知イベントも飛ばす）。
+     *
+     * 戻り値を返すのは、呼び出し側が「保存できたか」で分岐できないと
+     * 保存に失敗したのに元データを消す、という取り返しのつかない順序を
+     * 書けてしまうため（試合終了時の履歴保存→セッション削除が実際にそうだった）。
+     * 戻り値を無視する既存の呼び出しはそのままでよい。
+     */
+    save(value: T): boolean;
     clear(): void;
 }
 
@@ -38,11 +46,13 @@ export function createJsonStorage<T>(
                 return structuredClone(fallback);
             }
         },
-        save(value: T): void {
+        save(value: T): boolean {
             try {
                 localStorage.setItem(key, JSON.stringify(value));
+                return true;
             } catch (error) {
                 notifyStorageError(context, error);
+                return false;
             }
         },
         clear(): void {

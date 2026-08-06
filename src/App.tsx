@@ -129,6 +129,8 @@ function AppContent() {
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [endGameConfirmType, setEndGameConfirmType] = useState<'tied' | 'notTied' | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false); // 保存せず破棄の確認
+  const [showSaveFailed, setShowSaveFailed] = useState(false); // 試合結果の保存に失敗
+  const [isBackingUp, setIsBackingUp] = useState(false); // 保存失敗時のバックアップ実行中
   // 進行中セッションがある状態での新規開始警告。
   // 新規試合ショートカットから起動した場合も、ホームのボタンと同じ警告を通す
   // （ショートカットだけ素通りさせて記録を消さない）
@@ -739,10 +741,16 @@ function AppContent() {
 
 
 
-  // 試合終了・保存してホームへ
+  /**
+   * 試合終了・保存してホームへ。
+   *
+   * 保存できたときだけセッションを消す。以前は成否を見ずに消していたため、
+   * 容量超過などで履歴に書けないと、履歴にもセッションにも残らない試合が
+   * できていた。トーストは「設定画面からバックアップを」と案内するが、
+   * その時点で対象データはもう存在しない、という状態だった。
+   */
   const handleGameFinished = () => {
-    // 試合結果を保存
-    saveGameResult(
+    const { saved } = saveGameResult(
       gameName,
       state.teamA,
       state.teamB,
@@ -753,10 +761,13 @@ function AppContent() {
       state.gameInfo
     );
 
-    // セッションデータをクリア
-    clearGameSession();
+    if (!saved) {
+      // 記録は state と中断セッションの両方に残したまま、復旧手段を出す
+      setShowSaveFailed(true);
+      return;
+    }
 
-    // ホームへ戻る
+    clearGameSession();
     setScreen('home');
 
     // 前回バックアップ後に試合が増えていれば督促
@@ -851,6 +862,7 @@ function AppContent() {
   // 履歴ポップアップ（シンプルモード用）
   const [showHistoryPopup, setShowHistoryPopup] = useState(false);
 
+  // 復元・バックアップ督促は画面を占有する確認なので、設定より前に単独で出す
   if (restoreCandidate) {
     return (
       <RestorePrompt
@@ -876,6 +888,15 @@ function AppContent() {
     );
   }
 
+  /**
+   * 現在の画面を描画する。
+   *
+   * 早期returnの外側にアプリ設定を置くためにここで束ねている。
+   * 以前は設定モーダルをホーム画面の分岐内にだけ描画していたため、
+   * 保存失敗のトーストが「設定画面からバックアップを保存してください」と
+   * 案内しても、記録中は開く手段が無かった。
+   */
+  const renderScreen = () => {
   if (screen === 'home') {
     return (
       <>
@@ -889,10 +910,6 @@ function AppContent() {
           onOpenSettings={() => setShowAppSettings(true)}
           isFullScreen={isFullScreen}
           onToggleFullScreen={toggleFullScreen}
-        />
-        <AppSettingsModal
-          isOpen={showAppSettings}
-          onClose={() => setShowAppSettings(false)}
         />
         {/* 進行中セッションがある状態での新規開始警告 */}
         {showNewGameWarning && (
@@ -1409,6 +1426,58 @@ function AppContent() {
           </div>
         </Modal>
       )}
+      {/*
+        試合結果の保存に失敗したときの復旧導線。
+        記録はまだ state と中断セッションに残っているので、閉じても失われない。
+        端末の空きが原因なので、その場でバックアップを取り出せる出口を必ず置く
+        （設定画面まで辿らせない）。
+      */}
+      {showSaveFailed && (
+        <Modal
+          onClose={() => setShowSaveFailed(false)}
+          contentClassName="modal-content end-game-confirm-modal"
+          closeOnOverlayClick={false}
+          labelledBy="save-failed-title"
+        >
+          <h3 id="save-failed-title">試合を保存できませんでした</h3>
+          <p className="end-game-confirm-message">
+            端末の空き容量が足りない可能性があります。<br />
+            <strong>この試合の記録はまだ残っています。</strong><br />
+            バックアップを取り出すか、空き容量を作ってからもう一度保存してください。
+          </p>
+          <div className="modal-actions-column">
+            <button
+              className="btn btn-primary btn-large"
+              disabled={isBackingUp}
+              onClick={async () => {
+                setIsBackingUp(true);
+                const ok = await shareBackup();
+                setIsBackingUp(false);
+                showToast(
+                  ok ? 'バックアップを保存しました' : 'バックアップに失敗しました',
+                  ok ? 'success' : 'error',
+                );
+              }}
+            >
+              {isBackingUp ? '保存中…' : '💾 バックアップを保存'}
+            </button>
+            <button
+              className="btn btn-secondary btn-large"
+              onClick={() => { setShowSaveFailed(false); handleGameFinished(); }}
+            >
+              もう一度保存する
+            </button>
+            <button
+              className="btn btn-secondary btn-large"
+              data-autofocus
+              onClick={() => setShowSaveFailed(false)}
+            >
+              閉じる
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {/* ベンチファウル選択モーダル - Step 1: 種類選択 */}
       {coachFoulState && coachFoulState.step === 'type' && (
         <Modal
@@ -1588,6 +1657,20 @@ function AppContent() {
             >
               5分{state.quarterMinutes === 5 ? '（現在）' : ''}
             </button>
+          </div>
+          {/*
+            アプリ設定への入口。ヘッダーは既にボタンで埋まっているので増やさず、
+            ここに置く。保存失敗のトーストが設定画面を案内するため、
+            記録中にも辿り着ける経路が要る
+          */}
+          <p className="end-game-confirm-message">アプリ全体</p>
+          <div className="modal-actions-column">
+            <button
+              className="btn btn-secondary btn-large"
+              onClick={() => { setShowGameOptions(false); setShowAppSettings(true); }}
+            >
+              ⚙️ アプリ設定・バックアップ
+            </button>
             <button className="btn btn-secondary btn-large" onClick={() => setShowGameOptions(false)}>
               閉じる
             </button>
@@ -1609,6 +1692,18 @@ function AppContent() {
         onCancel={() => setTimeoutModalTeam(null)}
       />
     </div>
+  );
+  };
+
+  return (
+    <>
+      {renderScreen()}
+      {/* 設定はどの画面からでも開ける（保存失敗時の案内先になるため） */}
+      <AppSettingsModal
+        isOpen={showAppSettings}
+        onClose={() => setShowAppSettings(false)}
+      />
+    </>
   );
 }
 
