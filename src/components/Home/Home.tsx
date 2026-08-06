@@ -28,7 +28,7 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
     const hasMyTeams = myTeams.length > 0;
 
     return (
-        <div className="home-container">
+        <main className="home-container">
             <div className="home-header">
                 <div className="header-left">
                     {/* 絵文字だけだとアクセシブル名が絵文字自体になり「四角」等と読まれる。
@@ -132,6 +132,6 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                     v{__APP_VERSION__} | タブレット最適化 | オフライン動作
                 </p>
             </div>
-        </div>
+        </main>
     );
 }

@@ -219,7 +219,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
 
     return (
-        <div className="game-setup">
+        <main className="game-setup">
             <div className="setup-header">
                 <button
                     className="btn btn-secondary"
@@ -227,7 +227,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                 >
                     ← 戻る
                 </button>
-                <h2>試合設定</h2>
+                <h1>試合設定</h1>
             </div>
 
             <div className="setup-progress">
@@ -279,12 +279,13 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                     <div className="setup-step basic-info">
                         <h3>基本情報</h3>
                         <div className="form-group">
-                            <label>
+                            <label htmlFor="game-setup-game-name">
                                 試合名 / 大会名
                                 <span className="label-optional">任意</span>
                             </label>
                             <div className="suggestion-input-wrapper">
                                 <input
+                                    id="game-setup-game-name"
                                     ref={inputRef}
                                     type="text"
                                     className="input"
@@ -337,8 +338,8 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                             </p>
                         </div>
                         <div className="form-group">
-                            <label>日付</label>
-                            <input
+                            <label htmlFor="game-setup-field-1">日付</label>
+                            <input id="game-setup-field-1"
                                 type="date"
                                 className="input"
                                 value={date}
@@ -440,14 +441,14 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
                         <div className="confirm-card">
                             <div className="confirm-row">
-                                <label>試合名</label>
+                                <span className="confirm-row-label">試合名</span>
                                 <span>
                                     {effectiveGameName}
                                     {isGameNameAuto && <span className="confirm-auto-badge">自動</span>}
                                 </span>
                             </div>
                             <div className="confirm-row">
-                                <label>日付</label>
+                                <span className="confirm-row-label">日付</span>
                                 <span>{date}</span>
                             </div>
 
@@ -558,7 +559,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                     </div>
                 )}
             </div>
-        </div>
+        </main>
     );
 }
 

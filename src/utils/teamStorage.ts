@@ -52,22 +52,11 @@ export function getPlayerNumber(player: SavedPlayer, numberType: NumberType): nu
     }
 }
 
-// TeamからSavedTeamへ変換
-export function teamToSavedTeam(team: Team): SavedTeam {
-    return {
-        id: team.id,
-        name: team.name,
-        coachName: team.coachName,
-        assistantCoachName: team.assistantCoachName || '',
-        players: team.players.map(p => ({
-            number: p.number,
-            name: p.name,
-            isCaptain: p.isCaptain,
-        })),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    };
-}
+// teamToSavedTeam（Team → SavedTeam）はここにあったが、参照が無いまま
+// courtName / licenseNo / bibNumber / uniformNumber / コーチのライセンスNo. を
+// 落とす実装だった。名前は素直なので次に触る人が使いたくなるが、使うと
+// 静かにデータが欠ける。必要になった時点で、落ちるフィールドが無い形で
+// 書き直すほうが安全なため削除する。
 
 // SavedTeamからTeamへ変換
 // numberType: マイチームの場合に使用する番号タイプ（対戦チームはnumberをそのまま使用）

@@ -205,13 +205,13 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                     {/* Top Row: Competition & Game Info */}
                     <div className="rs-header-top-row">
                         <div className="rs-competition-box">
-                            <label>大会名</label>
+                            <span className="rs-field-label">大会名</span>
                             <span className="rs-competition-value">{gameName}</span>
                         </div>
                         <div className="rs-game-info-box">
                             <div className="rs-date-time-row">
                                 <div className="rs-date-box">
-                                    <label>日付</label>
+                                    <span className="rs-field-label">日付</span>
                                     {(() => {
                                         const [y, m, d] = date ? date.replace(/-/g, '/').split('/') : ['', '', ''];
                                         return (
@@ -227,17 +227,17 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                     })()}
                                 </div>
                                 <div className="rs-time-box">
-                                    <label>時間</label>
+                                    <span className="rs-field-label">時間</span>
                                     <span>{gameInfo.time || ':'}</span>
                                 </div>
                             </div>
                             <div className="rs-place-game-row">
                                 <div className="rs-place-box">
-                                    <label>会場</label>
+                                    <span className="rs-field-label">会場</span>
                                     <span className="rs-place-val">{gameInfo.venue}</span>
                                 </div>
                                 <div className="rs-game-no-box">
-                                    <label>Game No.</label>
+                                    <span className="rs-field-label">Game No.</span>
                                     <span>{gameInfo.gameNo}</span>
                                 </div>
                             </div>

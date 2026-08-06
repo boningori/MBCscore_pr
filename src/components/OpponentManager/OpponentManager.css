@@ -12,9 +12,11 @@
     margin-bottom: var(--spacing-xl);
 }
 
-.opponent-manager-container .opponent-manager-header h2 {
+/* 画面見出しは h1。既定の 2em に跳ねないようサイズを明示する */
+.opponent-manager-container .opponent-manager-header h1 {
     margin: 0;
     color: var(--text-primary);
+    font-size: 1.5rem;
 }
 
 .opponent-manager-container .opponent-manager-content {

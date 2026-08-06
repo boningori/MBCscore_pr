@@ -68,7 +68,16 @@
     min-width: 0;
 }
 
+/* 入力欄は label の中に置いている（htmlFor/id を持ち回らずに結び付けるため）。
+   label 自体が見出しと入力を縦に積むコンテナになる */
 .game-info-modal .form-group label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    min-width: 0;
+}
+
+.game-info-modal .form-group .form-label-text {
     font-weight: 600;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);

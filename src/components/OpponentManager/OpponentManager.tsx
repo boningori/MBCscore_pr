@@ -369,18 +369,18 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     // 編集画面
     if (editingTeam) {
         return (
-            <div className="opponent-manager-container">
+            <main className="opponent-manager-container">
                 <div className="opponent-manager-header">
                     <button className="btn btn-secondary" onClick={handleCancel}>
                         ← キャンセル
                     </button>
-                    <h2>{isCreating ? '対戦チーム新規登録' : '対戦チーム編集'}</h2>
+                    <h1>{isCreating ? '対戦チーム新規登録' : '対戦チーム編集'}</h1>
                 </div>
 
                 <div className="team-edit-form">
                     <div className="form-group">
-                        <label>チーム名 *</label>
-                        <input
+                        <label htmlFor="opponent-mgr-field-1">チーム名 *</label>
+                        <input id="opponent-mgr-field-1"
                             type="text"
                             value={editingTeam.name}
                             onChange={(e) => handleTeamNameChange(e.target.value)}
@@ -390,9 +390,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     </div>
 
                     <div className="form-group">
-                        <label>コーチ</label>
+                        {/* 1行に氏名とライセンスNo.の2つが並ぶ。labelは氏名側に結び付け、
+                            もう一方はaria-labelで区別する（同じ「コーチ」では読み分けられない） */}
+                        <label htmlFor="opponent-coach-name">コーチ</label>
                         <div className="opponent-coach-row">
                             <input
+                                id="opponent-coach-name"
                                 type="text"
                                 className="opponent-coach-name-input"
                                 value={editingTeam.coachName}
@@ -403,6 +406,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             <input
                                 type="text"
                                 className="opponent-coach-license-input"
+                                aria-label="コーチのライセンスNo."
                                 value={editingTeam.coachLicenseNo || ''}
                                 onChange={(e) => handleCoachLicenseNoChange(e.target.value)}
                                 placeholder="ライセンスNo."
@@ -413,9 +417,10 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     </div>
 
                     <div className="form-group">
-                        <label>Aコーチ</label>
+                        <label htmlFor="opponent-assistant-coach-name">Aコーチ</label>
                         <div className="opponent-coach-row">
                             <input
+                                id="opponent-assistant-coach-name"
                                 type="text"
                                 className="opponent-coach-name-input"
                                 value={editingTeam.assistantCoachName || ''}
@@ -426,6 +431,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             <input
                                 type="text"
                                 className="opponent-coach-license-input"
+                                aria-label="AコーチのライセンスNo."
                                 value={editingTeam.assistantCoachLicenseNo || ''}
                                 onChange={(e) => handleAssistantCoachLicenseNoChange(e.target.value)}
                                 placeholder="ライセンスNo."
@@ -513,6 +519,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                 className="player-number-input"
                                 value={newNumber}
                                 onChange={e => setNewNumber(e.target.value)}
+                                aria-label="背番号"
                                 placeholder="No."
                                 maxLength={2}
                                 autoComplete="off"
@@ -522,6 +529,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                 className="player-name-input"
                                 value={newName}
                                 onChange={e => setNewName(e.target.value)}
+                                aria-label="選手名"
                                 placeholder="氏名"
                                 autoComplete="off"
                             />
@@ -530,6 +538,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                 className="opponent-player-license-input"
                                 value={newLicenseNo}
                                 onChange={e => setNewLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                aria-label="選手のライセンスNo."
                                 placeholder="ライセンスNo."
                                 maxLength={10}
                                 autoComplete="off"
@@ -565,6 +574,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 className="player-name-input"
                                                 value={editName}
                                                 onChange={e => setEditName(e.target.value)}
+                                                aria-label="選手名"
                                                 placeholder="氏名"
                                                 autoComplete="off"
                                             />
@@ -573,6 +583,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                                 className="opponent-player-license-input"
                                                 value={editLicenseNo}
                                                 onChange={e => setEditLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                                aria-label="選手のライセンスNo."
                                                 placeholder="ライセンスNo."
                                                 maxLength={10}
                                                 autoComplete="off"
@@ -642,18 +653,18 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     </div>
 
                 </div>
-            </div>
+            </main>
         );
     }
 
     // 一覧画面
     return (
-        <div className="opponent-manager-container">
+        <main className="opponent-manager-container">
             <div className="opponent-manager-header">
                 <button className="btn btn-secondary" onClick={onBack}>
                     ← ホームへ
                 </button>
-                <h2>対戦チーム管理</h2>
+                <h1>対戦チーム管理</h1>
             </div>
 
             <div className="opponent-manager-content">
@@ -720,8 +731,8 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                         <>
                             <p className="import-info">📌 同じIDのチームが既にある場合、インポートしたデータで上書きされます。</p>
                             <div className="import-target-selector">
-                                <label>インポート先：</label>
-                                <select value={importTarget} onChange={e => setImportTarget(e.target.value as 'myTeam' | 'opponent')}>
+                                <label htmlFor="opponent-mgr-field-2">インポート先：</label>
+                                <select id="opponent-mgr-field-2" value={importTarget} onChange={e => setImportTarget(e.target.value as 'myTeam' | 'opponent')}>
                                     <option value="myTeam">マイチーム</option>
                                     <option value="opponent">対戦チーム</option>
                                 </select>
@@ -802,6 +813,6 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     onCancel={() => setShowClearPlayersConfirm(false)}
                 />
             )}
-        </div>
+        </main>
     );
 }

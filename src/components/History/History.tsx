@@ -96,7 +96,7 @@ export function History({ onBack }: HistoryProps) {
                     <button className="btn btn-secondary" onClick={() => setSelectedRecord(null)}>
                         ← 一覧に戻る
                     </button>
-                    <h2>{selectedRecord.gameName} ({new Date(selectedRecord.date).toLocaleDateString()})</h2>
+                    <h1>{selectedRecord.gameName} ({new Date(selectedRecord.date).toLocaleDateString()})</h1>
                 </div>
 
                 <div className="history-tabs">
@@ -141,12 +141,12 @@ export function History({ onBack }: HistoryProps) {
     }
 
     return (
-        <div className="history-container">
+        <main className="history-container">
             <div className="history-header">
                 <button className="btn btn-secondary" onClick={onBack}>
                     ← ホームへ
                 </button>
-                <h2>試合履歴</h2>
+                <h1>試合履歴</h1>
             </div>
 
             <div className="history-content">
@@ -218,6 +218,6 @@ export function History({ onBack }: HistoryProps) {
                     onCancel={cancelDelete}
                 />
             )}
-        </div>
+        </main>
     );
 }

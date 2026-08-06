@@ -5,7 +5,7 @@ import type {
     GameAction,
     Player,
 } from '../types/game';
-import { createInitialGame, MAX_PERSONAL_FOULS } from '../types/game';
+import { createInitialGame } from '../types/game';
 import { gameReducer } from './reducers';
 
 // Context
@@ -17,7 +17,6 @@ interface GameContextType {
     getPlayerById: (playerId: string) => Player | null;
     getPlayersOnCourt: (teamId: string) => Player[];
     getTeamFoulsInQuarter: (teamId: string, quarter: number) => number;
-    canPlayerPlay: (player: Player) => boolean;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -46,9 +45,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         return team.teamFouls[quarter - 1] || 0;
     };
 
-    const canPlayerPlay = (player: Player): boolean => {
-        return player.fouls.length < MAX_PERSONAL_FOULS;
-    };
+    // canPlayerPlay（5ファウル未満か）はここにあったが、参照が無かった。
+    // 出場可否でコートから外す用途を想定した名前だが、練習試合では
+    // 相手チームの同意のうえで退場者が出続ける運用があるため、そもそも
+    // アプリ側で出場を止めない方針にしている（PROJECT_MAP「設計上の制約」）。
+    // 退場は useFoulOutNotice と表示で伝える。
 
     return (
         <GameContext.Provider value={{
@@ -58,7 +59,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
             getPlayerById,
             getPlayersOnCourt,
             getTeamFoulsInQuarter,
-            canPlayerPlay,
         }}>
             {children}
         </GameContext.Provider>

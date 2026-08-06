@@ -273,7 +273,7 @@
     /* Request: 7.48pt */
 }
 
-.running-scoresheet-container .rs-competition-box label {
+.running-scoresheet-container .rs-competition-box .rs-field-label {
     font-weight: 700;
     width: 13.5mm;
     height: 100%;
@@ -311,7 +311,7 @@
     font-size: 9pt;
 }
 
-.running-scoresheet-container .rs-date-box label {
+.running-scoresheet-container .rs-date-box .rs-field-label {
     font-weight: 700;
     height: 100%;
     display: flex;
@@ -352,7 +352,7 @@
     font-size: 9pt;
 }
 
-.running-scoresheet-container .rs-time-box label {
+.running-scoresheet-container .rs-time-box .rs-field-label {
     font-weight: 700;
     width: 13.5mm;
     height: 100%;
@@ -382,7 +382,7 @@
     font-size: 9pt;
 }
 
-.running-scoresheet-container .rs-place-box label {
+.running-scoresheet-container .rs-place-box .rs-field-label {
     font-weight: 700;
     height: 100%;
     display: flex;
@@ -400,7 +400,7 @@
     font-size: 9pt;
 }
 
-.running-scoresheet-container .rs-game-no-box label {
+.running-scoresheet-container .rs-game-no-box .rs-field-label {
     font-size: 8px;
     font-weight: 700;
     width: 13.5mm;
