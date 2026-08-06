@@ -52,12 +52,10 @@ jobs:
           path: dist
       # devDependency の gh-pages をそのまま使う（手元の手順と同じ道具）。
       # サードパーティのactionを増やさない
+      # コミット作者は git config で渡す。gh-pages の -u オプションは
+      # "github-actions[bot] <...>" を解析できずに落ちる（角括弧を受け付けない）
       - name: Publish to gh-pages
-        env:
-          GIT_USER: github-actions[bot]
-          GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          git config --global user.name "$GIT_USER"
-          git config --global user.email "$GIT_EMAIL"
-          npx gh-pages -d dist -u "$GIT_USER <$GIT_EMAIL>" \
-            -m "Deploy ${{ github.sha }}"
+          git config --global user.name "github-actions"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npx gh-pages -d dist -m "Deploy ${{ github.sha }}"
