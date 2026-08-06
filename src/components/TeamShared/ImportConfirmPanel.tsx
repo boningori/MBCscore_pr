@@ -40,8 +40,8 @@ export function ImportConfirmPanel({ pendingImport, importTarget, onChangeImport
                 <>
                     <p className="import-info">📌 同じIDのチームが既にある場合、インポートしたデータで上書きされます。</p>
                     <div className="import-target-selector">
-                        <label>インポート先：</label>
-                        <select value={importTarget} onChange={e => onChangeImportTarget(e.target.value as ImportTarget)}>
+                        <label htmlFor="import-confirm-field-1">インポート先：</label>
+                        <select id="import-confirm-field-1" value={importTarget} onChange={e => onChangeImportTarget(e.target.value as ImportTarget)}>
                             <option value="myTeam">マイチーム</option>
                             <option value="opponent">対戦チーム</option>
                         </select>

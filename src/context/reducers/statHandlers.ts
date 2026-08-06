@@ -1,12 +1,7 @@
-import type { Game, GameAction, StatEntry } from '../../types/game';
+import type { Game, PayloadOf, StatEntry } from '../../types/game';
 
-export function handleAddStat(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, playerId, statType, entryId } = payload as {
-        teamId: string;
-        playerId: string;
-        statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA';
-        entryId?: string;  // 呼び出し側でUndo対象を特定するための明示ID（省略時は自動生成）
-    };
+export function handleAddStat(state: Game, payload: PayloadOf<'ADD_STAT'>): Game {
+    const { teamId, playerId, statType, entryId } = payload;
 
     const updatePlayerStat = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
@@ -56,8 +51,8 @@ export function handleAddStat(state: Game, payload: GameAction['payload']): Game
     };
 }
 
-export function handleRemoveStat(state: Game, payload: GameAction['payload']): Game {
-    const { entryId } = payload as { entryId: string };
+export function handleRemoveStat(state: Game, payload: PayloadOf<'REMOVE_STAT'>): Game {
+    const { entryId } = payload;
     const entry = state.statHistory.find(s => s.id === entryId);
     if (!entry) return state;
 
@@ -96,12 +91,8 @@ export function handleRemoveStat(state: Game, payload: GameAction['payload']): G
     };
 }
 
-export function handleEditStat(state: Game, payload: GameAction['payload']): Game {
-    const { entryId, newPlayerId, newStatType } = payload as {
-        entryId: string;
-        newPlayerId: string;
-        newStatType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA';
-    };
+export function handleEditStat(state: Game, payload: PayloadOf<'EDIT_STAT'>): Game {
+    const { entryId, newPlayerId, newStatType } = payload;
     const entry = state.statHistory.find(s => s.id === entryId);
     if (!entry) return state;
 

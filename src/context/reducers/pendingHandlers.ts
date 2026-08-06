@@ -1,30 +1,24 @@
 import type {
     Game,
-    GameAction,
+    PayloadOf,
     ScoreEntry,
     StatEntry,
     FoulEntry,
     FoulType,
     FoulRecord,
-    FreeThrowResult,
-    ShotSituation,
 } from '../../types/game';
-import type { PendingAction } from '../../types/pendingAction';
 import { recalculateRunningScores } from './shared';
 
-export function handleAddPendingAction(state: Game, payload: GameAction['payload']): Game {
-    const pendingAction = payload as PendingAction;
+export function handleAddPendingAction(state: Game, payload: PayloadOf<'ADD_PENDING_ACTION'>): Game {
+    const pendingAction = payload;
     return {
         ...state,
         pendingActions: [...state.pendingActions, pendingAction],
     };
 }
 
-export function handleResolvePendingAction(state: Game, payload: GameAction['payload']): Game {
-    const { pendingActionId, playerId } = payload as {
-        pendingActionId: string;
-        playerId: string;
-    };
+export function handleResolvePendingAction(state: Game, payload: PayloadOf<'RESOLVE_PENDING_ACTION'>): Game {
+    const { pendingActionId, playerId } = payload;
     const pending = state.pendingActions.find(p => p.id === pendingActionId);
     if (!pending) return state;
 
@@ -170,11 +164,8 @@ export function handleResolvePendingAction(state: Game, payload: GameAction['pay
     };
 }
 
-export function handleUpdatePendingActionCandidates(state: Game, payload: GameAction['payload']): Game {
-    const { pendingActionId, candidatePlayerIds } = payload as {
-        pendingActionId: string;
-        candidatePlayerIds: string[];
-    };
+export function handleUpdatePendingActionCandidates(state: Game, payload: PayloadOf<'UPDATE_PENDING_ACTION_CANDIDATES'>): Game {
+    const { pendingActionId, candidatePlayerIds } = payload;
     return {
         ...state,
         pendingActions: state.pendingActions.map(p =>
@@ -183,20 +174,16 @@ export function handleUpdatePendingActionCandidates(state: Game, payload: GameAc
     };
 }
 
-export function handleRemovePendingAction(state: Game, payload: GameAction['payload']): Game {
-    const { pendingActionId } = payload as { pendingActionId: string };
+export function handleRemovePendingAction(state: Game, payload: PayloadOf<'REMOVE_PENDING_ACTION'>): Game {
+    const { pendingActionId } = payload;
     return {
         ...state,
         pendingActions: state.pendingActions.filter(p => p.id !== pendingActionId),
     };
 }
 
-export function handleResolvePendingActionWithFoulType(state: Game, payload: GameAction['payload']): Game {
-    const { pendingActionId, playerId, foulType } = payload as {
-        pendingActionId: string;
-        playerId: string;
-        foulType: FoulType;
-    };
+export function handleResolvePendingActionWithFoulType(state: Game, payload: PayloadOf<'RESOLVE_PENDING_ACTION_WITH_FOUL_TYPE'>): Game {
+    const { pendingActionId, playerId, foulType } = payload;
     const pending = state.pendingActions.find(p => p.id === pendingActionId);
     if (!pending || pending.actionType !== 'FOUL') return state;
 
@@ -238,7 +225,7 @@ export function handleResolvePendingActionWithFoulType(state: Game, payload: Gam
     };
 }
 
-export function handleResolvePendingActionWithFreeThrows(state: Game, payload: GameAction['payload']): Game {
+export function handleResolvePendingActionWithFreeThrows(state: Game, payload: PayloadOf<'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS'>): Game {
     const {
         pendingActionId,
         playerId,
@@ -249,17 +236,7 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: G
         shooterTeamId,
         shooterPlayerId,
         shotMade,
-    } = payload as {
-        pendingActionId: string;
-        playerId: string;
-        foulType: FoulType;
-        shotSituation: ShotSituation;
-        shotMade?: boolean;
-        freeThrows: number;
-        freeThrowResults: FreeThrowResult[];
-        shooterTeamId: string;
-        shooterPlayerId: string;
-    };
+    } = payload;
 
     const pending = state.pendingActions.find(p => p.id === pendingActionId);
     if (!pending || pending.actionType !== 'FOUL') return state;
@@ -420,9 +397,9 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: G
     };
 }
 
-export function handleResolvePendingActionUnknown(state: Game, payload: GameAction['payload']): Game {
+export function handleResolvePendingActionUnknown(state: Game, payload: PayloadOf<'RESOLVE_PENDING_ACTION_UNKNOWN'>): Game {
     // 選手不明としてアクションを記録（統計履歴には残すが個人統計には加算しない）
-    const { pendingActionId } = payload as { pendingActionId: string };
+    const { pendingActionId } = payload;
     const pending = state.pendingActions.find(p => p.id === pendingActionId);
     if (!pending) return state;
 

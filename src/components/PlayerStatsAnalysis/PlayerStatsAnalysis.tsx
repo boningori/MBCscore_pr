@@ -98,32 +98,32 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
 
     if (myTeams.length === 0) {
         return (
-            <div className="player-stats-container">
+            <main className="player-stats-container">
                 <div className="player-stats-header">
                     <button className="btn-back" onClick={onBack}>
                         <span className="back-icon">←</span>
                         <span>ホーム</span>
                     </button>
-                    <h2>📊 選手スタッツ分析</h2>
+                    <h1>📊 選手スタッツ分析</h1>
                 </div>
                 <div className="empty-state">
                     <div className="empty-icon">🏀</div>
                     <h3>マイチームが登録されていません</h3>
                     <p>先にマイチームを登録してください</p>
                 </div>
-            </div>
+            </main>
         );
     }
 
     if (playerStats.length === 0 && viewMode === 'summary') {
         return (
-            <div className="player-stats-container">
+            <main className="player-stats-container">
                 <div className="player-stats-header">
                     <button className="btn-back" onClick={onBack}>
                         <span className="back-icon">←</span>
                         <span>ホーム</span>
                     </button>
-                    <h2>📊 選手スタッツ分析</h2>
+                    <h1>📊 選手スタッツ分析</h1>
                 </div>
                 <div className="controls-bar">
                     <div className="field-group">
@@ -172,18 +172,18 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                         <p>試合を記録すると選手スタッツが表示されます</p>
                     </div>
                 )}
-            </div>
+            </main>
         );
     }
 
     return (
-        <div className="player-stats-container">
+        <main className="player-stats-container">
             <div className="player-stats-header">
                 <button className="btn-back" onClick={viewMode === 'summary' ? onBack : handleBackToSummary}>
                     <span className="back-icon">←</span>
                     <span>{viewMode === 'summary' ? 'ホーム' : '一覧'}</span>
                 </button>
-                {viewMode === 'summary' && <h2>📊 選手スタッツ分析</h2>}
+                {viewMode === 'summary' && <h1>📊 選手スタッツ分析</h1>}
             </div>
 
             {viewMode === 'summary' && (
@@ -290,6 +290,6 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     onToggleHidden={handleTogglePlayerHidden}
                 />
             )}
-        </div>
+        </main>
     );
 }

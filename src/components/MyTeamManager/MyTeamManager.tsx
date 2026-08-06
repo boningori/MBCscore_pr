@@ -115,12 +115,12 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
     }
 
     return (
-        <div className="my-team-manager">
+        <main className="my-team-manager">
             <div className="manager-header">
                 <button className="btn btn-secondary" onClick={onBack}>
                     ← 戻る
                 </button>
-                <h2>{isSelectionMode ? 'マイチーム選択' : 'マイチーム管理'}</h2>
+                <h1>{isSelectionMode ? 'マイチーム選択' : 'マイチーム管理'}</h1>
             </div>
 
             <div className="manager-content">
@@ -230,7 +230,7 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                     onCancel={cancelDelete}
                 />
             )}
-        </div>
+        </main>
     );
 }
 
@@ -430,23 +430,24 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
     const isValid = name && players.length >= 5;
 
     return (
-        <div className="my-team-editor">
+        <main className="my-team-editor">
             <div className="editor-header">
                 <button className="btn btn-secondary" onClick={onCancel}>
                     ← キャンセル
                 </button>
-                <h2>{team.name ? 'チーム編集' : '新規チーム作成'}</h2>
+                <h1>{team.name ? 'チーム編集' : '新規チーム作成'}</h1>
             </div>
 
             <div className="editor-form">
                 <div className="form-section">
-                    <label className="form-label">チーム名 *</label>
+                    <label className="form-label" htmlFor="my-team-name">チーム名 *</label>
                     <input
                         type="text"
                         className="input"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="チーム名を入力"
+                        id="my-team-name"
+                            placeholder="チーム名を入力"
                         autoComplete="one-time-code"
                         name="team-name-field"
                         data-form-type="other"
@@ -456,13 +457,14 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                 </div>
 
                 <div className="form-section">
-                    <label className="form-label">コーチ</label>
+                    <label className="form-label" htmlFor="my-team-coach">コーチ</label>
                     <div className="editor-coach-row">
                         <input
                             type="text"
                             className="input editor-coach-name-input"
                             value={coachName}
                             onChange={e => setCoachName(e.target.value)}
+                            id="my-team-coach"
                             placeholder="コーチ名を入力"
                             autoComplete="one-time-code"
                             name="coach-name-field"
@@ -475,6 +477,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                             className="input editor-coach-license-input"
                             value={coachLicenseNo}
                             onChange={e => setCoachLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            aria-label="コーチのライセンスNo."
                             placeholder="ライセンスNo."
                             maxLength={10}
                             autoComplete="one-time-code"
@@ -487,13 +490,14 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                 </div>
 
                 <div className="form-section">
-                    <label className="form-label">Aコーチ</label>
+                    <label className="form-label" htmlFor="my-team-acoach">Aコーチ</label>
                     <div className="editor-coach-row">
                         <input
                             type="text"
                             className="input editor-coach-name-input"
                             value={assistantCoachName}
                             onChange={e => setAssistantCoachName(e.target.value)}
+                            id="my-team-acoach"
                             placeholder="Aコーチ名を入力"
                             autoComplete="one-time-code"
                             name="assistant-coach-field"
@@ -506,6 +510,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                             className="input editor-coach-license-input"
                             value={assistantCoachLicenseNo}
                             onChange={e => setAssistantCoachLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            aria-label="AコーチのライセンスNo."
                             placeholder="ライセンスNo."
                             maxLength={10}
                             autoComplete="one-time-code"
@@ -528,6 +533,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                             className="input player-number-input"
                             value={newBibNumber}
                             onChange={e => setNewBibNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                            aria-label="ビブス番号"
                             placeholder="ビブス"
                             maxLength={2}
                             autoComplete="one-time-code"
@@ -540,6 +546,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                             className="input player-number-input"
                             value={newUniformNumber}
                             onChange={e => setNewUniformNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                            aria-label="ユニフォーム番号"
                             placeholder="ユニ"
                             maxLength={2}
                             autoComplete="one-time-code"
@@ -552,6 +559,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                             className="input player-name-input"
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
+                            aria-label="選手名"
                             placeholder="氏名"
                             autoComplete="one-time-code"
                             name="player-name-field"
@@ -563,6 +571,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                             className="input player-courtname-input"
                             value={newCourtName}
                             onChange={e => setNewCourtName(e.target.value)}
+                            aria-label="コートネーム"
                             placeholder="コートネーム"
                             autoComplete="one-time-code"
                             name="court-name-field"
@@ -574,6 +583,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                             className="input player-license-input"
                             value={newLicenseNo}
                             onChange={e => setNewLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                            aria-label="選手のライセンスNo."
                             placeholder="ライセンスNo."
                             maxLength={10}
                             autoComplete="one-time-code"
@@ -602,6 +612,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                             className="input player-number-input"
                                             value={editBibNumber}
                                             onChange={e => setEditBibNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                                            aria-label="ビブス番号"
                                             placeholder="ビブス"
                                             maxLength={2}
                                             autoFocus
@@ -615,6 +626,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                             className="input player-number-input"
                                             value={editUniformNumber}
                                             onChange={e => setEditUniformNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                                            aria-label="ユニフォーム番号"
                                             placeholder="ユニ"
                                             maxLength={2}
                                             autoComplete="one-time-code"
@@ -627,6 +639,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                             className="input player-name-input"
                                             value={editName}
                                             onChange={e => setEditName(e.target.value)}
+                                            aria-label="選手名"
                                             placeholder="氏名"
                                             autoComplete="one-time-code"
                                             name="edit-player-name"
@@ -638,6 +651,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                             className="input player-courtname-input"
                                             value={editCourtName}
                                             onChange={e => setEditCourtName(e.target.value)}
+                                            aria-label="コートネーム"
                                             placeholder="コートネーム"
                                             autoComplete="one-time-code"
                                             name="edit-court-name"
@@ -649,6 +663,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                                             className="input player-license-input"
                                             value={editLicenseNo}
                                             onChange={e => setEditLicenseNo(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                            aria-label="選手のライセンスNo."
                                             placeholder="ライセンスNo."
                                             maxLength={10}
                                             autoComplete="one-time-code"
@@ -738,6 +753,6 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                     </button>
                 </div>
             </div>
-        </div>
+        </main>
     );
 }

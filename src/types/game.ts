@@ -220,11 +220,98 @@ export type GameActionType =
     | 'SET_SHOW_THREE_POINT'
     | 'SET_QUARTER_MINUTES';
 
-// ゲームアクション
-export interface GameAction {
-    type: GameActionType;
-    payload?: unknown;
+// スタッツ種別（ADD_STAT / EDIT_STAT のペイロード用）
+export type StatType =
+    | 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK'
+    | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM'
+    | '2PA' | '3PA' | 'FTA';
+
+// 得点種別
+export type ScoreType = '2P' | '3P' | 'FT';
+
+// ベンチテクニカルの種類
+export type BenchTechType = 'HC' | 'AC' | 'Sub' | 'Bench';
+
+/** ファウル＋フリースローの共通ペイロード */
+interface FoulWithFreeThrowsBase {
+    foulType: FoulType;
+    shotSituation: ShotSituation;
+    shotMade?: boolean;
+    freeThrows: number;
+    freeThrowResults: FreeThrowResult[];
+    shooterTeamId: string;
+    shooterPlayerId: string;
 }
+
+/**
+ * ゲームアクション（判別可能ユニオン）。
+ *
+ * 以前は `{ type: GameActionType; payload?: unknown }` で、37アクションすべての
+ * ペイロードが無検査だった。reducer側は29箇所で `payload as {...}` にキャストし、
+ * dispatch側は何を渡しても通る。
+ *
+ * 実害が出ていた: App.tsx の handleLineupStart が quartersPlayed に `true` を
+ * 書いていたが、型は 'starter' | 'sub' | 'both' | false でコンパイラは素通しした
+ * （直後の START_GAME が上書きするため表面化していなかっただけ）。
+ *
+ * ここを union にすると、dispatch のペイロードが型で守られ、reducer側の
+ * キャストも要らなくなる。
+ */
+export type GameAction =
+    // フェーズ
+    | { type: 'SET_TEAMS'; payload: { teamA: Team; teamB: Team; showThreePoint?: boolean; quarterMinutes?: 5 | 6 } }
+    | { type: 'START_GAME' }
+    | { type: 'PAUSE_GAME' }
+    | { type: 'RESUME_GAME' }
+    | { type: 'END_QUARTER' }
+    | { type: 'UNDO_QUARTER_END' }
+    | { type: 'END_GAME' }
+    | { type: 'RESET_GAME' }
+    | { type: 'SET_END_TIME'; payload: { endTime: Date | null } }
+    // 得点
+    | { type: 'ADD_SCORE'; payload: { teamId: string; playerId: string; scoreType: ScoreType; entryId?: string } }
+    | { type: 'REMOVE_SCORE'; payload: { entryId: string } }
+    | { type: 'EDIT_SCORE'; payload: { entryId: string; newPlayerId: string; newScoreType: ScoreType } }
+    | { type: 'CONVERT_SCORE_TO_MISS'; payload: { entryId: string; newMissType: '2PA' | '3PA' | 'FTA' } }
+    | { type: 'CONVERT_MISS_TO_SCORE'; payload: { entryId: string; newScoreType: ScoreType } }
+    | { type: 'TOGGLE_OWN_GOAL'; payload: { entryId: string } }
+    // スタッツ
+    | { type: 'ADD_STAT'; payload: { teamId: string; playerId: string; statType: StatType; entryId?: string } }
+    | { type: 'REMOVE_STAT'; payload: { entryId: string } }
+    | { type: 'EDIT_STAT'; payload: { entryId: string; newPlayerId: string; newStatType: StatType } }
+    // ファウル
+    | { type: 'ADD_FOUL'; payload: { teamId: string; playerId: string | null; foulType: FoulType } }
+    | {
+        type: 'ADD_FOUL_WITH_FREE_THROWS';
+        payload: FoulWithFreeThrowsBase & { teamId: string; playerId: string | null; benchTechType?: BenchTechType };
+    }
+    | { type: 'REMOVE_FOUL'; payload: { entryId: string } }
+    // 管理
+    | { type: 'SUBSTITUTE_PLAYER'; payload: { teamId: string; playerInId: string; playerOutId: string } }
+    | { type: 'ADD_TIMEOUT'; payload: { teamId: string; elapsedMinutes: number } }
+    | { type: 'ADD_PLAYER_TO_TEAM'; payload: { teamId: string; number: number; name: string } }
+    | { type: 'SELECT_PLAYER'; payload: { playerId: Game['selectedPlayerId']; teamId: Game['selectedTeamId'] } }
+    | { type: 'CLEAR_SELECTION' }
+    // 未解決アクション
+    | { type: 'ADD_PENDING_ACTION'; payload: PendingAction }
+    | { type: 'RESOLVE_PENDING_ACTION'; payload: { pendingActionId: string; playerId: string } }
+    | { type: 'RESOLVE_PENDING_ACTION_WITH_FOUL_TYPE'; payload: { pendingActionId: string; playerId: string; foulType: FoulType } }
+    | {
+        type: 'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS';
+        payload: FoulWithFreeThrowsBase & { pendingActionId: string; playerId: string };
+    }
+    | { type: 'RESOLVE_PENDING_ACTION_UNKNOWN'; payload: { pendingActionId: string } }
+    | { type: 'UPDATE_PENDING_ACTION_CANDIDATES'; payload: { pendingActionId: string; candidatePlayerIds: string[] } }
+    | { type: 'REMOVE_PENDING_ACTION'; payload: { pendingActionId: string } }
+    // 設定・復元
+    | { type: 'RESTORE_GAME'; payload: { game: Game } }
+    | { type: 'UPDATE_GAME_INFO'; payload: Partial<GameInfo> }
+    | { type: 'SET_SHOW_THREE_POINT'; payload: { showThreePoint: boolean } }
+    | { type: 'SET_QUARTER_MINUTES'; payload: { quarterMinutes: 5 | 6 } };
+
+/** GameAction から特定のtypeのペイロード型を取り出す（ハンドラの引数用） */
+export type PayloadOf<T extends GameAction['type']> =
+    Extract<GameAction, { type: T }> extends { payload: infer P } ? P : never;
 
 // 初期選手統計
 export const createInitialStats = (): PlayerStats => ({

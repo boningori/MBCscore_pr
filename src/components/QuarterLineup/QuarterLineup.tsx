@@ -97,7 +97,7 @@ export function QuarterLineup({
         : `Q${quarter}`;
 
     return (
-        <div className="quarter-lineup">
+        <main className="quarter-lineup">
             <div className="quarter-lineup-header">
                 {onBack && (
                     <button className="btn btn-secondary" onClick={onBack}>
@@ -107,7 +107,7 @@ export function QuarterLineup({
                 <div className={`quarter-badge ${quarterClass}`}>
                     {quarterLabel}
                 </div>
-                <h2>スタメン選択</h2>
+                <h1>スタメン選択</h1>
             </div>
 
             {/* この画面のままスコアを確認できるようにする（確認のために戻る操作を不要にする） */}
@@ -171,6 +171,6 @@ export function QuarterLineup({
             </div>
 
             {!isValid && <p className="lineup-incomplete-hint">{incompleteMessage}</p>}
-        </div>
+        </main>
     );
 }

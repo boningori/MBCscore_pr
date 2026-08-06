@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { ScoreEntry, StatEntry, FoulEntry, Player } from '../../types/game';
+import type { ScoreEntry, StatEntry, FoulEntry, Player, ScoreType, StatType } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { EditActionModal } from '../EditActionModal';
 import './ActionHistory.css';
@@ -21,8 +21,8 @@ interface ActionHistoryProps {
     onRemoveScore: (entryId: string) => void;
     onRemoveStat: (entryId: string) => void;
     onRemoveFoul: (entryId: string) => void;
-    onEditScore?: (entryId: string, newPlayerId: string, newScoreType: string) => void;
-    onEditStat?: (entryId: string, newPlayerId: string, newStatType: string) => void;
+    onEditScore?: (entryId: string, newPlayerId: string, newScoreType: ScoreType) => void;
+    onEditStat?: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
     onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => void;
     onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT') => void;
     onToggleOwnGoal?: (entryId: string) => void;
@@ -284,10 +284,13 @@ export function ActionHistory({
 
     const handleEditSave = useCallback((itemId: string, newPlayerId: string, newType: string) => {
         if (!editingItem) return;
+        // EditActionModal は得点・スタッツ両方を1つのコールバックで返すため
+        // newType は string。どちらの編集かはこの分岐で確定しているので、
+        // ここで絞る（選択肢は各種別の一覧から生成している）
         if (editingItem.type === 'score' && onEditScore) {
-            onEditScore(itemId, newPlayerId, newType);
+            onEditScore(itemId, newPlayerId, newType as ScoreType);
         } else if (editingItem.type === 'stat' && onEditStat) {
-            onEditStat(itemId, newPlayerId, newType);
+            onEditStat(itemId, newPlayerId, newType as StatType);
         }
         setEditingItem(null);
     }, [editingItem, onEditScore, onEditStat]);

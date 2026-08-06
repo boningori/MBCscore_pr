@@ -94,7 +94,7 @@
     margin-bottom: 20px;
 }
 
-.player-stats-container .player-stats-header h2 {
+.player-stats-container .player-stats-header h1 {
     margin: 0;
     font-size: 1.3rem;
     font-weight: 700;}
@@ -1504,7 +1504,7 @@
         padding: 12px;
     }
 
-    .player-stats-container .player-stats-header h2 {
+    .player-stats-container .player-stats-header h1 {
         font-size: 1.1rem;
     }
 
@@ -1595,7 +1595,7 @@
     background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
 }
 
-.player-stats-container .player-stats-header h2 {
+.player-stats-container .player-stats-header h1 {
     color: var(--stats-text-bright);
 }
 

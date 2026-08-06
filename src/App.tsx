@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
-import type { Team, FoulType, FreeThrowResult, ShotSituation } from './types/game';
+import type { Team, FoulType, FreeThrowResult, ShotSituation, ScoreType, StatType } from './types/game';
 import type { SavedTeam, NumberType } from './utils/teamStorage';
 import { formatPlayerNumber } from './utils/playerNumber';
 import type { PendingAction } from './types/pendingAction';
@@ -289,7 +289,7 @@ function AppContent() {
   };
 
   // スタッツを記録し、Undoスナックバーを表示する
-  const recordStat = (teamId: string, playerId: string, statType: string) => {
+  const recordStat = (teamId: string, playerId: string, statType: StatType) => {
     const entryId = crypto.randomUUID();
     dispatch({ type: 'ADD_STAT', payload: { teamId, playerId, statType, entryId } });
     setUndoInfo({
@@ -317,9 +317,10 @@ function AppContent() {
       if (pendingAction.type === 'SCORE') {
         recordScore(teamId, playerId, pendingAction.value as '2P' | '3P' | 'FT');
       } else if (pendingAction.type === 'STAT') {
-        recordStat(teamId, playerId, pendingAction.value as string);
+        // value は ActionButtons が渡す固定の種別文字列（StatType のいずれか）
+        recordStat(teamId, playerId, pendingAction.value as StatType);
       } else if (pendingAction.type === 'MISS') {
-        recordStat(teamId, playerId, pendingAction.value as string);
+        recordStat(teamId, playerId, pendingAction.value as StatType);
       } else if (pendingAction.type === 'FOUL') {
         // ファウルタイプセレクター表示のために選択状態にする
         dispatch({ type: 'SELECT_PLAYER', payload: { playerId, teamId } });
@@ -689,9 +690,14 @@ function AppContent() {
       players: team.players.map(p => ({
         ...p,
         isOnCourt: startingPlayerIds.includes(p.id),
-        // 出場クォーターを記録
+        // 出場クォーターを記録。
+        // ここは長らく `true` を書いていた（QuarterPlayType に無い値）。
+        // 直後の START_GAME が 'starter' で上書きするため表面化していなかったが、
+        // それを保証していたのは Scoreboard 側の phase === 'quarterEnd' ガード1本
+        // だけで、型は素通しだった。GameAction を判別可能ユニオンにした際に
+        // コンパイラが検出したので、はじめから正しい値を書く
         quartersPlayed: p.quartersPlayed.map((played, i) =>
-          i === currentQuarter - 1 ? (startingPlayerIds.includes(p.id) ? true : played) : played
+          i === currentQuarter - 1 ? (startingPlayerIds.includes(p.id) ? 'starter' : played) : played
         ),
       })),
     });
@@ -817,12 +823,12 @@ function AppContent() {
   };
 
   // スコア編集
-  const handleEditScore = (entryId: string, newPlayerId: string, newScoreType: string) => {
+  const handleEditScore = (entryId: string, newPlayerId: string, newScoreType: ScoreType) => {
     dispatch({ type: 'EDIT_SCORE', payload: { entryId, newPlayerId, newScoreType } });
   };
 
   // スタッツ編集
-  const handleEditStat = (entryId: string, newPlayerId: string, newStatType: string) => {
+  const handleEditStat = (entryId: string, newPlayerId: string, newStatType: StatType) => {
     dispatch({ type: 'EDIT_STAT', payload: { entryId, newPlayerId, newStatType } });
   };
 

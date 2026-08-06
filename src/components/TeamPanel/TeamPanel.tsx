@@ -1,4 +1,4 @@
-import type { Player, ScoreEntry, StatEntry, FoulEntry } from '../../types/game';
+import type { Player, ScoreEntry, StatEntry, FoulEntry, ScoreType, StatType } from '../../types/game';
 import { MAX_PERSONAL_FOULS } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { ActionHistory } from '../ActionHistory';
@@ -7,8 +7,8 @@ interface ActionHistoryHandlers {
   onRemoveScore: (entryId: string) => void;
   onRemoveStat: (entryId: string) => void;
   onRemoveFoul: (entryId: string) => void;
-  onEditScore: (entryId: string, newPlayerId: string, newScoreType: string) => void;
-  onEditStat: (entryId: string, newPlayerId: string, newStatType: string) => void;
+  onEditScore: (entryId: string, newPlayerId: string, newScoreType: ScoreType) => void;
+  onEditStat: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
   onConvertScoreToMiss: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => void;
   onConvertMissToScore: (entryId: string, newScoreType: '2P' | '3P' | 'FT') => void;
   onToggleOwnGoal: (entryId: string) => void;

@@ -130,8 +130,8 @@ export function EditActionModal({
 
                 <div className="edit-form">
                     <div className="form-group">
-                        <label>選手</label>
-                        <select
+                        <label htmlFor="edit-action-field-1">選手</label>
+                        <select id="edit-action-field-1"
                             value={selectedPlayerId}
                             onChange={e => setSelectedPlayerId(e.target.value)}
                         >
@@ -144,10 +144,10 @@ export function EditActionModal({
                     </div>
 
                     <div className="form-group">
-                        <label>
+                        <label htmlFor="edit-action-field-2">
                             {isOriginalShotRelated ? 'シュート結果' : 'スタッツ種類'}
                         </label>
-                        <select
+                        <select id="edit-action-field-2"
                             value={selectedType}
                             onChange={e => setSelectedType(e.target.value)}
                         >
