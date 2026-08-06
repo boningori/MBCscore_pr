@@ -49,17 +49,15 @@ import { shareBackup } from './utils/dataBackup';
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameMode } from './hooks/useGameMode';
 import { useGameAutoSave } from './hooks/useGameAutoSave';
+import { GAME_SCREENS, type AppScreen } from './types/screens';
 import { useWakeLock } from './hooks/useWakeLock';
 
 import { useScreenHistorySync } from './hooks/useScreenHistorySync';
 import './App.css';
 
-// アプリの画面状態
-type AppScreen = 'home' | 'myTeamManager' | 'opponentManager' | 'gameSetup' | 'game' | 'quarterLineup' | 'history' | 'scoresheet' | 'playerStats';
-
-// 試合データがないと表示できない画面（戻る/進むでの復元をガードする対象）。
-// 試合系画面を追加したらここにも追加すること
-const GAME_SCREENS: readonly AppScreen[] = ['game', 'quarterLineup', 'scoresheet'];
+// 画面の識別子と試合系画面の集合は types/screens.ts に置く。
+// 戻る/進むの復元ガードと自動保存が同じ集合を見る必要があり、
+// 片方（フック側）から App.tsx を参照できないため。
 
 // Undoスナックバー用のスタッツ表示名
 const STAT_UNDO_LABELS: Record<string, string> = {
