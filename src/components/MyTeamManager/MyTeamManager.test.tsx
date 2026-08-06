@@ -148,21 +148,46 @@ describe('MyTeamManager: 選手の追加', () => {
         expect(screen.queryByText('重複くん')).toBeNull();
     });
 
-    // 番号欄は maxLength=2 なので3桁は入力できず、範囲外の値自体を作れない。
-    // 実際に起きるのは「番号を入れ忘れる」ほう。
-    // 現状の追加処理は番号が無いと無言で return する（既存選手の「編集」側には
-    // 「いずれかを入力してください」の案内があるので、追加側だけ黙っている）。
-    // ここでは現在の挙動を固定する。案内を足すなら、このテストも一緒に変える
-    it('番号を入れずに追加しても登録されない（現状は案内も出ない）', () => {
+    it('未入力のうちは「追加」ボタンが押せない（何が足りないかは欄を見れば分かる）', () => {
+        seed([team()]);
+        render(<MyTeamManager onBack={vi.fn()} />);
+        openEditor();
+
+        const add = () => screen.getByRole('button', { name: '追加' }) as HTMLButtonElement;
+        expect(add().disabled).toBe(true);
+
+        fireEvent.change(screen.getByLabelText('選手名'), { target: { value: '番号なし' } });
+        expect(add().disabled).toBe(true);
+
+        fireEvent.change(screen.getByLabelText('ビブス番号'), { target: { value: '9' } });
+        expect(add().disabled).toBe(false);
+    });
+
+    // ライセンスNo.欄のEnterは handleAddPlayer を直接呼ぶため、
+    // disabledなボタンを迂回して未入力のまま実行されうる。
+    // 以前はそこで無言でreturnしていた（押しても何も起きない）
+    it('入力が足りないままEnterを押したら、何が足りないかを知らせる', () => {
+        seed([team()]);
+        render(<MyTeamManager onBack={vi.fn()} />);
+        openEditor();
+
+        fireEvent.change(screen.getByLabelText('ビブス番号'), { target: { value: '9' } });
+        fireEvent.keyDown(screen.getByLabelText('選手のライセンスNo.'), { key: 'Enter' });
+
+        expect(showToast).toHaveBeenCalledWith('氏名を入力してください', 'error');
+    });
+
+    it('番号が無いままEnterを押したときも知らせる', () => {
         seed([team()]);
         render(<MyTeamManager onBack={vi.fn()} />);
         openEditor();
 
         fireEvent.change(screen.getByLabelText('選手名'), { target: { value: '番号なし' } });
-        fireEvent.click(screen.getByRole('button', { name: '追加' }));
+        fireEvent.keyDown(screen.getByLabelText('選手のライセンスNo.'), { key: 'Enter' });
 
+        expect(showToast).toHaveBeenCalledWith(
+            'ビブス番号またはユニフォーム番号のいずれかを入力してください', 'error');
         expect(screen.queryByText('番号なし')).toBeNull();
-        expect(showToast).not.toHaveBeenCalled();
     });
 
     it('空いている番号なら追加できる', () => {

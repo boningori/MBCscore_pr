@@ -269,8 +269,18 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
     const [editLicenseNo, setEditLicenseNo] = useState('');
 
     const handleAddPlayer = () => {
-        // 少なくとも1つの番号と氏名が必要
-        if ((!newBibNumber && !newUniformNumber) || !newName) return;
+        // 少なくとも1つの番号と氏名が必要。
+        // 「追加」ボタンは同じ条件で disabled にしてあるが、ライセンスNo.欄の
+        // Enter がここを直接呼ぶため、ボタンを迂回して未入力のまま来る。
+        // 以前は黙って return していて「押しても何も起きない」状態だった
+        if (!newBibNumber && !newUniformNumber) {
+            showStatus('ビブス番号またはユニフォーム番号のいずれかを入力してください', 'error');
+            return;
+        }
+        if (!newName) {
+            showStatus('氏名を入力してください', 'error');
+            return;
+        }
 
         // 「00」は「0」と別の番号として内部値100で扱う（parsePlayerNumber）
         const bibNum = newBibNumber ? parsePlayerNumber(newBibNumber) : undefined;

@@ -30,7 +30,7 @@ function withStarterOnCourt(): Game {
     const game = makeGame();
     game.teamA.players = game.teamA.players.map(p =>
         p.id === 'a1'
-            ? { ...p, isOnCourt: true, quartersPlayed: ['starter', null, null, null] }
+            ? { ...p, isOnCourt: true, quartersPlayed: ['starter', false, false, false] }
             : { ...p, isOnCourt: false }
     );
     return game;
@@ -200,7 +200,7 @@ describe('gameReducer: ADD_TIMEOUT', () => {
 
 describe('gameReducer: END_GAME', () => {
     it('試合終了に遷移する', () => {
-        const state = gameReducer(makeGame(), { type: 'END_GAME', payload: {} });
+        const state = gameReducer(makeGame(), { type: 'END_GAME' });
         expect(state.phase).toBe('finished');
     });
 });

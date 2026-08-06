@@ -419,7 +419,6 @@ describe('shareBackup', () => {
     afterEach(() => {
         vi.restoreAllMocks();
         // テストで差し込んだ navigator.share を除去
-        // @ts-expect-error テスト用クリーンアップ
         delete (navigator as unknown as { share?: unknown }).share;
     });
 
@@ -435,9 +434,7 @@ describe('shareBackup', () => {
             if (tag === 'a') el.click = () => {};
             return el as HTMLElement;
         });
-        // @ts-expect-error jsdom未実装APIのスタブ
         URL.createObjectURL = () => 'blob:mock';
-        // @ts-expect-error jsdom未実装APIのスタブ
         URL.revokeObjectURL = () => {};
 
         const ok = await shareBackup();
@@ -451,7 +448,6 @@ describe('shareBackup', () => {
         saveGameResult('第1試合', teamA, teamB, [], [], []);
 
         // navigator.share を成功するモックに
-        // @ts-expect-error テスト用に share を注入
         navigator.share = vi.fn().mockResolvedValue(undefined);
         const downloadSpy = vi.spyOn(URL, 'createObjectURL');
 
@@ -468,17 +464,13 @@ describe('shareFile モバイル共有（.json共有不可対策）', () => {
     });
     afterEach(() => {
         vi.restoreAllMocks();
-        // @ts-expect-error テスト用クリーンアップ
         delete (navigator as unknown as { share?: unknown }).share;
-        // @ts-expect-error テスト用クリーンアップ
         delete (navigator as unknown as { canShare?: unknown }).canShare;
     });
 
     it('.jsonファイル名でも共有時は.txt(text/plain)として共有し、titleに日付入りファイル名を使う', async () => {
         let payload: { files: File[]; title?: string } | undefined;
-        // @ts-expect-error テスト用に注入
         navigator.canShare = () => true;
-        // @ts-expect-error テスト用に注入
         navigator.share = vi.fn(async (p: { files: File[]; title?: string }) => { payload = p; });
 
         const ok = await shareFile({ a: 1 }, 'MBCscore_backup_2026-07-10_10-30.json');
@@ -495,10 +487,8 @@ describe('shareFile モバイル共有（.json共有不可対策）', () => {
     });
 
     it('canShareがfalseを返す場合は共有せずfalseを返す（呼び出し側がダウンロードにフォールバック）', async () => {
-        // @ts-expect-error テスト用に注入
         navigator.canShare = () => false;
         const shareSpy = vi.fn();
-        // @ts-expect-error テスト用に注入
         navigator.share = shareSpy;
 
         const ok = await shareFile({ a: 1 }, 'x.json');
