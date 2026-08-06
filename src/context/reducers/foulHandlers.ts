@@ -1,22 +1,16 @@
 import type {
     Game,
-    GameAction,
+    PayloadOf,
     FoulEntry,
     FoulType,
     FoulRecord,
-    FreeThrowResult,
-    ShotSituation,
     CoachFoulTarget,
     ScoreEntry,
 } from '../../types/game';
 import { recalculateRunningScores } from './shared';
 
-export function handleAddFoul(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, playerId, foulType } = payload as {
-        teamId: string;
-        playerId: string | null;
-        foulType: FoulType;
-    };
+export function handleAddFoul(state: Game, payload: PayloadOf<'ADD_FOUL'>): Game {
+    const { teamId, playerId, foulType } = payload;
 
     const isCoachOrBench = playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
     const coachFoulTarget: CoachFoulTarget = playerId === 'COACH' ? 'COACH'
@@ -97,7 +91,7 @@ export function handleAddFoul(state: Game, payload: GameAction['payload']): Game
     };
 }
 
-export function handleAddFoulWithFreeThrows(state: Game, payload: GameAction['payload']): Game {
+export function handleAddFoulWithFreeThrows(state: Game, payload: PayloadOf<'ADD_FOUL_WITH_FREE_THROWS'>): Game {
     const {
         teamId,
         playerId,
@@ -109,18 +103,7 @@ export function handleAddFoulWithFreeThrows(state: Game, payload: GameAction['pa
         shooterPlayerId,
         shotMade,
         benchTechType,  // ベンチテクニカルの種類（HC/AC/Sub/Bench）
-    } = payload as {
-        teamId: string;
-        playerId: string | null;
-        foulType: FoulType;
-        shotSituation: ShotSituation;
-        shotMade?: boolean;
-        freeThrows: number;
-        freeThrowResults: FreeThrowResult[];
-        shooterTeamId: string;
-        shooterPlayerId: string;
-        benchTechType?: 'HC' | 'AC' | 'Sub' | 'Bench';
-    };
+    } = payload;
 
     // ベンチテクニカル関連の判定
     const isCoachOrBench = playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
@@ -325,8 +308,8 @@ export function handleAddFoulWithFreeThrows(state: Game, payload: GameAction['pa
     };
 }
 
-export function handleRemoveFoul(state: Game, payload: GameAction['payload']): Game {
-    const { entryId } = payload as { entryId: string };
+export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>): Game {
+    const { entryId } = payload;
     const entry = state.foulHistory.find(f => f.id === entryId);
     if (!entry) return state;
 

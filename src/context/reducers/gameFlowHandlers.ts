@@ -1,18 +1,12 @@
 import type {
     Game,
-    GameAction,
+    PayloadOf,
     Player,
-    GameInfo,
 } from '../../types/game';
 import { createInitialGameInfo, DEFAULT_QUARTER_MINUTES } from '../../types/game';
 
-export function handleSetTeams(state: Game, payload: GameAction['payload']): Game {
-    const { teamA, teamB, showThreePoint, quarterMinutes } = payload as {
-        teamA: Game['teamA'];
-        teamB: Game['teamB'];
-        showThreePoint?: boolean;
-        quarterMinutes?: 5 | 6;
-    };
+export function handleSetTeams(state: Game, payload: PayloadOf<'SET_TEAMS'>): Game {
+    const { teamA, teamB, showThreePoint, quarterMinutes } = payload;
     // デフォルトカラー設定（setupデータから来る場合は上書きされる可能性があるが、ここで保証する）
     const teamAWithColor = { ...teamA, color: teamA.color || 'white' };
     const teamBWithColor = { ...teamB, color: teamB.color || 'blue' };
@@ -115,11 +109,8 @@ export function handleUndoQuarterEnd(state: Game): Game {
     };
 }
 
-export function handleAddTimeout(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, elapsedMinutes } = payload as {
-        teamId: string;
-        elapsedMinutes: number;
-    };
+export function handleAddTimeout(state: Game, payload: PayloadOf<'ADD_TIMEOUT'>): Game {
+    const { teamId, elapsedMinutes } = payload;
 
     const updateTeamTimeout = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
@@ -136,12 +127,8 @@ export function handleAddTimeout(state: Game, payload: GameAction['payload']): G
     };
 }
 
-export function handleSubstitutePlayer(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, playerInId, playerOutId } = payload as {
-        teamId: string;
-        playerInId: string;
-        playerOutId: string;
-    };
+export function handleSubstitutePlayer(state: Game, payload: PayloadOf<'SUBSTITUTE_PLAYER'>): Game {
+    const { teamId, playerInId, playerOutId } = payload;
 
     const updateTeamSubstitution = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
@@ -177,12 +164,8 @@ export function handleSubstitutePlayer(state: Game, payload: GameAction['payload
     };
 }
 
-export function handleAddPlayerToTeam(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, number, name } = payload as {
-        teamId: string;
-        number: number;
-        name: string;
-    };
+export function handleAddPlayerToTeam(state: Game, payload: PayloadOf<'ADD_PLAYER_TO_TEAM'>): Game {
+    const { teamId, number, name } = payload;
 
     const quarterCount = Math.max(4, state.teamA.teamFouls.length);
     const newPlayer: Player = {
@@ -233,13 +216,13 @@ export function handleAddPlayerToTeam(state: Game, payload: GameAction['payload'
     };
 }
 
-export function handleSelectPlayer(state: Game, payload: GameAction['payload']): Game {
-    const { playerId, teamId } = payload as { playerId: Game['selectedPlayerId']; teamId: Game['selectedTeamId'] };
+export function handleSelectPlayer(state: Game, payload: PayloadOf<'SELECT_PLAYER'>): Game {
+    const { playerId, teamId } = payload;
     return { ...state, selectedPlayerId: playerId, selectedTeamId: teamId };
 }
 
-export function handleRestoreGame(payload: GameAction['payload']): Game {
-    const { game } = payload as { game: Game };
+export function handleRestoreGame(payload: PayloadOf<'RESTORE_GAME'>): Game {
+    const { game } = payload;
     // 古いデータとの互換性のため、新しいフィールドを補完
     const migrateTeam = (team: typeof game.teamA) => ({
         ...team,
@@ -255,8 +238,8 @@ export function handleRestoreGame(payload: GameAction['payload']): Game {
     };
 }
 
-export function handleUpdateGameInfo(state: Game, payload: GameAction['payload']): Game {
-    const gameInfo = payload as Partial<GameInfo>;
+export function handleUpdateGameInfo(state: Game, payload: PayloadOf<'UPDATE_GAME_INFO'>): Game {
+    const gameInfo = payload;
     return {
         ...state,
         gameInfo: {

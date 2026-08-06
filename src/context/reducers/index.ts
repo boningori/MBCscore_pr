@@ -64,10 +64,10 @@ export function gameReducer(state: Game, action: GameAction): Game {
             return handleUndoQuarterEnd(state);
 
         case 'SET_SHOW_THREE_POINT':
-            return { ...state, showThreePoint: (action.payload as { showThreePoint: boolean }).showThreePoint };
+            return { ...state, showThreePoint: action.payload.showThreePoint };
 
         case 'SET_QUARTER_MINUTES':
-            return { ...state, quarterMinutes: (action.payload as { quarterMinutes: 5 | 6 }).quarterMinutes };
+            return { ...state, quarterMinutes: action.payload.quarterMinutes };
 
         case 'END_GAME':
             return { ...state, phase: 'finished', endTime: new Date() };
@@ -154,7 +154,7 @@ export function gameReducer(state: Game, action: GameAction): Game {
             return handleToggleOwnGoal(state, action.payload);
 
         case 'SET_END_TIME': {
-            const { endTime } = action.payload as { endTime: Date | null };
+            const { endTime } = action.payload;
             return { ...state, endTime };
         }
 

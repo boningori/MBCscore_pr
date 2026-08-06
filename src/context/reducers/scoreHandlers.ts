@@ -1,13 +1,8 @@
-import type { Game, GameAction, ScoreEntry, StatEntry } from '../../types/game';
+import type { Game, PayloadOf, ScoreEntry, StatEntry } from '../../types/game';
 import { recalculateRunningScores } from './shared';
 
-export function handleAddScore(state: Game, payload: GameAction['payload']): Game {
-    const { teamId, playerId, scoreType, entryId } = payload as {
-        teamId: string;
-        playerId: string;
-        scoreType: '2P' | '3P' | 'FT';
-        entryId?: string;  // 呼び出し側でUndo対象を特定するための明示ID（省略時は自動生成）
-    };
+export function handleAddScore(state: Game, payload: PayloadOf<'ADD_SCORE'>): Game {
+    const { teamId, playerId, scoreType, entryId } = payload;
     const points = scoreType === '3P' ? 3 : scoreType === '2P' ? 2 : 1;
 
     const updateTeamScore = (team: typeof state.teamA, isTarget: boolean) => {
@@ -59,8 +54,8 @@ export function handleAddScore(state: Game, payload: GameAction['payload']): Gam
     };
 }
 
-export function handleRemoveScore(state: Game, payload: GameAction['payload']): Game {
-    const { entryId } = payload as { entryId: string };
+export function handleRemoveScore(state: Game, payload: PayloadOf<'REMOVE_SCORE'>): Game {
+    const { entryId } = payload;
     const entry = state.scoreHistory.find(s => s.id === entryId);
     if (!entry) return state;
 
@@ -96,12 +91,8 @@ export function handleRemoveScore(state: Game, payload: GameAction['payload']): 
     };
 }
 
-export function handleEditScore(state: Game, payload: GameAction['payload']): Game {
-    const { entryId, newPlayerId, newScoreType } = payload as {
-        entryId: string;
-        newPlayerId: string;
-        newScoreType: '2P' | '3P' | 'FT';
-    };
+export function handleEditScore(state: Game, payload: PayloadOf<'EDIT_SCORE'>): Game {
+    const { entryId, newPlayerId, newScoreType } = payload;
     const entry = state.scoreHistory.find(s => s.id === entryId);
     if (!entry) return state;
 
@@ -165,12 +156,9 @@ export function handleEditScore(state: Game, payload: GameAction['payload']): Ga
     };
 }
 
-export function handleConvertScoreToMiss(state: Game, payload: GameAction['payload']): Game {
+export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVERT_SCORE_TO_MISS'>): Game {
     // 成功 → ミスへの変換
-    const { entryId, newMissType } = payload as {
-        entryId: string;
-        newMissType: '2PA' | '3PA' | 'FTA';
-    };
+    const { entryId, newMissType } = payload;
     const entry = state.scoreHistory.find(s => s.id === entryId);
     if (!entry) return state;
 
@@ -240,12 +228,9 @@ export function handleConvertScoreToMiss(state: Game, payload: GameAction['paylo
     };
 }
 
-export function handleConvertMissToScore(state: Game, payload: GameAction['payload']): Game {
+export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVERT_MISS_TO_SCORE'>): Game {
     // ミス → 成功への変換
-    const { entryId, newScoreType } = payload as {
-        entryId: string;
-        newScoreType: '2P' | '3P' | 'FT';
-    };
+    const { entryId, newScoreType } = payload;
     const entry = state.statHistory.find(s => s.id === entryId);
     if (!entry) return state;
 
@@ -321,8 +306,8 @@ export function handleConvertMissToScore(state: Game, payload: GameAction['paylo
     };
 }
 
-export function handleToggleOwnGoal(state: Game, payload: GameAction['payload']): Game {
-    const { entryId } = payload as { entryId: string };
+export function handleToggleOwnGoal(state: Game, payload: PayloadOf<'TOGGLE_OWN_GOAL'>): Game {
+    const { entryId } = payload;
     return {
         ...state,
         scoreHistory: state.scoreHistory.map(entry =>
