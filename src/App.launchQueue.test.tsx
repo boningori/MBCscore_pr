@@ -23,9 +23,11 @@ const myTeam = {
 
 /** App が登録した consumer を捕まえるためのスタブ */
 function stubLaunchQueue() {
-    let consumer: ((params: { targetURL: string }) => void) | null = null;
+    // App は targetURL しか見ないが、LaunchParams は files も持つ。
+    // 型を満たすためスタブ側でも空配列を渡す
+    let consumer: ((params: LaunchParams) => void) | null = null;
     (window as Window).launchQueue = {
-        setConsumer: (c: (params: { targetURL: string }) => void) => {
+        setConsumer: (c: (params: LaunchParams) => void) => {
             consumer = c;
         },
     };
@@ -33,7 +35,7 @@ function stubLaunchQueue() {
         /** 起動中にショートカットが押された状況を再現する */
         launch(targetURL: string) {
             if (!consumer) throw new Error('consumerが登録されていない');
-            act(() => consumer!({ targetURL }));
+            act(() => consumer!({ targetURL, files: [] }));
         },
         isRegistered: () => consumer !== null,
     };

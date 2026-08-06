@@ -42,7 +42,7 @@ describe('DetailView の出力操作', () => {
     it('出力中は両方の出力ボタンを押せなくする', async () => {
         const d = deferred<void>();
         exportElement.mockReturnValue(d.promise);
-        render(<DetailView player={makePlayer()} isHidden={false} onToggleHidden={() => { }} />);
+        render(<DetailView player={makePlayer()} teamId="teamA" isHidden={false} onToggleHidden={() => { }} />);
 
         act(() => { pdfButton().click(); });
 
@@ -55,7 +55,7 @@ describe('DetailView の出力操作', () => {
 
     it('出力に失敗したらエラーを知らせる', async () => {
         exportElement.mockRejectedValue(new Error('canvas allocation failed'));
-        render(<DetailView player={makePlayer()} isHidden={false} onToggleHidden={() => { }} />);
+        render(<DetailView player={makePlayer()} teamId="teamA" isHidden={false} onToggleHidden={() => { }} />);
 
         await act(async () => { pdfButton().click(); });
 

@@ -172,9 +172,9 @@ describe('QuarterLineup 出場ルールの目安（非強制の警告表示）',
     it('Q4: 既に3Q出場済みの選手を出そうとすると「3Q超」、未出場の選手は「2Q未達」＋未出場バナー', () => {
         const players = [
             // Q1-Q3出場済み・コート上（初期選択される）→ 4Q目で最大3Q超過
-            player('heavy', 5, '白5', [true, true, true, false], true),
+            player('heavy', 5, '白5', ['starter', 'starter', 'starter', false], true),
             // 2Q出場済み → 違反なし（誤検知しないこと）
-            player('normal', 6, '白6', [true, true, false, false], true),
+            player('normal', 6, '白6', ['starter', 'starter', false, false], true),
             // 未出場 → 残り1Qでは2Qに届かない ＋ 全員出場の目安に該当
             player('bench', 9, '白9', [false, false, false, false], false),
         ];
@@ -198,11 +198,11 @@ describe('QuarterLineup 出場ルールの目安（非強制の警告表示）',
     it('警告があっても開始ボタンはブロックしない（強制しない）', () => {
         // 5名ちょうどでスタメンが揃えば、ルール警告に関わらず開始可能
         const heavyPlayers = [
-            player('heavy', 5, '白5', [true, true, true, false], true),
-            player('p6', 6, '白6', [true, false, false, false], true),
-            player('p7', 7, '白7', [false, true, false, false], true),
-            player('p8', 8, '白8', [true, false, false, false], true),
-            player('p9', 9, '白9', [false, true, false, false], true),
+            player('heavy', 5, '白5', ['starter', 'starter', 'starter', false], true),
+            player('p6', 6, '白6', ['starter', false, false, false], true),
+            player('p7', 7, '白7', [false, 'starter', false, false], true),
+            player('p8', 8, '白8', ['starter', false, false, false], true),
+            player('p9', 9, '白9', [false, 'starter', false, false], true),
         ];
         const bluePlayers = fivePlayers('青').map(p => ({ ...p, isOnCourt: true }));
         render(
@@ -225,7 +225,7 @@ describe('QuarterLineup 出場ルールの目安（非強制の警告表示）',
 describe('QuarterLineup ファウルアウト（非強制・練習試合での続行に対応）', () => {
     it('5ファウルの選手もカードに表示され、選択できる', () => {
         const players = [
-            withFouls(player('out', 9, '退場者', [true, false, false, false], false), 5),
+            withFouls(player('out', 9, '退場者', ['starter', false, false, false], false), 5),
             ...fivePlayers('白'),
         ];
         render(
@@ -241,8 +241,8 @@ describe('QuarterLineup ファウルアウト（非強制・練習試合での�
 
     it('5ファウルの選手には「退場」チップを出し、4ファウルには出さない', () => {
         const players = [
-            withFouls(player('out', 9, '退場者', [true, false, false, false], false), 5),
-            withFouls(player('trouble', 8, 'トラブル', [true, false, false, false], false), 4),
+            withFouls(player('out', 9, '退場者', ['starter', false, false, false], false), 5),
+            withFouls(player('trouble', 8, 'トラブル', ['starter', false, false, false], false), 4),
             ...fivePlayers('白'),
         ];
         render(
@@ -257,12 +257,12 @@ describe('QuarterLineup ファウルアウト（非強制・練習試合での�
     it('退場者を含めないと5名に届かない編成でも、選べば開始できる（進行不能にならない）', () => {
         // 6人編成で2人が5ファウル。除外すると4人しか残らず、従来は開始不能だった
         const players = [
-            withFouls(player('o1', 1, '白1', [true, false, false, false], false), 5),
-            withFouls(player('o2', 2, '白2', [true, false, false, false], false), 5),
-            player('p3', 3, '白3', [true, false, false, false], false),
-            player('p4', 4, '白4', [true, false, false, false], false),
-            player('p5', 5, '白5', [true, false, false, false], false),
-            player('p6', 6, '白6', [true, false, false, false], false),
+            withFouls(player('o1', 1, '白1', ['starter', false, false, false], false), 5),
+            withFouls(player('o2', 2, '白2', ['starter', false, false, false], false), 5),
+            player('p3', 3, '白3', ['starter', false, false, false], false),
+            player('p4', 4, '白4', ['starter', false, false, false], false),
+            player('p5', 5, '白5', ['starter', false, false, false], false),
+            player('p6', 6, '白6', ['starter', false, false, false], false),
         ];
         const onStart = vi.fn();
         const bluePlayers = fivePlayers('青').map(p => ({ ...p, isOnCourt: true }));
@@ -287,7 +287,7 @@ describe('QuarterLineup ファウルアウト（非強制・練習試合での�
 
     it('初期選択には退場者を含めない（既定は公式ルール寄り・必要なら手で選び直せる）', () => {
         const players = [
-            withFouls(player('out', 1, '白1', [true, false, false, false], true), 5),
+            withFouls(player('out', 1, '白1', ['starter', false, false, false], true), 5),
             ...fivePlayers('白').slice(1).map(p => ({ ...p, isOnCourt: true })),
         ];
         render(

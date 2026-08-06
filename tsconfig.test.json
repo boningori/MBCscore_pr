@@ -1,0 +1,21 @@
+{
+  // テストファイルの型検査用。
+  //
+  // tsconfig.app.json は "exclude" で *.test.ts(x) を外しているため、
+  // テストは tsc -b の対象にならない。型の間違いも @ts-expect-error の
+  // 不発も検出されないままだった（実際、GameActionの型テストを .test.ts に
+  // 置いたときは意図的に壊しても素通りした）。
+  //
+  // アプリ本体は tsconfig.app.json が見るので、ここはテストだけを対象にする。
+  // 参照先の本体コードも型解決のために読み込まれるが、報告は include の
+  // ファイルに限られない点に注意（本体のエラーもここで出うる）。
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    // vitest の describe/it/expect は各テストが明示importしているが、
+    // node:fs などを使うテストがあるため node の型も要る
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src"],
+  "exclude": []
+}

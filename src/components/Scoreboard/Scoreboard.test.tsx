@@ -18,11 +18,10 @@ function buildTeams(): { teamA: Team; teamB: Team } {
 }
 
 // マウント時に指定アクションをディスパッチしてScoreboardを描画するハーネス
-function Harness({ initActions, onQuarterEnd, onOpenLineup, mode }: {
+function Harness({ initActions, onQuarterEnd, onOpenLineup }: {
     initActions: GameAction[];
     onQuarterEnd: () => void;
     onOpenLineup?: () => void;
-    mode: 'full' | 'simple';
 }) {
     const { dispatch } = useGame();
     useEffect(() => {
@@ -33,15 +32,13 @@ function Harness({ initActions, onQuarterEnd, onOpenLineup, mode }: {
         <Scoreboard
             onQuarterEnd={onQuarterEnd}
             onOpenLineup={onOpenLineup}
-            onTimeout={() => {}}
-            mode={mode}
         />
     );
 }
 
 function renderScoreboard(
     extraActions: GameAction[] = [],
-    { withOpenLineup = false, mode = 'full' as 'full' | 'simple' } = {},
+    { withOpenLineup = false } = {},
 ) {
     const onQuarterEnd = vi.fn();
     const onOpenLineup = vi.fn();
@@ -56,7 +53,6 @@ function renderScoreboard(
                 ]}
                 onQuarterEnd={onQuarterEnd}
                 onOpenLineup={withOpenLineup ? onOpenLineup : undefined}
-                mode={mode}
             />
         </GameProvider>,
     );
@@ -129,10 +125,13 @@ describe('Scoreboard: スタメン選択画面への復帰', () => {
         expect(onOpenLineup).toHaveBeenCalledTimes(1);
     });
 
-    it('シンプルモードでも quarterEnd 中は「スタメン選択へ」を表示する', () => {
+    // Scoreboard はフル/シンプルで分岐しない（component側のコメント参照）。
+    // 以前このテストは mode='simple' を渡していたが、Scoreboard は
+    // その prop を受け取らないので黙って無視されており、
+    // 「シンプルモードでも」を実際には確かめていなかった
+    it('quarterEnd 中の「スタメン選択へ」はモードに関係なく出る', () => {
         const { onOpenLineup } = renderScoreboard([{ type: 'END_QUARTER' }], {
             withOpenLineup: true,
-            mode: 'simple',
         });
 
         fireEvent.click(screen.getByText('スタメン選択へ'));

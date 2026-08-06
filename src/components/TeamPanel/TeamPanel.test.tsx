@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { TeamPanel } from './TeamPanel';
 import { createPlayer } from '../../types/game';
-import type { FoulEntry } from '../../types/game';
+import type { FoulRecord } from '../../types/game';
 
 afterEach(cleanup);
 
@@ -103,16 +103,9 @@ describe('TeamPanel: 選択中の選手の強調表示', () => {
     // ✓の右寄せCSSは .player-fouls + .player-check の隣接セレクタに依存するため、
     // この並び順が崩れるとファウル表示がカード中央に浮いてしまう
     it('ファウルがある選手では✓がファウル表示の直後に並ぶ', () => {
-        const foul: FoulEntry = {
-            id: 'f1',
-            teamId: 'teamA',
-            playerId: 'a1',
-            playerNumber: 4,
-            foulType: 'P',
-            quarter: 1,
-            timestamp: 0,
-            isCoachOrBench: false,
-        };
+        // Player.fouls は (FoulType | FoulRecord)[]。
+        // FoulEntry（履歴側の型）とは別物で、以前はここで取り違えていた
+        const foul: FoulRecord = { type: 'P', freeThrows: 0 };
         const fouled = { ...createPlayer('a1', 4, '選手4'), isOnCourt: true, fouls: [foul] };
         renderPanel({ players: [fouled], selectedPlayerId: 'a1' });
         const tail = [...screen.getByRole('button', { name: /選手4/ }).children].slice(-2);
