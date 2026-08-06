@@ -780,8 +780,22 @@ function AppContent() {
     }
   };
 
-  // ホーム画面に戻る
+  // ホーム画面に戻る。
+  // 試合中のホームボタンからも呼ばれる「中断」の導線なので、
+  // ここでセッションを消してはいけない（破棄は handleDiscardGame）
   const handleBackToHome = () => {
+    setScreen('home');
+  };
+
+  /**
+   * 試合データを保存せずに破棄してホームへ。
+   *
+   * 確認ダイアログが「※この操作は取り消せません」と言う以上、中断セッションも
+   * 消す。以前は画面を戻すだけだったため、破棄したはずの試合がホームの
+   * 「試合を再開」から復活し、文言と挙動が食い違っていた。
+   */
+  const handleDiscardGame = () => {
+    clearGameSession();
     setScreen('home');
   };
 
@@ -1420,7 +1434,7 @@ function AppContent() {
           <div className="modal-actions-column">
             <button
               className="btn btn-danger btn-large"
-              onClick={() => { setShowDiscardConfirm(false); handleBackToHome(); }}
+              onClick={() => { setShowDiscardConfirm(false); handleDiscardGame(); }}
             >
               保存せずに戻る
             </button>
