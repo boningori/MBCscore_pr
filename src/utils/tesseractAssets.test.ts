@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readdirSync, existsSync } from 'node:fs';
+import { readdirSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { TESSERACT_CORE_FILE } from './tesseractAssets';
 
@@ -30,5 +30,23 @@ describe('Tesseractの同梱アセット', () => {
     it('workerと言語データも同梱されている', () => {
         expect(existsSync(resolve(TESSERACT_DIR, 'worker.min.js'))).toBe(true);
         expect(existsSync(resolve(TESSERACT_DIR, 'tessdata/jpn.traineddata.gz'))).toBe(true);
+    });
+});
+
+// tesseract.js を静的importすると、それを読む imageOCR → OpponentManager /
+// OpponentSelect → App と芋づるでエントリチャンクに載り、写真読込を使わない
+// 利用者にも配られる。html2canvas / jspdf は同じ理由で動的importにしてある
+// （pdfExport.ts の冒頭コメント）。同じ基準をここにも効かせる。
+describe('OCRの読み込み境界', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/utils/imageOCR.ts'), 'utf8');
+
+    it('tesseract.js を静的importしない（実行時までエントリに載せない）', () => {
+        // `import type` は型のみでビルド後に消えるため対象外
+        const staticValueImport = /^\s*import\s+(?!type\s)[^;]*from\s+['"]tesseract\.js['"]/m;
+        expect(staticValueImport.test(source)).toBe(false);
+    });
+
+    it('OCR実行時に動的importする', () => {
+        expect(/await\s+import\(\s*['"]tesseract\.js['"]\s*\)/.test(source)).toBe(true);
     });
 });

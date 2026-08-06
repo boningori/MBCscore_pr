@@ -2,7 +2,12 @@
 // Gemini API実装はコメントアウトして温存
 
 import type { SavedPlayer } from './teamStorage';
-import { createWorker } from 'tesseract.js';
+// tesseract.js は実行時に動的importする。静的importにすると、この
+// モジュールを読む OpponentManager / OpponentSelect 経由でエントリチャンクに
+// 載り、写真読込を一度も使わない利用者にも配られてしまう。
+// html2canvas / jspdf と同じ扱い（pdfExport.ts の冒頭コメント参照）。
+// 型は import type で取る（ビルド後に消えるためバンドルに影響しない）。
+import type { createWorker } from 'tesseract.js';
 import { TESSERACT_PATHS } from './tesseractAssets';
 
 // API設定
@@ -185,6 +190,8 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
     let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
     try {
         if (import.meta.env.DEV) console.log('Using OCR Engine: Tesseract.js (self-hosted)');
+        // 本体の読み込みもここで初めて発生する（写真読込を使う人だけが払う）
+        const { createWorker } = await import('tesseract.js');
         // worker・wasmコア・言語データすべてを同梱物から読み込む（第三者CDN依存なし＝完全オフライン対応）
         // corePathはディレクトリではなくファイルを直指定する。詳細は tesseractAssets.ts。
         worker = await createWorker('jpn', 1, {

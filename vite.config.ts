@@ -37,7 +37,11 @@ export default defineConfig({
       // 'prompt' なら新SWは waiting で待機し、旧キャッシュは利用者が更新を
       // 選ぶまで消えない。試合中に足元が入れ替わらないことを優先する。
       registerType: 'prompt',
-      includeAssets: ['icon-512.png'],
+      // includeAssets と includeManifestIcons は使わない。下の globPatterns が
+      // **/*.png を拾うので、どちらも同じURLをprecache manifestへ二重に載せる
+      // （実際に icon-192 / icon-512 / icon-512-maskable が各2回入っていた。
+      // revisionが同じためworkboxはエラーにせず、そのまま通してしまう）
+      includeManifestIcons: false,
       manifest: {
         // idを固定しないと start_url から導出され、将来 start_url を変えた際に
         // 別アプリ扱いになる（インストール済みの端末で重複する）
