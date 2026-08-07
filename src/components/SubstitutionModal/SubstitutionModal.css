@@ -177,6 +177,15 @@
     border-radius: var(--radius-sm);
 }
 
+/* 追加を妨げない注意書き。エラー（赤）と区別できるよう警告色にする */
+.substitution-modal .add-player-notice {
+    color: var(--warning-text, #92400e);
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(245, 158, 11, 0.12);
+    border-radius: var(--radius-sm);
+}
+
 .substitution-modal .add-player-actions {
     display: flex;
     gap: var(--spacing-sm);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '../Modal';
 import type { Player } from '../../types/game';
-import { MAX_PERSONAL_FOULS } from '../../types/game';
+import { MAX_PERSONAL_FOULS, MAX_PLAYERS_PER_TEAM } from '../../types/game';
 import {
     formatPlayerNumber,
     parsePlayerNumber,
@@ -179,6 +179,20 @@ export function SubstitutionModal({
                                         </div>
                                         {addError && (
                                             <div className="add-player-error">{addError}</div>
+                                        )}
+                                        {/*
+                                          公式様式の選手欄は15人分しかないため、超えると
+                                          スコアシートの行があふれる。ただし練習試合では
+                                          人数が読めないまま始まることがあり、止めると
+                                          記録そのものができなくなる。判断は利用者に任せ、
+                                          結果だけ先に伝える（退場者の扱いと同じ方針）
+                                        */}
+                                        {players.length >= MAX_PLAYERS_PER_TEAM && (
+                                            <div className="add-player-notice" role="status">
+                                                すでに{players.length}人います。
+                                                スコアシートの選手欄は{MAX_PLAYERS_PER_TEAM}人分のため、
+                                                これ以上は印刷・出力に収まりません。
+                                            </div>
                                         )}
                                         <div className="add-player-actions">
                                             <button

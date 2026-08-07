@@ -62,3 +62,49 @@ describe('SubstitutionModal ファウルアウト（非強制・練習試合で�
         expect(screen.queryByText('ベンチに選手がいません')).toBeNull();
     });
 });
+
+// 公式様式の選手欄は15人分しかない。試合中の追加には上限チェックが無く、
+// 実測で22人まで登録できた（スコアシートの行があふれる）。
+// ただし練習試合で人数が読めない場面もあるため、止めずに警告だけ出す。
+describe('SubstitutionModal 登録人数の上限', () => {
+    function renderWithAdd(count: number) {
+        const onAddPlayer = vi.fn();
+        const players = Array.from({ length: count }, (_, i) =>
+            player(`p${i}`, i + 1, `選手${i + 1}`, i < 5),
+        );
+        render(
+            <SubstitutionModal
+                teamName="白チーム"
+                teamId="teamA"
+                players={players}
+                onSubstitute={vi.fn()}
+                onAddPlayer={onAddPlayer}
+                onClose={() => {}}
+            />,
+        );
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        return onAddPlayer;
+    }
+
+    it('15人に達したら、スコアシートに収まらないことを知らせる', () => {
+        renderWithAdd(15);
+
+        expect(screen.getByText(/15人/)).toBeTruthy();
+        expect(screen.getByText(/スコアシート/)).toBeTruthy();
+    });
+
+    it('15人未満では警告を出さない', () => {
+        renderWithAdd(14);
+
+        expect(screen.queryByText(/スコアシート/)).toBeNull();
+    });
+
+    it('警告が出ていても追加自体は止めない', () => {
+        const onAddPlayer = renderWithAdd(15);
+
+        fireEvent.change(screen.getByPlaceholderText('No.'), { target: { value: '77' } });
+        fireEvent.click(screen.getByRole('button', { name: '追加' }));
+
+        expect(onAddPlayer).toHaveBeenCalledWith(77, '選手77');
+    });
+});
