@@ -94,3 +94,59 @@ describe('useGameAutoSave', () => {
         expect(loadGameSession()).toBeNull();
     });
 });
+
+// PWAはOSに凍結・破棄されうる。デバウンス待ちの500msに入ったまま
+// アプリが落とされると、直前の得点やファウルがどこにも残らない。
+// 「画面が隠れた」時点は端末が奪われる直前なので、そこで必ず書き出す。
+describe('useGameAutoSave: 離脱時の書き出し', () => {
+    /** 画面が隠れた（他アプリへ切り替え・ホームに戻る等） */
+    function hidePage() {
+        Object.defineProperty(document, 'visibilityState', {
+            configurable: true,
+            get: () => 'hidden',
+        });
+        act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+    }
+
+    it('デバウンスを待たずに保存する', () => {
+        const game = makeGame('playing', 3);
+        renderHook(() => useGameAutoSave(game, 'game', '練習試合', '2026-08-06', game.phase));
+
+        // タイマーを進めずに離脱
+        hidePage();
+
+        expect(loadGameSession()?.game.currentQuarter).toBe(3);
+    });
+
+    it('pagehideでも保存する', () => {
+        const game = makeGame('playing', 4);
+        renderHook(() => useGameAutoSave(game, 'game', '練習試合', '2026-08-06', game.phase));
+
+        act(() => { window.dispatchEvent(new Event('pagehide')); });
+
+        expect(loadGameSession()?.game.currentQuarter).toBe(4);
+    });
+
+    it('保存対象でない画面では離脱しても保存しない', () => {
+        const game = makeGame('finished', 4);
+        renderHook(() => useGameAutoSave(game, 'home', '練習試合', '2026-08-06', game.phase));
+
+        hidePage();
+
+        expect(loadGameSession()).toBeNull();
+    });
+
+    it('最新の状態を書き出す（デバウンス中の変更を取りこぼさない）', () => {
+        const { rerender } = renderHook(
+            ({ game }: { game: Game }) => useGameAutoSave(game, 'game', '練習試合', '2026-08-06', game.phase),
+            { initialProps: { game: makeGame('playing', 1) } },
+        );
+        flushDebounce();
+
+        // Q2へ進んだ直後、デバウンスが終わる前に離脱
+        rerender({ game: makeGame('playing', 2) });
+        hidePage();
+
+        expect(loadGameSession()?.game.currentQuarter).toBe(2);
+    });
+});
