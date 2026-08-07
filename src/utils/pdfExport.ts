@@ -53,6 +53,82 @@ function drawSlashLinesOnCanvas(
     });
 }
 
+/**
+ * 円グラフ（conic-gradient）をhtml2canvas向けに描き直す
+ *
+ * html2canvas 1.4.1 は conic-gradient に対応しておらず、単色に潰れて
+ * 割合が読み取れなくなる。キャプチャ用に複製されたDOM上で、背景を
+ * 自前で描いたPNGに差し替える。
+ */
+interface PieSegments {
+    percent: number; // 主色(OFF側)が占める割合
+    mainColor: string;
+    restColor: string;
+}
+
+// conic-gradient は真上から時計回り。canvasの0radは3時方向なので起点をずらす。
+const PIE_START_ANGLE = -Math.PI / 2;
+const FULL_TURN = Math.PI * 2;
+// 実寸120pxの円をscale 3で出しても足りる解像度。背景は 100% 100% で伸縮させる。
+const PIE_TEXTURE_SIZE = 480;
+
+export function pieSplitAngle(percent: number): number {
+    const clamped = Math.min(100, Math.max(0, percent));
+    return PIE_START_ANGLE + (clamped / 100) * FULL_TURN;
+}
+
+export function readPieSegments(pie: HTMLElement): PieSegments | null {
+    const percent = Number(pie.dataset.piePercent);
+    if (!Number.isFinite(percent)) return null;
+
+    // 色はテーマで変わるため、複製DOM上で解決済みの値を読む（凡例ドットと必ず揃う）
+    const style = pie.ownerDocument.defaultView?.getComputedStyle(pie);
+    const mainColor = style?.getPropertyValue('--stats-success').trim();
+    const restColor = style?.getPropertyValue('--stats-success-pale').trim();
+    if (!mainColor || !restColor) return null;
+
+    return { percent: Math.min(100, Math.max(0, percent)), mainColor, restColor };
+}
+
+function drawPieDataUrl({ percent, mainColor, restColor }: PieSegments): string | null {
+    const canvas = document.createElement('canvas');
+    canvas.width = PIE_TEXTURE_SIZE;
+    canvas.height = PIE_TEXTURE_SIZE;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const r = PIE_TEXTURE_SIZE / 2;
+    const wedge = (start: number, end: number, color: string) => {
+        ctx.beginPath();
+        ctx.moveTo(r, r);
+        ctx.arc(r, r, r, start, end);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+    };
+
+    // 境界に隙間ができないよう、DEF色で全面を塗ってからOFF色を重ねる
+    wedge(PIE_START_ANGLE, PIE_START_ANGLE + FULL_TURN, restColor);
+    wedge(PIE_START_ANGLE, pieSplitAngle(percent), mainColor);
+
+    return canvas.toDataURL('image/png');
+}
+
+export function repaintPieCharts(root: HTMLElement): void {
+    root.querySelectorAll<HTMLElement>('[data-pie-percent]').forEach((pie) => {
+        const segments = readPieSegments(pie);
+        if (!segments) return;
+
+        const dataUrl = drawPieDataUrl(segments);
+        if (!dataUrl) return;
+
+        // 中央の穴は子要素(.pie-center)が描くので、ここは塗り分けた円だけでよい
+        pie.style.backgroundImage = `url("${dataUrl}")`;
+        pie.style.backgroundSize = '100% 100%';
+        pie.style.backgroundRepeat = 'no-repeat';
+    });
+}
+
 interface ExportOptions {
     filename: string;
     format: 'pdf' | 'jpeg';
@@ -96,6 +172,8 @@ export async function exportElement(
             backgroundColor: '#ffffff',
             windowWidth,
             ignoreElements: (el) => el.classList?.contains('rs-unused-slash'), // SVG斜線は除外
+            // 複製DOMなので、画面の表示には影響しない
+            onclone: (_doc, clonedElement) => repaintPieCharts(clonedElement),
         });
     } finally {
         element.classList.remove('exporting');

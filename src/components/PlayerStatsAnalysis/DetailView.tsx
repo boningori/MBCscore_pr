@@ -275,6 +275,9 @@ function ReboundPieChart({ off, def }: { off: number; def: number }) {
         <div className="rebound-pie-container">
             <div
                 className="rebound-pie"
+                // html2canvasはconic-gradientを描けないため、出力時にこの割合から
+                // PNGを描き直す（src/utils/pdfExport.ts の repaintPieCharts）
+                data-pie-percent={offPercent}
                 style={{
                     // DEF側は面として見える中立色。淡い緑(#dcfce7)は暗い画面で浮くため
                     // 凡例ドットと同じ --stats-success-pale を使う
