@@ -960,8 +960,55 @@ export function importTeamAsOpponent(rawTeam: SavedTeam): ImportResult {
 /**
  * 全データバックアップのインポート
  */
+/**
+ * 複数キーへの書き込みをまとめて適用する。1つでも失敗したら、書けた分を
+ * 書き込む前の状態へ戻して false を返す。
+ *
+ * 全体復元は試合履歴・チーム・設定など7つのキーにまたがる。順に書いていくと
+ * 途中で容量が尽きたとき「一部だけ差し替わったまま失敗しました」になり、
+ * 利用者からは今どちらのデータなのか判別できない。全部入るか、何も変わらないか
+ * のどちらかにする。
+ *
+ * 巻き戻しは先に removeItem で場所を空けてから書き戻す（容量超過で失敗した
+ * 直後に、元の値を入れる余地を作るため）。
+ */
+function commitAll(writes: [key: string, value: string][]): boolean {
+    const previous = writes.map(([key]) => [key, localStorage.getItem(key)] as const);
+    const applied: string[] = [];
+    try {
+        for (const [key, value] of writes) {
+            localStorage.setItem(key, value);
+            applied.push(key);
+        }
+        return true;
+    } catch (error) {
+        console.error('Failed to apply backup import, rolling back:', error);
+        for (const key of applied) {
+            try {
+                localStorage.removeItem(key);
+            } catch {
+                // 削除にすら失敗する状況では打つ手がない。下の書き戻しに任せる
+            }
+        }
+        for (const [key, value] of previous) {
+            if (value === null || !applied.includes(key)) continue;
+            try {
+                localStorage.setItem(key, value);
+            } catch (restoreError) {
+                // 巻き戻しも書けない＝端末が完全に詰まっている。
+                // 呼び出し側は失敗を返すので、利用者にはバックアップの
+                // 取り出しを促す導線が出る
+                console.error(`Failed to restore ${key}:`, restoreError);
+            }
+        }
+        return false;
+    }
+}
+
 function importFullBackup(data: BackupData): ImportResult {
     try {
+        // 書き込みは最後にまとめて適用する（部分適用を残さないため）
+        const writes: [key: string, value: string][] = [];
         const imported = { games: 0, teams: 0, opponents: 0 };
         const details = {
             newGames: 0, updatedGames: 0,
@@ -976,7 +1023,7 @@ function importFullBackup(data: BackupData): ImportResult {
             const { merged, newGames, updatedGames } = mergeGameRecords(loadGameHistory(), games);
             details.newGames = newGames;
             details.updatedGames = updatedGames;
-            localStorage.setItem('minibasket-game-history', JSON.stringify(merged));
+            writes.push(['minibasket-game-history', JSON.stringify(merged)]);
             imported.games = games.length;
         }
 
@@ -994,7 +1041,7 @@ function importFullBackup(data: BackupData): ImportResult {
                 else details.newTeams++;
             }
             const mergedTeams = mergeArrayById(existingTeams, teams);
-            localStorage.setItem('minibasket-my-teams', JSON.stringify(mergedTeams));
+            writes.push(['minibasket-my-teams', JSON.stringify(mergedTeams)]);
             imported.teams = teams.length;
         }
 
@@ -1012,7 +1059,7 @@ function importFullBackup(data: BackupData): ImportResult {
                 else details.newOpponents++;
             }
             const mergedOpponents = mergeArrayById(existingOpponents, teams);
-            localStorage.setItem('minibasket-saved-opponents', JSON.stringify(mergedOpponents));
+            writes.push(['minibasket-saved-opponents', JSON.stringify(mergedOpponents)]);
             imported.opponents = teams.length;
         }
 
@@ -1034,7 +1081,7 @@ function importFullBackup(data: BackupData): ImportResult {
             const mergedRecent = [...byId.values()]
                 .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
                 .slice(0, 10);
-            localStorage.setItem('minibasket-opponent-teams', JSON.stringify(mergedRecent));
+            writes.push(['minibasket-opponent-teams', JSON.stringify(mergedRecent)]);
             importedRecent = teams.length;
         }
 
@@ -1043,7 +1090,7 @@ function importFullBackup(data: BackupData): ImportResult {
         if (data.data.gameSession && !hasGameSession()) {
             const cleanSession = sanitizeImportedGameSession(data.data.gameSession);
             if (cleanSession) {
-                localStorage.setItem('minibasket-game-session', JSON.stringify(cleanSession));
+                writes.push(['minibasket-game-session', JSON.stringify(cleanSession)]);
                 sessionRestored = true;
             }
         }
@@ -1052,7 +1099,7 @@ function importFullBackup(data: BackupData): ImportResult {
         if (data.data.settings) {
             const existingSettings = loadAppSettings();
             const mergedSettings = { ...existingSettings, ...data.data.settings };
-            localStorage.setItem('minibasket-app-settings', JSON.stringify(mergedSettings));
+            writes.push(['minibasket-app-settings', JSON.stringify(mergedSettings)]);
         }
 
         // 非表示選手情報のインポート（既存データとマージ）
@@ -1063,7 +1110,16 @@ function importFullBackup(data: BackupData): ImportResult {
                 const existing = mergedHidden[teamId] || [];
                 mergedHidden[teamId] = [...new Set([...existing, ...playerIds])];
             }
-            localStorage.setItem('minibasket-hidden-players', JSON.stringify(mergedHidden));
+            writes.push(['minibasket-hidden-players', JSON.stringify(mergedHidden)]);
+        }
+
+        // ここまでは何も書いていない。まとめて適用し、途中で失敗したら巻き戻す
+        if (!commitAll(writes)) {
+            return {
+                success: false,
+                message: '復元に失敗しました（端末の空き容量が足りない可能性があります）。データは元のままです',
+                errors: ['localStorageへの書き込みに失敗しました'],
+            };
         }
 
         // 詳細メッセージ生成
