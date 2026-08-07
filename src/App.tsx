@@ -128,6 +128,7 @@ function AppContent() {
   const [endGameConfirmType, setEndGameConfirmType] = useState<'tied' | 'notTied' | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false); // 保存せず破棄の確認
   const [showSaveFailed, setShowSaveFailed] = useState(false); // 試合結果の保存に失敗
+  const [showPendingWarning, setShowPendingWarning] = useState(false); // 未割り当ての記録が残ったまま終了しようとした
   const [isBackingUp, setIsBackingUp] = useState(false); // 保存失敗時のバックアップ実行中
   // 進行中セッションがある状態での新規開始警告。
   // 新規試合ショートカットから起動した場合も、ホームのボタンと同じ警告を通す
@@ -753,7 +754,15 @@ function AppContent() {
    * できていた。トーストは「設定画面からバックアップを」と案内するが、
    * その時点で対象データはもう存在しない、という状態だった。
    */
-  const handleGameFinished = () => {
+  const handleGameFinished = (options?: { skipPendingCheck?: boolean }) => {
+    // 保留中の記録はどの選手のスタッツにも入っていない＝最終スコアに現れない。
+    // 黙って保存すると実際の試合と違うスコアが履歴に残るので、必ず一度知らせる。
+    // （それでも保存を選べる。試合後に急いでいる場面で詰ませない）
+    if (!options?.skipPendingCheck && pendingActions.length > 0) {
+      setShowPendingWarning(true);
+      return;
+    }
+
     const { saved } = saveGameResult(
       gameName,
       state.teamA,
@@ -762,7 +771,8 @@ function AppContent() {
       state.statHistory,
       state.foulHistory,
       new Date(date),
-      state.gameInfo
+      state.gameInfo,
+      state.pendingActions
     );
 
     if (!saved) {
@@ -1404,7 +1414,7 @@ function AppContent() {
               <span>{state.teamB.name}</span>
             </div>
             <div className="game-finished-actions">
-              <button className="btn btn-primary btn-large game-finished-btn" onClick={handleGameFinished}>
+              <button className="btn btn-primary btn-large game-finished-btn" onClick={() => handleGameFinished()}>
                 保存して終了
               </button>
               <button
@@ -1416,6 +1426,44 @@ function AppContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/*
+        未割り当ての記録を残したまま終了しようとしたときの確認。
+        保留中の得点はどの選手のスタッツにも入っていない＝最終スコアに出ないため、
+        気づかず保存すると実際の試合と違うスコアが履歴に残る。
+        保留パネルは試合終了オーバーレイより手前(z-index)に浮いているので、
+        この確認を閉じればその場で割り当てられる。
+      */}
+      {showPendingWarning && (
+        <Modal
+          onClose={() => setShowPendingWarning(false)}
+          contentClassName="modal-content end-game-confirm-modal"
+          closeOnOverlayClick={false}
+          labelledBy="pending-warning-title"
+        >
+          <h3 id="pending-warning-title">未割り当ての記録があります</h3>
+          <p className="end-game-confirm-message">
+            選手が決まっていない記録が<strong>{pendingActions.length}件</strong>残っています。<br />
+            このまま保存すると、最終スコアに反映されません。<br />
+            画面下の保留パネルから割り当ててください。
+          </p>
+          <div className="modal-actions-column">
+            <button
+              className="btn btn-primary btn-large"
+              data-autofocus
+              onClick={() => setShowPendingWarning(false)}
+            >
+              戻って割り当てる
+            </button>
+            <button
+              className="btn btn-danger btn-large"
+              onClick={() => { setShowPendingWarning(false); handleGameFinished({ skipPendingCheck: true }); }}
+            >
+              このまま保存
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* 保存せず破棄の確認モーダル */}
@@ -1479,9 +1527,10 @@ function AppContent() {
             >
               {isBackingUp ? '保存中…' : '💾 バックアップを保存'}
             </button>
+            {/* 保留の確認は保存を試す前に済んでいるので、再試行では挟まない */}
             <button
               className="btn btn-secondary btn-large"
-              onClick={() => { setShowSaveFailed(false); handleGameFinished(); }}
+              onClick={() => { setShowSaveFailed(false); handleGameFinished({ skipPendingCheck: true }); }}
             >
               もう一度保存する
             </button>
