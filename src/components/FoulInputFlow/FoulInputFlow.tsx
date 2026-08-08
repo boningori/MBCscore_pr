@@ -339,7 +339,9 @@ export function FoulInputFlow({
                 {step === 'foulType' && (
                     <div className="team-foul-info">
                         チームファウル: {teamFouls}個
-                        {teamFouls >= 4 && <span className="penalty-warning"> (次からペナルティ)</span>}
+                        {/* 4個目までが済んだ状態なので、いま入力するファウルが5個目＝ペナルティ。
+                            「次から」と読ませると、FT2本を求められた時に案内と食い違う */}
+                        {isPenalty && <span className="penalty-warning"> (このファウルからペナルティ)</span>}
                     </div>
                 )}
 
