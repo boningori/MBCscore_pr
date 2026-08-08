@@ -5,7 +5,9 @@ import type { SavedTeam, NumberType } from './utils/teamStorage';
 import { formatPlayerNumber } from './utils/playerNumber';
 import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
-import { savedTeamToTeam, saveRecentOpponent } from './utils/teamStorage';
+import { saveRecentOpponent } from './utils/teamStorage';
+import { buildMatchTeams } from './utils/matchTeams';
+import { migrateSavedTeamIds } from './utils/savedTeamIdMigration';
 import { saveGameResult } from './utils/gameHistoryStorage';
 import { loadGameSession, clearGameSession, hasGameSession } from './utils/gameSessionStorage';
 import { Home } from './components/Home';
@@ -178,6 +180,14 @@ function AppContent() {
     canShowGuarded: state.teamA.players.length > 0 && state.phase !== 'finished',
   });
 
+  // 起動時: 過去の試合に登録マイチームのidを書き戻す。
+  // 改名されるとその試合は名前で辿れなくなり選手スタッツ分析から消えるため、
+  // 改名される前に帰属をidへ凍結しておく（走らせても分析結果は変わらない）。
+  // 起動スナップショットより先に置き、書き戻し後のデータが控えに載るようにする。
+  useEffect(() => {
+    migrateSavedTeamIds();
+  }, []);
+
   // 起動時: 永続ストレージ要求・データ消失検知・起動スナップショット
   useEffect(() => {
     requestPersistentStorage();
@@ -236,27 +246,9 @@ function AppContent() {
     setGameName(setupData.gameName);
     setDate(setupData.date);
 
-    // 白チーム=teamA（上段）、青チーム=teamB（下段）に固定
-    // マイチームの色に応じて割り当てを決定
-    const isMyTeamWhite = setupData.myTeamColor === 'white';
-
-    // 白チーム（teamA）の作成
-    const whiteTeamSource = isMyTeamWhite ? setupData.myTeam : setupData.opponentTeam;
-    const whiteNumberType = isMyTeamWhite ? setupData.numberType : undefined;
-    const teamA = savedTeamToTeam(whiteTeamSource, 'teamA', whiteNumberType);
-    teamA.isMyTeam = isMyTeamWhite;
-    teamA.color = 'white';
-
-    // 青チーム（teamB）の作成
-    const blueTeamSource = isMyTeamWhite ? setupData.opponentTeam : setupData.myTeam;
-    const blueNumberType = isMyTeamWhite ? undefined : setupData.numberType;
-    const teamB = savedTeamToTeam(blueTeamSource, 'teamB', blueNumberType);
-    teamB.isMyTeam = !isMyTeamWhite;
-    teamB.color = 'blue';
-
-    // コート上選手はクリア（QuarterLineupで選択）
-    teamA.players = teamA.players.map(p => ({ ...p, isOnCourt: false }));
-    teamB.players = teamB.players.map(p => ({ ...p, isOnCourt: false }));
+    // 白=teamA（上段）／青=teamB（下段）の割り当て、番号タイプ、マイチーム側の
+    // savedTeamId、コート上選手のクリアまで buildMatchTeams が引き受ける
+    const { teamA, teamB } = buildMatchTeams(setupData);
 
     dispatch({ type: 'SET_TEAMS', payload: { teamA, teamB, showThreePoint: setupData.showThreePoint, quarterMinutes: setupData.quarterMinutes } });
 

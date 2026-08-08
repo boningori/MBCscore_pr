@@ -131,6 +131,71 @@ export function dedupeGameIds(records: GameRecord[]): GameRecord[] | null {
     return changed ? result : null;
 }
 
+/** 書き戻しに要るのは id と名前だけ。teamStorage への依存を持ち込まないため SavedTeam 型は取らない */
+export interface MyTeamRef {
+    id: string;
+    name: string;
+}
+
+/**
+ * savedTeamId を持たない旧レコードに、現在のチーム名からマイチームのidを書き戻す
+ * （書き戻す対象が無ければ null）。
+ *
+ * savedTeamId を記録し始めるより前の試合は名前でしか結び付かないため、放っておくと
+ * 「これから改名する人」の既存データが分析から消える。改名される前の今のうちに、
+ * 名前による帰属をidへ凍結しておく。
+ *
+ * 誤った結び付けは名前の取り違えより厄介で、idは改名しても自己修正しない。そこで
+ * 今日の帰属が一意に決まるときだけ書く:
+ *   - 両側とも savedTeamId を持たないレコードだけを対象にする
+ *   - isMyTeam が真の側がちょうど1つあること（＝どちらが自分かが記録に残っている）
+ *   - その側の名前に一致する登録マイチームがちょうど1つであること
+ * どれかを満たさなければ何も書かず、従来どおり名前照合に委ねる。
+ *
+ * この条件のもとでは、書き戻した瞬間の getMyTeamGames の結果は書き戻す前と一致する
+ * （相手側にはidを付けないので、相手として登場する自分の別チームも名前で拾えたまま）。
+ * 変わるのは、以後の改名に耐えるようになることだけ。
+ *
+ * すでに改名済みの利用者の過去の試合は救えない。旧チーム名がどこにも残っておらず、
+ * 照合の手掛かりが無いため。
+ */
+export function backfillSavedTeamIds(records: GameRecord[], myTeams: MyTeamRef[]): GameRecord[] | null {
+    let changed = false;
+
+    const result = records.map(record => {
+        if (record?.teamA?.savedTeamId || record?.teamB?.savedTeamId) return record;
+
+        const aIsMine = record?.teamA?.isMyTeam === true;
+        const bIsMine = record?.teamB?.isMyTeam === true;
+        if (aIsMine === bIsMine) return record; // どちらでもない／両方＝自分側を決められない
+
+        const team = aIsMine ? record.teamA : record.teamB;
+        const matched = myTeams.filter(t => t.name === team.name);
+        if (matched.length !== 1) return record;
+
+        changed = true;
+        const withId = { ...team, savedTeamId: matched[0].id };
+        return aIsMine ? { ...record, teamA: withId } : { ...record, teamB: withId };
+    });
+
+    return changed ? result : null;
+}
+
+/**
+ * 履歴に backfillSavedTeamIds を適用して保存する（書き戻した場合だけ true）。
+ *
+ * 呼び出しは起動時の1回だけ（savedTeamIdMigration）。loadGameHistory の中には
+ * 置かない —— 履歴の読み込みは至る所から何度も走るので、そのたびにマイチーム一覧を
+ * 読み直して全レコードを走査することになる。
+ */
+export function applySavedTeamIdBackfill(myTeams: MyTeamRef[]): boolean {
+    const backfilled = backfillSavedTeamIds(loadGameHistory(), myTeams);
+    if (!backfilled) return false;
+
+    historyStorage.save(backfilled);
+    return true;
+}
+
 // 試合履歴一覧取得（旧バージョン由来の重複IDはこの時点で修復する）
 export function loadGameHistory(): GameRecord[] {
     const history = historyStorage.load();

@@ -203,26 +203,43 @@ function calculateStatsStdDev(gameHistory: PlayerGameRecord[], avgStats: PlayerS
 }
 
 /**
- * 試合履歴から、指定したマイチームの試合を抽出する。
+ * 記録された1チームが、指定したマイチームかどうかを判定する。
  *
- * GameRecord は SavedTeam の id を持たない（保存時に Team へ写した時点で
- * id は 'teamA'/'teamB' になる）ため、どのマイチームかを結び付けられるのは
- * チーム名だけ。isMyTeam は「どちら側がマイチームか」しか示さない。
+ * savedTeamId があれば id だけで決める。名前へフォールバックしないのは、
+ * 旧名を別のマイチームが引き継いだときに取り違えないため。
+ *
+ * savedTeamId が無いのは、これを記録するより前に保存された試合か、相手側
+ * （相手には入れない。理由は Team.savedTeamId のコメント）。この場合は
+ * 従来どおり現在の名前で照合する。旧データは名前しか手掛かりが無い。
+ */
+function isMyTeamSide(team: GameRecord['teamA'], myTeam: SavedTeam): boolean {
+    if (team.savedTeamId) return team.savedTeamId === myTeam.id;
+    return team.name === myTeam.name;
+}
+
+/**
+ * 試合履歴から、指定したマイチームの試合を抽出する。
  *
  * 以前は名前が一致しなくても isMyTeam だけで拾っていた。マイチームが1つなら
  * 実害は無いが、学年別・男女別に複数登録している環境では別チームの試合まで
  * 混ざり、試合数も平均も成長グラフも狂っていた（実測: 2チーム登録で
- * 一方の分析に他方の選手が並ぶ）。名前の一致を必須にする。
+ * 一方の分析に他方の選手が並ぶ）。isMyTeam は「どちら側がマイチームか」しか
+ * 示さないので、これだけで拾ってはいけない。
  *
- * 紅白戦のように両チームが同名のときだけ、どちらが自分側かを isMyTeam で決める。
+ * 一方、名前だけを見ると改名した利用者の過去の試合が丸ごと抜ける。記録には
+ * 旧チーム名しか残っていないため。そこで savedTeamId を優先し、持たない
+ * 旧データだけ名前へ落とす（isMyTeamSide）。
+ *
+ * 紅白戦のように両側とも自分だと判定されたときだけ、どちらが自分側かを
+ * isMyTeam で決める。
  */
 export function getMyTeamGames(myTeam: SavedTeam): { record: GameRecord; isTeamA: boolean }[] {
     const history = loadGameHistory();
     const result: { record: GameRecord; isTeamA: boolean }[] = [];
 
     for (const record of history) {
-        const isTeamAMine = record.teamA.name === myTeam.name;
-        const isTeamBMine = record.teamB.name === myTeam.name;
+        const isTeamAMine = isMyTeamSide(record.teamA, myTeam);
+        const isTeamBMine = isMyTeamSide(record.teamB, myTeam);
 
         if (isTeamAMine && isTeamBMine) {
             result.push({ record, isTeamA: !record.teamB.isMyTeam });

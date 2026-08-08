@@ -78,6 +78,17 @@ export interface Team {
     assistantCoachFouls: FoulType[]; // A.コーチのファウル
     benchFouls: FoulType[]; // ベンチのファウル
     isMyTeam?: boolean;    // マインチームかどうか
+    // 元になった SavedTeam の id。マイチーム側にだけ入れる。
+    //
+    // savedTeamToTeam で SavedTeam を写した時点で id は 'teamA'/'teamB' に
+    // 変わるため、これが無いと保存後は名前でしか登録チームと結び付けられず、
+    // 改名した瞬間に過去の試合が選手スタッツ分析から消える。
+    //
+    // 相手チーム側にはあえて入れない。自分の別チームを「相手チーム」として
+    // 登録して記録した練習試合（6年 vs 5年）は、いま 5年 側の名前照合で
+    // 拾えている。相手側に相手レコードの id が入ると id 照合が外れ、その
+    // 試合が 5年 の分析から消える。未設定なら名前照合へ落ちて現状を保てる。
+    savedTeamId?: string;
     color: 'white' | 'blue'; // チームカラー
 }
 
