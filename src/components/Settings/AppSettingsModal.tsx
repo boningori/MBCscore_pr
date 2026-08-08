@@ -15,6 +15,7 @@ import {
 } from '../../utils/dataBackup';
 import type { ParsedImportData } from '../../utils/dataBackup';
 import { loadLastBackup } from '../../utils/lastBackupStorage';
+import { todayInputDate } from '../../utils/localDate';
 import { getErrorLog, clearErrorLog, formatErrorLog } from '../../utils/errorLog';
 import type { ErrorLogEntry } from '../../utils/errorLog';
 import { LegalModal } from '../Legal';
@@ -212,7 +213,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const handleExportCSV = () => {
         try {
             const csv = exportGameHistoryCSV();
-            const filename = `MBCscore_試合履歴_${new Date().toISOString().slice(0, 10)}.csv`;
+            const filename = `MBCscore_試合履歴_${todayInputDate()}.csv`;
             downloadCSV(csv, filename);
             showStatus('✓ CSV形式でダウンロードしました', 'success');
         } catch (error) {
@@ -223,7 +224,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const handleExportDetailCSV = () => {
         try {
             const csv = exportGameHistoryDetailCSV();
-            const filename = `MBCscore_選手スタッツ詳細_${new Date().toISOString().slice(0, 10)}.csv`;
+            const filename = `MBCscore_選手スタッツ詳細_${todayInputDate()}.csv`;
             downloadCSV(csv, filename);
             showStatus('✓ 選手スタッツ詳細CSVをダウンロードしました', 'success');
         } catch (error) {
