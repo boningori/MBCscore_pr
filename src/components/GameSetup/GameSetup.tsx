@@ -3,6 +3,7 @@ import type { SavedTeam, NumberType } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { getGameNameSuggestions } from '../../utils/gameHistoryStorage';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { todayInputDate } from '../../utils/localDate';
 import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
 import './GameSetup.css';
@@ -44,7 +45,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
 
     // Setup Data
     const [gameName, setGameName] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().substring(0, 10)); // YYYY-MM-DD
+    const [date, setDate] = useState(todayInputDate); // YYYY-MM-DD（現地日付。理由は localDate.ts）
     const [myTeam, setMyTeam] = useState<SavedTeam | null>(null);
     const [opponentTeam, setOpponentTeam] = useState<SavedTeam | null>(null);
 

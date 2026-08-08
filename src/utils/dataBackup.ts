@@ -11,6 +11,7 @@ import { loadAppSettings } from './appSettings';
 import type { GameSession } from './gameSessionStorage';
 import { loadGameSession, hasGameSession } from './gameSessionStorage';
 import { recordBackup } from './lastBackupStorage';
+import { formatInputDate } from './localDate';
 
 // バックアップデータのバージョン
 export const BACKUP_VERSION = '2.0';
@@ -1181,7 +1182,9 @@ function mergeArrayById<T extends { id: string }>(existing: T[], imported: T[]):
  */
 export function generateBackupFilename(prefix: string = 'MBCscore_backup'): string {
     const now = new Date();
-    const date = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    // 時刻は現地(toTimeString)なので、日付も現地で揃える。
+    // toISOStringだと朝9時前の控えが前日のファイル名になり、時刻とも食い違う
+    const date = formatInputDate(now); // YYYY-MM-DD
     const time = now.toTimeString().slice(0, 5).replace(':', '-'); // HH-MM
     return `${prefix}_${date}_${time}.json`;
 }

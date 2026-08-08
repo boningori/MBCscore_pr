@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup, shareFile } from './dataBackup';
+import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup, shareFile, generateBackupFilename } from './dataBackup';
 import { saveMyTeam, loadMyTeams } from './teamStorage';
 import type { SavedTeam } from './teamStorage';
 import { saveGameResult, loadGameHistory } from './gameHistoryStorage';
@@ -579,5 +579,20 @@ describe('復元の途中失敗（部分適用させない）', () => {
         vi.restoreAllMocks();
         expect(loadGameHistory()).toHaveLength(0);
         expect(loadMyTeams()).toHaveLength(0);
+    });
+});
+
+describe('generateBackupFilename', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    // 現地の朝9時前に取ったバックアップが前日のファイル名になると、
+    // 「今日のぶんを取ったはず」の控えを探せなくなる
+    it('現地の朝8時半に取っても、その日の日付が入る', () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date(2026, 7, 8, 8, 30));
+
+        expect(generateBackupFilename()).toContain('2026-08-08');
     });
 });

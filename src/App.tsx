@@ -3,6 +3,7 @@ import { GameProvider, useGame } from './context/GameContext';
 import type { Team, FoulType, FreeThrowResult, ShotSituation, ScoreType, StatType } from './types/game';
 import type { SavedTeam, NumberType } from './utils/teamStorage';
 import { formatPlayerNumber } from './utils/playerNumber';
+import { todayInputDate } from './utils/localDate';
 import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
 import { saveRecentOpponent } from './utils/teamStorage';
@@ -115,7 +116,7 @@ function AppContent() {
   const { state, dispatch } = useGame();
   const [screen, setScreen] = useState<AppScreen>(initialScreen);
   const [gameName, setGameName] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().substring(0, 10));
+  const [date, setDate] = useState(todayInputDate);
   const [showSubstitutionModal, setShowSubstitutionModal] = useState(false);
   const [substitutionTeamId, setSubstitutionTeamId] = useState<'teamA' | 'teamB'>('teamA');
   const [showStats, setShowStats] = useState(false);
