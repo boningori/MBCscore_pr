@@ -4,6 +4,7 @@ import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
 import { useExportAction } from '../../hooks/useExportAction';
+import { countFirstHalfFouls } from './halfTimeFouls';
 import { GameInfoModal } from '../GameInfoModal';
 import './RunningScoresheet.css';
 
@@ -67,12 +68,16 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
     });
 
     const renderPlayerRow = (player: typeof teamA.players[0], index: number, allPlayers: typeof teamA.players) => {
-        // 選手のファウル数
+        // 選手のファウル数（試合終了時の「未使用欄」判定に使う現在の合計）
         const foulCount = player.fouls.length;
 
-        // 隣接選手のファウル数（階段状境界線用）
-        const prevFoulCount = index > 0 ? allPlayers[index - 1]?.fouls.length ?? 0 : foulCount;
-        const nextFoulCount = index < 14 ? allPlayers[index + 1]?.fouls.length ?? 0 : foulCount;
+        // ハーフタイムの太線は前半終了時点の記入位置を示すため、合計ではなく前半分で数える。
+        // 合計で数えると後半にファウルが増えるたびに区切りが右へ動いてしまう
+        const halfCount = countFirstHalfFouls(foulHistory, player.id);
+
+        // 隣接選手の前半ファウル数（階段状境界線用）
+        const prevHalfCount = index > 0 ? countFirstHalfFouls(foulHistory, allPlayers[index - 1]?.id) : halfCount;
+        const nextHalfCount = index < 14 ? countFirstHalfFouls(foulHistory, allPlayers[index + 1]?.id) : halfCount;
 
         // この選手のファウル履歴をfoulHistoryから取得（クォーター情報取得用）
         const playerFoulHistory = foulHistory
@@ -112,8 +117,9 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                 })}
                 {[0, 1, 2, 3, 4].map(f => {
                     const hasFoul = player.fouls[f];
-                    const isUsedFoul = foulCount > f;
-                    const isLastUsedFoul = f === foulCount - 1 && foulCount > 0;
+                    // 階段状の境界は前半終了時点の記入状況で決まる
+                    const isUsedInFirstHalf = halfCount > f;
+                    const isLastFirstHalfFoul = f === halfCount - 1 && halfCount > 0;
                     const isUnusedFoul = f >= foulCount;
 
                     // クラス構築
@@ -129,18 +135,18 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
 
                     // 第2Q終了時: 階段状の太線境界
                     if (isHalfFinished) {
-                        // 最後に使用したファウル枠の右に太線
-                        if (isLastUsedFoul) {
+                        // 前半最後のファウル枠の右に太線
+                        if (isLastFirstHalfFoul) {
                             classes.push('foul-half-border');
                         }
-                        // 上境界: このセルが使用済みで、上の選手の同じ位置が未使用の場合
+                        // 上境界: このセルが前半で使用済みで、上の選手の同じ位置が未使用の場合
                         // ただし選手1（index=0）の上辺は外枠なので除外
-                        if (isUsedFoul && index > 0 && prevFoulCount <= f) {
+                        if (isUsedInFirstHalf && index > 0 && prevHalfCount <= f) {
                             classes.push('foul-half-border-top');
                         }
-                        // 下境界: このセルが使用済みで、下の選手の同じ位置が未使用の場合
+                        // 下境界: このセルが前半で使用済みで、下の選手の同じ位置が未使用の場合
                         // ただし選手15（index=14）の下辺は外枠なので除外
-                        if (isUsedFoul && index < 14 && nextFoulCount <= f) {
+                        if (isUsedInFirstHalf && index < 14 && nextHalfCount <= f) {
                             classes.push('foul-half-border-bottom');
                         }
                     }
