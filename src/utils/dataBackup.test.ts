@@ -497,3 +497,87 @@ describe('shareFile モバイル共有（.json共有不可対策）', () => {
         expect(shareSpy).not.toHaveBeenCalled();
     });
 });
+
+// 復元は複数のlocalStorageキーへ順に書き込む。途中で容量超過になると、
+// 先に書いたキーだけ新しい内容に置き換わったまま「復元に失敗しました」と
+// 返っていた。利用者から見ると、失敗したはずなのに一部のデータが
+// 差し替わっている＝どちらの状態なのか分からない。全部戻すか全部やめるか
+// のどちらかにする。
+describe('復元の途中失敗（部分適用させない）', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.restoreAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /**
+     * 指定キーへの書き込みだけを失敗させる。
+     *
+     * 全ての書き込みを潰すと巻き戻しの書き込みまで失敗し、「何もできない」
+     * ことしか確かめられない。ここで見たいのは「1つ失敗したら、書けた分を
+     * 元に戻して失敗を返す」なので、失敗は1キーに限定する
+     */
+    function failWritesTo(failingKey: string) {
+        const real = Storage.prototype.setItem;
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+            this: Storage, key: string, value: string,
+        ) {
+            if (key === failingKey) throw new Error('QuotaExceededError');
+            real.call(this, key, value);
+        });
+    }
+
+    function backupJsonWith(teamName: string, gameName: string): string {
+        localStorage.clear();
+        saveMyTeam(makeSavedTeam('team-import', teamName));
+        const teamA = createTeam('teamA', teamName, 'コーチ');
+        teamA.players = [createPlayer('teamA-player-0', 4, '選手A', true)];
+        saveGameResult(gameName, teamA, createTeam('teamB', '相手', '相手コーチ'), [], [], []);
+        const json = JSON.stringify(exportAllData());
+        localStorage.clear();
+        return json;
+    }
+
+    it('途中で書き込めなくなったら、元のデータのまま失敗を返す', () => {
+        const json = backupJsonWith('復元チーム', '復元大会');
+
+        // 端末には既存のデータがある
+        saveMyTeam(makeSavedTeam('team-existing', '既存チーム'));
+        const teamA = createTeam('teamA', '既存チーム', 'コーチ');
+        teamA.players = [createPlayer('teamA-player-0', 7, '既存選手', true)];
+        saveGameResult('既存大会', teamA, createTeam('teamB', '相手', '相手コーチ'), [], [], []);
+
+        const parsed = parseImportJSON(json);
+        // 試合履歴は書けたが、続くマイチームの書き込みで容量が尽きる状況
+        failWritesTo('minibasket-my-teams');
+        const result = executeImport(parsed);
+
+        expect(result.success).toBe(false);
+
+        vi.restoreAllMocks();
+        // 既存データが残っており、インポート分は入っていない
+        const history = loadGameHistory();
+        expect(history).toHaveLength(1);
+        expect(history[0].gameName).toBe('既存大会');
+        const teams = loadMyTeams();
+        expect(teams).toHaveLength(1);
+        expect(teams[0].name).toBe('既存チーム');
+    });
+
+    it('元データが無い端末で失敗しても、書きかけを残さない', () => {
+        const json = backupJsonWith('復元チーム', '復元大会');
+        const parsed = parseImportJSON(json);
+
+        failWritesTo('minibasket-my-teams');
+        const result = executeImport(parsed);
+
+        expect(result.success).toBe(false);
+
+        vi.restoreAllMocks();
+        expect(loadGameHistory()).toHaveLength(0);
+        expect(loadMyTeams()).toHaveLength(0);
+    });
+});

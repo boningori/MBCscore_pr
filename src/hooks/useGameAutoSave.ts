@@ -22,6 +22,12 @@ export function useGameAutoSave(
   phase: Game['phase'],
 ): void {
   const saveTimeoutRef = useRef<number | null>(null);
+  // 離脱時に書き出す値。リスナーの中から「その瞬間の最新」を読みたいが、
+  // 依存配列に入れて貼り替えると記録のたびに add/remove を繰り返すため ref で渡す
+  const latestRef = useRef({ state, screen, gameName, date, phase });
+  useEffect(() => {
+    latestRef.current = { state, screen, gameName, date, phase };
+  });
 
   useEffect(() => {
     if (isGameScreen(screen) && phase !== 'setup') {
@@ -41,4 +47,30 @@ export function useGameAutoSave(
       }
     };
   }, [state, screen, gameName, date, phase]);
+
+  // 画面が隠れたら、デバウンスを待たずにその場で書き出す。
+  // PWAはバックグラウンドに回った時点でOSに凍結・破棄されうるため、
+  // 500msの待ちに入ったまま落とされると直前の得点やファウルが残らない。
+  useEffect(() => {
+    const flush = () => {
+      const current = latestRef.current;
+      if (!isGameScreen(current.screen) || current.phase === 'setup') return;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      saveGameSession(current.state, current.gameName, current.date);
+      maybeSnapshot();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // iOSでは visibilitychange が来ないまま破棄されることがあるため pagehide も見る
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, []);
 }

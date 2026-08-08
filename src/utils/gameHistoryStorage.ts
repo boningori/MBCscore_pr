@@ -1,4 +1,5 @@
 import type { Team, ScoreEntry, StatEntry, FoulEntry, GameInfo } from '../types/game';
+import type { PendingAction } from '../types/pendingAction';
 import { createJsonStorage } from './createStorage';
 
 const GAME_HISTORY_KEY = 'minibasket-game-history';
@@ -24,6 +25,11 @@ export interface GameRecord {
     statHistory: StatEntry[];
     foulHistory: FoulEntry[];
     gameInfo?: GameInfo; // 試合情報（審判員・会場など）
+    // 選手を割り当てないまま試合を終えた記録。
+    // 保留中の得点はどの選手のスタッツにも入っていないため finalScore には
+    // 現れないが、「何が未割り当てだったか」を残さないと後から追えない。
+    // 未解決のまま終わることは稀なので任意フィールドにしている。
+    pendingActions?: PendingAction[];
     createdAt: string;
 }
 
@@ -68,7 +74,8 @@ export function saveGameResult(
     statHistory: StatEntry[],
     foulHistory: FoulEntry[],
     date: Date = new Date(),
-    gameInfo?: GameInfo
+    gameInfo?: GameInfo,
+    pendingActions: PendingAction[] = []
 ): SaveGameResult {
     const record: GameRecord = {
         id: createGameId(date),
@@ -84,6 +91,7 @@ export function saveGameResult(
         statHistory,
         foulHistory,
         gameInfo,
+        ...(pendingActions.length > 0 ? { pendingActions } : {}),
         createdAt: new Date().toISOString(),
     };
 

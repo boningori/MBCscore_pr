@@ -354,6 +354,7 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: P
             timestamp: now,
             runningScoreA: basketScoreA,
             runningScoreB: basketScoreB,
+            sourceFoulId: foulEntry.id,
         };
         newScoreHistory.push(basketEntry);
     }
@@ -381,6 +382,7 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: P
                 // 各FTごとにランニングスコアをインクリメント
                 runningScoreA: shooterTeamId === 'teamA' ? baseScoreA + (i + 1) : baseScoreA,
                 runningScoreB: shooterTeamId === 'teamB' ? baseScoreB + (i + 1) : baseScoreB,
+                sourceFoulId: foulEntry.id,
             };
             newScoreHistory.push(scoreEntry);
         }

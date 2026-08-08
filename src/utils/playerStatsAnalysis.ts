@@ -202,15 +202,33 @@ function calculateStatsStdDev(gameHistory: PlayerGameRecord[], avgStats: PlayerS
     };
 }
 
-// 試合履歴からマイチームの試合を抽出
+/**
+ * 試合履歴から、指定したマイチームの試合を抽出する。
+ *
+ * GameRecord は SavedTeam の id を持たない（保存時に Team へ写した時点で
+ * id は 'teamA'/'teamB' になる）ため、どのマイチームかを結び付けられるのは
+ * チーム名だけ。isMyTeam は「どちら側がマイチームか」しか示さない。
+ *
+ * 以前は名前が一致しなくても isMyTeam だけで拾っていた。マイチームが1つなら
+ * 実害は無いが、学年別・男女別に複数登録している環境では別チームの試合まで
+ * 混ざり、試合数も平均も成長グラフも狂っていた（実測: 2チーム登録で
+ * 一方の分析に他方の選手が並ぶ）。名前の一致を必須にする。
+ *
+ * 紅白戦のように両チームが同名のときだけ、どちらが自分側かを isMyTeam で決める。
+ */
 export function getMyTeamGames(myTeam: SavedTeam): { record: GameRecord; isTeamA: boolean }[] {
     const history = loadGameHistory();
     const result: { record: GameRecord; isTeamA: boolean }[] = [];
 
     for (const record of history) {
-        if (record.teamA.name === myTeam.name || record.teamA.isMyTeam) {
+        const isTeamAMine = record.teamA.name === myTeam.name;
+        const isTeamBMine = record.teamB.name === myTeam.name;
+
+        if (isTeamAMine && isTeamBMine) {
+            result.push({ record, isTeamA: !record.teamB.isMyTeam });
+        } else if (isTeamAMine) {
             result.push({ record, isTeamA: true });
-        } else if (record.teamB.name === myTeam.name || record.teamB.isMyTeam) {
+        } else if (isTeamBMine) {
             result.push({ record, isTeamA: false });
         }
     }
