@@ -1875,6 +1875,44 @@
     display: inline;
 }
 
+/*
+  出力（PDF/JPEG）の下地は白。pdfExport.exportElement が html2canvas に
+  backgroundColor: '#ffffff' を渡すためで、これは白紙に印刷する
+  ランニングスコアシートに合わせた値。
+
+  一方この画面の濃紺の地は .player-stats-container が持っていて、出力範囲
+  (.detail-export-area) の外にある。カード類は自前の背景を持つので濃紺のまま
+  出るが、背景を持たない箇所だけが白地になり、そこに載るダークテーマの明色文字が
+  消えていた（html2canvas実測: #f8fafc が 1.05:1、#a3b1c4 が 2.18:1）。
+
+  白地に載るのは下の3か所だけなので、出力中はそこの文字色を濃色へ切り替える。
+  背景を持つ .highlight-section / .stats-card / .game-history-section には
+  触れない（触ると今度は濃紺の上の濃色文字になる）。
+  対象と色は exportContrast.test.ts が守る。
+*/
+.player-stats-container .detail-export-area.exporting {
+    /* アプリ本体は無条件ダークで、白地に置ける濃色の文字トークンを持たない。
+       出力時だけの色としてここに持つ。値は白地でのコントラスト比 */
+    --export-on-white: #1e293b;
+    /* 14.6:1。canvasのタイトル帯(pdfExport.addTitleToCanvas)と同色 */
+    --export-on-white-dim: #475569;
+    /* 7.6:1 */
+}
+
+.player-stats-container .detail-export-area.exporting .period-badge {
+    color: var(--export-on-white);
+}
+
+.player-stats-container .detail-export-area.exporting > .recent-form-section > .section-title .title-text,
+.player-stats-container .detail-export-area.exporting > .win-loss-split-section > .section-title .title-text {
+    color: var(--export-on-white);
+}
+
+.player-stats-container .detail-export-area.exporting > .recent-form-section > .section-title .title-note,
+.player-stats-container .detail-export-area.exporting > .win-loss-split-section > .section-title .title-note {
+    color: var(--export-on-white-dim);
+}
+
 /* 直近フォーム */
 .player-stats-container .recent-form-section {
     margin: 16px 0;
