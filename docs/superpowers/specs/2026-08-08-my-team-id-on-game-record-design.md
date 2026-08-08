@@ -24,9 +24,9 @@
 
 ### 2. 保存経路
 
-`src/App.tsx` の `handleGameStart` 内、`teamA.isMyTeam = isMyTeamWhite` / `teamB.isMyTeam = !isMyTeamWhite` の隣で、マイチーム側の `Team` に `setupData.myTeam.id` を入れる。`setupData.myTeam` は必ず `loadMyTeams()` から選ばれるため id は常に実在する。
+`src/App.tsx` の `handleGameSetupComplete` にある白/青チームの組み立てを、純関数 `buildMatchTeams`（`src/utils/matchTeams.ts`）へ切り出す。App.tsx に置いたままでは id の割り当てをテストできず、GameSetup のウィザードを通す重いテストしか書けないため。切り出す範囲は今そこにある処理（色の割り当て・番号タイプ・`isMyTeam`・コート上選手のクリア）に、マイチーム側の `savedTeamId` を足しただけにとどめる。
 
-`saveGameResult` のシグネチャは変更しない。
+`setupData.myTeam` は必ず `loadMyTeams()` から選ばれるため id は常に実在する。`saveGameResult` のシグネチャは変更しない。
 
 ### 3. `getMyTeamGames` の照合
 
@@ -62,9 +62,9 @@ export function backfillSavedTeamIds(
 ): GameRecord[] | null   // 変化が無ければ null
 ```
 
-`SavedTeam` 型ではなく `{ id, name }` を受けることで、`gameHistoryStorage` が `teamStorage` に依存せずに済む。
+`SavedTeam` 型ではなく `{ id, name }` を受けることで、`gameHistoryStorage` が `teamStorage` に依存せずに済む。保存まで含めた `applySavedTeamIdBackfill(myTeams)` を同じモジュールに置き、書き込みはストレージ層の中に閉じる。
 
-起動時の `useEffect`（`src/App.tsx`）から一度だけ実行する。`loadGameHistory` の中には入れない — 呼び出し回数が多く、毎回マイチーム一覧を読み直すことになるため。
+2つを繋ぐ入口として `migrateSavedTeamIds()`（`src/utils/savedTeamIdMigration.ts`）を用意し、起動時の `useEffect`（`src/App.tsx`）から一度だけ呼ぶ。`loadGameHistory` の中には入れない — 呼び出し回数が多く、毎回マイチーム一覧を読み直して全レコードを走査することになるため。
 
 ### 限界
 
