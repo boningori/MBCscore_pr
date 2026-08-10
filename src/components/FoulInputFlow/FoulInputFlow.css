@@ -407,6 +407,17 @@
     margin-top: var(--spacing-md);
 }
 
+/* ペナルティ中でもFTを与えないファウル（オフェンスファウル等）の出口。
+   主導線（次へ）より弱く見せて、既定はシューター選択のままにする */
+.foul-input-flow .shooter-no-ft {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    margin-top: var(--spacing-sm);
+}
+
 /* アクションボタン */
 .foul-input-flow .foul-input-actions {
     margin-top: var(--spacing-lg);
