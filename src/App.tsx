@@ -1115,7 +1115,6 @@ function AppContent() {
                 teamName={state.teamA.name}
                 teamColor={state.teamA.color}
                 players={state.teamA.players}
-                isMyTeam={state.teamA.isMyTeam}
                 isActive={selectedTeamId === 'teamA'}
                 selectedPlayerId={selectedPlayerId}
                 gameMode={gameMode}
@@ -1171,7 +1170,6 @@ function AppContent() {
                 teamName={state.teamB.name}
                 teamColor={state.teamB.color}
                 players={state.teamB.players}
-                isMyTeam={state.teamB.isMyTeam}
                 isActive={selectedTeamId === 'teamB'}
                 selectedPlayerId={selectedPlayerId}
                 gameMode={gameMode}

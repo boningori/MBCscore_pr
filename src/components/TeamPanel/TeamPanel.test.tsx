@@ -153,6 +153,34 @@ describe('TeamPanel: ファウルアウトの表示', () => {
     });
 });
 
+// 相手チームの選手も、ファウル・FT・得点まで全部このアプリで記録する。
+// フルモードでマイチームだけ名前を出していたため、相手だけ番号で人を選ばされていた。
+// しかも aria-label には名前が入っていたので、読み上げ利用者だけが名前を読める
+// という逆転も起きていた。
+describe('TeamPanel: 選手カードの名前表示', () => {
+    const player = { ...createPlayer('b1', 7, '鈴木一郎', false, 'イチロー'), isOnCourt: true };
+
+    it('フルモードなら相手チームでも名前を出す', () => {
+        renderPanel({ teamId: 'teamB', players: [player], gameMode: 'full' });
+        const card = screen.getByRole('button', { name: /イチロー/ });
+        // コートネームがあればそちらを優先する（マイチームと同じ規則）
+        expect(card.querySelector('.player-num')?.textContent).toContain('イチロー');
+    });
+
+    it('マイチームでも従来どおり名前を出す', () => {
+        renderPanel({ players: [player], gameMode: 'full' });
+        expect(screen.getByRole('button', { name: /イチロー/ }).querySelector('.player-num')?.textContent)
+            .toContain('イチロー');
+    });
+
+    // シンプルモードは1枚あたりの幅が狭く、番号と得点で埋まる
+    it('シンプルモードでは名前を出さない', () => {
+        renderPanel({ players: [player], gameMode: 'simple' });
+        expect(screen.getByRole('button', { name: /イチロー/ }).querySelector('.player-num')?.textContent)
+            .not.toContain('イチロー');
+    });
+});
+
 // .btn は border:none だけを指定し背景色を持たないため、色バリアントクラスが
 // 無いとブラウザ既定の buttonface（ライトグレー・黒文字）で描画される。
 // ダークUIの中に素のボタンが出る不具合の再発を検知する。

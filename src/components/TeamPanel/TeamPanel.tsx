@@ -19,7 +19,8 @@ interface TeamPanelProps {
   teamName: string;
   teamColor: 'white' | 'blue';
   players: Player[];
-  isMyTeam?: boolean;
+  // isMyTeam はここにあったが、選手名をマイチームだけに出すための分岐にしか
+  // 使っていなかった。名前は両チームとも出すようになったので参照が無くなった
   isActive: boolean;
   selectedPlayerId: string | null;
   gameMode: 'full' | 'simple';
@@ -43,7 +44,6 @@ export function TeamPanel({
   teamName,
   teamColor,
   players,
-  isMyTeam,
   isActive,
   selectedPlayerId,
   gameMode,
@@ -97,11 +97,14 @@ export function TeamPanel({
               aria-pressed={selectedPlayerId === player.id}
               aria-label={`#${formatPlayerNumber(player.number)} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}${fouledOut ? ' 退場' : ''}`}
             >
+              {/* 名前はフルモードなら両チームとも出す。相手の得点・ファウル・FTも
+                  このアプリで記録するので、相手だけ番号で人を選ばせる理由がない。
+                  aria-label には元から名前が入っていたため、出さないと
+                  「読み上げ利用者だけ名前が読める」という逆転にもなっていた。
+                  シンプルモードはカードの幅が狭いので従来どおり番号と得点だけ */}
               <span className="player-num">
                 #{formatPlayerNumber(player.number)}
-                {gameMode === 'full' && isMyTeam
-                  ? (player.courtName ? ` ${player.courtName}` : ` ${player.name}`)
-                  : ''}
+                {gameMode === 'full' && displayName ? ` ${displayName}` : ''}
               </span>
               <span className="player-pts">{player.stats.points}</span>
               {/* ファウル0でも要素は残す。条件描画にすると、この要素が持つ margin-left:auto が
