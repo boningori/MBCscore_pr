@@ -85,6 +85,16 @@ describe('PendingActionPanel: 折りたたみバッジ', () => {
         expect(onDirectResolve).toHaveBeenCalledWith('pending-1', 'a1');
     });
 
+    // ターンオーバーの細目はスワイプで日常的に入る。辞書に無かったため
+    // 「TO:DD」と内部コードのまま出ていた
+    it('ターンオーバーの細目も日本語で出す', () => {
+        renderPanel([makePending({ actionType: 'STAT', value: 'TO:DD' })]);
+        fireEvent.click(screen.getByRole('button', { name: /保留/ }));
+
+        expect(screen.getByText('ターンオーバー(ダブドリ)')).toBeTruthy();
+        expect(screen.queryByText('TO:DD')).toBeNull();
+    });
+
     it('明細行はaria-expandedを持つボタンとしてキーボード操作できる', () => {
         renderPanel([
             makePending(),
