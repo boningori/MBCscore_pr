@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import type { FoulType, FreeThrowResult, ShotSituation, Player } from '../../types/game';
+import type { FoulType, FoulRecord, FreeThrowResult, ShotSituation, Player } from '../../types/game';
 import { MAX_PERSONAL_FOULS, suggestFreeThrowCount } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { getDisqualification, disqualificationMessage } from '../../utils/disqualification';
 import { Modal } from '../Modal';
 import './FoulInputFlow.css';
 
@@ -21,6 +22,8 @@ interface FoulInputFlowProps {
     onCancel: () => void;
     hasSelectedPlayer: boolean;
     currentFoulCount?: number;
+    /** ファウル中の選手の既存ファウル。退場・失格の判定に使う（省略時は判定しない） */
+    currentFouls?: (FoulType | FoulRecord)[];
     playerName?: string;
     teamFouls: number;
     opponentTeamId: string;
@@ -50,6 +53,7 @@ export function FoulInputFlow({
     onCancel,
     hasSelectedPlayer,
     currentFoulCount = 0,
+    currentFouls,
     playerName,
     teamFouls,
     opponentPlayers,
@@ -72,7 +76,10 @@ export function FoulInputFlow({
     const longPressTimer = useRef<number | null>(null);
     const isLongPress = useRef(false);
 
-    const isFouledOut = currentFoulCount >= MAX_PERSONAL_FOULS;
+    // 5ファウルだけでなく D / U・T 2回も見る。どちらも5個目より先に来るため、
+    // 数だけで判定すると「失格済みの選手に何の警告も出ない」ことになる
+    const disqualification = currentFouls ? getDisqualification(currentFouls) : null;
+    const isFouledOut = disqualification !== null || currentFoulCount >= MAX_PERSONAL_FOULS;
 
     // ペナルティ状態（チームファウル5個目以降）
     const isPenalty = teamFouls >= 4;
@@ -157,6 +164,30 @@ export function FoulInputFlow({
             handlePFoulNormalTap();
         }
     }, [handlePFoulNormalTap]);
+
+    /**
+     * Pファウルのキーボード操作。
+     *
+     * このボタンは長押しで分岐するため onMouseDown/onTouchStart で組んであり、
+     * onClick を持たない。キーボードのEnter/Spaceが発火させるのは click なので、
+     * Pファウルだけキーボードから記録できなかった（T/U/Dは onClick がある）。
+     * ボタンを2つに割らずに、同じボタンへキー操作を足す:
+     *   Enter / Space       → 通常のPファウル（タップ相当）
+     *   Shift + Enter/Space → シュートファウル（長押し相当）
+     */
+    const handlePFoulKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        // 押しっぱなしのキーリピートで何個も記録されるのを防ぐ
+        if (e.repeat) return;
+        // Spaceのスクロールと、Enterが起こす合成clickを止める
+        e.preventDefault();
+
+        if (e.shiftKey) {
+            handlePFoulLongPress();
+        } else {
+            handlePFoulNormalTap();
+        }
+    }, [handlePFoulLongPress, handlePFoulNormalTap]);
 
     // T/U/Dファウル選択
     const handleSpecialFoulSelect = useCallback((type: FoulType) => {
@@ -323,7 +354,10 @@ export function FoulInputFlow({
                 {/* ファウルアウト警告 */}
                 {hasSelectedPlayer && isFouledOut && (
                     <div className="foul-warning">
-                        ⚠️ {playerName || '選手'}は既に{currentFoulCount}個のファウル（ファウルアウト済み）
+                        ⚠️ {playerName || '選手'}は
+                        {disqualification
+                            ? `既に${disqualificationMessage(disqualification)}（ファウル${currentFoulCount}個）`
+                            : `既に${currentFoulCount}個のファウル（ファウルアウト済み）`}
                     </div>
                 )}
 
@@ -361,7 +395,12 @@ export function FoulInputFlow({
                             }}
                             onTouchStart={hasSelectedPlayer ? handlePressStart : undefined}
                             onTouchEnd={hasSelectedPlayer ? handlePressEnd : undefined}
+                            onKeyDown={hasSelectedPlayer ? handlePFoulKeyDown : undefined}
                             disabled={!hasSelectedPlayer}
+                            aria-keyshortcuts="Enter Shift+Enter"
+                            // 視覚的なヒントは「長押し」のままにして、キーボード用の案内は
+                            // アクセシブルな説明として添える（表示レイアウトは変えない）
+                            title="タップ／Enter: パーソナルファウル、長押し／Shift+Enter: シュートファウル"
                         >
                             <span className="foul-type-label">P</span>
                             <div className="foul-type-desc-container">

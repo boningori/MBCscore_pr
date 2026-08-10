@@ -765,7 +765,8 @@ function AppContent() {
       state.foulHistory,
       new Date(date),
       state.gameInfo,
-      state.pendingActions
+      state.pendingActions,
+      { showThreePoint: state.showThreePoint, quarterMinutes: state.quarterMinutes }
     );
 
     if (!saved) {
@@ -1230,6 +1231,7 @@ function AppContent() {
               }}
               hasSelectedPlayer={true}
               currentFoulCount={foulingPlayer?.fouls.length || 0}
+              currentFouls={foulingPlayer?.fouls}
               playerName={foulingPlayer?.name}
               teamFouls={teamFoulsForPending}
               opponentTeamId={opponentTeamIdForPending}
@@ -1255,6 +1257,7 @@ function AppContent() {
             }}
             hasSelectedPlayer={!!selectedPlayerId}
             currentFoulCount={selectedPlayer?.fouls.length || 0}
+            currentFouls={selectedPlayer?.fouls}
             playerName={selectedPlayer?.name}
             teamFouls={teamFouls}
             opponentTeamId={opponentTeamId}

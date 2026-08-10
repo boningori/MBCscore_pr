@@ -572,6 +572,18 @@
     margin-left: var(--spacing-xs);
 }
 
+/* 確認画面の注意書き（15人超のチームなど）。進行は止めないので警告色は控えめに */
+.game-setup .setup-warning {
+    color: var(--danger-text);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    margin: var(--spacing-md) 0 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    /* 明暗どちらのテーマでも下地に馴染むよう、塗りではなく半透明で重ねる */
+    background: rgba(220, 38, 38, 0.08);
+}
+
 .game-setup .player-check-list {
     display: flex;
     flex-direction: column;

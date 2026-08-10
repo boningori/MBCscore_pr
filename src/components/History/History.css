@@ -24,6 +24,60 @@
     font-size: 1.5rem;
 }
 
+/* 絞り込み・並べ替え。カード一覧と同じ幅に揃える */
+.history-container .history-controls {
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.history-container .history-search,
+.history-container .history-order {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.history-container .history-search {
+    flex: 1 1 220px;
+}
+
+.history-container .history-field-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.history-container .history-search .input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 検索欄の✕。選手スタッツ分析の期間リセットと同じ見た目に揃える */
+.history-container .btn-reset {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.history-container .history-count {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
 .history-content {
     max-width: 500px;
     margin: 0 auto;
@@ -51,10 +105,22 @@
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
-    cursor: pointer;
     border: 1px solid var(--border);
     position: relative;
     transition: all 0.2s ease;
+}
+
+/* 「開く」操作。見た目はカードのままで、実体はbutton（キーボードで到達できる） */
+.history-container .history-card-main {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -153,14 +219,17 @@
     gap: var(--spacing-xs);
 }
 
-/* ホバー対応デバイス（PC）ではホバー時のみ表示 */
+/* ホバー対応デバイス（PC）ではホバー時のみ表示。
+   focus-within も条件に入れる。無いとキーボードで共有・削除に移った瞬間、
+   フォーカスが当たっているのに opacity:0 のまま＝見えない操作先になる */
 @media (hover: hover) {
     .history-container .history-card-actions {
         opacity: 0;
         transition: opacity 0.2s;
     }
 
-    .history-container .history-card:hover .history-card-actions {
+    .history-container .history-card:hover .history-card-actions,
+    .history-container .history-card:focus-within .history-card-actions {
         opacity: 1;
     }
 }

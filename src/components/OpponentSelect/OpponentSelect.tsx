@@ -12,6 +12,7 @@ import {
 import { recognizePlayerList, isOCRAvailable, getStoredApiKey } from '../../utils/imageOCR';
 import { showToast } from '../Toast/toastApi';
 import { DeleteConfirmModal } from '../TeamShared/DeleteConfirmModal';
+import { isPlayerLimitReached, playerLimitMessage } from '../TeamShared/playerLimit';
 import {
     DOUBLE_ZERO_INTERNAL,
     formatPlayerNumber,
@@ -270,9 +271,13 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
         const existingIndex = players.findIndex(p => p.number === num);
 
         if (existingIndex >= 0) {
-            // 既存なら削除
+            // 既存なら削除。上限に達していても外す操作は常に通す（詰みにしない）
             setPlayers(players.filter((_, i) => i !== existingIndex));
         } else {
+            if (isPlayerLimitReached(players.length)) {
+                showToast(playerLimitMessage(), 'error');
+                return;
+            }
             // 新規なら追加
             const displayNum = formatPlayerNumber(num);
             const newPlayer: SavedPlayer = {
@@ -286,6 +291,10 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
 
     const handleAddPlayer = () => {
         if (!newNumber) return;
+        if (isPlayerLimitReached(players.length)) {
+            showToast(playerLimitMessage(), 'error');
+            return;
+        }
         const number = parsePlayerNumber(newNumber);
         if (number === null || !isValidPlayerNumber(number)) {
             showToast('背番号は0〜99または00を入力してください', 'error');

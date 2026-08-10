@@ -1,5 +1,6 @@
 import type { Player, PlayerStats } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { isDisqualified } from '../../utils/disqualification';
 import './StatsPanel.css';
 
 interface StatsPanelProps {
@@ -27,6 +28,8 @@ export function StatsPanel({ players, teamName, isHistoryView = false }: StatsPa
                     <span className="stats-col">AST</span>
                     <span className="stats-col">STL</span>
                     <span className="stats-col">BLK</span>
+                    {/* ファウルは PlayerStats に無いため、この表にだけ出ていなかった */}
+                    <span className="stats-col stats-col-foul">F</span>
                     <span className="stats-col stats-col-separator">TO</span>
                     <span className="stats-col stats-col-to">DD</span>
                     <span className="stats-col stats-col-to">TR</span>
@@ -46,6 +49,10 @@ export function StatsPanel({ players, teamName, isHistoryView = false }: StatsPa
                         <span className="stats-col">{player.stats.assists}</span>
                         <span className="stats-col">{player.stats.steals}</span>
                         <span className="stats-col">{player.stats.blocks}</span>
+                        {/* 退場・失格は5ファウルとは限らない（D / U・T 2回）。詳細は disqualification.ts */}
+                        <span className={`stats-col stats-col-foul ${isDisqualified(player.fouls) ? 'fouled-out' : ''}`}>
+                            {player.fouls.length}
+                        </span>
                         <span className="stats-col stats-col-separator">{player.stats.turnovers}</span>
                         <span className="stats-col stats-col-to">{player.stats.turnoverDD || 0}</span>
                         <span className="stats-col stats-col-to">{player.stats.turnoverTR || 0}</span>
@@ -65,6 +72,9 @@ export function StatsPanel({ players, teamName, isHistoryView = false }: StatsPa
                     <span className="stats-col">{sumStat(players, 'assists')}</span>
                     <span className="stats-col">{sumStat(players, 'steals')}</span>
                     <span className="stats-col">{sumStat(players, 'blocks')}</span>
+                    <span className="stats-col stats-col-foul">
+                        {players.reduce((sum, p) => sum + p.fouls.length, 0)}
+                    </span>
                     <span className="stats-col stats-col-separator">{sumStat(players, 'turnovers')}</span>
                     <span className="stats-col stats-col-to">{sumStat(players, 'turnoverDD')}</span>
                     <span className="stats-col stats-col-to">{sumStat(players, 'turnoverTR')}</span>

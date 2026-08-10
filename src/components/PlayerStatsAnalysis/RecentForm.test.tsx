@@ -3,12 +3,12 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { RecentForm } from './RecentForm';
 import type { PlayerGameRecord } from '../../utils/playerStatsAnalysis';
 import type { PlayerStats } from '../../types/game';
-import { createInitialStats } from '../../types/game';
+import { makeGameRecord, makeStats } from '../../test/statsFactories';
 
 afterEach(cleanup);
 
 function rec(date: string, s: Partial<PlayerStats>): PlayerGameRecord {
-    return { gameId: date, date, opponent: 'X', stats: { ...createInitialStats(), ...s }, result: 'win', teamScore: 0, opponentScore: 0 };
+    return makeGameRecord({ gameId: date, date, stats: makeStats(s) });
 }
 
 describe('RecentForm', () => {

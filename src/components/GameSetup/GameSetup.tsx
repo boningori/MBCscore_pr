@@ -4,6 +4,7 @@ import { loadMyTeams } from '../../utils/teamStorage';
 import { getGameNameSuggestions } from '../../utils/gameHistoryStorage';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { todayInputDate } from '../../utils/localDate';
+import { MAX_PLAYERS_PER_TEAM } from '../../types/game';
 import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
 import './GameSetup.css';
@@ -167,6 +168,15 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     const effectiveGameName = gameName.trim() ||
         (opponentTeam ? `${date} vs ${opponentTeam.name}` : date);
     const isGameNameAuto = !gameName.trim();
+
+    // 上限を掛ける前に登録された（あるいは取り込んだ）チームは16人以上のことがある。
+    // スコアシートは15人分しか描かないので、記録を始める前に知らせる。
+    // ここで弾かないのは、当日の名簿を削らせるより「出る形が違う」と分かって
+    // 進めるほうが実害が小さいため。
+    const overSizedTeams = [
+        { label: 'マイチーム', team: myTeam },
+        { label: '対戦チーム', team: opponentTeam },
+    ].filter(({ team }) => (team?.players.length ?? 0) > MAX_PLAYERS_PER_TEAM);
 
     const handleConfirm = () => {
         if (myTeam && opponentTeam) {
@@ -550,6 +560,14 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 </div>
                             </div>
                         </div>
+
+                        {overSizedTeams.length > 0 && (
+                            <p className="setup-warning" role="status">
+                                ⚠ {overSizedTeams.map(({ label, team }) => `${label}（${team!.players.length}名）`).join('・')}
+                                {' '}は{MAX_PLAYERS_PER_TEAM}人を超えています。
+                                スコアシートには背番号順で先頭{MAX_PLAYERS_PER_TEAM}人までしか印字されません。
+                            </p>
+                        )}
 
                         <button
                             className="btn btn-success btn-large start-game-btn"

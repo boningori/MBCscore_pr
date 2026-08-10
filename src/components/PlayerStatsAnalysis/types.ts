@@ -1,6 +1,7 @@
 // PlayerStatsAnalysis 共通型定義・定数
 
 import type { AggregatedPlayerStats, PlayerGameRecord } from '../../utils/playerStatsAnalysis';
+import { formatRecordDateShort } from '../../utils/localDate';
 
 // ビューモード
 export type ViewMode = 'summary' | 'detail';
@@ -38,11 +39,8 @@ export const STAT_COLORS: Record<StatType, string> = {
     turnovers: '#ef4444',
 };
 
-// 日付フォーマット
-export function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return `${(date.getMonth() + 1)}/${date.getDate()}`;
-}
+// 日付フォーマット（記録された暦日をそのまま出す。理由は localDate.ts）
+export const formatDate = formatRecordDateShort;
 
 // Props型
 export interface PlayerCardListProps {

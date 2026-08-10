@@ -16,7 +16,8 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 750px;
+    /* 列を1つ（F）足したぶん広げる。狭いと列が潰れて数字が読めなくなる */
+    min-width: 795px;
 }
 
 .stats-panel .stats-header,
@@ -81,6 +82,12 @@
 .stats-panel .stats-points {
     font-weight: 700;
     color: var(--primary-text);
+}
+
+/* ファウル列。退場・失格した選手はひと目で分かるようにする */
+.stats-panel .stats-col-foul.fouled-out {
+    color: var(--danger-text);
+    font-weight: 700;
 }
 
 /* TO列の後の縦線セパレーター */

@@ -15,7 +15,14 @@ import {
     generateTeamFilename,
 } from '../../utils/dataBackup';
 import { parsePlayerNumber, formatPlayerNumber } from '../../utils/playerNumber';
-import { useTeamImportExport, TextImportPanel, ImportConfirmPanel, DeleteConfirmModal } from '../TeamShared';
+import {
+    useTeamImportExport,
+    TextImportPanel,
+    ImportConfirmPanel,
+    DeleteConfirmModal,
+    isPlayerLimitReached,
+    playerLimitMessage,
+} from '../TeamShared';
 import './MyTeamManager.css';
 
 interface MyTeamManagerProps {
@@ -306,7 +313,11 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
             return;
         }
 
-        if (players.length >= 15) return;
+        // 黙って弾くと「追加を押したのに増えない」だけになるので理由を出す
+        if (isPlayerLimitReached(players.length)) {
+            showStatus(playerLimitMessage(), 'error');
+            return;
+        }
 
         // デフォルト番号はビブス番号優先
         const defaultNumber = bibNum ?? uniNum!;
@@ -605,7 +616,7 @@ function MyTeamEditor({ team, onSave, onCancel, showStatus }: MyTeamEditorProps)
                         <button
                             className="btn btn-primary"
                             onClick={handleAddPlayer}
-                            disabled={(!newBibNumber && !newUniformNumber) || !newName || players.length >= 15}
+                            disabled={(!newBibNumber && !newUniformNumber) || !newName || isPlayerLimitReached(players.length)}
                         >
                             追加
                         </button>

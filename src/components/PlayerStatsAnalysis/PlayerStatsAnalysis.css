@@ -178,6 +178,11 @@
     min-width: 160px;
     box-shadow: var(--stats-card-shadow);}
 
+/* 並び順は選択肢の文字が短いので、チーム選択ほど幅を取らない */
+.player-stats-container .sort-select {
+    min-width: 150px;
+}
+
 .player-stats-container .date-range {
     display: flex;
     align-items: center;
@@ -354,6 +359,11 @@
 .player-stats-container .player-info .player-games {
     font-size: 0.75rem;
     color: var(--text-secondary);
+}
+
+/* 試合数と平均出場Qは別の単位なので、区切りを入れて読み違えないようにする */
+.player-stats-container .player-info .player-quarters::before {
+    content: '・';
 }
 
 .player-stats-container .player-stats-grid {
@@ -889,6 +899,26 @@
     border-left-color: var(--danger-light);
 }
 
+/* ファウルはTOと同じ「減らしたい」側だが、別の指標なので橙で分ける */
+.player-stats-container .perf-row.foul {
+    background: rgba(217, 119, 6, 0.15);
+    border-left-color: var(--warning-light);
+}
+
+.player-stats-container .perf-row.foul .perf-value {
+    color: var(--warning-light);
+}
+
+.player-stats-container .perf-note {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+    color: var(--stats-danger-soft);
+}
+
+.player-stats-container .detail-export-area.exporting .perf-note {
+    color: var(--export-on-white-dim);
+}
+
 .player-stats-container .perf-label {
     flex: 1;
     font-size: 0.9rem;
@@ -1062,7 +1092,7 @@
 /* ヘッダー行 */
 .player-stats-container .game-history-header {
     display: grid;
-    grid-template-columns: 44px 12px 1fr 56px 100px 100px;
+    grid-template-columns: 44px 12px 1fr 56px 28px 100px 100px;
     gap: 6px;
     align-items: center;
     padding: 4px 8px;
@@ -1100,7 +1130,7 @@
 
 .player-stats-container .game-row {
     display: grid;
-    grid-template-columns: 44px 12px 1fr 56px 100px 100px;
+    grid-template-columns: 44px 12px 1fr 56px 28px 100px 100px;
     gap: 6px;
     align-items: center;
     padding: 6px 8px;
@@ -1163,6 +1193,23 @@
     font-weight: 700;
     color: var(--text-primary);
     font-size: 0.85rem;
+    text-align: center;
+}
+
+/* 試合別詳細のファウル欄。退場・失格した試合は数字だけでは分からないので色を変える */
+.player-stats-container .game-fouls {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.player-stats-container .game-fouls.fouled-out {
+    color: var(--stats-danger-soft);
+    font-weight: 700;
+}
+
+.player-stats-container .game-history-header .foul-header {
     text-align: center;
 }
 
@@ -1965,6 +2012,58 @@
     color: var(--text-secondary);
 }
 
+/* 1クォーターあたり（出場時間で均した指標） */
+.player-stats-container .workload-section {
+    margin: 16px 0;
+}
+
+.player-stats-container .workload-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.player-stats-container .workload-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    background: var(--stats-surface);
+    border: 1px solid var(--team-white);
+    border-radius: 10px;
+    box-shadow: var(--stats-card-shadow);
+}
+
+.player-stats-container .workload-card .wl-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.player-stats-container .workload-card .wl-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.player-stats-container .workload-note {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+/* 出力は白背景に焼くので、暗いテーマ向けの淡色だと読めなくなる */
+.player-stats-container .detail-export-area.exporting > .workload-section > .section-title .title-text {
+    color: var(--export-on-white);
+}
+
+.player-stats-container .detail-export-area.exporting > .workload-section > .section-title .title-note,
+.player-stats-container .detail-export-area.exporting .workload-note {
+    color: var(--export-on-white-dim);
+}
+
 /* 勝敗別スプリット */
 .player-stats-container .win-loss-split-section {
     margin: 16px 0;
@@ -2001,6 +2100,11 @@
 
 .player-stats-container .win-loss-table th.loss-col {
     color: var(--danger-light);
+}
+
+/* 引き分けは勝ち・負けのどちらとも取れないので、色は付けず中立に置く */
+.player-stats-container .win-loss-table th.draw-col {
+    color: var(--text-secondary);
 }
 
 .player-stats-container .win-loss-table .wl-label {

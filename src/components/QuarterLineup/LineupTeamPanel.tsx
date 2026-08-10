@@ -1,6 +1,7 @@
 import type { Player } from '../../types/game';
-import { PLAYERS_ON_COURT, MAX_PERSONAL_FOULS } from '../../types/game';
+import { PLAYERS_ON_COURT } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
 
 interface LineupTeamPanelProps {
     quarter: number;
@@ -53,7 +54,9 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                 {players.map(player => {
                     const isSelected = selectedIds.includes(player.id);
                     const wasOnCourt = player.isOnCourt;
-                    const fouledOut = player.fouls.length >= MAX_PERSONAL_FOULS;
+                    // 5ファウルだけでなく D / U・T 2回の失格も見る（詳細は disqualification.ts）
+                    const disqualification = getDisqualification(player.fouls);
+                    const fouledOut = disqualification !== null;
 
                     // 出場ルールの目安（非強制の警告表示）
                     const rq = regularQuartersPlayed(player);
@@ -101,7 +104,11 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                             </div>
                             {(fouledOut || overMax || cannotReachMin) && (
                                 <div className="lineup-rule-chips">
-                                    {fouledOut && <span className="lineup-rule-chip fouled-out">退場</span>}
+                                    {disqualification && (
+                                        <span className="lineup-rule-chip fouled-out">
+                                            {shortDisqualificationLabel(disqualification)}
+                                        </span>
+                                    )}
                                     {overMax && <span className="lineup-rule-chip over-max">3Q超</span>}
                                     {cannotReachMin && <span className="lineup-rule-chip min-risk">2Q未達</span>}
                                 </div>
