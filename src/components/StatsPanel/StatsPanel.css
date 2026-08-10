@@ -61,6 +61,14 @@
     margin-top: var(--spacing-sm);
 }
 
+/* 選手が決まらないまま記録した分。選手の行と合計の間に置き、
+   合計に含まれていることは分かるが選手の記録とは区別できるようにする */
+.stats-panel .stats-row.stats-unknown {
+    background: var(--bg-tertiary);
+    font-style: italic;
+    opacity: 0.85;
+}
+
 .stats-panel .stats-col-num {
     width: 30px;
     text-align: center;

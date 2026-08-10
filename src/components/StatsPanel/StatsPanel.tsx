@@ -1,4 +1,5 @@
-import type { Player, PlayerStats } from '../../types/game';
+import type { Player, PlayerStats, StatEntry } from '../../types/game';
+import { createInitialStats } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { isDisqualified } from '../../utils/disqualification';
 import './StatsPanel.css';
@@ -7,10 +8,56 @@ interface StatsPanelProps {
     players: Player[];
     teamName: string;
     isHistoryView?: boolean; // 履歴表示モード（trueの場合、コート上の選手ハイライトを無効化）
+    /** このパネルが表す側。statHistory を渡すときは必須 */
+    teamId?: string;
+    /**
+     * 試合の統計履歴。「不明で記録」した分を拾うためだけに使う。
+     *
+     * 保留アクションを不明で解決すると playerId が 'unknown' の StatEntry になり、
+     * どの選手のスタッツにも入らない。この表の合計は選手スタッツの総和なので、
+     * 渡さないとその分がどの数字にも現れない（ボタンは「チーム統計に記録」と
+     * 言うのに記録先が無い、という状態だった）。
+     */
+    statHistory?: StatEntry[];
 }
 
-export function StatsPanel({ players, teamName, isHistoryView = false }: StatsPanelProps) {
+/** 'unknown' に割り当てられた記録をチーム分だけ集計する（無ければ null） */
+function sumUnknownStats(statHistory: StatEntry[], teamId: string): PlayerStats | null {
+    const entries = statHistory.filter(s => s.playerId === 'unknown' && s.teamId === teamId);
+    if (entries.length === 0) return null;
+
+    const stats = createInitialStats();
+    for (const { statType } of entries) {
+        switch (statType) {
+            case 'OREB': stats.offensiveRebounds++; break;
+            case 'DREB': stats.defensiveRebounds++; break;
+            case 'AST': stats.assists++; break;
+            case 'STL': stats.steals++; break;
+            case 'BLK': stats.blocks++; break;
+            case 'TO': stats.turnovers++; break;
+            case 'TO:DD': stats.turnovers++; stats.turnoverDD++; break;
+            case 'TO:TR': stats.turnovers++; stats.turnoverTR++; break;
+            case 'TO:PM': stats.turnovers++; stats.turnoverPM++; break;
+            case 'TO:CM': stats.turnovers++; stats.turnoverCM++; break;
+            case '2PA': stats.twoPointAttempt++; break;
+            case '3PA': stats.threePointAttempt++; break;
+            case 'FTA': stats.freeThrowAttempt++; break;
+        }
+    }
+    return stats;
+}
+
+export function StatsPanel({
+    players,
+    teamName,
+    isHistoryView = false,
+    teamId,
+    statHistory,
+}: StatsPanelProps) {
     const sortedPlayers = [...players].sort((a, b) => a.number - b.number);
+    const unknownStats = statHistory && teamId ? sumUnknownStats(statHistory, teamId) : null;
+    // 合計は選手分と不明分の両方。不明分が無ければ従来どおり選手分だけになる
+    const total = (stat: keyof PlayerStats) => sumStat(players, stat) + (unknownStats?.[stat] ?? 0);
 
     return (
         <div className="stats-panel">
@@ -61,25 +108,49 @@ export function StatsPanel({ players, teamName, isHistoryView = false }: StatsPa
                     </div>
                 ))}
 
+                {/* 選手が決まらないまま記録した分。合計にだけ入れて行を出さないと
+                    「合計が選手の足し算と合わない」と読めてしまう */}
+                {unknownStats && (
+                    <div className="stats-row stats-unknown">
+                        <span className="stats-col-num">?</span>
+                        <span className="stats-col-name">選手不明</span>
+                        <span className="stats-col stats-points">{unknownStats.points}</span>
+                        <span className="stats-col">{formatShot(unknownStats.twoPointMade, unknownStats.twoPointAttempt)}</span>
+                        <span className="stats-col">{formatShot(unknownStats.threePointMade, unknownStats.threePointAttempt)}</span>
+                        <span className="stats-col">{formatShot(unknownStats.freeThrowMade, unknownStats.freeThrowAttempt)}</span>
+                        <span className="stats-col">{unknownStats.offensiveRebounds + unknownStats.defensiveRebounds}</span>
+                        <span className="stats-col">{unknownStats.assists}</span>
+                        <span className="stats-col">{unknownStats.steals}</span>
+                        <span className="stats-col">{unknownStats.blocks}</span>
+                        {/* ファウルは不明で記録できない（保留の不明解決はSTATのみ） */}
+                        <span className="stats-col stats-col-foul">-</span>
+                        <span className="stats-col stats-col-separator">{unknownStats.turnovers}</span>
+                        <span className="stats-col stats-col-to">{unknownStats.turnoverDD}</span>
+                        <span className="stats-col stats-col-to">{unknownStats.turnoverTR}</span>
+                        <span className="stats-col stats-col-to">{unknownStats.turnoverPM}</span>
+                        <span className="stats-col stats-col-to">{unknownStats.turnoverCM}</span>
+                    </div>
+                )}
+
                 <div className="stats-row stats-total">
                     <span className="stats-col-num"></span>
                     <span className="stats-col-name">合計</span>
-                    <span className="stats-col stats-points">{sumStat(players, 'points')}</span>
-                    <span className="stats-col">{sumStat(players, 'twoPointMade')}/{sumStat(players, 'twoPointAttempt')}</span>
-                    <span className="stats-col">{sumStat(players, 'threePointMade')}/{sumStat(players, 'threePointAttempt')}</span>
-                    <span className="stats-col">{sumStat(players, 'freeThrowMade')}/{sumStat(players, 'freeThrowAttempt')}</span>
-                    <span className="stats-col">{sumStat(players, 'offensiveRebounds') + sumStat(players, 'defensiveRebounds')}</span>
-                    <span className="stats-col">{sumStat(players, 'assists')}</span>
-                    <span className="stats-col">{sumStat(players, 'steals')}</span>
-                    <span className="stats-col">{sumStat(players, 'blocks')}</span>
+                    <span className="stats-col stats-points">{total('points')}</span>
+                    <span className="stats-col">{total('twoPointMade')}/{total('twoPointAttempt')}</span>
+                    <span className="stats-col">{total('threePointMade')}/{total('threePointAttempt')}</span>
+                    <span className="stats-col">{total('freeThrowMade')}/{total('freeThrowAttempt')}</span>
+                    <span className="stats-col">{total('offensiveRebounds') + total('defensiveRebounds')}</span>
+                    <span className="stats-col">{total('assists')}</span>
+                    <span className="stats-col">{total('steals')}</span>
+                    <span className="stats-col">{total('blocks')}</span>
                     <span className="stats-col stats-col-foul">
                         {players.reduce((sum, p) => sum + p.fouls.length, 0)}
                     </span>
-                    <span className="stats-col stats-col-separator">{sumStat(players, 'turnovers')}</span>
-                    <span className="stats-col stats-col-to">{sumStat(players, 'turnoverDD')}</span>
-                    <span className="stats-col stats-col-to">{sumStat(players, 'turnoverTR')}</span>
-                    <span className="stats-col stats-col-to">{sumStat(players, 'turnoverPM')}</span>
-                    <span className="stats-col stats-col-to">{sumStat(players, 'turnoverCM')}</span>
+                    <span className="stats-col stats-col-separator">{total('turnovers')}</span>
+                    <span className="stats-col stats-col-to">{total('turnoverDD')}</span>
+                    <span className="stats-col stats-col-to">{total('turnoverTR')}</span>
+                    <span className="stats-col stats-col-to">{total('turnoverPM')}</span>
+                    <span className="stats-col stats-col-to">{total('turnoverCM')}</span>
                 </div>
             </div>
         </div>

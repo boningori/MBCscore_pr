@@ -1100,8 +1100,9 @@ function AppContent() {
         {showStats ? (
           <div className="stats-view">
 
-            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} />
-            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} />
+            {/* statHistory は「不明で記録」した分を合計に含めるために渡す */}
+            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} teamId="teamA" statHistory={state.statHistory} />
+            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} teamId="teamB" statHistory={state.statHistory} />
           </div>
         ) : (
           <>
