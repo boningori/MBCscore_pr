@@ -38,6 +38,8 @@ export function makeAggregatedPlayer(overrides: Partial<AggregatedPlayerStats> =
         name: '選手A',
         gamesPlayed: 1,
         totalQuartersPlayed: 0,
+        gamesWithQuarters: 0,
+        statsWithQuarters: empty,
         totalFouls: 0,
         foulOutGames: 0,
         totalStats: empty,

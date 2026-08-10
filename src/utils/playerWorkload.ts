@@ -8,8 +8,18 @@
 // ミニバスでOTに入る試合は稀で、区別すると計算も表示も複雑になるわりに
 // 動く幅が小さいため。
 
+/**
+ * すべて「出場クォーターが記録されている試合だけ」を対象にした値を渡すこと。
+ *
+ * 以前は分子（累計スタッツ）が全試合、分母（出場Q・試合数）が記録のある試合だけ、
+ * と対象が食い違っていた。出場Qを記録していない試合が1つでも混ざると、その試合の
+ * 得点まで新しい試合の出場Qで割られ、1Qあたりが必ず過大になる
+ * （実測: 2Q出場10点＋Q未記録10点で 10.0点/Q。正しくは 5.0）。
+ * 出場Q未記録は旧データに限らず、スタメン未確定のまま記録した試合でも起きる。
+ */
 export interface WorkloadInput {
-    gamesPlayed: number;
+    /** 出場クォーターが記録されている試合数 */
+    gamesWithQuarters: number;
     totalQuartersPlayed: number;
     points: number;
     rebounds: number;
@@ -32,11 +42,11 @@ export interface Workload {
  * 伝えるためにも、0ではなく null を返す。
  */
 export function getWorkload(input: WorkloadInput): Workload | null {
-    const { gamesPlayed, totalQuartersPlayed, points, rebounds, assists } = input;
-    if (gamesPlayed <= 0 || totalQuartersPlayed <= 0) return null;
+    const { gamesWithQuarters, totalQuartersPlayed, points, rebounds, assists } = input;
+    if (gamesWithQuarters <= 0 || totalQuartersPlayed <= 0) return null;
 
     return {
-        quartersPerGame: quartersPerGame(totalQuartersPlayed, gamesPlayed),
+        quartersPerGame: quartersPerGame(totalQuartersPlayed, gamesWithQuarters),
         perQuarter: {
             points: points / totalQuartersPlayed,
             rebounds: rebounds / totalQuartersPlayed,

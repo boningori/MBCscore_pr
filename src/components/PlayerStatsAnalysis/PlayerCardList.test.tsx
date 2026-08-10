@@ -9,11 +9,16 @@ function makePlayer(overrides: {
     totalStats?: Partial<PlayerStats>;
     gamesPlayed?: number;
     totalQuartersPlayed?: number;
+    gamesWithQuarters?: number;
 } = {}): AggregatedPlayerStats {
+    const totalQuartersPlayed = overrides.totalQuartersPlayed ?? 0;
     return makeAggregatedPlayer({
         name: '山田太郎',
         gamesPlayed: overrides.gamesPlayed ?? 4,
-        totalQuartersPlayed: overrides.totalQuartersPlayed ?? 0,
+        totalQuartersPlayed,
+        // 既定は「全試合に出場Qの記録がある」。混在の検証は明示的に渡す
+        gamesWithQuarters: overrides.gamesWithQuarters
+            ?? (totalQuartersPlayed > 0 ? overrides.gamesPlayed ?? 4 : 0),
         totalStats: makeStats(overrides.totalStats),
     });
 }
@@ -63,5 +68,17 @@ describe('選手カードの平均出場クォーター', () => {
         );
 
         expect(screen.queryByText(/平均.*Q/)).toBeNull();
+    });
+
+    // 出場Qを記録していない試合まで分母に入れると、平均出場Qが実態より短く出る
+    it('出場Qが記録された試合だけで割る', () => {
+        render(
+            <PlayerCardList
+                players={[makePlayer({ gamesPlayed: 4, totalQuartersPlayed: 6, gamesWithQuarters: 2 })]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByText('平均3.0Q')).toBeTruthy();
     });
 });

@@ -71,6 +71,15 @@ export interface AggregatedPlayerStats {
     // 出場していない旧データ（quartersPlayed 未記録）は0のままにして推測しない。
     // 0のときは1Qあたりの数値を出してはいけない（ゼロ除算になる）。
     totalQuartersPlayed: number;
+    // 「1クォーターあたり」を出すための、出場Qが記録されている試合だけの試合数と累計。
+    //
+    // totalStats / gamesPlayed は全試合が対象なので、これで totalQuartersPlayed を
+    // 割ると分子と分母の対象試合が食い違う。出場Qを記録していない試合が1つでも
+    // 混ざると、その試合の得点まで他の試合の出場Qで割られて必ず過大になる
+    // （実測: 2Q出場10点＋Q未記録10点で 10.0点/Q。正しくは 5.0）。
+    // 出場Q未記録は旧データに限らず、スタメンを確定しないまま記録した試合でも起きる。
+    gamesWithQuarters: number;
+    statsWithQuarters: PlayerStats;
     // ファウルの通算と、退場・失格に至った試合数。
     //
     // ファウルは PlayerStats に無い（Player.fouls に別で入っている）ため、
@@ -362,6 +371,8 @@ export function aggregatePlayerStats(
                     licenseNo: player.licenseNo,
                     gamesPlayed: 0,
                     totalQuartersPlayed: 0,
+                    gamesWithQuarters: 0,
+                    statsWithQuarters: createEmptyStats(),
                     totalFouls: 0,
                     foulOutGames: 0,
                     totalStats: createEmptyStats(),
@@ -375,6 +386,10 @@ export function aggregatePlayerStats(
             const aggregated = playerMap.get(key)!;
             aggregated.gamesPlayed += 1;
             aggregated.totalQuartersPlayed += quartersPlayed;
+            if (hasPlayedQuarters) {
+                aggregated.gamesWithQuarters += 1;
+                aggregated.statsWithQuarters = addStats(aggregated.statsWithQuarters, player.stats);
+            }
             aggregated.totalFouls += gameRecord.fouls;
             if (gameRecord.fouledOut) aggregated.foulOutGames += 1;
             aggregated.totalStats = addStats(aggregated.totalStats, player.stats);

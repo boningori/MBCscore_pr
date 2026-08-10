@@ -14,9 +14,11 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                     ? `${((player.totalStats.twoPointMade + player.totalStats.threePointMade) / attempts * 100).toFixed(0)}%`
                     : '-';
                 // 出場クォーターが記録されている選手だけ平均出場Qを併記する。
-                // 同じ「n試合」でも出場時間が大きく違うため（詳細は playerWorkload）
-                const quartersPerGame = player.totalQuartersPlayed > 0
-                    ? (player.totalQuartersPlayed / player.gamesPlayed).toFixed(1)
+                // 同じ「n試合」でも出場時間が大きく違うため（詳細は playerWorkload）。
+                // 分母は出場Qが記録された試合数。全試合で割ると、記録していない試合の分だけ
+                // 平均出場Qが実態より短く出る
+                const quartersPerGame = player.gamesWithQuarters > 0
+                    ? (player.totalQuartersPlayed / player.gamesWithQuarters).toFixed(1)
                     : null;
 
                 return (

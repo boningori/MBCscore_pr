@@ -155,6 +155,26 @@ describe('playerStatsAnalysis', () => {
         expect(playerA.totalQuartersPlayed).toBe(0);
     });
 
+    // 「1クォーターあたり」は分子と分母の対象試合が揃っていないと必ず過大になる。
+    // 出場Qが記録された試合だけの累計と試合数を別に持ち、割り算がそれで閉じるようにする
+    it('出場Qが記録された試合だけの累計と試合数を別に持つ', () => {
+        // 出場Q未記録で10点
+        recordGame(10, 0, new Date('2026-06-01'), { off: 1, def: 1 }, [false, false, false, false]);
+        // 2Q出場で10点
+        recordGame(10, 0, new Date('2026-06-08'), { off: 2, def: 2 }, ['starter', 'starter', false, false]);
+
+        const playerA = aggregatePlayerStats(myTeam)[0];
+
+        expect(playerA.gamesPlayed).toBe(2);
+        expect(playerA.totalStats.points).toBe(20);
+        expect(playerA.totalQuartersPlayed).toBe(2);
+        // 出場Qが記録されている試合だけを数える
+        expect(playerA.gamesWithQuarters).toBe(1);
+        expect(playerA.statsWithQuarters.points).toBe(10);
+        expect(playerA.statsWithQuarters.offensiveRebounds).toBe(2);
+        expect(playerA.statsWithQuarters.defensiveRebounds).toBe(2);
+    });
+
     // 背番号は「いちばん新しい試合のもの」を出したい。以前は push 済みの
     // gameHistory[0]（＝最初に走査した試合）を基準に比較していたため、
     // 基準より新しい試合が複数あると最大日付ではなく最後に走査したものが勝っていた。
