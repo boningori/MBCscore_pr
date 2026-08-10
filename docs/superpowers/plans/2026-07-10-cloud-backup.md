@@ -1,5 +1,8 @@
 # クラウドバックアップ（半自動・共有シート方式）Implementation Plan
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `3a3c8b2`（2026-07-10）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** ユーザー自身のクラウド（Drive/iCloud等）へワンタップでバックアップでき、試合保存後に適切に督促する機能を追加する。

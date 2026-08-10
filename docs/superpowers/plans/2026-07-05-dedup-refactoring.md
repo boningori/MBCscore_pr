@@ -1,5 +1,8 @@
 # フェーズ2: コード重複解消・lint解消 実装計画
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `410b97f`（2026-07-05）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 挙動を一切変えずにコード重複（約2,000行）とlintエラー55件を解消し、CIにlintを追加する。

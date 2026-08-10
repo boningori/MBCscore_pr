@@ -1,5 +1,8 @@
 # 個人詳細の深掘り（直近フォーム＋勝敗別スプリット）Implementation Plan
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `7105316`（2026-07-13）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 選手詳細ビューに「直近フォーム（直近5試合 vs 通算平均）」と「勝敗別スプリット（勝ち/負けの平均比較）」の2セクションを追加する。

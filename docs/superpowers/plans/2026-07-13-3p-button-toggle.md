@@ -1,5 +1,8 @@
 # 3Pボタンの試合ごと表示/非表示 Implementation Plan
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `0d76dd6`（2026-07-13）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 試合ごとに3P入力ボタンの表示/非表示を切り替えられるようにする（新規試合はデフォルト非表示）。

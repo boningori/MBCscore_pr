@@ -1,5 +1,8 @@
 # 3P非表示時のファウルフロー2P固定化 ＆ クォーター時間設定（6分/5分） 実装計画
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `f8db9b6`（2026-07-21）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 3P非表示の試合ではシュートファウル入力のシュート状況選択をスキップして2P固定にし、クォーター時間を試合ごとに6分/5分から選択可能にする。

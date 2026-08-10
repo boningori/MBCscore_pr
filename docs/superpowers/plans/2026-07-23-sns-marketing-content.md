@@ -1,5 +1,8 @@
 # SNS機能紹介シリーズ（投稿カード＋文面集）実装プラン
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `0e76202`（2026-07-23）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** X/Instagram向けの機能紹介シリーズ全7投稿分の「1080×1080カード画像ギャラリー（`public/SNS_CARDS.html`）」と「投稿文面集（`docs/marketing/sns-posts.md`）」を作成する。

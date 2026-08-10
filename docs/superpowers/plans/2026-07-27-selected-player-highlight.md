@@ -1,5 +1,8 @@
 # アクション記録画面の選手選択表示を強調 Implementation Plan
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `278347f`（2026-07-27）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** アクション記録画面で選択中の選手が一目で分かるよう、緑の細枠だけだった表現をピンクの枠＋背景＋外側リング＋左端の太いバー＋✓バッジに強化する。
