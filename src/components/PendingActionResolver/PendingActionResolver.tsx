@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { actionLabel } from '../../utils/actionLabels';
 import { Modal } from '../Modal';
 import './PendingActionResolver.css';
 
@@ -9,42 +10,6 @@ interface PendingActionResolverProps {
     onResolve: (playerId: string) => void;
     onCancel: () => void;
 }
-
-// アクションタイプの日本語表示
-const getActionLabel = (actionType: string, value: string): string => {
-    if (actionType === 'SCORE') {
-        switch (value) {
-            case '2P': return '2P成功';
-            case '3P': return '3P成功';
-            case 'FT': return 'FT成功';
-            default: return value;
-        }
-    }
-    if (actionType === 'STAT') {
-        switch (value) {
-            case 'OREB': return 'オフェンスリバウンド';
-            case 'DREB': return 'ディフェンスリバウンド';
-            case 'AST': return 'アシスト';
-            case 'STL': return 'スティール';
-            case 'BLK': return 'ブロック';
-            case 'TO': return 'ターンオーバー';
-            case '2PA': return '2Pミス';
-            case '3PA': return '3Pミス';
-            case 'FTA': return 'FTミス';
-            default: return value;
-        }
-    }
-    if (actionType === 'FOUL') {
-        switch (value) {
-            case 'P': return 'パーソナルファウル';
-            case 'T': return 'テクニカルファウル';
-            case 'U': return 'アンスポ';
-            case 'D': return '失格';
-            default: return 'ファウル';
-        }
-    }
-    return value;
-};
 
 // 時刻フォーマット
 const formatTime = (timestamp: number): string => {
@@ -82,7 +47,7 @@ export function PendingActionResolver({
 
                 <div className="resolver-info">
                     <div className="resolver-action-type">
-                        {getActionLabel(pendingAction.actionType, pendingAction.value)}
+                        {actionLabel(pendingAction.actionType, pendingAction.value)}
                     </div>
                     <div className="resolver-meta">
                         <span className="resolver-quarter">Q{pendingAction.quarter}</span>

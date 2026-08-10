@@ -13,6 +13,7 @@ import {
 } from '../../utils/dataBackup';
 import { showToast } from '../Toast/toastApi';
 import { formatRecordDate, recordInputDate } from '../../utils/localDate';
+import { actionLabel } from '../../utils/actionLabels';
 import { filterAndSortRecords, type HistoryOrder } from './historyFilter';
 import { DeleteConfirmModal } from '../TeamShared';
 import './History.css';
@@ -124,11 +125,53 @@ export function History({ onBack }: HistoryProps) {
                     </button>
                 </div>
 
+                {/*
+                  選手を割り当てないまま終えた記録。どの選手のスタッツにも入って
+                  いないので、上のスタッツ表にも最終スコアにも現れない。
+                  保存はしていたのに読み出す画面が無く、事実上失われていた。
+                */}
+                {viewMode === 'stats' && (selectedRecord.pendingActions?.length ?? 0) > 0 && (
+                    <div className="history-pending-section">
+                        <h3>⏳ 未割り当ての記録（{selectedRecord.pendingActions!.length}件）</h3>
+                        <p className="history-pending-note">
+                            選手が決まらないまま試合を終えた記録です。
+                            どの選手のスタッツにも入っておらず、最終スコアにも含まれていません。
+                        </p>
+                        <ul className="history-pending-list">
+                            {selectedRecord.pendingActions!.map(pending => (
+                                <li key={pending.id}>
+                                    <span className="history-pending-quarter">
+                                        {pending.quarter <= 4 ? `Q${pending.quarter}` : 'OT'}
+                                    </span>
+                                    <span className="history-pending-team">
+                                        {pending.teamId === 'teamA' ? selectedRecord.teamA.name : selectedRecord.teamB.name}
+                                    </span>
+                                    <span className="history-pending-action">
+                                        {actionLabel(pending.actionType, pending.value)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 {viewMode === 'stats' && (
                     <div className="history-stats-view">
-                        <StatsPanel players={selectedRecord.teamA.players} teamName={selectedRecord.teamA.name} isHistoryView={true} />
+                        <StatsPanel
+                            players={selectedRecord.teamA.players}
+                            teamName={selectedRecord.teamA.name}
+                            isHistoryView={true}
+                            teamId="teamA"
+                            statHistory={selectedRecord.statHistory}
+                        />
                         <div style={{ height: '32px' }}></div>
-                        <StatsPanel players={selectedRecord.teamB.players} teamName={selectedRecord.teamB.name} isHistoryView={true} />
+                        <StatsPanel
+                            players={selectedRecord.teamB.players}
+                            teamName={selectedRecord.teamB.name}
+                            isHistoryView={true}
+                            teamId="teamB"
+                            statHistory={selectedRecord.statHistory}
+                        />
                     </div>
                 )}
 

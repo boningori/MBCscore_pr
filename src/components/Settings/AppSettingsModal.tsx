@@ -349,8 +349,18 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         <p className="section-description">
                             Gemini APIキーを設定すると、写真読み込みの精度が向上します。
                         </p>
+                        {/*
+                          以前は「APIキーはこのデバイス内にのみ保存されます。OCR実行時に
+                          GoogleのAPIへ送信されますが…」で、2文目の主語がAPIキーに読めた。
+                          実際に外へ出るのは名簿の撮影画像で、子どもの氏名とライセンスNo.が
+                          写る。プライバシーポリシー側は正しく書けているので文言を揃える。
+                        */}
                         <p className="security-notice">
-                            🔒 APIキーはこのデバイス内にのみ保存されます。OCR実行時にGoogleのAPIへ送信されますが、当アプリの運営者や第三者のサーバーには送信されません。
+                            🔒 APIキーはこのデバイス内にのみ保存され、外部には送信されません。
+                            AI機能を有効にすると、<strong>撮影した画像がGoogleのサーバーへ送信されます</strong>。
+                            名簿の写真には氏名やライセンスNo.が写るため、必要な同意を得たうえでご利用ください。
+                            当アプリの運営者や第三者のサーバーには送信されません。
+                            APIキーを設定しない標準モード（オフラインOCR）では、画像は端末外に出ません。
                         </p>
 
                         <div className="api-status">

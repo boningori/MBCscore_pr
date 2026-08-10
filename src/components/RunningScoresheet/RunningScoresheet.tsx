@@ -17,6 +17,19 @@ interface RunningScoresheetProps {
     onEndTimeChange?: (endTime: Date | null) => void;
 }
 
+/**
+ * 4Q欄に出すチームファウル数。OTがあれば通算した最後の枠を使う。
+ *
+ * END_QUARTER は「OTは第4Qの延長」としてリセットせず枠を足し、直前ピリオドの
+ * 数から通算し続ける（gameFlowHandlers）。ペナルティ判定はその枠を見ているのに、
+ * シートは teamFouls[3] 固定だったため、OT中に増えたファウルが公式様式から
+ * 丸ごと消えていた。様式には4つのピリオド欄しか無いので、規則どおり4Qに続けて出す。
+ */
+function fourthPeriodFouls(teamFouls: number[]): number {
+    if (teamFouls.length <= 4) return teamFouls[3] ?? 0;
+    return teamFouls[teamFouls.length - 1] ?? 0;
+}
+
 export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo, onEndTimeChange }: RunningScoresheetProps) {
     const scoresheetRef = useRef<HTMLDivElement>(null);
     const [showGameInfoModal, setShowGameInfoModal] = useState(false);
@@ -533,7 +546,7 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                         <div className="rs-tf-header-cell">4Q</div>
                                         {[1, 2, 3, 4].map(num => {
                                             const is3QMarked = team.teamFouls[2] >= num;
-                                            const is4QMarked = team.teamFouls[3] >= num;
+                                            const is4QMarked = fourthPeriodFouls(team.teamFouls) >= num;
                                             // 試合終了時、未使用の枠に縦線
                                             const is3QUnused = isGameFinished && !is3QMarked;
                                             const is4QUnused = isGameFinished && !is4QMarked;

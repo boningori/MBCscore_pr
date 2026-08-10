@@ -264,6 +264,30 @@ export function FoulInputFlow({
         setShooterPlayerId(playerId);
     }, []);
 
+    /**
+     * ペナルティ中でもFTを与えないファウルのための出口。
+     *
+     * オフェンスファウル（player control foul）はチームファウルが5個目以降でも
+     * FTにならない。ここが無いと、記録者に残るのは「2本とも失敗を入力する」
+     * （相手シューターに架空のFTA2本が付いてFT%が狂う）か「キャンセルして
+     * ファウル自体を記録しない」（チームファウルも進まない）かの2つだけになる。
+     *
+     * 出すのはペナルティ由来のPファウルだけ。シュートファウルのFT本数は
+     * シュートの成否で決まるので、そちらに0本を許すと規則にない記録ができる。
+     */
+    const canSkipFreeThrows = !benchFoulMode && foulType === 'P' && shotSituation === 'none';
+
+    const handleSkipFreeThrows = useCallback(() => {
+        onComplete({
+            foulType: 'P',
+            shotSituation: 'none',
+            shotMade: false,
+            freeThrows: 0,
+            freeThrowResults: [],
+            shooterPlayerId: null,
+        });
+    }, [onComplete]);
+
     // シューター選択完了 → FT結果入力へ
     const handleShooterComplete = useCallback(() => {
         if (!shooterPlayerId) return;
@@ -508,6 +532,15 @@ export function FoulInputFlow({
                         >
                             次へ
                         </button>
+                        {canSkipFreeThrows && (
+                            <button
+                                className="btn btn-secondary shooter-no-ft"
+                                onClick={handleSkipFreeThrows}
+                            >
+                                FTなし（オフェンスファウル等）
+                                <span className="btn-desc">ペナルティ中でもFTにならないファウル</span>
+                            </button>
+                        )}
                     </div>
                 )}
 

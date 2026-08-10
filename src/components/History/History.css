@@ -389,3 +389,49 @@
     min-width: 800px;
     /* Ensure layout doesn't break */
 }
+/* 未割り当ての記録。スタッツ表のどこにも現れない分なので、
+   表と並べず独立したブロックにして「別枠である」ことを見せる */
+.history-pending-section {
+    background: var(--bg-tertiary);
+    border-left: 4px solid var(--warning);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.history-pending-section h3 {
+    font-size: var(--font-size-md);
+    margin: 0 0 var(--spacing-xs);
+}
+
+.history-pending-note {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-sm);
+}
+
+.history-pending-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.history-pending-list li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
+.history-pending-quarter {
+    flex: 0 0 2.5em;
+    font-weight: 700;
+}
+
+.history-pending-team {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+}

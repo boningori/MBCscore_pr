@@ -3,6 +3,9 @@ import { GameProvider, useGame } from './context/GameContext';
 import type { Team, FoulType, FreeThrowResult, ShotSituation, ScoreType, StatType } from './types/game';
 import type { SavedTeam, NumberType } from './utils/teamStorage';
 import { formatPlayerNumber } from './utils/playerNumber';
+// 表示名は utils/actionLabels に集約する。以前はこのファイルと保留パネル・
+// 保留解決モーダルに別々の辞書があり、チーム選択モーダルだけ内部コードが出ていた
+import { actionLabel, statLabel } from './utils/actionLabels';
 import { todayInputDate } from './utils/localDate';
 import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
@@ -61,23 +64,6 @@ import './App.css';
 // 画面の識別子と試合系画面の集合は types/screens.ts に置く。
 // 戻る/進むの復元ガードと自動保存が同じ集合を見る必要があり、
 // 片方（フック側）から App.tsx を参照できないため。
-
-// Undoスナックバー用のスタッツ表示名
-const STAT_UNDO_LABELS: Record<string, string> = {
-  OREB: 'オフェンスリバウンド',
-  DREB: 'ディフェンスリバウンド',
-  AST: 'アシスト',
-  STL: 'スティール',
-  BLK: 'ブロック',
-  TO: 'ターンオーバー',
-  'TO:DD': 'ターンオーバー(ダブドリ)',
-  'TO:TR': 'ターンオーバー(トラベリング)',
-  'TO:PM': 'ターンオーバー(パスミス)',
-  'TO:CM': 'ターンオーバー(キャッチミス)',
-  '2PA': '2Pミス',
-  '3PA': '3Pミス',
-  FTA: 'FTミス',
-};
 
 // manifestのショートカット（アイコン長押しメニュー）から起動されたかを、
 // モジュール読み込み時に一度だけ確定させる。
@@ -285,7 +271,7 @@ function AppContent() {
     const entryId = crypto.randomUUID();
     dispatch({ type: 'ADD_STAT', payload: { teamId, playerId, statType, entryId } });
     setUndoInfo({
-      message: `${getPlayerUndoLabel(teamId, playerId)} ${STAT_UNDO_LABELS[statType] ?? statType}`,
+      message: `${getPlayerUndoLabel(teamId, playerId)} ${statLabel(statType)}`,
       kind: 'stat',
       entryId,
     });
@@ -1114,8 +1100,9 @@ function AppContent() {
         {showStats ? (
           <div className="stats-view">
 
-            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} />
-            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} />
+            {/* statHistory は「不明で記録」した分を合計に含めるために渡す */}
+            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} teamId="teamA" statHistory={state.statHistory} />
+            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} teamId="teamB" statHistory={state.statHistory} />
           </div>
         ) : (
           <>
@@ -1128,7 +1115,6 @@ function AppContent() {
                 teamName={state.teamA.name}
                 teamColor={state.teamA.color}
                 players={state.teamA.players}
-                isMyTeam={state.teamA.isMyTeam}
                 isActive={selectedTeamId === 'teamA'}
                 selectedPlayerId={selectedPlayerId}
                 gameMode={gameMode}
@@ -1165,9 +1151,7 @@ function AppContent() {
                     hasSelection={!!selectedPlayerId}
                     activeAction={pendingAction}
                     activeActionLabel={pendingAction
-                      ? pendingAction.type === 'SCORE' ? `${pendingAction.value}成功`
-                        : pendingAction.type === 'FOUL' ? 'ファウル'
-                          : STAT_UNDO_LABELS[pendingAction.value ?? ''] ?? pendingAction.value
+                      ? actionLabel(pendingAction.type, pendingAction.value ?? '')
                       : null}
                     gameMode={gameMode}
                     showThreePoint={state.showThreePoint}
@@ -1186,7 +1170,6 @@ function AppContent() {
                 teamName={state.teamB.name}
                 teamColor={state.teamB.color}
                 players={state.teamB.players}
-                isMyTeam={state.teamB.isMyTeam}
                 isActive={selectedTeamId === 'teamB'}
                 selectedPlayerId={selectedPlayerId}
                 gameMode={gameMode}
@@ -1295,10 +1278,7 @@ function AppContent() {
         >
           <h3 id="team-selector-title">どちらのチームですか？</h3>
             <p className="team-selector-action">
-              {pendingAction.type === 'SCORE' ? `${pendingAction.value}成功` :
-                pendingAction.type === 'STAT' ? pendingAction.value :
-                  pendingAction.type === 'MISS' ? `${pendingAction.value}` :
-                    'ファウル'}
+              {actionLabel(pendingAction.type, pendingAction.value ?? '')}
               を保留として記録し、あとから選手を割り当てられます
             </p>
             <div className="team-selector-buttons">
