@@ -1,5 +1,8 @@
 # MBCscore 商用品質化 実装計画
 
+> **状態: 実装完了** — main に取り込み済み。実装は本計画の追加コミット `d55a9b9`（2026-07-04）以降のコミット群にあたる。
+> 以下のチェックボックスは実行時に更新していないため未チェックのまま残っている。**残作業の指標として読まないこと。**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** ローカル完結のまま、データ保全・クラッシュ耐性・テスト・セキュリティ・法務表記を商用水準に引き上げる。
