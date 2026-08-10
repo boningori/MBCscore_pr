@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { GameRecord } from '../../utils/gameHistoryStorage';
 import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
 import { StatsPanel } from '../StatsPanel';
 import type { Game, GameInfo } from '../../types/game';
-import { createInitialGameInfo } from '../../types/game';
+import { createInitialGameInfo, DEFAULT_QUARTER_MINUTES } from '../../types/game';
 import {
     exportGame,
     downloadJSON,
@@ -12,6 +12,8 @@ import {
     generateGameFilename,
 } from '../../utils/dataBackup';
 import { showToast } from '../Toast/toastApi';
+import { formatRecordDate, recordInputDate } from '../../utils/localDate';
+import { filterAndSortRecords, type HistoryOrder } from './historyFilter';
 import { DeleteConfirmModal } from '../TeamShared';
 import './History.css';
 
@@ -25,9 +27,17 @@ export function History({ onBack }: HistoryProps) {
     const [selectedRecord, setSelectedRecord] = useState<GameRecord | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'stats' | 'scoresheet'>('stats');
+    const [query, setQuery] = useState('');
+    const [order, setOrder] = useState<HistoryOrder>('newest');
 
-    const handleDelete = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
+    const visibleRecords = useMemo(
+        () => filterAndSortRecords(records, { query, order }),
+        [records, query, order],
+    );
+
+    // 「開く」がカード全体ではなく専用のbuttonになったので、
+    // 共有・削除のクリックがそちらへ伝わることはない（stopPropagation不要）
+    const handleDelete = (id: string) => {
         setDeleteTargetId(id);
     };
 
@@ -46,9 +56,7 @@ export function History({ onBack }: HistoryProps) {
         setDeleteTargetId(null);
     };
 
-    const handleExportGame = async (e: React.MouseEvent, record: GameRecord) => {
-        e.stopPropagation();
-
+    const handleExportGame = async (record: GameRecord) => {
         const data = exportGame(record.id);
         if (!data) {
             showToast('試合データが見つかりませんでした', 'error');
@@ -85,8 +93,10 @@ export function History({ onBack }: HistoryProps) {
         endTime: new Date(record.createdAt),
         pendingActions: [],
         gameInfo: (record as { gameInfo?: GameInfo }).gameInfo || createInitialGameInfo(),
-        showThreePoint: (record as { showThreePoint?: boolean }).showThreePoint ?? true,
-        quarterMinutes: (record as { quarterMinutes?: 5 | 6 }).quarterMinutes ?? 6,
+        // 記録し始める前の試合には入っていない。既定は試合設定と同じ側に寄せる
+        // （3P入力はミニバスでは通常OFF、クォーターはJBA公式の6分）
+        showThreePoint: record.showThreePoint ?? false,
+        quarterMinutes: record.quarterMinutes ?? DEFAULT_QUARTER_MINUTES,
     });
 
     if (selectedRecord) {
@@ -96,7 +106,7 @@ export function History({ onBack }: HistoryProps) {
                     <button className="btn btn-secondary" onClick={() => setSelectedRecord(null)}>
                         ← 一覧に戻る
                     </button>
-                    <h1>{selectedRecord.gameName} ({new Date(selectedRecord.date).toLocaleDateString()})</h1>
+                    <h1>{selectedRecord.gameName} ({formatRecordDate(selectedRecord.date)})</h1>
                 </div>
 
                 <div className="history-tabs">
@@ -122,11 +132,17 @@ export function History({ onBack }: HistoryProps) {
                     </div>
                 )}
 
+                {/*
+                  スコアシートは date を「年/月/日」に割って公式様式の日付欄へ入れる。
+                  toLocaleDateString() は端末のロケール次第で並びが変わり、
+                  英語ロケールでは 6/5/2026 → 年6・月5・日2026 になっていた。
+                  試合中の画面と同じ YYYY-MM-DD で渡す
+                */}
                 {viewMode === 'scoresheet' && (
                     <RunningScoresheet
                         game={recordToGame(selectedRecord)}
                         gameName={selectedRecord.gameName}
-                        date={selectedRecord.date ? new Date(selectedRecord.date).toLocaleDateString() : ''}
+                        date={recordInputDate(selectedRecord.date)}
                         onClose={() => setViewMode('stats')}
                         onUpdateGameInfo={(partialInfo) => {
                             const currentGameInfo = selectedRecord.gameInfo || createInitialGameInfo();
@@ -149,53 +165,106 @@ export function History({ onBack }: HistoryProps) {
                 <h1>試合履歴</h1>
             </div>
 
+            {/*
+              絞り込みの操作子は結果が0件でも描画する。
+              条件を変える手段が消えると、その条件から抜け出せなくなる
+            */}
+            {records.length > 0 && (
+                <div className="history-controls">
+                    <div className="history-search">
+                        <label className="history-field-label" htmlFor="history-search-input">検索：</label>
+                        <input
+                            id="history-search-input"
+                            type="search"
+                            className="input"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            placeholder="試合名・チーム名・日付"
+                        />
+                        {query && (
+                            <button
+                                className="btn-reset"
+                                onClick={() => setQuery('')}
+                                aria-label="検索条件を消す"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                    <div className="history-order">
+                        <label className="history-field-label" htmlFor="history-order-select">並び順：</label>
+                        <select
+                            id="history-order-select"
+                            className="input"
+                            value={order}
+                            onChange={e => setOrder(e.target.value as HistoryOrder)}
+                        >
+                            <option value="newest">新しい順</option>
+                            <option value="oldest">古い順</option>
+                        </select>
+                    </div>
+                    <span className="history-count">{visibleRecords.length} / {records.length}件</span>
+                </div>
+            )}
+
             <div className="history-content">
                 {records.length === 0 ? (
                     <div className="history-empty">
                         <p>保存された試合記録はありません</p>
                     </div>
+                ) : visibleRecords.length === 0 ? (
+                    // 「記録がない」と「検索で消えた」を混同しない
+                    <div className="history-empty">
+                        <p>「{query}」に一致する試合はありません</p>
+                    </div>
                 ) : (
                     <div className="history-list">
-                        {records.map(record => (
-                            <div
-                                key={record.id}
-                                className="history-card"
-                                onClick={() => setSelectedRecord(record)}
-                            >
-                                <div className="history-card-header">
-                                    <span className="history-date">
-                                        {new Date(record.date).toLocaleDateString()}
+                        {visibleRecords.map(record => (
+                            <div key={record.id} className="history-card">
+                                {/*
+                                  カード全体をbuttonにはできない（中の共有・削除と入れ子になる）。
+                                  「開く」操作だけをbuttonに切り出して、キーボードから到達できるようにする
+                                */}
+                                <button
+                                    type="button"
+                                    className="history-card-main"
+                                    onClick={() => setSelectedRecord(record)}
+                                >
+                                    <span className="history-card-header">
+                                        <span className="history-date">
+                                            {formatRecordDate(record.date)}
+                                        </span>
+                                        <span className="history-title">{record.gameName}</span>
                                     </span>
-                                    <span className="history-title">{record.gameName}</span>
-                                </div>
-                                <div className="history-score">
-                                    <div className="history-team team-left">
-                                        <span className="team-name">
-                                            {record.finalScore.teamA > record.finalScore.teamB && <span className="winner-star">★</span>}
-                                            {record.teamA.name}
+                                    <span className="history-score">
+                                        <span className="history-team team-left">
+                                            <span className="team-name">
+                                                {record.finalScore.teamA > record.finalScore.teamB && <span className="winner-star">★</span>}
+                                                {record.teamA.name}
+                                            </span>
+                                            <span className="team-score-val">{record.finalScore.teamA}</span>
                                         </span>
-                                        <span className="team-score-val">{record.finalScore.teamA}</span>
-                                    </div>
-                                    <span className="vs-divider">|</span>
-                                    <div className="history-team team-right">
-                                        <span className="team-name">
-                                            {record.finalScore.teamB > record.finalScore.teamA && <span className="winner-star">★</span>}
-                                            {record.teamB.name}
+                                        <span className="vs-divider">|</span>
+                                        <span className="history-team team-right">
+                                            <span className="team-name">
+                                                {record.finalScore.teamB > record.finalScore.teamA && <span className="winner-star">★</span>}
+                                                {record.teamB.name}
+                                            </span>
+                                            <span className="team-score-val">{record.finalScore.teamB}</span>
                                         </span>
-                                        <span className="team-score-val">{record.finalScore.teamB}</span>
-                                    </div>
-                                </div>
+                                    </span>
+                                </button>
                                 <div className="history-card-actions">
                                     <button
                                         className="btn btn-secondary btn-small export-btn"
-                                        onClick={(e) => handleExportGame(e, record)}
+                                        onClick={() => handleExportGame(record)}
                                         title="この試合をエクスポート"
                                     >
                                         📤 共有
                                     </button>
                                     <button
                                         className="btn btn-danger btn-small delete-btn"
-                                        onClick={(e) => handleDelete(e, record.id)}
+                                        onClick={() => handleDelete(record.id)}
                                     >
                                         削除
                                     </button>

@@ -27,6 +27,9 @@ export interface SplitStats {
 export interface WinLossSplit {
     win: { n: number; avg: SplitStats };
     loss: { n: number; avg: SplitStats };
+    // 引き分けも返す。以前は勝ち・負けだけを抜き出していたため引き分けの試合が
+    // どちらにも入らず表から消え、nの合計が試合数と合わなかった
+    draw: { n: number; avg: SplitStats };
 }
 
 const reb = (r: PlayerGameRecord) => r.stats.offensiveRebounds + r.stats.defensiveRebounds;
@@ -91,10 +94,9 @@ function avgSplit(games: PlayerGameRecord[]): SplitStats {
 }
 
 export function getWinLossSplit(gameHistory: PlayerGameRecord[]): WinLossSplit {
-    const wins = gameHistory.filter(g => g.result === 'win');
-    const losses = gameHistory.filter(g => g.result === 'loss');
-    return {
-        win: { n: wins.length, avg: avgSplit(wins) },
-        loss: { n: losses.length, avg: avgSplit(losses) },
+    const of = (result: PlayerGameRecord['result']) => {
+        const games = gameHistory.filter(g => g.result === result);
+        return { n: games.length, avg: avgSplit(games) };
     };
+    return { win: of('win'), loss: of('loss'), draw: of('draw') };
 }

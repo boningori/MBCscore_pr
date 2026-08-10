@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Player, Team } from '../../types/game';
 import { PLAYERS_ON_COURT } from '../../types/game';
+import { isDisqualified } from '../../utils/disqualification';
 import { LineupTeamPanel } from './LineupTeamPanel';
 import './QuarterLineup.css';
 
@@ -21,9 +22,9 @@ interface QuarterLineupProps {
     onBack?: () => void;
 }
 
-/** コート上かつ5ファウル未満の選手を初期選択にする */
+/** コート上かつ退場・失格していない選手を初期選択にする */
 const initialSelection = (players: Player[]) =>
-    players.filter(p => p.isOnCourt && p.fouls.length < 5).map(p => p.id);
+    players.filter(p => p.isOnCourt && !isDisqualified(p.fouls)).map(p => p.id);
 
 const TAB_IDS: LineupTabId[] = ['teamA', 'teamB'];
 

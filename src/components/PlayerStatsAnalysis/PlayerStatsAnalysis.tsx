@@ -13,6 +13,9 @@ import {
     type AggregatedPlayerStats,
     type TeamRecord,
 } from '../../utils/playerStatsAnalysis';
+import { startOfInputDateUtc, endOfInputDateUtc } from '../../utils/localDate';
+import { formatWinRate } from './winRate';
+import { sortPlayers, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSort';
 import { PlayerCardList } from './PlayerCardList';
 import { DetailView } from './DetailView';
 import type { ViewMode } from './types';
@@ -22,6 +25,37 @@ interface PlayerStatsAnalysisProps {
     onBack: () => void;
 }
 
+/** 一覧が空になった理由（案内の文面を選ぶ） */
+type EmptyReason = 'period' | 'hidden' | 'noData';
+
+function EmptyState({ reason, hiddenPlayerCount }: { reason: EmptyReason; hiddenPlayerCount: number }) {
+    if (reason === 'period') {
+        return (
+            <div className="empty-state">
+                <div className="empty-icon">📅</div>
+                <h3>この期間に試合がありません</h3>
+                <p>上の「データ表示期間」を変えるか、✕ で絞り込みを解除してください</p>
+            </div>
+        );
+    }
+    if (reason === 'hidden') {
+        return (
+            <div className="empty-state">
+                <div className="empty-icon">🙈</div>
+                <h3>表示できる選手がいません</h3>
+                <p>{hiddenPlayerCount}人を選手スタッツ一覧に非表示にしています</p>
+            </div>
+        );
+    }
+    return (
+        <div className="empty-state">
+            <div className="empty-icon">📋</div>
+            <h3>試合データがありません</h3>
+            <p>試合を記録すると選手スタッツが表示されます</p>
+        </div>
+    );
+}
+
 export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     // 初回マウント時のみチーム一覧を読み込む（遅延初期化）
     const [myTeams] = useState<SavedTeam[]>(() => getAvailableMyTeams());
@@ -29,6 +63,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('summary');
     const [selectedPlayer, setSelectedPlayer] = useState<AggregatedPlayerStats | null>(null);
     const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+    const [sortKey, setSortKey] = useState<PlayerSortKey>('number');
     const [showHiddenPlayers, setShowHiddenPlayers] = useState(false);
     const [hiddenPlayerCount, setHiddenPlayerCount] = useState(() =>
         myTeams[0] ? loadHiddenPlayers(myTeams[0].id).length : 0
@@ -45,9 +80,11 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         }
     }
 
-    // 日付範囲はレンダーごとに新しいDateを生成しないようメモ化（useMemoの依存を安定させる）
-    const startDate = useMemo(() => dateRange.start ? new Date(dateRange.start) : undefined, [dateRange.start]);
-    const endDate = useMemo(() => dateRange.end ? new Date(dateRange.end + 'T23:59:59') : undefined, [dateRange.end]);
+    // 日付範囲はレンダーごとに新しいDateを生成しないようメモ化（useMemoの依存を安定させる）。
+    // 記録がUTC0時で入っているので境界もUTCでそろえる（理由は localDate.ts）。
+    // 以前は開始日がUTC・終了日が現地で食い違っていた
+    const startDate = useMemo(() => startOfInputDateUtc(dateRange.start ?? ''), [dateRange.start]);
+    const endDate = useMemo(() => endOfInputDateUtc(dateRange.end ?? ''), [dateRange.end]);
 
     const playerStats = useMemo(() => {
         if (!selectedTeam) return [];
@@ -89,6 +126,21 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setHiddenToggleKey(prev => prev + 1); // 再描画をトリガー
     }, [selectedTeam, selectedPlayer]);
 
+    // 並べ替えは表示順だけを変える。集計（playerStats）には影響しないので分けて持つ
+    const sortedPlayers = useMemo(() => sortPlayers(playerStats, sortKey), [playerStats, sortKey]);
+
+    const hasDateFilter = !!(dateRange.start || dateRange.end);
+
+    // 一覧が空になった理由。案内の文面と、抜け出すための操作子が変わる。
+    // 「試合が無い」と「絞り込みで消えた」を混同すると、事実と違う案内をしたうえに
+    // 元に戻す手掛かりも出せない。
+    const emptyReason: EmptyReason | null = useMemo(() => {
+        if (playerStats.length > 0) return null;
+        if (hasDateFilter && (teamRecord?.totalGames ?? 0) === 0) return 'period';
+        if (hiddenPlayerCount > 0) return 'hidden';
+        return 'noData';
+    }, [playerStats.length, hasDateFilter, teamRecord, hiddenPlayerCount]);
+
     const isSelectedPlayerHidden = useMemo(() => {
         if (!selectedTeam || !selectedPlayer) return false;
         const playerKey = generatePlayerKey(selectedPlayer.name, selectedPlayer.licenseNo);
@@ -115,67 +167,6 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         );
     }
 
-    if (playerStats.length === 0 && viewMode === 'summary') {
-        return (
-            <main className="player-stats-container">
-                <div className="player-stats-header">
-                    <button className="btn-back" onClick={onBack}>
-                        <span className="back-icon">←</span>
-                        <span>ホーム</span>
-                    </button>
-                    <h1>📊 選手スタッツ分析</h1>
-                </div>
-                <div className="controls-bar">
-                    <div className="field-group">
-                        <label className="field-label" htmlFor="stats-team-select">マイチーム選択：</label>
-                        <select
-                            id="stats-team-select"
-                            value={selectedTeam?.id || ''}
-                            onChange={e => handleTeamChange(e.target.value)}
-                            className="team-select"
-                        >
-                            {myTeams.map(team => (
-                                <option key={team.id} value={team.id}>{team.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                {/*
-                  非表示にした結果として0件になった場合と、そもそも試合データが
-                  無い場合を区別する。前者で「試合データがありません」と出すと
-                  事実と違ううえ、戻すためのトグルも描画されず袋小路になる。
-                */}
-                {hiddenPlayerCount > 0 ? (
-                    <>
-                        <div className="empty-state">
-                            <div className="empty-icon">🙈</div>
-                            <h3>表示できる選手がいません</h3>
-                            <p>{hiddenPlayerCount}人を選手スタッツ一覧に非表示にしています</p>
-                        </div>
-                        <label className={`hidden-players-toggle ${showHiddenPlayers ? 'active' : ''}`}>
-                            <span className="toggle-label">
-                                {showHiddenPlayers ? '全選手表示中' : `非表示選手 (${hiddenPlayerCount}人)`}
-                            </span>
-                            <input
-                                type="checkbox"
-                                checked={showHiddenPlayers}
-                                onChange={e => setShowHiddenPlayers(e.target.checked)}
-                                aria-label="非表示にした選手も一覧に表示する"
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </>
-                ) : (
-                    <div className="empty-state">
-                        <div className="empty-icon">📋</div>
-                        <h3>試合データがありません</h3>
-                        <p>試合を記録すると選手スタッツが表示されます</p>
-                    </div>
-                )}
-            </main>
-        );
-    }
-
     return (
         <main className="player-stats-container">
             <div className="player-stats-header">
@@ -188,17 +179,36 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
 
             {viewMode === 'summary' && (
                 <>
+                    {/*
+                      絞り込みの操作子は集計が0件でも必ず描画する。
+                      条件を変える手段が消えると、その条件から抜け出せなくなる
+                      （期間・非表示選手のどちらでも起きた）。
+                    */}
                     <div className="controls-bar">
                         <div className="field-group">
-                            <label className="field-label" htmlFor="stats-team-select-detail">マイチーム選択：</label>
+                            <label className="field-label" htmlFor="stats-team-select">マイチーム選択：</label>
                             <select
-                                id="stats-team-select-detail"
+                                id="stats-team-select"
                                 value={selectedTeam?.id || ''}
                                 onChange={e => handleTeamChange(e.target.value)}
                                 className="team-select"
                             >
                                 {myTeams.map(team => (
                                     <option key={team.id} value={team.id}>{team.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="field-group">
+                            <label className="field-label" htmlFor="stats-sort-select">並び順：</label>
+                            <select
+                                id="stats-sort-select"
+                                value={sortKey}
+                                onChange={e => setSortKey(e.target.value as PlayerSortKey)}
+                                className="team-select sort-select"
+                            >
+                                {PLAYER_SORT_OPTIONS.map(option => (
+                                    <option key={option.key} value={option.key}>{option.label}</option>
                                 ))}
                             </select>
                         </div>
@@ -220,10 +230,11 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                                 value={dateRange.end || ''}
                                 onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                             />
-                            {(dateRange.start || dateRange.end) && (
+                            {hasDateFilter && (
                                 <button
                                     className="btn-reset"
                                     onClick={() => setDateRange({})}
+                                    aria-label="期間の絞り込みを解除"
                                 >
                                     ✕
                                 </button>
@@ -255,16 +266,17 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                                     </div>
                                 )}
                                 <div className="record-stat rate">
-                                    <span className="value">
-                                        {((teamRecord.wins / teamRecord.totalGames) * 100).toFixed(0)}%
-                                    </span>
+                                    {/* 引き分けは分母に入れない。理由は winRate.ts */}
+                                    <span className="value">{formatWinRate(teamRecord)}</span>
                                     <span className="label">勝率</span>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <PlayerCardList players={playerStats} onPlayerClick={handlePlayerClick} />
+                    {emptyReason === null
+                        ? <PlayerCardList players={sortedPlayers} onPlayerClick={handlePlayerClick} />
+                        : <EmptyState reason={emptyReason} hiddenPlayerCount={hiddenPlayerCount} />}
 
                     {hiddenPlayerCount > 0 && (
                         <label className={`hidden-players-toggle ${showHiddenPlayers ? 'active' : ''}`}>
@@ -275,6 +287,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                                 type="checkbox"
                                 checked={showHiddenPlayers}
                                 onChange={e => setShowHiddenPlayers(e.target.checked)}
+                                aria-label="非表示にした選手も一覧に表示する"
                             />
                             <span className="toggle-slider"></span>
                         </label>

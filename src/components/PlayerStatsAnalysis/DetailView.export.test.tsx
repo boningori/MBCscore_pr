@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { act } from 'react';
-import { createInitialStats } from '../../types/game';
 import type { AggregatedPlayerStats } from '../../utils/playerStatsAnalysis';
+import { makeAggregatedPlayer } from '../../test/statsFactories';
 import { DetailView } from './DetailView';
 
 const exportElement = vi.hoisted(() => vi.fn());
@@ -11,11 +11,7 @@ vi.mock('../../utils/pdfExport', () => ({ exportElement }));
 vi.mock('../Toast/toastApi', () => ({ showToast }));
 
 function makePlayer(): AggregatedPlayerStats {
-    const stats = createInitialStats();
-    return {
-        playerKey: 'p1', number: 4, name: '選手A1', gamesPlayed: 3,
-        totalStats: stats, avgStats: stats, stdDevStats: stats, gameHistory: [],
-    };
+    return makeAggregatedPlayer({ name: '選手A1', gamesPlayed: 3 });
 }
 
 function deferred<T>() {

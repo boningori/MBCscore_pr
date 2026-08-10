@@ -30,6 +30,12 @@ export interface GameRecord {
     // 現れないが、「何が未割り当てだったか」を残さないと後から追えない。
     // 未解決のまま終わることは稀なので任意フィールドにしている。
     pendingActions?: PendingAction[];
+    // 試合ごとの設定。記録そのものではないが、あとから記録を読むときの前提になる
+    // （5分制の試合か6分制か、3P入力を使った試合か）。保存していなかったため、
+    // 履歴から開いた時点でどちらだったのか分からなくなっていた。
+    // 旧レコードには無いので、読む側は未設定を許容すること。
+    showThreePoint?: boolean;
+    quarterMinutes?: 5 | 6;
     createdAt: string;
 }
 
@@ -75,7 +81,8 @@ export function saveGameResult(
     foulHistory: FoulEntry[],
     date: Date = new Date(),
     gameInfo?: GameInfo,
-    pendingActions: PendingAction[] = []
+    pendingActions: PendingAction[] = [],
+    settings?: { showThreePoint?: boolean; quarterMinutes?: 5 | 6 }
 ): SaveGameResult {
     const record: GameRecord = {
         id: createGameId(date),
@@ -92,6 +99,8 @@ export function saveGameResult(
         foulHistory,
         gameInfo,
         ...(pendingActions.length > 0 ? { pendingActions } : {}),
+        ...(settings?.showThreePoint !== undefined ? { showThreePoint: settings.showThreePoint } : {}),
+        ...(settings?.quarterMinutes !== undefined ? { quarterMinutes: settings.quarterMinutes } : {}),
         createdAt: new Date().toISOString(),
     };
 

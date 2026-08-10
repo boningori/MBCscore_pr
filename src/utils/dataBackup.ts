@@ -11,7 +11,7 @@ import { loadAppSettings } from './appSettings';
 import type { GameSession } from './gameSessionStorage';
 import { loadGameSession, hasGameSession } from './gameSessionStorage';
 import { recordBackup } from './lastBackupStorage';
-import { formatInputDate } from './localDate';
+import { formatInputDate, formatRecordDate } from './localDate';
 
 // バックアップデータのバージョン
 export const BACKUP_VERSION = '2.0';
@@ -190,7 +190,7 @@ export function exportGameHistoryCSV(): string {
 
     // データ行
     const rows = gameHistory.map(game => {
-        const date = new Date(game.date).toLocaleDateString('ja-JP');
+        const date = formatRecordDate(game.date);
         const result = game.finalScore.teamA > game.finalScore.teamB ? '勝利' :
             game.finalScore.teamA < game.finalScore.teamB ? '敗北' : '引分';
 
@@ -271,7 +271,7 @@ export function exportGameHistoryDetailCSV(): string {
     const rows: string[][] = [];
 
     for (const game of gameHistory) {
-        const date = new Date(game.date).toLocaleDateString('ja-JP');
+        const date = formatRecordDate(game.date);
         const venue = game.gameInfo?.venue || '';
 
         // チームAの選手データ
@@ -711,7 +711,7 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
         const game = data.game as GameRecord;
         const existing = loadGameHistory();
         const isDuplicate = existing.some(g => isSameGameRecord(g, game));
-        const dateStr = game.date ? new Date(game.date).toLocaleDateString('ja-JP') : '不明';
+        const dateStr = formatRecordDate(game.date) || '不明';
         const score = game.finalScore ? `${game.finalScore.teamA} - ${game.finalScore.teamB}` : '';
         const preview: string[] = [
             `📅 ${dateStr}`,

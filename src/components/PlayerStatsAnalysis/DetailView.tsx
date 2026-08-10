@@ -8,14 +8,26 @@ import { splitPercent } from '../../utils/percentSplit';
 import { GrowthComparison } from './GrowthComparison';
 import { RecentForm } from './RecentForm';
 import { WinLossSplit } from './WinLossSplit';
+import { Workload } from './Workload';
 import { formatDate, type DetailViewProps } from './types';
 
+/**
+ * 「±（標準偏差）」を出しはじめる試合数。
+ *
+ * 計算は2試合から可能だが、2試合の標準偏差は差の半分にしかならず、
+ * 「ばらつき」として読むと実態を表さない。数字が出ている＝根拠がある、と
+ * 受け取られるので、根拠が薄いうちは出さずに理由を書く。
+ */
+const MIN_GAMES_FOR_STD_DEV = 3;
+
 export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps) {
+    const showStdDev = player.gamesPlayed >= MIN_GAMES_FOR_STD_DEV;
     const detailRef = useRef<HTMLDivElement>(null);
     const { isExporting, runExport } = useExportAction();
     const totalRebounds = player.totalStats.offensiveRebounds + player.totalStats.defensiveRebounds;
     const avgRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
-    const stdDevRebounds = player.stdDevStats.offensiveRebounds + player.stdDevStats.defensiveRebounds;
+    // 平均は足してよいが標準偏差は足せない。理由は AggregatedPlayerStats.reboundsStdDev のコメント
+    const stdDevRebounds = player.reboundsStdDev;
 
     const playerName = player.name || `#${formatPlayerNumber(player.number)}`;
     const title = `#${formatPlayerNumber(player.number)} ${player.name}（${player.gamesPlayed}試合）`;
@@ -84,26 +96,32 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                 <div className="highlight-section">
                     <div className="section-title">
                         <span className="title-text">📊 試合平均</span>
-                        <span className="title-note">±は標準偏差（ばらつき）</span>
+                        <span className="title-note">
+                            {showStdDev
+                                ? '±は標準偏差（ばらつき）'
+                                : `ばらつき（±）は${MIN_GAMES_FOR_STD_DEV}試合以上から表示します`}
+                        </span>
                     </div>
                     <div className="highlight-stats">
                         <div className="highlight-stat primary">
                             <span className="highlight-value">{player.avgStats.points.toFixed(1)}</span>
-                            <span className="highlight-std">±{player.stdDevStats.points.toFixed(1)}</span>
+                            {showStdDev && <span className="highlight-std">±{player.stdDevStats.points.toFixed(1)}</span>}
                             <span className="highlight-label">得点/試合</span>
                         </div>
                         <div className="highlight-stat">
                             <span className="highlight-value">{avgRebounds.toFixed(1)}</span>
-                            <span className="highlight-std">±{stdDevRebounds.toFixed(1)}</span>
+                            {showStdDev && <span className="highlight-std">±{stdDevRebounds.toFixed(1)}</span>}
                             <span className="highlight-label">REB/試合</span>
                         </div>
                         <div className="highlight-stat">
                             <span className="highlight-value">{player.avgStats.assists.toFixed(1)}</span>
-                            <span className="highlight-std">±{player.stdDevStats.assists.toFixed(1)}</span>
+                            {showStdDev && <span className="highlight-std">±{player.stdDevStats.assists.toFixed(1)}</span>}
                             <span className="highlight-label">AST/試合</span>
                         </div>
                     </div>
                 </div>
+
+                <Workload player={player} />
 
                 <RecentForm gameHistory={player.gameHistory} />
 
@@ -160,7 +178,18 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                                 <span className="perf-value">{player.avgStats.turnovers.toFixed(1)}</span>
                                 <span className="perf-total">{player.totalStats.turnovers}</span>
                             </div>
+                            {/* ファウルは PlayerStats に無いため、これまで分析側に出ていなかった */}
+                            <div className="perf-row foul">
+                                <span className="perf-label">ファウル</span>
+                                <span className="perf-value">{(player.totalFouls / player.gamesPlayed).toFixed(1)}</span>
+                                <span className="perf-total">{player.totalFouls}</span>
+                            </div>
                         </div>
+                        {player.foulOutGames > 0 && (
+                            <p className="perf-note">
+                                退場・失格 {player.foulOutGames}試合（{player.gamesPlayed}試合中）
+                            </p>
+                        )}
                     </div>
 
                     <div className="stats-card wide">
@@ -199,6 +228,7 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                         <span></span>
                         <span>対戦相手</span>
                         <span>スコア</span>
+                        <span className="foul-header">F</span>
                         <div className="stats-header">
                             <span>PTS</span>
                             <span>REB</span>
@@ -220,6 +250,10 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                                 <span className={`result-dot ${game.result}`}></span>
                                 <span className="game-opponent">{game.opponent}</span>
                                 <span className="game-score">{game.teamScore}-{game.opponentScore}</span>
+                                {/* 退場・失格した試合は数字だけでは分からないので印を付ける */}
+                                <span className={`game-fouls ${game.fouledOut ? 'fouled-out' : ''}`}>
+                                    {game.fouls}{game.fouledOut ? '!' : ''}
+                                </span>
                                 <div className="game-stats-compact">
                                     <span className="stat-pts">{game.stats.points}</span>
                                     <span className="stat-reb">{game.stats.offensiveRebounds + game.stats.defensiveRebounds}</span>

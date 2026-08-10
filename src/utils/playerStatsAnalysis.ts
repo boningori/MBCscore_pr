@@ -5,6 +5,8 @@ import type { GameRecord } from './gameHistoryStorage';
 import { loadGameHistory } from './gameHistoryStorage';
 import { loadMyTeams, type SavedTeam } from './teamStorage';
 import { createJsonStorage } from './createStorage';
+import { formatRecordDate, recordDateParts, recordInputDate } from './localDate';
+import { isDisqualified } from './disqualification';
 
 // 非表示選手ストレージ。
 // 配列やnullが入っているとチームIDでの索引が壊れるため、素のオブジェクトのみ受ける
@@ -62,9 +64,30 @@ export interface AggregatedPlayerStats {
     name: string;
     licenseNo?: string;
     gamesPlayed: number;      // 出場試合数
+    // 出場したクォーターの通算（OTも1つとして数える）。
+    //
+    // ミニバスは全員出場ルールがあり、1Qだけ出た試合と4Q出た試合が同居する。
+    // 「試合平均」だけを見るとエースほど過小・控えほど過大に評価される。
+    // 出場していない旧データ（quartersPlayed 未記録）は0のままにして推測しない。
+    // 0のときは1Qあたりの数値を出してはいけない（ゼロ除算になる）。
+    totalQuartersPlayed: number;
+    // ファウルの通算と、退場・失格に至った試合数。
+    //
+    // ファウルは PlayerStats に無い（Player.fouls に別で入っている）ため、
+    // これまで分析側では一切集計されていなかった。試合中の画面には出るのに
+    // 成長を追う画面にだけ無い、という非対称になっていた。
+    totalFouls: number;
+    foulOutGames: number;
     totalStats: PlayerStats;  // 累積スタッツ
     avgStats: PlayerStats;    // 平均スタッツ
     stdDevStats: PlayerStats; // 標準偏差
+    // 試合ごとの OR+DR の標準偏差。
+    //
+    // stdDevStats.offensiveRebounds + stdDevStats.defensiveRebounds では求まらない。
+    // 標準偏差は加算できないため（平均は加算できるので avgStats は足してよい）。
+    // 足すと必ず過大評価になり、OR偏重・DR偏重が試合ごとに入れ替わる選手ほど
+    // 外れる（実測: 毎試合REB4で安定している選手が ±4 と表示されていた）。
+    reboundsStdDev: number;
     gameHistory: PlayerGameRecord[];  // 試合別履歴
 }
 
@@ -77,6 +100,12 @@ export interface PlayerGameRecord {
     result: 'win' | 'loss' | 'draw';
     teamScore: number;
     opponentScore: number;
+    /** この試合で出場したクォーター数（OTも1つとして数える。旧データは0） */
+    quartersPlayed: number;
+    /** この試合のファウル数 */
+    fouls: number;
+    /** この試合で退場・失格したか（5ファウル / D / U・T 2回） */
+    fouledOut: boolean;
 }
 
 // 期間別の集計結果
@@ -202,6 +231,15 @@ function calculateStatsStdDev(gameHistory: PlayerGameRecord[], avgStats: PlayerS
     };
 }
 
+/** 試合ごとの OR+DR の標準偏差（詳細は AggregatedPlayerStats.reboundsStdDev のコメント） */
+function calculateReboundsStdDev(gameHistory: PlayerGameRecord[], avgStats: PlayerStats): number {
+    if (gameHistory.length < 2) return 0;
+    return calculateStdDev(
+        gameHistory.map(g => g.stats.offensiveRebounds + g.stats.defensiveRebounds),
+        avgStats.offensiveRebounds + avgStats.defensiveRebounds,
+    );
+}
+
 /**
  * 記録された1チームが、指定したマイチームかどうかを判定する。
  *
@@ -262,6 +300,8 @@ export function aggregatePlayerStats(
 ): AggregatedPlayerStats[] {
     const games = getMyTeamGames(myTeam);
     const playerMap = new Map<string, AggregatedPlayerStats>();
+    // 選手ごとに「いま採用している背番号の試合日」。走査順は日付順とは限らない
+    const latestNumberTime = new Map<string, number>();
     const hiddenPlayers = options?.includeHidden ? [] : loadHiddenPlayers(myTeam.id);
 
     for (const { record, isTeamA } of games) {
@@ -295,7 +335,9 @@ export function aggregatePlayerStats(
                 player.stats.steals > 0 ||
                 player.stats.blocks > 0 ||
                 player.stats.turnovers > 0;
-            const hasPlayedQuarters = player.quartersPlayed?.some(q => q !== false);
+            // 'starter' | 'sub' | 'both'（と旧boolean形式の true）が出場。false / 未記録は非出場
+            const quartersPlayed = player.quartersPlayed?.filter(q => q !== false && !!q).length ?? 0;
+            const hasPlayedQuarters = quartersPlayed > 0;
 
             if (!hasStats && !hasPlayedQuarters) continue;
 
@@ -307,6 +349,9 @@ export function aggregatePlayerStats(
                 result,
                 teamScore: myScore,
                 opponentScore: opponentScore,
+                quartersPlayed,
+                fouls: player.fouls?.length ?? 0,
+                fouledOut: isDisqualified(player.fouls ?? []),
             };
 
             if (!playerMap.has(key)) {
@@ -316,19 +361,35 @@ export function aggregatePlayerStats(
                     name: player.name,
                     licenseNo: player.licenseNo,
                     gamesPlayed: 0,
+                    totalQuartersPlayed: 0,
+                    totalFouls: 0,
+                    foulOutGames: 0,
                     totalStats: createEmptyStats(),
                     avgStats: createEmptyStats(),
                     stdDevStats: createEmptyStats(),
+                    reboundsStdDev: 0,
                     gameHistory: [],
                 });
             }
 
             const aggregated = playerMap.get(key)!;
             aggregated.gamesPlayed += 1;
+            aggregated.totalQuartersPlayed += quartersPlayed;
+            aggregated.totalFouls += gameRecord.fouls;
+            if (gameRecord.fouledOut) aggregated.foulOutGames += 1;
             aggregated.totalStats = addStats(aggregated.totalStats, player.stats);
             aggregated.gameHistory.push(gameRecord);
-            // 最新の背番号を更新
-            if (new Date(record.date) > new Date(aggregated.gameHistory[0]?.date || '1900-01-01')) {
+
+            // 背番号はいちばん新しい試合のものを使う。
+            //
+            // 以前は push 済みの gameHistory[0]（＝最初に走査した試合）を基準にして
+            // 「基準より新しければ上書き」としていた。基準より新しい試合が複数あると
+            // 最大日付ではなく最後に走査したものが勝つ。履歴は保存順に並ぶので、
+            // 過去の試合を後から入力すると日付順と食い違い、古い背番号が残っていた。
+            const gameTime = new Date(record.date).getTime();
+            const latest = latestNumberTime.get(key);
+            if (latest === undefined || gameTime > latest) {
+                latestNumberTime.set(key, gameTime);
                 aggregated.number = player.number;
             }
         }
@@ -338,6 +399,7 @@ export function aggregatePlayerStats(
     for (const aggregated of playerMap.values()) {
         aggregated.avgStats = divideStats(aggregated.totalStats, aggregated.gamesPlayed);
         aggregated.stdDevStats = calculateStatsStdDev(aggregated.gameHistory, aggregated.avgStats);
+        aggregated.reboundsStdDev = calculateReboundsStdDev(aggregated.gameHistory, aggregated.avgStats);
         aggregated.gameHistory.sort((a, b) =>
             new Date(b.date).getTime() - new Date(a.date).getTime()
         );
@@ -346,10 +408,12 @@ export function aggregatePlayerStats(
     return Array.from(playerMap.values()).sort((a, b) => a.number - b.number);
 }
 
-// 期間キーを生成
-function getPeriodKey(date: Date, periodType: PeriodType): string {
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
+// 期間キーを生成。
+// 記録された暦日で束ねる（現地時刻に直すと、UTCより西では月初の試合が前月に入る）
+function getPeriodKey(iso: string, periodType: PeriodType): string {
+    const parts = recordDateParts(iso);
+    if (!parts) return iso;
+    const { year, month } = parts;
 
     switch (periodType) {
         case 'month':
@@ -361,7 +425,7 @@ function getPeriodKey(date: Date, periodType: PeriodType): string {
         case 'year':
             return `${year}`;
         default:
-            return date.toISOString().split('T')[0];
+            return recordInputDate(iso);
     }
 }
 
@@ -406,7 +470,7 @@ export function aggregateByPeriod(
 
     for (const game of gameHistory) {
         const date = new Date(game.date);
-        const key = getPeriodKey(date, periodType);
+        const key = getPeriodKey(game.date, periodType);
 
         if (!periodMap.has(key)) {
             periodMap.set(key, { games: [], startDate: date, endDate: date });
@@ -440,11 +504,8 @@ export function aggregateByPeriod(
     return result.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
 }
 
-// 日付フォーマット
-function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
-}
+// 日付フォーマット（記録された暦日をそのまま出す。理由は localDate.ts）
+const formatDate = formatRecordDate;
 
 // 登録済みマイチーム一覧を取得
 export function getAvailableMyTeams(): SavedTeam[] {

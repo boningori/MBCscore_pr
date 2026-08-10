@@ -21,7 +21,13 @@ import {
     shareFile,
     generateTeamFilename,
 } from '../../utils/dataBackup';
-import { useTeamImportExport, TextImportPanel, DeleteConfirmModal } from '../TeamShared';
+import {
+    useTeamImportExport,
+    TextImportPanel,
+    DeleteConfirmModal,
+    isPlayerLimitReached,
+    playerLimitMessage,
+} from '../TeamShared';
 import '../../styles/number-grid.css';
 import './OpponentManager.css';
 
@@ -182,10 +188,14 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         const existingIndex = editingTeam.players.findIndex(p => p.number === num);
 
         if (existingIndex >= 0) {
-            // 既存なら削除
+            // 既存なら削除。上限に達していても外す操作は常に通す（詰みにしない）
             const players = editingTeam.players.filter((_, i) => i !== existingIndex);
             setEditingTeam({ ...editingTeam, players });
         } else {
+            if (isPlayerLimitReached(editingTeam.players.length)) {
+                showStatus(playerLimitMessage(), 'error');
+                return;
+            }
             // 新規なら追加
             const displayNum = formatPlayerNumber(num);
             const newPlayer: SavedPlayer = {
@@ -218,6 +228,11 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
 
     const handleAddPlayer = () => {
         if (!editingTeam || !newNumber) return;  // 名前は任意
+
+        if (isPlayerLimitReached(editingTeam.players.length)) {
+            showStatus(playerLimitMessage(), 'error');
+            return;
+        }
 
         const number = parsePlayerNumber(newNumber);
         if (number === null || !isValidPlayerNumber(number)) {

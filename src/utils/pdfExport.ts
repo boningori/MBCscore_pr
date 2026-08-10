@@ -238,8 +238,108 @@ function addTitleToCanvas(canvas: HTMLCanvasElement, title: string): HTMLCanvasE
     return newCanvas;
 }
 
+/** PDF1ページ分の割り当て */
+export interface PdfPageSlice {
+    /** 元canvas上の切り出し開始位置(px) */
+    sourceY: number;
+    /** 切り出す高さ(px) */
+    sourceHeight: number;
+    /** ページ上の描画幅(mm) */
+    drawWidth: number;
+    /** ページ上の描画高さ(mm) */
+    drawHeight: number;
+    /** ページ上の左端(mm)。1ページに収める場合だけ中央寄せになる */
+    x: number;
+}
+
 /**
- * 1ページPDF出力（A4にマージン付きで収める）
+ * 1ページに収めるために許す縦の超過。
+ *
+ * スコアシートは実測で縦横比 1.471（A4は 1.414）と、A4より4%だけ縦長い。
+ * 超過が少しでもあれば改ページする実装にすると、公式様式が「2ページ目に数mmだけ」
+ * という形で必ず割れる。この程度は幅を96%に縮めて1枚に収めたほうがよい。
+ * 一方で選手詳細は縦横比3以上まで伸びるので、そこは改ページに回す。
+ */
+const SINGLE_PAGE_TOLERANCE = 1.15;
+
+/**
+ * canvasをA4ページへ割り当てる。
+ *
+ * 以前は Math.min(pageWidth/w, pageHeight/h) で必ず1ページに収めていた。
+ * スコアシートはA4比のレイアウトなので問題なかったが、選手詳細は
+ * 「試合別詳細（1試合1行）＋推移グラフ6枚」を含むため高さが試合数に比例して伸びる。
+ * 実測では52試合の選手で描画幅が 89.4mm（A4幅210mmの42%）まで縮み、
+ * 右側120mmが空白のまま本文が読めない大きさになっていた。しかも
+ * 試合を重ねるほど悪化する。
+ *
+ * そこで幅は常にページ幅に合わせ、あふれた分を次ページへ送る。
+ * 切れ目が行の途中に来ることはあるが、全体が読めなくなるよりは軽い。
+ */
+export function planPdfPages(
+    canvasWidth: number,
+    canvasHeight: number,
+    pageWidth: number,
+    pageHeight: number,
+): PdfPageSlice[] {
+    if (!(canvasWidth > 0) || !(canvasHeight > 0)) {
+        return [{
+            sourceY: 0, sourceHeight: Math.max(0, canvasHeight),
+            drawWidth: pageWidth, drawHeight: 0, x: 0,
+        }];
+    }
+
+    const mmPerPx = pageWidth / canvasWidth;
+    const totalHeight = canvasHeight * mmPerPx;
+
+    if (totalHeight <= pageHeight) {
+        return [{ sourceY: 0, sourceHeight: canvasHeight, drawWidth: pageWidth, drawHeight: totalHeight, x: 0 }];
+    }
+
+    // わずかな超過なら縮めて1ページに収める（改ページするとほぼ空のページが増える）
+    if (totalHeight <= pageHeight * SINGLE_PAGE_TOLERANCE) {
+        const shrunkWidth = pageWidth * (pageHeight / totalHeight);
+        return [{
+            sourceY: 0,
+            sourceHeight: canvasHeight,
+            drawWidth: shrunkWidth,
+            drawHeight: pageHeight,
+            x: (pageWidth - shrunkWidth) / 2,
+        }];
+    }
+
+    // 1ページに載る元canvasの高さ。切り上げるとページ高を超えるので必ず切り捨てる
+    const slicePx = Math.max(1, Math.floor(pageHeight / mmPerPx));
+    const slices: PdfPageSlice[] = [];
+    for (let y = 0; y < canvasHeight; y += slicePx) {
+        // 最終ページは余りだけ。引き伸ばすと縦横比が崩れる
+        const sourceHeight = Math.min(slicePx, canvasHeight - y);
+        slices.push({
+            sourceY: y, sourceHeight,
+            drawWidth: pageWidth, drawHeight: sourceHeight * mmPerPx, x: 0,
+        });
+    }
+    return slices;
+}
+
+/** canvasの一部を切り出した新しいcanvasを返す */
+function cropCanvas(source: HTMLCanvasElement, sourceY: number, sourceHeight: number): HTMLCanvasElement {
+    if (sourceY === 0 && sourceHeight === source.height) return source;
+
+    const cropped = document.createElement('canvas');
+    cropped.width = source.width;
+    cropped.height = sourceHeight;
+    const ctx = cropped.getContext('2d');
+    if (!ctx) return source;
+
+    // 切り出し先の下地。JPEG化すると透明部分が黒くなるため白で塗る
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cropped.width, cropped.height);
+    ctx.drawImage(source, 0, sourceY, source.width, sourceHeight, 0, 0, source.width, sourceHeight);
+    return cropped;
+}
+
+/**
+ * PDF出力（A4幅いっぱいに描き、あふれた分は改ページ）
  */
 async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): Promise<void> {
     const { jsPDF } = await import('jspdf');
@@ -253,18 +353,16 @@ async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): 
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
+    const pages = planPdfPages(canvas.width, canvas.height, pageWidth, pageHeight);
 
-    // アスペクト比を維持してページ全体に収める（余白はCSS側で設定済み）
-    const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
-    const scaledWidth = canvas.width * ratio;
-    const scaledHeight = canvas.height * ratio;
+    pages.forEach((page, index) => {
+        if (index > 0) pdf.addPage();
+        const pageCanvas = cropCanvas(canvas, page.sourceY, page.sourceHeight);
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.85);
+        // 上寄せ（余白はCSS側で設定済み）
+        pdf.addImage(imgData, 'JPEG', page.x, 0, page.drawWidth, page.drawHeight);
+    });
 
-    // 左右中央・上寄せ
-    const x = (pageWidth - scaledWidth) / 2;
-    const y = 0;
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.85);
-    pdf.addImage(imgData, 'JPEG', x, y, scaledWidth, scaledHeight);
     pdf.save(`${filename}.pdf`);
 }
 

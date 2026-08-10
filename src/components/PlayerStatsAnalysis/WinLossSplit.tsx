@@ -20,6 +20,9 @@ export function WinLossSplit({ gameHistory }: WinLossSplitProps) {
     const cell = (side: { n: number; avg: SplitStats }, key: keyof SplitStats) =>
         side.n === 0 ? '—' : side.avg[key].toFixed(1);
     const incomplete = split.win.n === 0 || split.loss.n === 0;
+    // ミニバスで引き分けはまれ。0件のときに空の列を足すと表が読みにくくなるので、
+    // あるときだけ出す。無いまま隠すと n の合計が試合数と合わない理由が分からなくなる
+    const showDraw = split.draw.n > 0;
 
     return (
         <div className="win-loss-split-section">
@@ -32,6 +35,7 @@ export function WinLossSplit({ gameHistory }: WinLossSplitProps) {
                         <th></th>
                         <th className="win-col">勝ち (n={split.win.n})</th>
                         <th className="loss-col">負け (n={split.loss.n})</th>
+                        {showDraw && <th className="draw-col">引分 (n={split.draw.n})</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -40,6 +44,7 @@ export function WinLossSplit({ gameHistory }: WinLossSplitProps) {
                             <td className="wl-label">{label}</td>
                             <td className="win-col">{cell(split.win, key)}</td>
                             <td className="loss-col">{cell(split.loss, key)}</td>
+                            {showDraw && <td className="draw-col">{cell(split.draw, key)}</td>}
                         </tr>
                     ))}
                 </tbody>

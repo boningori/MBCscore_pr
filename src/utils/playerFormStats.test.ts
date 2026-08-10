@@ -2,19 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { getRecentForm, getWinLossSplit } from './playerFormStats';
 import type { PlayerGameRecord } from './playerStatsAnalysis';
 import type { PlayerStats } from '../types/game';
-import { createInitialStats } from '../types/game';
+import { makeGameRecord, makeStats } from '../test/statsFactories';
 
 // gameHistoryは日付降順（新しい順）で渡す
 function rec(date: string, result: 'win' | 'loss' | 'draw', s: Partial<PlayerStats>): PlayerGameRecord {
-    return {
-        gameId: date,
-        date,
-        opponent: 'X',
-        stats: { ...createInitialStats(), ...s },
-        result,
-        teamScore: 0,
-        opponentScore: 0,
-    };
+    return makeGameRecord({ gameId: date, date, result, stats: makeStats(s) });
 }
 
 describe('getRecentForm', () => {

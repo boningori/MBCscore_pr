@@ -108,3 +108,28 @@ describe('gameHistoryStorage: 既存データの重複ID修復', () => {
         expect(after.map(g => g.gameName)).toContain('2日目 第2試合');
     });
 });
+
+describe('試合ごとの設定の保存', () => {
+    // 5分制か6分制か、3P入力を使ったかは「記録を読むときの前提」。
+    // 保存していなかったため、履歴から開いた時点で分からなくなっていた
+    it('showThreePoint と quarterMinutes を記録に残す', () => {
+        const { record } = saveGameResult(
+            'テスト', createTeam('teamA','マイチーム','コーチ'), createTeam('teamB','相手チーム','相手コーチ'), [], [], [],
+            new Date('2026-06-05'), undefined, [],
+            { showThreePoint: true, quarterMinutes: 5 },
+        );
+
+        expect(record.showThreePoint).toBe(true);
+        expect(record.quarterMinutes).toBe(5);
+        expect(loadGameHistory()[0].quarterMinutes).toBe(5);
+    });
+
+    it('渡さなければ項目を作らない（旧レコードと同じ形のまま）', () => {
+        const { record } = saveGameResult(
+            'テスト', createTeam('teamA','マイチーム','コーチ'), createTeam('teamB','相手チーム','相手コーチ'), [], [], [], new Date('2026-06-05'),
+        );
+
+        expect('showThreePoint' in record).toBe(false);
+        expect('quarterMinutes' in record).toBe(false);
+    });
+});
