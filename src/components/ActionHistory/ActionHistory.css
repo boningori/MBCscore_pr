@@ -179,6 +179,18 @@
     padding: 2px;
     border-radius: var(--radius-sm);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    /* ファウルの注記が入ると横並びでは収まらないので折り返す */
+    flex-wrap: wrap;
+    max-width: 100%;
+    align-items: center;
+}
+
+/* 編集を出さない種別に、代わりの直し方を添える */
+.action-history .action-menu-note {
+    flex-basis: 100%;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    padding: 0 2px 2px;
 }
 
 /* ジョグダイヤル */

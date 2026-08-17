@@ -25,9 +25,24 @@ describe('RecentForm', () => {
         expect(screen.getByText('AST')).toBeTruthy();
     });
 
-    it('5試合未満はデータ不足の注記を出す', () => {
+    // 全試合が直近ウィンドウに収まっている間は直近平均＝通算平均で、差は必ず0。
+    // 「vs 通算平均」と称して ± 0.0 を並べると、毎試合伸びている選手が
+    // 「通算と変わらない」と読めてしまう
+    it('全試合が直近に収まる間は差分を出さず、いつから比較できるかを書く', () => {
         render(<RecentForm gameHistory={[rec('2026-06-01', { points: 10 })]} />);
-        expect(screen.getByText(/データ不足/)).toBeTruthy();
+        expect(screen.getByText(/全1試合の平均（通算との比較は6試合目から）/)).toBeTruthy();
+        expect(screen.queryByText(/±/)).toBeNull();
+    });
+
+    it('ちょうど5試合でも差分は出さない（直近5試合＝全試合のため）', () => {
+        const gh = [
+            rec('2026-06-05', { points: 14 }), rec('2026-06-04', { points: 12 }),
+            rec('2026-06-03', { points: 10 }), rec('2026-06-02', { points: 8 }),
+            rec('2026-06-01', { points: 6 }),
+        ];
+        const { container } = render(<RecentForm gameHistory={gh} />);
+        expect(screen.getByText(/全5試合の平均/)).toBeTruthy();
+        expect(container.querySelector('.rf-delta')).toBeNull();
     });
 
     it('直近が通算より高い得点はupクラス（↑）で表示される', () => {

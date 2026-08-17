@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Player, Team } from '../../types/game';
 import { PLAYERS_ON_COURT } from '../../types/game';
 import { isDisqualified } from '../../utils/disqualification';
+import { quarterLabel } from '../../utils/quarterLabel';
 import { LineupTeamPanel } from './LineupTeamPanel';
 import './QuarterLineup.css';
 
@@ -93,9 +94,8 @@ export function QuarterLineup({
     // クォーター色（1Q/3Qは赤、2Q/4Q/OTは黒）
     const isOT = quarter > 4;
     const quarterClass = isOT ? 'q-even' : (quarter === 1 || quarter === 3 ? 'q-odd' : 'q-even');
-    const quarterLabel = isOT
-        ? (quarter === 5 ? 'OT' : `OT${quarter - 4}`)
-        : `Q${quarter}`;
+    // 表記は共通のヘルパーに集約する（utils/quarterLabel）
+    const periodLabel = quarterLabel(quarter);
 
     return (
         <main className="quarter-lineup">
@@ -106,7 +106,7 @@ export function QuarterLineup({
                     </button>
                 )}
                 <div className={`quarter-badge ${quarterClass}`}>
-                    {quarterLabel}
+                    {periodLabel}
                 </div>
                 <h1>スタメン選択</h1>
             </div>
@@ -167,7 +167,7 @@ export function QuarterLineup({
                     onClick={handleStart}
                     disabled={!isValid}
                 >
-                    {quarter === 1 ? '試合開始' : `${quarterLabel} 開始`}
+                    {quarter === 1 ? '試合開始' : `${periodLabel} 開始`}
                 </button>
             </div>
 

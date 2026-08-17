@@ -15,8 +15,10 @@ interface EditActionModalProps {
     };
     players: Player[];
     onSave: (itemId: string, newPlayerId: string, newType: string) => void;
-    onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => void;
-    onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT') => void;
+    // 変換にも選手を渡す。「誰の記録か」と「成功／ミス」は同時に間違えるので、
+    // 変換経路で選手を捨てると訂正したはずの付け替えが黙って消える
+    onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
+    onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => void;
     onToggleOwnGoal?: (entryId: string) => void;
     onCancel: () => void;
 }
@@ -99,14 +101,14 @@ export function EditActionModal({
             // 成功 → ミス への変換
             if (originalCategory === 'score' && newCategory === 'stat') {
                 if (onConvertScoreToMiss) {
-                    onConvertScoreToMiss(item.id, selectedType as '2PA' | '3PA' | 'FTA');
+                    onConvertScoreToMiss(item.id, selectedType as '2PA' | '3PA' | 'FTA', selectedPlayerId);
                     return;
                 }
             }
             // ミス → 成功 への変換
             if (originalCategory === 'stat' && newCategory === 'score') {
                 if (onConvertMissToScore) {
-                    onConvertMissToScore(item.id, selectedType as '2P' | '3P' | 'FT');
+                    onConvertMissToScore(item.id, selectedType as '2P' | '3P' | 'FT', selectedPlayerId);
                     return;
                 }
             }

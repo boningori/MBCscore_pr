@@ -171,6 +171,22 @@ export function exportTeam(team: SavedTeam): TeamExportData {
 }
 
 /**
+ * その試合でマイチームが teamA 側だったか。
+ *
+ * teamA は「白」であって「自分」ではない。マイチームの色に青を選ぶと
+ * buildMatchTeams はマイチームを teamB に置く（matchTeams.ts）。
+ * どちらが自分かは記録の isMyTeam にだけ残っているので、それを見る。
+ *
+ * 紅白戦などで両側に isMyTeam が立っている場合と、どちらにも無い旧データは
+ * 決め手が無いので従来どおり teamA を左に置く（並びが変わらないだけで、
+ * 勝敗の向きも teamA 基準のまま一貫する）。
+ */
+function isMyTeamOnSideA(game: GameRecord): boolean {
+    if (game.teamA?.isMyTeam === game.teamB?.isMyTeam) return true;
+    return game.teamA?.isMyTeam === true;
+}
+
+/**
  * 試合履歴をCSV形式でエクスポート（試合サマリー版）
  */
 export function exportGameHistoryCSV(): string {
@@ -191,16 +207,24 @@ export function exportGameHistoryCSV(): string {
     // データ行
     const rows = gameHistory.map(game => {
         const date = formatRecordDate(game.date);
-        const result = game.finalScore.teamA > game.finalScore.teamB ? '勝利' :
-            game.finalScore.teamA < game.finalScore.teamB ? '敗北' : '引分';
+        // 列名が「自チーム／相手」である以上、中身も自チーム視点にそろえる。
+        // teamA 固定で出していたため、青で戦った試合は自他が入れ替わり、
+        // 勝った試合が「敗北」として書き出されていた
+        const mineIsA = isMyTeamOnSideA(game);
+        const myTeam = mineIsA ? game.teamA : game.teamB;
+        const opponentTeam = mineIsA ? game.teamB : game.teamA;
+        const myScore = mineIsA ? game.finalScore.teamA : game.finalScore.teamB;
+        const opponentScore = mineIsA ? game.finalScore.teamB : game.finalScore.teamA;
+        const result = myScore > opponentScore ? '勝利' :
+            myScore < opponentScore ? '敗北' : '引分';
 
         return [
             date,
             game.gameName,
-            game.teamA.name,
-            game.teamB.name,
-            game.finalScore.teamA.toString(),
-            game.finalScore.teamB.toString(),
+            myTeam.name,
+            opponentTeam.name,
+            myScore.toString(),
+            opponentScore.toString(),
             result,
             game.gameInfo?.venue || '',
         ];

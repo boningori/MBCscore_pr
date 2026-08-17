@@ -23,8 +23,8 @@ interface ActionHistoryProps {
     onRemoveFoul: (entryId: string) => void;
     onEditScore?: (entryId: string, newPlayerId: string, newScoreType: ScoreType) => void;
     onEditStat?: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
-    onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => void;
-    onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT') => void;
+    onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
+    onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => void;
     onToggleOwnGoal?: (entryId: string) => void;
 }
 
@@ -320,16 +320,16 @@ export function ActionHistory({
         setEditingItem(null);
     }, [editingItem, onEditScore, onEditStat]);
 
-    const handleConvertScoreToMiss = useCallback((entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => {
+    const handleConvertScoreToMiss = useCallback((entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => {
         if (onConvertScoreToMiss) {
-            onConvertScoreToMiss(entryId, newMissType);
+            onConvertScoreToMiss(entryId, newMissType, newPlayerId);
         }
         setEditingItem(null);
     }, [onConvertScoreToMiss]);
 
-    const handleConvertMissToScore = useCallback((entryId: string, newScoreType: '2P' | '3P' | 'FT') => {
+    const handleConvertMissToScore = useCallback((entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => {
         if (onConvertMissToScore) {
-            onConvertMissToScore(entryId, newScoreType);
+            onConvertMissToScore(entryId, newScoreType, newPlayerId);
         }
         setEditingItem(null);
     }, [onConvertMissToScore]);
@@ -379,7 +379,14 @@ export function ActionHistory({
                                 </button>
                                 {selectedItemId === item.id && (
                                     <div className="action-menu">
-                                        {(onEditScore || onEditStat) && (
+                                        {/*
+                                          ファウルには編集を出さない。EditActionModal は得点・スタッツ用で、
+                                          ファウルを渡すとスタッツ種別（OREB等）を選ばせたうえに保存が
+                                          何もしない。ファウルはチームファウル・コーチ行のB・FTの得点まで
+                                          巻き戻す必要があり、それを正しく行えるのは削除の経路だけなので、
+                                          そちらへ案内する
+                                        */}
+                                        {item.type !== 'foul' && (onEditScore || onEditStat) && (
                                             <button className="btn btn-primary btn-small" onClick={() => handleEdit(item)}>
                                                 編集
                                             </button>
@@ -390,6 +397,11 @@ export function ActionHistory({
                                         <button className="btn btn-secondary btn-small" onClick={handleCancel}>
                                             キャンセル
                                         </button>
+                                        {item.type === 'foul' && (
+                                            <span className="action-menu-note">
+                                                ファウルは削除して入力し直してください
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>

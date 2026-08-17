@@ -28,6 +28,25 @@ describe('getRecentForm', () => {
         expect(form.deltas.points).toBeGreaterThan(0);
     });
 
+    // 全試合が直近ウィンドウに収まる間は、差が0なのは「変化が無い」からではなく
+    // 同じ集合どうしを引いているから。呼び出し側が区別できないと表示が嘘になる
+    it('ちょうどrecentN試合ではcoversAllGames=true（isPartialはfalseのまま）', () => {
+        const gh = [6, 5, 4, 3, 2].map((d, i) =>
+            rec(`2026-06-0${6 - i}`, 'win', { points: (5 - i) * 2 }));
+        const form = getRecentForm(gh);
+        expect(form.recentGames).toBe(5);
+        expect(form.isPartial).toBe(false);
+        expect(form.coversAllGames).toBe(true);
+        expect(form.comparableFrom).toBe(6);
+        expect(form.deltas.points).toBe(0);
+    });
+
+    it('recentNを超えるとcoversAllGames=false', () => {
+        const gh = Array.from({ length: 6 }, (_, i) =>
+            rec(`2026-06-0${6 - i}`, 'win', { points: 10 }));
+        expect(getRecentForm(gh).coversAllGames).toBe(false);
+    });
+
     it('3試合ではisPartial=true、直近平均=通算平均、delta=0', () => {
         const gh = [
             rec('2026-06-03', 'win', { points: 8 }),

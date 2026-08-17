@@ -7,7 +7,7 @@ import type {
     CoachFoulTarget,
     ScoreEntry,
 } from '../../types/game';
-import { recalculateRunningScores } from './shared';
+import { recalculateRunningScores, incrementTeamFoul, decrementTeamFoul } from './shared';
 
 export function handleAddFoul(state: Game, payload: PayloadOf<'ADD_FOUL'>): Game {
     const { teamId, playerId, foulType } = payload;
@@ -55,12 +55,9 @@ export function handleAddFoul(state: Game, payload: PayloadOf<'ADD_FOUL'>): Game
         }
 
         // 通常のプレイヤーファウルのみチームファウルを加算
-        const newTeamFouls = [...team.teamFouls];
-        newTeamFouls[state.currentQuarter - 1]++;
-
         return {
             ...team,
-            teamFouls: newTeamFouls,
+            teamFouls: incrementTeamFoul(team.teamFouls, state.currentQuarter),
             players: team.players.map(p => {
                 if (p.id !== playerId) return p;
                 return { ...p, fouls: [...p.fouls, foulType] };
@@ -168,12 +165,9 @@ export function handleAddFoulWithFreeThrows(state: Game, payload: PayloadOf<'ADD
         }
 
         // 通常のプレイヤーファウル（コート上の選手）はチームファウルを加算
-        const newTeamFouls = [...team.teamFouls];
-        newTeamFouls[state.currentQuarter - 1]++;
-
         return {
             ...team,
-            teamFouls: newTeamFouls,
+            teamFouls: incrementTeamFoul(team.teamFouls, state.currentQuarter),
             players: team.players.map(p => {
                 if (p.id !== playerId) return p;
                 return { ...p, fouls: [...p.fouls, foulRecord] };
@@ -320,30 +314,6 @@ export function handleAddFoulWithFreeThrows(state: Game, payload: PayloadOf<'ADD
  */
 function isSubstituteTech(entry: FoulEntry): boolean {
     return entry.playerId !== null && entry.coachFoulTarget === 'BENCH';
-}
-
-/**
- * 指定ピリオドのチームファウルを1つ減らした配列を返す。
- *
- * OTの枠は直前ピリオドの数を種にして積み上がる（gameFlowHandlers の
- * extendForOT）。つまりOT欄には第4Qで犯したファウルが含まれている。
- * 第4Q以降のファウルを取り消すときは、それを含んでいる後続のOT欄も
- * まとめて減らさないと通算が水増しのまま残り、ペナルティ判定
- * （OT欄を見ている）が本来より早くFTに入る。
- *
- * Q1〜Q3は互いに独立なので、その枠だけを減らす。
- */
-function decrementTeamFoul(teamFouls: number[], quarter: number): number[] {
-    const next = [...teamFouls];
-    const decrement = (index: number) => {
-        if (next[index] > 0) next[index]--;
-    };
-
-    decrement(quarter - 1);
-    if (quarter >= 4) {
-        for (let i = quarter; i < next.length; i++) decrement(i);
-    }
-    return next;
 }
 
 /** 配列から最初の該当を1つだけ取り除く。無ければ元の配列をそのまま返す */

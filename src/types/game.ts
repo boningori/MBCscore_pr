@@ -211,6 +211,7 @@ export type GameActionType =
     | 'ADD_FOUL'
     | 'ADD_FOUL_WITH_FREE_THROWS'
     | 'ADD_TIMEOUT'
+    | 'REMOVE_TIMEOUT'
     | 'SUBSTITUTE_PLAYER'
     | 'ADD_PLAYER_TO_TEAM'
     | 'SELECT_PLAYER'
@@ -289,8 +290,11 @@ export type GameAction =
     | { type: 'ADD_SCORE'; payload: { teamId: string; playerId: string; scoreType: ScoreType; entryId?: string } }
     | { type: 'REMOVE_SCORE'; payload: { entryId: string } }
     | { type: 'EDIT_SCORE'; payload: { entryId: string; newPlayerId: string; newScoreType: ScoreType } }
-    | { type: 'CONVERT_SCORE_TO_MISS'; payload: { entryId: string; newMissType: '2PA' | '3PA' | 'FTA' } }
-    | { type: 'CONVERT_MISS_TO_SCORE'; payload: { entryId: string; newScoreType: ScoreType } }
+    // newPlayerId は「誰の記録か」も同時に直すとき用（省略時は元の選手のまま）。
+    // 記録中は「押し間違えた選手」と「成功／ミスの取り違え」が同時に起きるため、
+    // 変換と付け替えを別の操作に分けると、片方が黙って捨てられる経路ができる
+    | { type: 'CONVERT_SCORE_TO_MISS'; payload: { entryId: string; newMissType: '2PA' | '3PA' | 'FTA'; newPlayerId?: string } }
+    | { type: 'CONVERT_MISS_TO_SCORE'; payload: { entryId: string; newScoreType: ScoreType; newPlayerId?: string } }
     | { type: 'TOGGLE_OWN_GOAL'; payload: { entryId: string } }
     // スタッツ
     | { type: 'ADD_STAT'; payload: { teamId: string; playerId: string; statType: StatType; entryId?: string } }
@@ -306,6 +310,9 @@ export type GameAction =
     // 管理
     | { type: 'SUBSTITUTE_PLAYER'; payload: { teamId: string; playerInId: string; playerOutId: string } }
     | { type: 'ADD_TIMEOUT'; payload: { teamId: string; elapsedMinutes: number } }
+    // 記録したタイムアウトの取り消し。得点・スタッツ・ファウルと違って
+    // アクション履歴に載らないため、これが無いと誤記録を直す手段が無い
+    | { type: 'REMOVE_TIMEOUT'; payload: { teamId: string; quarter: number } }
     | { type: 'ADD_PLAYER_TO_TEAM'; payload: { teamId: string; number: number; name: string } }
     | { type: 'SELECT_PLAYER'; payload: { playerId: Game['selectedPlayerId']; teamId: Game['selectedTeamId'] } }
     | { type: 'CLEAR_SELECTION' }

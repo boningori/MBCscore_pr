@@ -7,7 +7,7 @@ import type {
     FoulType,
     FoulRecord,
 } from '../../types/game';
-import { recalculateRunningScores } from './shared';
+import { recalculateRunningScores, incrementTeamFoul } from './shared';
 
 export function handleAddPendingAction(state: Game, payload: PayloadOf<'ADD_PENDING_ACTION'>): Game {
     const pendingAction = payload;
@@ -126,11 +126,11 @@ export function handleResolvePendingAction(state: Game, payload: PayloadOf<'RESO
         const foulType = pending.value as FoulType;
         const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
             if (!isTarget) return team;
-            const newTeamFouls = [...team.teamFouls];
-            newTeamFouls[pending.quarter - 1]++;
             return {
                 ...team,
-                teamFouls: newTeamFouls,
+                // 保留は記録された当時のピリオドへ後から足す。OT欄は第4Qからの
+                // 通算なので、第4Qの保留をOT中に解決したら後続の枠にも伝える
+                teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
                 players: team.players.map(p => {
                     if (p.id !== playerId) return p;
                     return { ...p, fouls: [...p.fouls, foulType] };
@@ -192,11 +192,10 @@ export function handleResolvePendingActionWithFoulType(state: Game, payload: Pay
 
     const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
-        const newTeamFouls = [...team.teamFouls];
-        newTeamFouls[pending.quarter - 1]++;
         return {
             ...team,
-            teamFouls: newTeamFouls,
+            // 理由は handleResolvePendingAction の同じ箇所のコメント
+            teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
             players: team.players.map(p => {
                 if (p.id !== playerId) return p;
                 return { ...p, fouls: [...p.fouls, foulType] };
@@ -258,11 +257,10 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: P
     // ファウルをしたチームを更新
     const updateFoulingTeam = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
-        const newTeamFouls = [...team.teamFouls];
-        newTeamFouls[pending.quarter - 1]++;
         return {
             ...team,
-            teamFouls: newTeamFouls,
+            // 理由は handleResolvePendingAction の同じ箇所のコメント
+            teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
             players: team.players.map(p => {
                 if (p.id !== playerId) return p;
                 return { ...p, fouls: [...p.fouls, foulRecord] };
