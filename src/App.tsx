@@ -752,7 +752,12 @@ function AppContent() {
       new Date(date),
       state.gameInfo,
       state.pendingActions,
-      { showThreePoint: state.showThreePoint, quarterMinutes: state.quarterMinutes }
+      {
+        showThreePoint: state.showThreePoint,
+        quarterMinutes: state.quarterMinutes,
+        // 公式様式の終了時間。gameInfo とは別フィールドなので明示的に渡す
+        endTime: state.endTime,
+      }
     );
 
     if (!saved) {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { GameRecord } from '../../utils/gameHistoryStorage';
-import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo } from '../../utils/gameHistoryStorage';
+import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo, updateGameRecordEndTime } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
 import { StatsPanel } from '../StatsPanel';
 import type { Game, GameInfo } from '../../types/game';
@@ -91,7 +91,9 @@ export function History({ onBack }: HistoryProps) {
         selectedPlayerId: null,
         selectedTeamId: null,
         startTime: record.date ? new Date(record.date) : null,
-        endTime: new Date(record.createdAt),
+        // 記録者が入れた公式様式の終了時間。持たない旧レコードだけ、
+        // 従来どおり保存時刻(createdAt)で代用する
+        endTime: record.endTime ? new Date(record.endTime) : new Date(record.createdAt),
         pendingActions: [],
         gameInfo: (record as { gameInfo?: GameInfo }).gameInfo || createInitialGameInfo(),
         // 記録し始める前の試合には入っていない。既定は試合設定と同じ側に寄せる
@@ -192,6 +194,15 @@ export function History({ onBack }: HistoryProps) {
                             const updatedGameInfo = { ...currentGameInfo, ...partialInfo };
                             updateGameRecordGameInfo(selectedRecord.id, updatedGameInfo);
                             setSelectedRecord({ ...selectedRecord, gameInfo: updatedGameInfo });
+                        }}
+                        // 終了時間は gameInfo とは別フィールド。渡さないと、入力欄は
+                        // 編集できて保存も押せるのに値がどこにも行かない
+                        onEndTimeChange={(endTime) => {
+                            updateGameRecordEndTime(selectedRecord.id, endTime);
+                            setSelectedRecord({
+                                ...selectedRecord,
+                                endTime: endTime ? new Date(endTime).toISOString() : undefined,
+                            });
                         }}
                     />
                 )}

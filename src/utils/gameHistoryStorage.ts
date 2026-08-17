@@ -36,6 +36,12 @@ export interface GameRecord {
     // 旧レコードには無いので、読む側は未設定を許容すること。
     showThreePoint?: boolean;
     quarterMinutes?: 5 | 6;
+    // 公式様式の「試合終了時間」（ISO文字列）。
+    // createdAt（保存ボタンを押した時刻）とは別物で、記録者が GameInfoModal で
+    // 入れた値、または END_GAME を押した時刻が入る。ここが無かったため、
+    // 試合中に出したPDFと履歴から出したPDFで終了時間が食い違っていた。
+    // 旧レコードには無いので、読む側は未設定を許容すること。
+    endTime?: string;
     createdAt: string;
 }
 
@@ -82,7 +88,7 @@ export function saveGameResult(
     date: Date = new Date(),
     gameInfo?: GameInfo,
     pendingActions: PendingAction[] = [],
-    settings?: { showThreePoint?: boolean; quarterMinutes?: 5 | 6 }
+    extra?: { showThreePoint?: boolean; quarterMinutes?: 5 | 6; endTime?: Date | null }
 ): SaveGameResult {
     const record: GameRecord = {
         id: createGameId(date),
@@ -99,8 +105,9 @@ export function saveGameResult(
         foulHistory,
         gameInfo,
         ...(pendingActions.length > 0 ? { pendingActions } : {}),
-        ...(settings?.showThreePoint !== undefined ? { showThreePoint: settings.showThreePoint } : {}),
-        ...(settings?.quarterMinutes !== undefined ? { quarterMinutes: settings.quarterMinutes } : {}),
+        ...(extra?.showThreePoint !== undefined ? { showThreePoint: extra.showThreePoint } : {}),
+        ...(extra?.quarterMinutes !== undefined ? { quarterMinutes: extra.quarterMinutes } : {}),
+        ...(extra?.endTime ? { endTime: new Date(extra.endTime).toISOString() } : {}),
         createdAt: new Date().toISOString(),
     };
 
@@ -231,6 +238,29 @@ export function updateGameRecordGameInfo(id: string, gameInfo: GameInfo): void {
         history[index].gameInfo = gameInfo;
         recordStorage.save(history);
     }
+}
+
+/**
+ * 試合記録の終了時間を更新する。
+ *
+ * gameInfo とは別フィールドなので updateGameRecordGameInfo では書けない。
+ * これが無いと、履歴から開いたスコアシートの終了時間欄は入力も保存も
+ * できるのに値がどこにも行かない（無言で捨てられる）。
+ */
+export function updateGameRecordEndTime(id: string, endTime: Date | null): void {
+    const history = loadGameHistory();
+    const index = history.findIndex(r => r.id === id);
+    if (index === -1) return;
+
+    if (endTime) {
+        history[index] = { ...history[index], endTime: new Date(endTime).toISOString() };
+    } else {
+        // 未設定に戻すときはキーごと消す（旧レコードと同じ形に揃える）
+        const cleared = { ...history[index] };
+        delete cleared.endTime;
+        history[index] = cleared;
+    }
+    recordStorage.save(history);
 }
 
 // 履歴削除
