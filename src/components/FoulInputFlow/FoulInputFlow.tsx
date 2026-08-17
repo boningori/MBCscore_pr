@@ -3,12 +3,24 @@ import type { FoulType, FoulRecord, FreeThrowResult, ShotSituation, Player } fro
 import { MAX_PERSONAL_FOULS, suggestFreeThrowCount } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, disqualificationMessage } from '../../utils/disqualification';
-import { Modal } from '../Modal';
+import { Modal, ConfirmModal } from '../Modal';
+import { wouldOverflowFoulColumns } from '../../utils/foulColumns';
 import './FoulInputFlow.css';
 
 type Step = 'foulType' | 'shotSituation' | 'shotResult' | 'ftCount' | 'shooter' | 'ftResult';
 
 const LONG_PRESS_DURATION = 500; // 長押し判定時間（ミリ秒）
+
+/**
+ * 6個目の確認で保留にした「本来やろうとしていたこと」。
+ *
+ * 関数をそのまま state に入れると React が更新関数と解釈するため、
+ * 何をするつもりだったかを素のデータで持つ。
+ */
+type OverflowIntent =
+    | { kind: 'pNormal' }
+    | { kind: 'pShot' }
+    | { kind: 'special'; foulType: FoulType };
 
 interface FoulInputFlowProps {
     onComplete: (data: {
@@ -25,6 +37,8 @@ interface FoulInputFlowProps {
     /** ファウル中の選手の既存ファウル。退場・失格の判定に使う（省略時は判定しない） */
     currentFouls?: (FoulType | FoulRecord)[];
     playerName?: string;
+    /** 確認ダイアログに出す背番号。同姓の選手が居ても取り違えないため（省略可） */
+    playerNumber?: number;
     teamFouls: number;
     opponentTeamId: string;
     opponentPlayers: Player[];
@@ -55,6 +69,7 @@ export function FoulInputFlow({
     currentFoulCount = 0,
     currentFouls,
     playerName,
+    playerNumber,
     teamFouls,
     opponentPlayers,
     opponentTeamName,
@@ -71,6 +86,22 @@ export function FoulInputFlow({
     const [freeThrowResults, setFreeThrowResults] = useState<FreeThrowResult[]>(benchFoulMode ? [null as unknown as FreeThrowResult] : []);
     const [shooterPlayerId, setShooterPlayerId] = useState<string | null>(null);
     const [shotMade, setShotMade] = useState<boolean>(false);
+
+    // 6個目以降になる記録は、様式のファウル欄（5枠）に載らない。
+    // 押し切れば記録できるが、黙って作らせない
+    const [overflowIntent, setOverflowIntent] = useState<OverflowIntent | null>(null);
+    // currentFouls が無い呼び出し側でも黙って確認を素通りさせないよう、
+    // 個数（currentFoulCount）だけでも判定できるようにしておく
+    const willOverflowFoulColumns = currentFouls
+        ? wouldOverflowFoulColumns(currentFouls)
+        : currentFoulCount >= MAX_PERSONAL_FOULS;
+
+    // 確認ダイアログは背番号から出す。同姓の選手は珍しくなく、スコアラーが
+    // 照合するのは背番号。他の2箇所の警告（App.tsx の交代要員確認、
+    // EditActionModal の付け替え警告）も #番号 で始まる
+    const confirmPlayerLabel = playerNumber !== undefined
+        ? `#${formatPlayerNumber(playerNumber)} ${playerName || ''}`.trim()
+        : (playerName || '選手');
 
     // 長押し検出用
     const longPressTimer = useRef<number | null>(null);
@@ -101,7 +132,7 @@ export function FoulInputFlow({
     }, [foulType, teamFouls, shotSituation]);
 
     // Pファウル通常タップ（シュート中でないファウル）
-    const handlePFoulNormalTap = useCallback(() => {
+    const runPFoulNormalTap = useCallback(() => {
         setFoulType('P');
         setShotSituation('none');
 
@@ -125,7 +156,7 @@ export function FoulInputFlow({
     }, [isPenalty, onComplete]);
 
     // Pファウル長押し（シュートファウル）
-    const handlePFoulLongPress = useCallback(() => {
+    const runPFoulLongPress = useCallback(() => {
         setFoulType('P');
         if (showThreePoint) {
             setStep('shotSituation');
@@ -135,6 +166,45 @@ export function FoulInputFlow({
             setStep('shotResult');
         }
     }, [showThreePoint]);
+
+    // T/U/Dファウル選択
+    const runSpecialFoulSelect = useCallback((type: FoulType) => {
+        setFoulType(type);
+        setShotSituation('none');
+        // 推奨FT本数を設定
+        const suggested = suggestFreeThrowCount(type, teamFouls, 'none');
+        setFreeThrows(suggested);
+        setFreeThrowResults(new Array(suggested).fill(null));
+        setStep('ftCount');
+    }, [teamFouls]);
+
+    const runIntent = useCallback((intent: OverflowIntent) => {
+        if (intent.kind === 'pNormal') runPFoulNormalTap();
+        else if (intent.kind === 'pShot') runPFoulLongPress();
+        else runSpecialFoulSelect(intent.foulType);
+    }, [runPFoulNormalTap, runPFoulLongPress, runSpecialFoulSelect]);
+
+    // 種類が決まった直後に確認する。シューターやFT結果まで入れさせてから
+    // 止めると、入れた分が無駄になる
+    const requestIntent = useCallback((intent: OverflowIntent) => {
+        if (willOverflowFoulColumns) {
+            setOverflowIntent(intent);
+            return;
+        }
+        runIntent(intent);
+    }, [willOverflowFoulColumns, runIntent]);
+
+    const handlePFoulNormalTap = useCallback(() => {
+        requestIntent({ kind: 'pNormal' });
+    }, [requestIntent]);
+
+    const handlePFoulLongPress = useCallback(() => {
+        requestIntent({ kind: 'pShot' });
+    }, [requestIntent]);
+
+    const handleSpecialFoulSelect = useCallback((type: FoulType) => {
+        requestIntent({ kind: 'special', foulType: type });
+    }, [requestIntent]);
 
     // 長押し開始
     const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -188,17 +258,6 @@ export function FoulInputFlow({
             handlePFoulNormalTap();
         }
     }, [handlePFoulLongPress, handlePFoulNormalTap]);
-
-    // T/U/Dファウル選択
-    const handleSpecialFoulSelect = useCallback((type: FoulType) => {
-        setFoulType(type);
-        setShotSituation('none');
-        // 推奨FT本数を設定
-        const suggested = suggestFreeThrowCount(type, teamFouls, 'none');
-        setFreeThrows(suggested);
-        setFreeThrowResults(new Array(suggested).fill(null));
-        setStep('ftCount');
-    }, [teamFouls]);
 
     // シュート状況選択（Pファウル長押し時のみ、2Pか3Pのみ）
     const handleShotSituationSelect = useCallback((situation: ShotSituation) => {
@@ -603,6 +662,27 @@ export function FoulInputFlow({
                         キャンセル
                     </button>
                 </div>
+
+                {/*
+                  6個目以降は公式様式のファウル欄（5枠）に載らない。
+                  記録は止めず、承知のうえかどうかだけ確かめる。
+                  打ち消し側が既定フォーカス（ConfirmModal の作法）
+                */}
+                {overflowIntent && (
+                    <ConfirmModal
+                        title={`このファウルは${currentFoulCount + 1}個目です`}
+                        message={`${confirmPlayerLabel} は既に${currentFoulCount}ファウルです。6個目以降は公式様式のファウル欄（5枠）に記録できません。`}
+                        note="チームファウルには加算されます。"
+                        confirmLabel="記録する"
+                        cancelLabel="やめる"
+                        onConfirm={() => {
+                            const intent = overflowIntent;
+                            setOverflowIntent(null);
+                            runIntent(intent);
+                        }}
+                        onCancel={() => setOverflowIntent(null)}
+                    />
+                )}
             </>
         </Modal>
     );

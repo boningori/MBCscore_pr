@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Player } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { wouldOverflowFoulColumns } from '../../utils/foulColumns';
 import { Modal } from '../Modal';
 import './EditActionModal.css';
 
@@ -96,6 +97,14 @@ export function EditActionModal({
     // 種別の選択肢を出さないのは、ファウルの entryType（'P' 等）が
     // 「シュート関連ではない」と判定され、OREB/DREB… が並んでいたのも兼ねる
     const isFoul = item.type === 'foul';
+
+    // 付け替え先が既に5ファウルなら、移した瞬間に6個目になり公式様式の
+    // ファウル欄（5枠）から漏れる。handleEditFoul は付け替え先の個数を
+    // 見ていないため、記録フローの確認（FoulInputFlow）をすり抜ける経路になる。
+    // 付け替えは長押し→編集と既に慎重な操作なので、ダイアログは重ねず警告だけ出す
+    const foulOverflowTarget = isFoul && selectedPlayerId !== item.playerId
+        ? players.find(p => p.id === selectedPlayerId && wouldOverflowFoulColumns(p.fouls))
+        : undefined;
 
     // 現在の編集対象がシュート関連かどうか
     const isOriginalShotRelated = isShotType(item.entryType);
@@ -234,6 +243,13 @@ export function EditActionModal({
                     {isConversion() && (
                         <div className="conversion-notice">
                             ⚠️ {item.type === 'score' ? '成功→ミス' : 'ミス→成功'}に変換されます
+                        </div>
+                    )}
+
+                    {foulOverflowTarget && (
+                        <div className="conversion-notice">
+                            ⚠️ #{formatPlayerNumber(foulOverflowTarget.number)} {foulOverflowTarget.courtName || foulOverflowTarget.name} は既に{foulOverflowTarget.fouls.length}ファウルです。
+                            付け替えると{foulOverflowTarget.fouls.length + 1}個目になり、公式様式には記録されません
                         </div>
                     )}
                 </div>
