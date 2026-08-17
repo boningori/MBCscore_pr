@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
-import type { Team, FoulType, FreeThrowResult, ShotSituation, ScoreType, StatType } from './types/game';
+import type { Team, Player, FoulType, FreeThrowResult, ShotSituation, ScoreType, StatType } from './types/game';
 import type { SavedTeam, NumberType } from './utils/teamStorage';
 import { formatPlayerNumber } from './utils/playerNumber';
 // 表示名は utils/actionLabels に集約する。以前はこのファイルと保留パネル・
@@ -52,6 +52,7 @@ import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage }
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
 import { isBackupDue } from './utils/lastBackupStorage';
 import { shareBackup } from './utils/dataBackup';
+import { wouldOverflowFoulColumns } from './utils/foulColumns';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameMode } from './hooks/useGameMode';
@@ -454,6 +455,22 @@ function AppContent() {
     });
   };
 
+  // 交代要員のテクニカルは選手行に「T」を書く＝様式のファウル欄（5枠）を使う。
+  // ベンチファウルは FoulInputFlow の種類選択を通らないので、そちらのゲートでは
+  // 捕まらない。ここで同じ条件の確認を挟む
+  const [benchOverflowPlayerId, setBenchOverflowPlayerId] = useState<string | null>(null);
+
+  const proceedBenchPlayerSelect = (player: Player) => {
+    setCoachFoulState(prev => prev && ({
+      ...prev,
+      step: 'foulInput',
+      foulType: 'T',
+      playerId: player.id,
+      label: `#${formatPlayerNumber(player.number)} ${player.courtName || player.name} (T)`,
+      benchTechType: 'Sub',
+    }));
+  };
+
   // 交代要員選択（ベンチの選手を選択）
   const handleBenchPlayerSelect = (playerId: string) => {
     if (!coachFoulState) return;
@@ -461,14 +478,11 @@ function AppContent() {
     const player = team.players.find(p => p.id === playerId);
     if (!player) return;
 
-    setCoachFoulState({
-      ...coachFoulState,
-      step: 'foulInput',
-      foulType: 'T',
-      playerId,
-      label: `#${formatPlayerNumber(player.number)} ${player.courtName || player.name} (T)`,
-      benchTechType: 'Sub',
-    });
+    if (wouldOverflowFoulColumns(player.fouls)) {
+      setBenchOverflowPlayerId(playerId);
+      return;
+    }
+    proceedBenchPlayerSelect(player);
   };
 
   // ベンチファウルFoulInputFlow完了
@@ -1771,6 +1785,28 @@ function AppContent() {
           onCancel={() => setTimeoutCancelTeam(null)}
         />
       )}
+
+      {/*
+        交代要員のテクニカルが6個目以降になるときの確認。
+        このファウルはチームファウルには加算されない（選手行にT・コーチ行にB）ので、
+        FoulInputFlow 側の確認とは補足文を変える
+      */}
+      {benchOverflowPlayerId && coachFoulState && (() => {
+        const team = coachFoulState.teamId === 'teamA' ? state.teamA : state.teamB;
+        const player = team.players.find(p => p.id === benchOverflowPlayerId);
+        if (!player) return null;
+        return (
+          <ConfirmModal
+            title="このファウルは6個目です"
+            message={`#${formatPlayerNumber(player.number)} ${player.courtName || player.name} は既に${player.fouls.length}ファウルです。6個目以降は公式様式のファウル欄（5枠）に記録できません。`}
+            note="コーチ行の「B」は記録されます。"
+            confirmLabel="記録する"
+            cancelLabel="やめる"
+            onConfirm={() => { setBenchOverflowPlayerId(null); proceedBenchPlayerSelect(player); }}
+            onCancel={() => setBenchOverflowPlayerId(null)}
+          />
+        );
+      })()}
     </div>
   );
   };
