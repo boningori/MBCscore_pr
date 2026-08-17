@@ -366,6 +366,21 @@
     content: '・';
 }
 
+/* 平均出場Qの母数。隣の「n試合」とは対象が違うことを示す小さな添え字。
+   括弧で囲って、平均値の一部と読まれないようにする */
+.player-stats-container .player-info .player-quarters-basis {
+    opacity: 0.75;
+    font-size: 0.9em;
+}
+
+.player-stats-container .player-info .player-quarters-basis::before {
+    content: '（';
+}
+
+.player-stats-container .player-info .player-quarters-basis::after {
+    content: '）';
+}
+
 .player-stats-container .player-stats-grid {
     display: flex;
     gap: 8px;

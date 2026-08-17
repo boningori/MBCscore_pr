@@ -79,6 +79,35 @@ describe('選手カードの平均出場クォーター', () => {
             />,
         );
 
+        expect(screen.getByText(/平均3\.0Q/)).toBeTruthy();
+    });
+});
+
+// カードは「4試合」と「平均3.0Q」を並べるが、この2つは母数が違う。
+// 注記が無いと通算12Q出場したように読める（実際は2試合で6Q）。
+// 詳細画面の「1クォーターあたり」は同じ理由で母数を明記している。
+describe('選手カードの平均出場クォーターの母数', () => {
+    it('出場Qが一部の試合にしか無いときは対象試合数を添える', () => {
+        render(
+            <PlayerCardList
+                players={[makePlayer({ gamesPlayed: 4, totalQuartersPlayed: 6, gamesWithQuarters: 2 })]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
         expect(screen.getByText('平均3.0Q')).toBeTruthy();
+        expect(screen.getByText('2試合分')).toBeTruthy();
+    });
+
+    it('全試合に出場Qがあれば余計な注記は出さない', () => {
+        render(
+            <PlayerCardList
+                players={[makePlayer({ gamesPlayed: 4, totalQuartersPlayed: 10, gamesWithQuarters: 4 })]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByText('平均2.5Q')).toBeTruthy();
+        expect(screen.queryByText(/試合分/)).toBeNull();
     });
 });
