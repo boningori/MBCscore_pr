@@ -386,12 +386,21 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 );
                                             })}
                                             {(() => {
-                                                const otTimeout = team.timeouts.find(t => t.quarter > 4);
-                                                const hasOtTimeout = !!otTimeout;
+                                                // 様式のOT欄は1マスだが、記録はOTピリオドごとに1回できる。
+                                                // 片方だけ出すと必ずもう片方の記録を捨てるので、紙で書くときと
+                                                // 同じようにこのマスへ全部並べる（枠は増やさない）
+                                                const otTimeouts = team.timeouts
+                                                    .filter(t => t.quarter > 4)
+                                                    .sort((a, b) => a.quarter - b.quarter);
+                                                const hasOtTimeout = otTimeouts.length > 0;
                                                 const isOtUnused = isGameFinished && !hasOtTimeout;
                                                 return (
                                                     <td className={`to-cell-val ot ${hasOtTimeout ? 'to-has-value q-black' : ''} ${isOtUnused ? 'to-unused' : ''}`}>
-                                                        {hasOtTimeout && <span className="to-elapsed-minutes">{otTimeout.elapsedMinutes}</span>}
+                                                        {hasOtTimeout && (
+                                                            <span className={`to-elapsed-minutes ${otTimeouts.length > 1 ? 'to-multiple' : ''}`}>
+                                                                {otTimeouts.map(t => t.elapsedMinutes).join(',')}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 );
                                             })()}
