@@ -62,7 +62,12 @@ export function ActionHistory({
     const dialRef = useRef<HTMLDivElement>(null);
     const [dialAngle, setDialAngle] = useState(0);
     const lastAngle = useRef(0);
-    const isDragging = useRef(false);
+    // ドラッグ中かどうかは state で持つ。
+    // ref にすると、これを見て document のリスナーを貼る useEffect が
+    // 「掴んだ」ことに気づけない（依存が安定した useCallback だけなので
+    // マウント時の1回しか走らず、その時点では常に false）。
+    // 結果、マウスでは mousemove が一度も登録されず、つまみが動かなかった
+    const [isDragging, setIsDragging] = useState(false);
 
     // 選手名を取得
     const getPlayerName = (playerId: string) => {
@@ -177,12 +182,12 @@ export function ActionHistory({
     }, []);
 
     const handleDialStart = useCallback((clientY: number) => {
-        isDragging.current = true;
+        setIsDragging(true);
         lastAngle.current = getAngleFromTouch(clientY);
     }, [getAngleFromTouch]);
 
     const handleDialMove = useCallback((clientY: number) => {
-        if (!isDragging.current || !listRef.current) return;
+        if (!listRef.current) return;
 
         const currentAngle = getAngleFromTouch(clientY);
         const delta = currentAngle - lastAngle.current;
@@ -196,7 +201,7 @@ export function ActionHistory({
     }, [getAngleFromTouch]);
 
     const handleDialEnd = useCallback(() => {
-        isDragging.current = false;
+        setIsDragging(false);
     }, []);
 
     // タッチイベント
@@ -215,20 +220,22 @@ export function ActionHistory({
         handleDialStart(e.clientY);
     }, [handleDialStart]);
 
+    // 掴んでいる間だけ document を見る。つまみの外へカーソルが出ても
+    // 追従させたいので、要素ではなく document に貼る
     useEffect(() => {
+        if (!isDragging) return;
+
         const handleMouseMove = (e: MouseEvent) => handleDialMove(e.clientY);
         const handleMouseUp = () => handleDialEnd();
 
-        if (isDragging.current) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
 
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [handleDialMove, handleDialEnd]);
+    }, [isDragging, handleDialMove, handleDialEnd]);
 
     const handleTouchStart = useCallback((itemId: string, e: React.MouseEvent | React.TouchEvent) => {
         // 右クリックは無視
