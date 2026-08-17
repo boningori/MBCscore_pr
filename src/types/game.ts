@@ -122,6 +122,14 @@ export interface StatEntry {
     statType: 'OREB' | 'DREB' | 'AST' | 'STL' | 'BLK' | 'TO' | 'TO:DD' | 'TO:TR' | 'TO:PM' | 'TO:CM' | '2PA' | '3PA' | 'FTA';
     quarter: number;
     timestamp: number;
+    // このFTAを生んだファウルのID（ScoreEntry.sourceFoulId と同じ役割）。
+    //
+    // ファウルで得たFTを「やっぱり外していた」と直すと、得点エントリがこのFTAへ
+    // 化ける（handleConvertScoreToMiss）。紐付けが無いとファウルを取り消しても
+    // 残り、シューターに原因の無い試投が付いたままになる。フリースローは
+    // ファウル無しには発生しないので、対で消えなければならない。
+    // 自分で記録したFTミスには付かない。旧データにも無いので未設定を許容すること。
+    sourceFoulId?: string;
 }
 
 // コーチ・ベンチファウルの種別

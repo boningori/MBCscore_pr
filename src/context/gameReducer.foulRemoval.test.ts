@@ -256,3 +256,129 @@ describe('gameReducer: OGにした得点を生んだファウルの取り消し'
         expect(b1.stats.points).toBe(0);
     });
 });
+
+// フリースローはファウル無しには発生しない。
+//
+// FT成功をミスへ直すと得点エントリがFTAのスタッツ記録に化けるが（handleConvertScoreToMiss）、
+// その記録はファウルとの紐付けを持たなかった。ファウルを取り消しても消えず、
+// シューターに「原因の無い試投」が残る（実測: ftm=0, fta=1）。
+// 競技規則では作れない状態で、選手詳細の FT 0/1 や通算集計にそのまま出る。
+describe('gameReducer: ファウル由来のFTをミスへ直したあとの取り消し', () => {
+    /** teamA a1 のファウルで teamB b1 がFTを1本打った状態 */
+    function withFoul(result: 'made' | 'missed') {
+        return gameReducer(makeGame(), {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P',
+                shotSituation: 'none', freeThrows: 1, freeThrowResults: [result],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+            },
+        });
+    }
+
+    it('ミスへ直してからファウルを取り消すと、試投もFTAの記録も残らない', () => {
+        let state = withFoul('made');
+        state = gameReducer(state, {
+            type: 'CONVERT_SCORE_TO_MISS',
+            payload: { entryId: state.scoreHistory[0].id, newMissType: 'FTA' },
+        });
+        expect(state.statHistory).toHaveLength(1);
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        const b1 = state.teamB.players.find(p => p.id === 'b1')!;
+        expect(b1.stats.freeThrowAttempt).toBe(0);
+        expect(b1.stats.freeThrowMade).toBe(0);
+        expect(state.statHistory).toHaveLength(0);
+    });
+
+    it('ミス→成功へ戻してからファウルを取り消しても、得点が残らない', () => {
+        let state = withFoul('made');
+        state = gameReducer(state, {
+            type: 'CONVERT_SCORE_TO_MISS',
+            payload: { entryId: state.scoreHistory[0].id, newMissType: 'FTA' },
+        });
+        state = gameReducer(state, {
+            type: 'CONVERT_MISS_TO_SCORE',
+            payload: { entryId: state.statHistory[0].id, newScoreType: 'FT' },
+        });
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        const b1 = state.teamB.players.find(p => p.id === 'b1')!;
+        expect(b1.stats.points).toBe(0);
+        expect(b1.stats.freeThrowAttempt).toBe(0);
+        expect(state.scoreHistory).toHaveLength(0);
+    });
+
+    it('ファウルと無関係に記録したFTミスは、ファウルを取り消しても残る', () => {
+        let state = withFoul('missed');
+        // 別途、自分で記録したFTミス（テクニカル後の追加練習ではなく通常の入力）
+        state = gameReducer(state, {
+            type: 'ADD_STAT',
+            payload: { teamId: 'teamB', playerId: 'b2', statType: 'FTA' },
+        });
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        const b2 = state.teamB.players.find(p => p.id === 'b2')!;
+        expect(b2.stats.freeThrowAttempt).toBe(1);
+        expect(state.statHistory).toHaveLength(1);
+    });
+
+    it('FTミスを別種別へ直したら、もうファウルの取り消しでは消さない', () => {
+        let state = withFoul('made');
+        state = gameReducer(state, {
+            type: 'CONVERT_SCORE_TO_MISS',
+            payload: { entryId: state.scoreHistory[0].id, newMissType: 'FTA' },
+        });
+        // 「FTミスではなくオフェンスリバウンドだった」と直す
+        state = gameReducer(state, {
+            type: 'EDIT_STAT',
+            payload: { entryId: state.statHistory[0].id, newPlayerId: 'b1', newStatType: 'OREB' },
+        });
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        const b1 = state.teamB.players.find(p => p.id === 'b1')!;
+        expect(b1.stats.offensiveRebounds).toBe(1);
+        expect(state.statHistory).toHaveLength(1);
+    });
+});
+
+// ミス→成功へ戻した得点は、紐付けを失っていた。
+// 従来これが救われていたのは「同じシューター・1秒以内」という旧データ向けの
+// 推測（handleRemoveFoul のフォールバック）に偶然引っかかっていたためで、
+// シューターを付け替えると推測が外れ、ファウルを消しても得点だけが残る。
+describe('gameReducer: ミス→成功へ戻したあとにシューターを付け替える', () => {
+    it('ファウルを取り消すと、付け替えた先の得点も消える', () => {
+        let state = gameReducer(makeGame(), {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P',
+                shotSituation: 'none', freeThrows: 1, freeThrowResults: ['made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+            },
+        });
+        // 一度ミスへ直し、やはり成功だったと戻す
+        state = gameReducer(state, {
+            type: 'CONVERT_SCORE_TO_MISS',
+            payload: { entryId: state.scoreHistory[0].id, newMissType: 'FTA' },
+        });
+        state = gameReducer(state, {
+            type: 'CONVERT_MISS_TO_SCORE',
+            payload: { entryId: state.statHistory[0].id, newScoreType: 'FT' },
+        });
+        // 打ったのは別の選手だった、と付け替える
+        state = gameReducer(state, {
+            type: 'EDIT_SCORE',
+            payload: { entryId: state.scoreHistory[0].id, newPlayerId: 'b2', newScoreType: 'FT' },
+        });
+        expect(state.teamB.players.find(p => p.id === 'b2')!.stats.points).toBe(1);
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        expect(state.scoreHistory).toHaveLength(0);
+        expect(state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0)).toBe(0);
+    });
+});

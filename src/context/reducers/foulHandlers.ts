@@ -535,6 +535,38 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
         };
     };
 
+    // このファウルが生んだ「ミス」の記録（handleConvertScoreToMiss でFTAへ化けた分）。
+    //
+    // フリースローはファウル無しには発生しないので、ファウルを取り消すなら
+    // 対で消えなければならない。紐付けを見ていなかったため、FTを「やっぱり
+    // 外していた」と直したあとにファウルを取り消すと、シューターに原因の無い
+    // 試投が残っていた（実測: ftm=0, fta=1）。
+    // 自分で記録したFTミスは sourceFoulId を持たないので巻き込まない。
+    const removedStatEntries = state.statHistory.filter(s => s.sourceFoulId === entry.id);
+    const removedStatIds = new Set(removedStatEntries.map(s => s.id));
+    const newStatHistory = removedStatIds.size > 0
+        ? state.statHistory.filter(s => !removedStatIds.has(s.id))
+        : state.statHistory;
+
+    const reverseRemovedStats = (team: typeof state.teamA, teamId: 'teamA' | 'teamB') => {
+        const targets = removedStatEntries.filter(s => s.teamId === teamId);
+        if (targets.length === 0) return team;
+        return {
+            ...team,
+            players: team.players.map(p => {
+                const mine = targets.filter(s => s.playerId === p.id);
+                if (mine.length === 0) return p;
+                const stats = { ...p.stats };
+                for (const s of mine) {
+                    if (s.statType === '2PA') stats.twoPointAttempt--;
+                    else if (s.statType === '3PA') stats.threePointAttempt--;
+                    else if (s.statType === 'FTA') stats.freeThrowAttempt--;
+                }
+                return { ...p, stats };
+            })
+        };
+    };
+
     // 外したFTは得点エントリを持たないため、本数だけシューターから戻す
     const missedFreeThrows = ftAttempts - ftMade;
     const reverseMissedFreeThrows = (team: typeof state.teamA, isTarget: boolean) => {
@@ -554,6 +586,8 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
     // チーム更新（得点側）
     newTeamA = reverseRemovedScores(newTeamA, 'teamA');
     newTeamB = reverseRemovedScores(newTeamB, 'teamB');
+    newTeamA = reverseRemovedStats(newTeamA, 'teamA');
+    newTeamB = reverseRemovedStats(newTeamB, 'teamB');
     newTeamA = reverseMissedFreeThrows(newTeamA, entry.shooterTeamId === 'teamA');
     newTeamB = reverseMissedFreeThrows(newTeamB, entry.shooterTeamId === 'teamB');
 
@@ -563,6 +597,7 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
         teamB: newTeamB,
         // 得点エントリを削除すると後続の累計がずれるため再計算（公式スコアシートの整合性維持）
         scoreHistory: recalculateRunningScores(newScoreHistory),
+        statHistory: newStatHistory,
         foulHistory: state.foulHistory.filter(f => f.id !== entryId),
     };
 }
