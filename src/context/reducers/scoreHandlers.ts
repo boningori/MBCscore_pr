@@ -281,6 +281,22 @@ export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVER
     const newPoints = newScoreType === '3P' ? 3 : newScoreType === '2P' ? 2 : 1;
     const target = resolveTargetPlayer(state, entry.teamId, entry.playerId, newPlayerId);
 
+    // 得点は必ず名簿の誰かに帰属させる。
+    //
+    // 保留を「選手不明」で解決した記録は playerId が 'unknown' で名簿の誰でもない。
+    // そのまま成功へ変換すると、得点エントリだけが増えて選手の points はどこにも
+    // 増えない。スコアボード・試合終了時の最終スコア・履歴の finalScore は選手の
+    // 合計から、ランニングスコアと様式のピリオド別スコアは scoreHistory から
+    // 出しているため、両者が食い違ったまま試合が保存される（実測: ボード0点・
+    // シート2点）。さらに以後の ADD_SCORE が同じ累計値を持つことになり、様式の
+    // ランニングスコア欄（累計値で1件だけ引く）で後の得点が印字されなくなる。
+    //
+    // 変換そのものを塞ぐわけではない。UI は不明の記録に対して先に選手を
+    // 選ばせる（EditActionModal）。ここは、どの経路からでも帰属の無い得点を
+    // 作らせないための最後の砦。
+    const targetTeam = entry.teamId === 'teamA' ? state.teamA : state.teamB;
+    if (!targetTeam.players.some(p => p.id === target.playerId)) return state;
+
     // 元の選手からミスのアテンプトを減算
     const removeMiss = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;

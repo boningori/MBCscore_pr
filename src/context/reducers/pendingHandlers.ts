@@ -7,7 +7,7 @@ import type {
     FoulType,
     FoulRecord,
 } from '../../types/game';
-import { recalculateRunningScores, incrementTeamFoul } from './shared';
+import { recalculateRunningScores, incrementTeamFoul, insertFoulInOrder } from './shared';
 
 export function handleAddPendingAction(state: Game, payload: PayloadOf<'ADD_PENDING_ACTION'>): Game {
     const pendingAction = payload;
@@ -124,19 +124,6 @@ export function handleResolvePendingAction(state: Game, payload: PayloadOf<'RESO
         };
     } else if (pending.actionType === 'FOUL') {
         const foulType = pending.value as FoulType;
-        const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
-            if (!isTarget) return team;
-            return {
-                ...team,
-                // 保留は記録された当時のピリオドへ後から足す。OT欄は第4Qからの
-                // 通算なので、第4Qの保留をOT中に解決したら後続の枠にも伝える
-                teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
-                players: team.players.map(p => {
-                    if (p.id !== playerId) return p;
-                    return { ...p, fouls: [...p.fouls, foulType] };
-                })
-            };
-        };
 
         // ファウル履歴エントリを作成
         const foulEntry: FoulEntry = {
@@ -149,12 +136,33 @@ export function handleResolvePendingAction(state: Game, payload: PayloadOf<'RESO
             timestamp: pending.timestamp,
             isCoachOrBench: false,
         };
+        const nextFoulHistory = [...newState.foulHistory, foulEntry];
+
+        const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
+            if (!isTarget) return team;
+            return {
+                ...team,
+                // 保留は記録された当時のピリオドへ後から足す。OT欄は第4Qからの
+                // 通算なので、第4Qの保留をOT中に解決したら後続の枠にも伝える
+                teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
+                players: team.players.map(p => {
+                    if (p.id !== playerId) return p;
+                    // 保留は記録された当時の時刻を持つ。末尾へ足すと、解決までの間に
+                    // 記録した後のクォーターのファウルと、様式の並び・記入色が
+                    // 入れ替わる（shared の insertFoulInOrder）
+                    return {
+                        ...p,
+                        fouls: insertFoulInOrder(p.fouls, foulType, nextFoulHistory, playerId, foulEntry.id),
+                    };
+                })
+            };
+        };
 
         newState = {
             ...newState,
             teamA: updateTeamFoul(newState.teamA, pending.teamId === 'teamA'),
             teamB: updateTeamFoul(newState.teamB, pending.teamId === 'teamB'),
-            foulHistory: [...newState.foulHistory, foulEntry],
+            foulHistory: nextFoulHistory,
         };
     }
 
@@ -190,19 +198,6 @@ export function handleResolvePendingActionWithFoulType(state: Game, payload: Pay
     const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
     if (!player) return state;
 
-    const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
-        if (!isTarget) return team;
-        return {
-            ...team,
-            // 理由は handleResolvePendingAction の同じ箇所のコメント
-            teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
-            players: team.players.map(p => {
-                if (p.id !== playerId) return p;
-                return { ...p, fouls: [...p.fouls, foulType] };
-            })
-        };
-    };
-
     // ファウル履歴エントリを作成
     const foulEntry: FoulEntry = {
         id: crypto.randomUUID(),
@@ -214,12 +209,29 @@ export function handleResolvePendingActionWithFoulType(state: Game, payload: Pay
         timestamp: pending.timestamp,
         isCoachOrBench: false,
     };
+    const nextFoulHistory = [...state.foulHistory, foulEntry];
+
+    const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
+        if (!isTarget) return team;
+        return {
+            ...team,
+            // 理由は handleResolvePendingAction の同じ箇所のコメント
+            teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
+            players: team.players.map(p => {
+                if (p.id !== playerId) return p;
+                return {
+                    ...p,
+                    fouls: insertFoulInOrder(p.fouls, foulType, nextFoulHistory, playerId, foulEntry.id),
+                };
+            })
+        };
+    };
 
     return {
         ...state,
         teamA: updateTeamFoul(state.teamA, pending.teamId === 'teamA'),
         teamB: updateTeamFoul(state.teamB, pending.teamId === 'teamB'),
-        foulHistory: [...state.foulHistory, foulEntry],
+        foulHistory: nextFoulHistory,
         pendingActions: state.pendingActions.filter(p => p.id !== pendingActionId),
     };
 }
@@ -254,6 +266,26 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: P
         freeThrowResults: freeThrowResults.length > 0 ? freeThrowResults : undefined,
     };
 
+    // ファウル履歴エントリを作成
+    const foulEntry: FoulEntry = {
+        id: crypto.randomUUID(),
+        teamId: pending.teamId,
+        playerId,
+        playerNumber: foulingPlayer.number,
+        foulType,
+        quarter: pending.quarter,
+        timestamp: pending.timestamp,
+        isCoachOrBench: false,
+        freeThrows,
+        freeThrowResults,
+        shotSituation,
+        shotMade: shotMade || undefined,
+        shooterTeamId: (freeThrows > 0 || shotMade) ? shooterTeamId : undefined,
+        shooterPlayerId: (freeThrows > 0 || shotMade) ? shooterPlayerId : undefined,
+        shooterPlayerNumber: (freeThrows > 0 || shotMade) ? (shooterPlayer?.number || 0) : undefined,
+    };
+    const nextFoulHistory = [...state.foulHistory, foulEntry];
+
     // ファウルをしたチームを更新
     const updateFoulingTeam = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
@@ -263,7 +295,10 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: P
             teamFouls: incrementTeamFoul(team.teamFouls, pending.quarter),
             players: team.players.map(p => {
                 if (p.id !== playerId) return p;
-                return { ...p, fouls: [...p.fouls, foulRecord] };
+                return {
+                    ...p,
+                    fouls: insertFoulInOrder(p.fouls, foulRecord, nextFoulHistory, playerId, foulEntry.id),
+                };
             })
         };
     };
@@ -301,25 +336,6 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: P
                 return { ...p, stats };
             })
         };
-    };
-
-    // ファウル履歴エントリを作成
-    const foulEntry: FoulEntry = {
-        id: crypto.randomUUID(),
-        teamId: pending.teamId,
-        playerId,
-        playerNumber: foulingPlayer.number,
-        foulType,
-        quarter: pending.quarter,
-        timestamp: pending.timestamp,
-        isCoachOrBench: false,
-        freeThrows,
-        freeThrowResults,
-        shotSituation,
-        shotMade: shotMade || undefined,
-        shooterTeamId: (freeThrows > 0 || shotMade) ? shooterTeamId : undefined,
-        shooterPlayerId: (freeThrows > 0 || shotMade) ? shooterPlayerId : undefined,
-        shooterPlayerNumber: (freeThrows > 0 || shotMade) ? (shooterPlayer?.number || 0) : undefined,
     };
 
     // チーム更新（ファウル側）
@@ -392,7 +408,7 @@ export function handleResolvePendingActionWithFreeThrows(state: Game, payload: P
         teamB: newTeamB,
         // 保留は作成時刻を持つため、時系列で累計を再計算して整合させる
         scoreHistory: recalculateRunningScores(newScoreHistory),
-        foulHistory: [...state.foulHistory, foulEntry],
+        foulHistory: nextFoulHistory,
         pendingActions: state.pendingActions.filter(p => p.id !== pendingActionId),
     };
 }
