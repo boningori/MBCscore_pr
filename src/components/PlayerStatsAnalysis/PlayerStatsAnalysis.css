@@ -366,6 +366,20 @@
     content: '・';
 }
 
+/* FG合計。内訳(2P/3P/FT)とは意味が違うので区切って見せる */
+.player-stats-container .shooting-total {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--stats-border, rgba(148, 163, 184, 0.35));
+}
+
+.player-stats-container .shooting-total-note {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    opacity: 0.75;
+}
+
 /* 平均出場Qの母数。隣の「n試合」とは対象が違うことを示す小さな添え字。
    括弧で囲って、平均値の一部と読まれないようにする */
 .player-stats-container .player-info .player-quarters-basis {
