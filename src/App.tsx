@@ -1797,7 +1797,7 @@ function AppContent() {
         if (!player) return null;
         return (
           <ConfirmModal
-            title="このファウルは6個目です"
+            title={`このファウルは${player.fouls.length + 1}個目です`}
             message={`#${formatPlayerNumber(player.number)} ${player.courtName || player.name} は既に${player.fouls.length}ファウルです。6個目以降は公式様式のファウル欄（5枠）に記録できません。`}
             note="コーチ行の「B」は記録されます。"
             confirmLabel="記録する"

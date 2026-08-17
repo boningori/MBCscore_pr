@@ -87,7 +87,11 @@ export function FoulInputFlow({
     // 6個目以降になる記録は、様式のファウル欄（5枠）に載らない。
     // 押し切れば記録できるが、黙って作らせない
     const [overflowIntent, setOverflowIntent] = useState<OverflowIntent | null>(null);
-    const willOverflowFoulColumns = wouldOverflowFoulColumns(currentFouls);
+    // currentFouls が無い呼び出し側でも黙って確認を素通りさせないよう、
+    // 個数（currentFoulCount）だけでも判定できるようにしておく
+    const willOverflowFoulColumns = currentFouls
+        ? wouldOverflowFoulColumns(currentFouls)
+        : currentFoulCount >= MAX_PERSONAL_FOULS;
 
     // 長押し検出用
     const longPressTimer = useRef<number | null>(null);
@@ -656,7 +660,7 @@ export function FoulInputFlow({
                 */}
                 {overflowIntent && (
                     <ConfirmModal
-                        title="このファウルは6個目です"
+                        title={`このファウルは${currentFoulCount + 1}個目です`}
                         message={`${playerName || '選手'} は既に${currentFoulCount}ファウルです。6個目以降は公式様式のファウル欄（5枠）に記録できません。`}
                         note="チームファウルには加算されます。"
                         confirmLabel="記録する"

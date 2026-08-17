@@ -112,4 +112,13 @@ describe('FoulInputFlow: 6個目以降の確認', () => {
         // シュート状況選択へは進まない
         expect(screen.queryByText('シュート状況を選択（シュートファウル）')).toBeNull();
     });
+
+    it('既に6ファウルなら、タイトルも実際の個数（7個目）に合わせる', () => {
+        const onComplete = renderFlow(['P', 'P', 'P', 'P', 'P', 'P']);
+        tapPFoul();
+
+        expect(screen.getByText('このファウルは7個目です')).toBeTruthy();
+        expect(screen.queryByText(CONFIRM_TITLE)).toBeNull();
+        expect(onComplete).not.toHaveBeenCalled();
+    });
 });

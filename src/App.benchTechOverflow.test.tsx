@@ -17,13 +17,14 @@ const withFouls = (p: Player, n: number): Player => ({
     fouls: Array.from({ length: n }, () => 'P' as FoulType),
 });
 
-/** ベンチに「5ファウルの選手」と「1ファウルの選手」がいる中断セッションを作る */
+/** ベンチに「5ファウルの選手」「1ファウルの選手」「6ファウルの選手」がいる中断セッションを作る */
 function seedSession() {
     const teamA = createTeam('teamA', 'ホームチーム', 'コーチ');
     teamA.players = [
         ...Array.from({ length: 5 }, (_, i) => onCourt(createPlayer(`a${i}`, 4 + i, `ホーム${i + 1}`))),
         withFouls(createPlayer('bench-five', 20, 'ベンチ五郎'), 5),
         withFouls(createPlayer('bench-one', 21, 'ベンチ一郎'), 1),
+        withFouls(createPlayer('bench-six', 22, 'ベンチ六郎'), 6),
     ];
     const teamB = createTeam('teamB', 'アウェイチーム', 'コーチB');
     teamB.players = Array.from({ length: 5 }, (_, i) => onCourt(createPlayer(`b${i}`, 11 + i, `アウェイ${i + 1}`)));
@@ -104,5 +105,14 @@ describe('交代要員のテクニカル: 6個目以降の確認', () => {
         fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 
         expect(screen.getByText(/シューター選択/)).toBeTruthy();
+    });
+
+    it('既に6ファウルのベンチ選手を選ぶと、タイトルも実際の個数（7個目）に合わせる', () => {
+        openBenchPlayerSelect();
+
+        fireEvent.click(screen.getByText('ベンチ六郎').closest('button')!);
+
+        expect(screen.getByText('このファウルは7個目です')).toBeTruthy();
+        expect(screen.queryByText(CONFIRM_TITLE)).toBeNull();
     });
 });
