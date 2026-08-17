@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { Game, GameInfo } from '../../types/game';
+import type { Game, GameInfo, FoulEntry } from '../../types/game';
 import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
@@ -28,6 +28,30 @@ interface RunningScoresheetProps {
 function fourthPeriodFouls(teamFouls: number[]): number {
     if (teamFouls.length <= 4) return teamFouls[3] ?? 0;
     return teamFouls[teamFouls.length - 1] ?? 0;
+}
+
+/**
+ * このファウルが公式様式のコーチ行（team.coachFouls）に積まれるか。
+ *
+ * コーチ行にはコーチ本人のT（表示「C」）だけでなく、A.コーチ・ベンチ関係者・
+ * 交代要員のテクニカルが「B」として二重計上される（foulHandlers）。
+ * 記入色を coachFoulTarget === 'COACH' の履歴だけから引くと、2つの列の
+ * 長さが揃わず i 番目どうしが別のファウルを指してしまう。
+ *
+ * ベンチ側は記録フローで行き先が分かれる。FT入力フロー
+ * （handleAddFoulWithFreeThrows）はコーチ行のBへ、ADD_FOUL 経由は
+ * benchFouls へ書く。両者は freeThrows を持つかどうかで見分けられる
+ * （findFoulIndex と同じ判別）。
+ */
+function writesToCoachRow(foul: FoulEntry): boolean {
+    // コーチ本人はどちらのフローでもコーチ行
+    if (foul.coachFoulTarget === 'COACH') return true;
+    // ADD_FOUL 由来のベンチ系はベンチ行に入るのでコーチ行には出ない
+    if (foul.freeThrows === undefined) return false;
+    return foul.coachFoulTarget === 'ACOACH'      // A.コーチのTに伴うB
+        || foul.coachFoulTarget === 'BENCH'        // ベンチ関係者・交代要員のB
+        // 種別を持たない古いベンチテクニカル
+        || (foul.isCoachOrBench && foul.coachFoulTarget == null);
 }
 
 export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo, onEndTimeChange }: RunningScoresheetProps) {
@@ -450,9 +474,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 {team.coachName}
                                             </td>
                                             {(() => {
-                                                // コーチのファウル履歴をfoulHistoryから取得
+                                                // コーチ行に積まれたファウルを、積まれた順に取得。
+                                                // A.コーチ・ベンチ・交代要員のBも含めないと
+                                                // team.coachFouls と並びがずれる（writesToCoachRow）
                                                 const coachFoulHistory = foulHistory
-                                                    .filter(f => f.teamId === team.id && f.coachFoulTarget === 'COACH')
+                                                    .filter(f => f.teamId === team.id && writesToCoachRow(f))
                                                     .sort((a, b) => a.timestamp - b.timestamp);
                                                 return [0, 1, 2].map(i => {
                                                     const f = team.coachFouls[i];
