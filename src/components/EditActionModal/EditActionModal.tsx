@@ -12,6 +12,8 @@ interface EditActionModalProps {
         playerId: string;
         playerNumber: number;
         isOwnGoal?: boolean;
+        /** ファウルの種別を読める形で（種別は変えられないので表示専用） */
+        typeLabel?: string;
     };
     players: Player[];
     onSave: (itemId: string, newPlayerId: string, newType: string) => void;
@@ -66,6 +68,13 @@ export function EditActionModal({
     const [selectedType, setSelectedType] = useState(item.entryType);
     const [isOwnGoal, setIsOwnGoal] = useState(item.isOwnGoal ?? false);
 
+    // ファウルは選手の付け替えだけを扱う。
+    // 種別やFT本数まで変えられるようにすると公式様式の表記とFTの本数が
+    // 辻褄の合わない組み合わせを作れてしまうため、そこは削除して入れ直す。
+    // 種別の選択肢を出さないのは、ファウルの entryType（'P' 等）が
+    // 「シュート関連ではない」と判定され、OREB/DREB… が並んでいたのも兼ねる
+    const isFoul = item.type === 'foul';
+
     // 現在の編集対象がシュート関連かどうか
     const isOriginalShotRelated = isShotType(item.entryType);
     const isSelectedShotRelated = isShotType(selectedType);
@@ -83,6 +92,12 @@ export function EditActionModal({
         : OTHER_STAT_TYPES;
 
     const handleSave = () => {
+        // ファウルは選手だけ。種別はそのまま返して呼び出し側の分岐に渡す
+        if (isFoul) {
+            onSave(item.id, selectedPlayerId, item.entryType);
+            return;
+        }
+
         const originalCategory = item.type; // 'score' or 'stat'
         const selectedShotType = SHOT_TYPES.find(t => t.value === selectedType);
         const newCategory = selectedShotType?.category;
@@ -120,6 +135,7 @@ export function EditActionModal({
 
     // 変換が発生するかどうかを判定
     const isConversion = (): boolean => {
+        if (isFoul) return false;
         if (!isOriginalShotRelated || !isSelectedShotRelated) return false;
         const originalCategory = item.type;
         const selectedShotType = SHOT_TYPES.find(t => t.value === selectedType);
@@ -151,21 +167,32 @@ export function EditActionModal({
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="edit-action-field-2">
-                            {isOriginalShotRelated ? 'シュート結果' : 'スタッツ種類'}
-                        </label>
-                        <select id="edit-action-field-2"
-                            value={selectedType}
-                            onChange={e => setSelectedType(e.target.value)}
-                        >
-                            {types.map(t => (
-                                <option key={t.value} value={t.value}>
-                                    {t.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    {isFoul ? (
+                        <div className="form-group">
+                            <span className="form-label-static">ファウル種類</span>
+                            {/* 何を直しているのかが分からないと選手だけ選ばせても危うい */}
+                            <p className="edit-readonly-value">{item.typeLabel || item.entryType}</p>
+                            <p className="edit-readonly-note">
+                                種類とフリースローは変更できません。変える場合は削除して記録し直してください。
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="form-group">
+                            <label htmlFor="edit-action-field-2">
+                                {isOriginalShotRelated ? 'シュート結果' : 'スタッツ種類'}
+                            </label>
+                            <select id="edit-action-field-2"
+                                value={selectedType}
+                                onChange={e => setSelectedType(e.target.value)}
+                            >
+                                {types.map(t => (
+                                    <option key={t.value} value={t.value}>
+                                        {t.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {showOwnGoal && (
                         <div className="form-group form-group-inline">

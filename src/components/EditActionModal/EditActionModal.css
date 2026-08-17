@@ -43,6 +43,32 @@
     font-size: var(--font-size-sm);
 }
 
+/* ファウルの種別は表示専用。labelは操作子を指さないので span で出し、
+   見た目だけ他の項目のラベルに揃える */
+.edit-action-modal .form-label-static {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.edit-action-modal .edit-readonly-value {
+    margin: 0;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    /* 入力欄と同じ枠だと編集できると読めるので、地の色で「読むだけ」を示す */
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+}
+
+.edit-action-modal .edit-readonly-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
 .edit-action-modal .form-group select {
     padding: var(--spacing-sm);
     border: 1px solid var(--border);

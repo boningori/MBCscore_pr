@@ -56,15 +56,21 @@ describe('ActionHistory: 編集の導線', () => {
         expect(screen.getByRole('button', { name: '編集' })).toBeTruthy();
     });
 
-    // EditActionModal は得点・スタッツ用で、ファウルを渡すとスタッツ種別を
-    // 選ばせたうえに保存が何も起こさない（無言で捨てる）。出さないこと自体が仕様
-    it('ファウルには編集を出さず、削除して入れ直すよう案内する', () => {
+    // ファウルは選手の付け替えだけ直せる（EDIT_FOUL）。
+    // 付け替え先を渡していないときは開いても保存しても何も起きないので出さない
+    it('付け替えの手段が無いファウルには編集を出さない', () => {
         renderHistory();
         openMenu('パーソナルファウル');
 
         expect(screen.queryByRole('button', { name: '編集' })).toBeNull();
         expect(screen.getByRole('button', { name: '削除' })).toBeTruthy();
-        expect(screen.getByText(/削除して入力し直/)).toBeTruthy();
+    });
+
+    it('onEditFoulがあるファウルには編集を出す', () => {
+        renderHistory({ onEditFoul: noop });
+        openMenu('パーソナルファウル');
+
+        expect(screen.getByRole('button', { name: '編集' })).toBeTruthy();
     });
 });
 

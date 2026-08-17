@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { buildAxisTicks, TICK_COUNT } from './chartAxis';
+// 年をまたぐと「6月／6月」「Q2／Q2」が並んで区別できなくなる。
+// 判定には並び全体が要るので、1つずつではなくまとめて組み立てる
+import { buildXLabels } from './chartXLabel';
 import {
     aggregateByPeriod,
     type PeriodStats,
@@ -20,35 +23,6 @@ function formatTick(value: number): string {
     if (value === 0) return '0';
     if (Number.isInteger(value)) return value.toString();
     return value.toFixed(1);
-}
-
-// X軸ラベルの短縮フォーマット
-function formatXLabel(label: string, periodType: PeriodType): string {
-    switch (periodType) {
-        case 'game': {
-            // "2026/01/15" → "1/15"
-            const parts = label.split('/');
-            if (parts.length === 3) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
-            return label;
-        }
-        case 'month': {
-            // "2026年1月" → "1月"
-            const monthMatch = label.match(/(\d+)月/);
-            return monthMatch ? `${monthMatch[1]}月` : label;
-        }
-        case 'quarter': {
-            // "2026年Q1" → "Q1"
-            const qMatch = label.match(/(Q\d)/);
-            return qMatch ? qMatch[1] : label;
-        }
-        case 'year': {
-            // "2026年" → "'26"
-            const yearMatch = label.match(/(\d{4})年/);
-            return yearMatch ? `'${yearMatch[1].slice(2)}` : label;
-        }
-        default:
-            return label;
-    }
 }
 
 export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
@@ -81,6 +55,7 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
     ) => {
         const reversed = periods.slice().reverse();
         const values = reversed.map(p => getStatValue(p, statType));
+        const xLabels = buildXLabels(reversed.map(p => p.periodLabel), periodType);
         const ticks = buildAxisTicks(values);
         const niceMax = ticks[0];
         const tickCount = TICK_COUNT;
@@ -125,9 +100,9 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
                             ))}
                         </div>
                         <div className="x-axis">
-                            {reversed.map((p) => (
+                            {reversed.map((p, i) => (
                                 <span key={`x-${chartIndex}-${p.periodKey}`} className="x-label">
-                                    {formatXLabel(p.periodLabel, periodType)}
+                                    {xLabels[i]}
                                 </span>
                             ))}
                         </div>

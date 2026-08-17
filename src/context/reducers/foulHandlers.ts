@@ -346,6 +346,68 @@ function findFoulIndex(fouls: (FoulType | FoulRecord)[], entry: FoulEntry): numb
     return fouls.findIndex(f => (typeof f === 'string' ? f : f.type) === entry.foulType);
 }
 
+/**
+ * ファウルをした選手を付け替える。
+ *
+ * 背番号の見間違いは試合中いちばん起きやすい訂正で、ファウルはとくに多い。
+ * これまで履歴の「編集」はファウル行にも出ていたが、保存しても何も起きなかった
+ * （ActionHistory の handleEditSave が score/stat しか分岐を持っていなかった）。
+ * 保存できたように見えるぶん、取り違えたまま試合が終わる。
+ *
+ * 動かすのは「誰が犯したか」だけに絞る:
+ *   - FTの得点・スタッツは相手チームのシューターに付いているので無関係
+ *   - チームファウルは同じチーム内の移動では増減しない（だから相手チームへは移さない）
+ *   - 種別とFT本数を変えると公式様式の表記もFTの本数も辻褄が合わなくなるため、
+ *     そこは削除して入れ直す
+ *
+ * コーチ・ベンチのファウルは移す先の選手行が無いので受け付けない。
+ * 交代要員のテクニカルは選手行に入っている（isCoachOrBench が false）ので移せる。
+ * コーチ行のBは付け替えでは動かない（誰が犯しても1つ計上される）。
+ */
+export function handleEditFoul(state: Game, payload: PayloadOf<'EDIT_FOUL'>): Game {
+    const { entryId, newPlayerId } = payload;
+    const entry = state.foulHistory.find(f => f.id === entryId);
+    if (!entry) return state;
+    if (entry.isCoachOrBench || !entry.playerId) return state;
+    if (entry.playerId === newPlayerId) return state;
+
+    const isTeamA = entry.teamId === 'teamA';
+    const team = isTeamA ? state.teamA : state.teamB;
+    const newPlayer = team.players.find(p => p.id === newPlayerId);
+    // 相手チームの選手はチームファウルの帰属が変わるので受け付けない
+    if (!newPlayer) return state;
+
+    const oldPlayer = team.players.find(p => p.id === entry.playerId);
+    if (!oldPlayer) return state;
+    // 同じ種類が複数あっても取り違えないよう、FT本数まで見て1つだけ取り出す
+    const foulIndex = findFoulIndex(oldPlayer.fouls, entry);
+    if (foulIndex === -1) return state;
+    const moved = oldPlayer.fouls[foulIndex];
+
+    const players = team.players.map(p => {
+        if (p.id === entry.playerId) {
+            const fouls = [...p.fouls];
+            fouls.splice(foulIndex, 1);
+            return { ...p, fouls };
+        }
+        if (p.id === newPlayerId) {
+            return { ...p, fouls: [...p.fouls, moved] };
+        }
+        return p;
+    });
+
+    const updatedTeam = { ...team, players };
+
+    return {
+        ...state,
+        teamA: isTeamA ? updatedTeam : state.teamA,
+        teamB: isTeamA ? state.teamB : updatedTeam,
+        foulHistory: state.foulHistory.map(f => f.id === entryId
+            ? { ...f, playerId: newPlayerId, playerNumber: newPlayer.number }
+            : f),
+    };
+}
+
 export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>): Game {
     const { entryId } = payload;
     const entry = state.foulHistory.find(f => f.id === entryId);

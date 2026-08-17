@@ -210,6 +210,7 @@ export type GameActionType =
     | 'ADD_STAT'
     | 'ADD_FOUL'
     | 'ADD_FOUL_WITH_FREE_THROWS'
+    | 'EDIT_FOUL'
     | 'ADD_TIMEOUT'
     | 'REMOVE_TIMEOUT'
     | 'SUBSTITUTE_PLAYER'
@@ -306,6 +307,8 @@ export type GameAction =
         type: 'ADD_FOUL_WITH_FREE_THROWS';
         payload: FoulWithFreeThrowsBase & { teamId: string; playerId: string | null; benchTechType?: BenchTechType };
     }
+    // ファウルをした選手の付け替え。種別とFTは動かさない（理由は handleEditFoul）
+    | { type: 'EDIT_FOUL'; payload: { entryId: string; newPlayerId: string } }
     | { type: 'REMOVE_FOUL'; payload: { entryId: string } }
     // 管理
     | { type: 'SUBSTITUTE_PLAYER'; payload: { teamId: string; playerInId: string; playerOutId: string } }
