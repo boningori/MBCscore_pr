@@ -22,6 +22,7 @@ function renderFlow(currentFouls: FoulType[], onComplete = vi.fn()) {
             currentFoulCount={currentFouls.length}
             currentFouls={currentFouls}
             playerName="選手A"
+            playerNumber={4}
             teamFouls={0}
             opponentTeamId="teamB"
             opponentPlayers={[]}
@@ -120,5 +121,12 @@ describe('FoulInputFlow: 6個目以降の確認', () => {
         expect(screen.getByText('このファウルは7個目です')).toBeTruthy();
         expect(screen.queryByText(CONFIRM_TITLE)).toBeNull();
         expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it('確認メッセージは背番号付きで選手を示す（同姓の選手を取り違えないため）', () => {
+        renderFlow(['P', 'P', 'P', 'P', 'P']);
+        tapPFoul();
+
+        expect(screen.getByText('#4 選手A は既に5ファウルです。6個目以降は公式様式のファウル欄（5枠）に記録できません。')).toBeTruthy();
     });
 });

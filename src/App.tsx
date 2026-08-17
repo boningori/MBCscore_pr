@@ -1255,6 +1255,7 @@ function AppContent() {
               currentFoulCount={foulingPlayer?.fouls.length || 0}
               currentFouls={foulingPlayer?.fouls}
               playerName={foulingPlayer?.name}
+              playerNumber={foulingPlayer?.number}
               teamFouls={teamFoulsForPending}
               opponentTeamId={opponentTeamIdForPending}
               opponentPlayers={opponentTeam.players}
@@ -1281,6 +1282,7 @@ function AppContent() {
             currentFoulCount={selectedPlayer?.fouls.length || 0}
             currentFouls={selectedPlayer?.fouls}
             playerName={selectedPlayer?.name}
+            playerNumber={selectedPlayer?.number}
             teamFouls={teamFouls}
             opponentTeamId={opponentTeamId}
             opponentPlayers={opponentTeam.players}

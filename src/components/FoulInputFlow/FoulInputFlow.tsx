@@ -37,6 +37,8 @@ interface FoulInputFlowProps {
     /** ファウル中の選手の既存ファウル。退場・失格の判定に使う（省略時は判定しない） */
     currentFouls?: (FoulType | FoulRecord)[];
     playerName?: string;
+    /** 確認ダイアログに出す背番号。同姓の選手が居ても取り違えないため（省略可） */
+    playerNumber?: number;
     teamFouls: number;
     opponentTeamId: string;
     opponentPlayers: Player[];
@@ -67,6 +69,7 @@ export function FoulInputFlow({
     currentFoulCount = 0,
     currentFouls,
     playerName,
+    playerNumber,
     teamFouls,
     opponentPlayers,
     opponentTeamName,
@@ -92,6 +95,13 @@ export function FoulInputFlow({
     const willOverflowFoulColumns = currentFouls
         ? wouldOverflowFoulColumns(currentFouls)
         : currentFoulCount >= MAX_PERSONAL_FOULS;
+
+    // 確認ダイアログは背番号から出す。同姓の選手は珍しくなく、スコアラーが
+    // 照合するのは背番号。他の2箇所の警告（App.tsx の交代要員確認、
+    // EditActionModal の付け替え警告）も #番号 で始まる
+    const confirmPlayerLabel = playerNumber !== undefined
+        ? `#${formatPlayerNumber(playerNumber)} ${playerName || ''}`.trim()
+        : (playerName || '選手');
 
     // 長押し検出用
     const longPressTimer = useRef<number | null>(null);
@@ -661,7 +671,7 @@ export function FoulInputFlow({
                 {overflowIntent && (
                     <ConfirmModal
                         title={`このファウルは${currentFoulCount + 1}個目です`}
-                        message={`${playerName || '選手'} は既に${currentFoulCount}ファウルです。6個目以降は公式様式のファウル欄（5枠）に記録できません。`}
+                        message={`${confirmPlayerLabel} は既に${currentFoulCount}ファウルです。6個目以降は公式様式のファウル欄（5枠）に記録できません。`}
                         note="チームファウルには加算されます。"
                         confirmLabel="記録する"
                         cancelLabel="やめる"
