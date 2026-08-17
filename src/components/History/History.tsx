@@ -14,6 +14,7 @@ import {
 import { showToast } from '../Toast/toastApi';
 import { formatRecordDate, recordInputDate } from '../../utils/localDate';
 import { actionLabel } from '../../utils/actionLabels';
+import { quarterLabel } from '../../utils/quarterLabel';
 import { filterAndSortRecords, type HistoryOrder } from './historyFilter';
 import { DeleteConfirmModal } from '../TeamShared';
 import './History.css';
@@ -143,7 +144,7 @@ export function History({ onBack }: HistoryProps) {
                             {selectedRecord.pendingActions!.map(pending => (
                                 <li key={pending.id}>
                                     <span className="history-pending-quarter">
-                                        {pending.quarter <= 4 ? `Q${pending.quarter}` : 'OT'}
+                                        {quarterLabel(pending.quarter)}
                                     </span>
                                     <span className="history-pending-team">
                                         {pending.teamId === 'teamA' ? selectedRecord.teamA.name : selectedRecord.teamB.name}

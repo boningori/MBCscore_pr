@@ -7,6 +7,7 @@ import { formatPlayerNumber } from './utils/playerNumber';
 // 保留解決モーダルに別々の辞書があり、チーム選択モーダルだけ内部コードが出ていた
 import { actionLabel, statLabel } from './utils/actionLabels';
 import { todayInputDate } from './utils/localDate';
+import { quarterLabel } from './utils/quarterLabel';
 import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
 import { saveRecentOpponent } from './utils/teamStorage';
@@ -1163,7 +1164,7 @@ function AppContent() {
                     onHoldPending={() => setShowTeamSelector(true)}
                     onCancelAction={() => setPendingAction(null)}
                     idleNotice={phase === 'quarterEnd'
-                      ? `⚠ 今の記録は ${currentQuarter <= 4 ? `Q${currentQuarter}` : 'OT'} として保存されます`
+                      ? `⚠ 今の記録は ${quarterLabel(currentQuarter)} として保存されます`
                       : null}
                   />
                 </div>

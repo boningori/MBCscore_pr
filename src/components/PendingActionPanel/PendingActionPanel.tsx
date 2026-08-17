@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { actionLabel } from '../../utils/actionLabels';
+import { quarterLabel } from '../../utils/quarterLabel';
 import { ConfirmModal } from '../Modal';
 import './PendingActionPanel.css';
 
@@ -146,7 +147,7 @@ export function PendingActionPanel({
                                 <span className="pending-action-type">
                                     {actionLabel(pending.actionType, pending.value)}
                                 </span>
-                                <span className="pending-quarter">Q{pending.quarter}</span>
+                                <span className="pending-quarter">{quarterLabel(pending.quarter)}</span>
                                 <span className={`pending-team ${pending.teamId}`}>
                                     {pending.teamId === 'teamA' ? 'A' : 'B'}
                                 </span>
@@ -206,7 +207,7 @@ export function PendingActionPanel({
             {removeTarget && (
                 <ConfirmModal
                     title="保留記録の削除"
-                    message={`Q${removeTarget.quarter} の「${actionLabel(removeTarget.actionType, removeTarget.value)}」を削除します`}
+                    message={`${quarterLabel(removeTarget.quarter)} の「${actionLabel(removeTarget.actionType, removeTarget.value)}」を削除します`}
                     note="※この操作は取り消せません。未割り当ての記録は最終スコアに入っていないため、消すと後から辿れなくなります"
                     onConfirm={() => handleRemove(removeTarget.id)}
                     onCancel={() => setRemoveTarget(null)}
