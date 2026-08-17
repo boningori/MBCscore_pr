@@ -35,7 +35,13 @@ const SHOT_TYPES = [
     { value: 'FTA', label: 'FTミス', category: 'stat' },
 ];
 
-// 非シュート系スタッツの選択肢
+// 非シュート系スタッツの選択肢。
+//
+// ターンオーバーの細目（TOボタンのスワイプで記録できる）も並べる。
+// 無かったころは、現在の種別がどの選択肢にも一致しないため、ダブドリの記録を
+// 開くと「OREB」が選ばれているように見えていた。選手だけ直したい記録で
+// 事実と違う種別が表示されるうえ、一度でも種類を触ると細目へ戻せず、
+// 削除して記録し直すしかなかった。
 const OTHER_STAT_TYPES = [
     { value: 'OREB', label: 'OREB (オフェンスリバウンド)' },
     { value: 'DREB', label: 'DREB (ディフェンスリバウンド)' },
@@ -43,6 +49,10 @@ const OTHER_STAT_TYPES = [
     { value: 'STL', label: 'STL (スティール)' },
     { value: 'BLK', label: 'BLK (ブロック)' },
     { value: 'TO', label: 'TO (ターンオーバー)' },
+    { value: 'TO:DD', label: 'TO (ダブドリ)' },
+    { value: 'TO:TR', label: 'TO (トラベリング)' },
+    { value: 'TO:PM', label: 'TO (パスミス)' },
+    { value: 'TO:CM', label: 'TO (キャッチミス)' },
 ];
 
 // シュート関連のタイプかどうかを判定
@@ -67,6 +77,18 @@ export function EditActionModal({
     const [selectedPlayerId, setSelectedPlayerId] = useState(item.playerId);
     const [selectedType, setSelectedType] = useState(item.entryType);
     const [isOwnGoal, setIsOwnGoal] = useState(item.isOwnGoal ?? false);
+
+    // 元の記録が名簿の誰にも結び付いていない（保留を「選手不明」で解決した記録）。
+    //
+    // プルダウンには名簿しか並ばないので、'unknown' はどの選択肢にも一致せず
+    // 名簿の先頭が選ばれているように見えていた。表示と実体が食い違ううえ、
+    // そのまま保存しても reducer 側で誰にも当たらず黙って捨てられる。
+    // 得点への変換に至っては、帰属の無い得点エントリが生まれてスコアボードと
+    // ランニングスコアの得点が食い違う（scoreHandlers の handleConvertMissToScore）。
+    // ここは「選手を割り当てる」ための唯一の導線でもあるので、変換を塞ぐのではなく
+    // 先に選手を選ばせる。
+    const hasUnknownPlayer = !players.some(p => p.id === item.playerId);
+    const needsPlayerChoice = hasUnknownPlayer && !players.some(p => p.id === selectedPlayerId);
 
     // ファウルは選手の付け替えだけを扱う。
     // 種別やFT本数まで変えられるようにすると公式様式の表記とFTの本数が
@@ -159,6 +181,9 @@ export function EditActionModal({
                             value={selectedPlayerId}
                             onChange={e => setSelectedPlayerId(e.target.value)}
                         >
+                            {hasUnknownPlayer && (
+                                <option value={item.playerId}>選手不明（選んでください）</option>
+                            )}
                             {players.map(p => (
                                 <option key={p.id} value={p.id}>
                                     #{formatPlayerNumber(p.number)} {p.courtName || p.name}
@@ -217,7 +242,7 @@ export function EditActionModal({
                     <button className="btn btn-secondary" onClick={onCancel}>
                         キャンセル
                     </button>
-                    <button className="btn btn-primary" onClick={handleSave}>
+                    <button className="btn btn-primary" onClick={handleSave} disabled={needsPlayerChoice}>
                         {isConversion() ? '変換' : '保存'}
                     </button>
                 </div>

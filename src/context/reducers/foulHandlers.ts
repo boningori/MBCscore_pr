@@ -7,7 +7,7 @@ import type {
     CoachFoulTarget,
     ScoreEntry,
 } from '../../types/game';
-import { recalculateRunningScores, incrementTeamFoul, decrementTeamFoul } from './shared';
+import { recalculateRunningScores, incrementTeamFoul, decrementTeamFoul, insertFoulInOrder } from './shared';
 
 export function handleAddFoul(state: Game, payload: PayloadOf<'ADD_FOUL'>): Game {
     const { teamId, playerId, foulType } = payload;
@@ -384,6 +384,10 @@ export function handleEditFoul(state: Game, payload: PayloadOf<'EDIT_FOUL'>): Ga
     if (foulIndex === -1) return state;
     const moved = oldPlayer.fouls[foulIndex];
 
+    const nextFoulHistory = state.foulHistory.map(f => f.id === entryId
+        ? { ...f, playerId: newPlayerId, playerNumber: newPlayer.number }
+        : f);
+
     const players = team.players.map(p => {
         if (p.id === entry.playerId) {
             const fouls = [...p.fouls];
@@ -391,7 +395,12 @@ export function handleEditFoul(state: Game, payload: PayloadOf<'EDIT_FOUL'>): Ga
             return { ...p, fouls };
         }
         if (p.id === newPlayerId) {
-            return { ...p, fouls: [...p.fouls, moved] };
+            // 末尾ではなく発生順の位置へ入れる。付け替え先が後のクォーターの
+            // ファウルを既に持っていると、様式の表記と記入色が入れ替わる
+            return {
+                ...p,
+                fouls: insertFoulInOrder(p.fouls, moved, nextFoulHistory, newPlayerId, entryId),
+            };
         }
         return p;
     });
@@ -402,9 +411,7 @@ export function handleEditFoul(state: Game, payload: PayloadOf<'EDIT_FOUL'>): Ga
         ...state,
         teamA: isTeamA ? updatedTeam : state.teamA,
         teamB: isTeamA ? state.teamB : updatedTeam,
-        foulHistory: state.foulHistory.map(f => f.id === entryId
-            ? { ...f, playerId: newPlayerId, playerNumber: newPlayer.number }
-            : f),
+        foulHistory: nextFoulHistory,
     };
 }
 
@@ -475,6 +482,15 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
         ? (entry.shotSituation === '3P' ? 3 : 2)
         : 0;
 
+    // このファウルが生んだ「ミス」の記録（handleConvertScoreToMiss でFTAへ化けた分）。
+    //
+    // フリースローはファウル無しには発生しないので、ファウルを取り消すなら
+    // 対で消えなければならない。紐付けを見ていなかったため、FTを「やっぱり
+    // 外していた」と直したあとにファウルを取り消すと、シューターに原因の無い
+    // 試投が残っていた（実測: ftm=0, fta=1）。
+    // 自分で記録したFTミスは sourceFoulId を持たないので巻き込まない。
+    const removedStatEntries = state.statHistory.filter(s => s.sourceFoulId === entry.id);
+
     // このファウルが生成した得点エントリ（FT成功分＋バスケットカウント）を特定する。
     // sourceFoulId を持つ新しいデータは確実に引ける。持たない旧データだけ、
     // 従来の「同じシューター・1秒以内」の推測にフォールバックする
@@ -483,7 +499,14 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
         const linked = state.scoreHistory.filter(s => s.sourceFoulId === entry.id);
         if (linked.length > 0) {
             removedScoreEntries.push(...linked);
-        } else {
+        } else if (removedStatEntries.length === 0) {
+            // 紐づく得点もミスも1件も無いときだけ推測に落ちる。
+            //
+            // 得点を「実は外していた」と直すと sourceFoulId ごと StatEntry へ移る
+            // （scoreHandlers）。バスケットカウントのFTとシュートを両方直すと
+            // linked は空になるが、これは新しい形式のデータであって旧データでは
+            // ない。ここで推測へ落ちると、同じシューターが1秒以内に自力で決めた
+            // 無関係な得点まで消えていた（実測: 自力の2Pが消えチーム得点 2→0）。
             const basketType = entry.shotSituation === '3P' ? '3P' : '2P';
             let removedFt = 0;
             let basketRemoved = basketPoints === 0; // バスケットが無ければ対象なし
@@ -535,14 +558,6 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
         };
     };
 
-    // このファウルが生んだ「ミス」の記録（handleConvertScoreToMiss でFTAへ化けた分）。
-    //
-    // フリースローはファウル無しには発生しないので、ファウルを取り消すなら
-    // 対で消えなければならない。紐付けを見ていなかったため、FTを「やっぱり
-    // 外していた」と直したあとにファウルを取り消すと、シューターに原因の無い
-    // 試投が残っていた（実測: ftm=0, fta=1）。
-    // 自分で記録したFTミスは sourceFoulId を持たないので巻き込まない。
-    const removedStatEntries = state.statHistory.filter(s => s.sourceFoulId === entry.id);
     const removedStatIds = new Set(removedStatEntries.map(s => s.id));
     const newStatHistory = removedStatIds.size > 0
         ? state.statHistory.filter(s => !removedStatIds.has(s.id))

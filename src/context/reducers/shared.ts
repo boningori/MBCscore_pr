@@ -1,4 +1,41 @@
-import type { ScoreEntry } from '../../types/game';
+import type { FoulEntry, FoulRecord, FoulType, ScoreEntry } from '../../types/game';
+
+/**
+ * 選手のファウル欄へ、発生時刻の順に収まる位置で1つ追加する。
+ *
+ * 公式様式は player.fouls[i] の表記（P2 など）と、foulHistory を時刻順に並べた
+ * i 番目のピリオド（記入色 1Q/3Q=赤・2Q/4Q/OT=黒）を対にして1マスを描く
+ * （RunningScoresheet.renderPlayerRow）。ハーフタイムの太線位置も前半の
+ * ファウル数から決まるので、並びが崩れると太線も別のファウルの右に出る。
+ *
+ * 単純に末尾へ足すと、発生より後に追加される経路で表記と色が入れ替わる:
+ *   - EDIT_FOUL: 背番号の見間違いの付け替え（試合中いちばん多い訂正）
+ *   - 保留ファウルの解決: 記録時のピリオドを持ったまま、あとから確定する
+ * 実測では「Q3のTが1枠目・Q1の赤」「Q1のPが2枠目・Q3の色」になっていた。
+ *
+ * 位置は様式と同じ手順（この選手で絞り、timestamp で安定ソート）で求める。
+ * 独自に「timestamp 以下の件数」で数えると、同じミリ秒に記録されたファウルの
+ * 前後が様式側の安定ソートと食い違う。
+ *
+ * @param nextFoulHistory 追加・付け替えを反映した後の履歴
+ * @param entryId 追加するファウルの FoulEntry.id
+ */
+export function insertFoulInOrder(
+    fouls: (FoulType | FoulRecord)[],
+    foul: FoulType | FoulRecord,
+    nextFoulHistory: FoulEntry[],
+    playerId: string,
+    entryId: string,
+): (FoulType | FoulRecord)[] {
+    const ordered = nextFoulHistory
+        .filter(f => f.playerId === playerId)
+        .sort((a, b) => a.timestamp - b.timestamp);
+    const index = ordered.findIndex(f => f.id === entryId);
+    const next = [...fouls];
+    // 履歴に見つからない・欄と件数が食い違う古いデータでは末尾へ（従来の挙動）
+    next.splice(index === -1 ? next.length : index, 0, foul);
+    return next;
+}
 
 /**
  * OT欄は直前ピリオドの数を種にして積み上がる（gameFlowHandlers の extendForOT）。

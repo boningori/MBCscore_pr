@@ -112,6 +112,44 @@ describe('REMOVE_FOUL: ファウルが生んだ得点の削除', () => {
         expect(removed.scoreHistory).toHaveLength(0);
     });
 
+    it('ファウル由来の得点を全部ミスへ直しても、無関係な得点を巻き込まない', () => {
+        // 同じシューターが自力で決めた2P。ファウルの記録とタイムスタンプが近接する
+        const withOwnScore = gameReducer(makeGame(), {
+            type: 'ADD_SCORE',
+            payload: { teamId: 'teamB', playerId: 'b1', scoreType: '2P', entryId: 'own-2p' },
+        });
+        // バスケットカウント: シュート成功 + FT1本成功
+        const withFoul = gameReducer(withOwnScore, {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P', shotSituation: '2P', shotMade: true,
+                freeThrows: 1, freeThrowResults: ['made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+            },
+        });
+        const foulId = withFoul.foulHistory[0].id;
+
+        // 「どちらも実は外していた」と直す。これでファウルに紐づく得点は1件も残らない
+        const corrected = withFoul.scoreHistory
+            .filter(s => s.sourceFoulId === foulId)
+            .reduce((state, entry) => gameReducer(state, {
+                type: 'CONVERT_SCORE_TO_MISS',
+                payload: { entryId: entry.id, newMissType: entry.scoreType === 'FT' ? 'FTA' : '2PA' },
+            }), withFoul);
+        expect(corrected.scoreHistory.map(s => s.id)).toEqual(['own-2p']);
+
+        const removed = gameReducer(corrected, { type: 'REMOVE_FOUL', payload: { entryId: foulId } });
+
+        // 紐づく得点が0件でも、旧データ向けの推測（同一シューター・1秒以内）へ
+        // 落ちてはいけない。自力の2Pは残る
+        expect(removed.scoreHistory.map(s => s.id)).toEqual(['own-2p']);
+        expect(teamPoints(removed, 'teamB')).toBe(historyPoints(removed, 'teamB'));
+        expect(teamPoints(removed, 'teamB')).toBe(2);
+        // ミスへ直した試投はファウルと対で消える
+        const b1 = removed.teamB.players.find(p => p.id === 'b1')!;
+        expect(b1.stats).toMatchObject({ twoPointMade: 1, twoPointAttempt: 1, freeThrowAttempt: 0 });
+    });
+
     it('無関係な得点は巻き込まれない', () => {
         const withFoul = withFoulAndTwoMadeFreeThrows();
         // 同じシューターが直後に通常の2Pを決めた（タイムスタンプが近接する）
