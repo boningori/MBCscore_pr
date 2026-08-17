@@ -9,6 +9,8 @@ interface ActionHistoryHandlers {
   onRemoveFoul: (entryId: string) => void;
   onEditScore: (entryId: string, newPlayerId: string, newScoreType: ScoreType) => void;
   onEditStat: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
+  /** ファウルをした選手の付け替え（種別とFTは変えない。理由は handleEditFoul） */
+  onEditFoul: (entryId: string, newPlayerId: string) => void;
   onConvertScoreToMiss: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
   onConvertMissToScore: (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => void;
   onToggleOwnGoal: (entryId: string) => void;

@@ -851,6 +851,11 @@ function AppContent() {
     dispatch({ type: 'EDIT_STAT', payload: { entryId, newPlayerId, newStatType } });
   };
 
+  // ファウルの選手付け替え（種別・FTは動かさない。理由は handleEditFoul）
+  const handleEditFoul = (entryId: string, newPlayerId: string) => {
+    dispatch({ type: 'EDIT_FOUL', payload: { entryId, newPlayerId } });
+  };
+
   // 成功 → ミス変換（選手の付け替えを伴うことがある）
   const handleConvertScoreToMiss = (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => {
     dispatch({ type: 'CONVERT_SCORE_TO_MISS', payload: { entryId, newMissType, newPlayerId } });
@@ -873,6 +878,7 @@ function AppContent() {
     onRemoveFoul: handleRemoveFoul,
     onEditScore: handleEditScore,
     onEditStat: handleEditStat,
+    onEditFoul: handleEditFoul,
     onConvertScoreToMiss: handleConvertScoreToMiss,
     onConvertMissToScore: handleConvertMissToScore,
     onToggleOwnGoal: handleToggleOwnGoal,

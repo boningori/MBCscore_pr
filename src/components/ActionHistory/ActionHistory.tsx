@@ -23,6 +23,8 @@ interface ActionHistoryProps {
     onRemoveFoul: (entryId: string) => void;
     onEditScore?: (entryId: string, newPlayerId: string, newScoreType: ScoreType) => void;
     onEditStat?: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
+    /** ファウルをした選手の付け替え（種別とFTは変えない。理由は handleEditFoul） */
+    onEditFoul?: (entryId: string, newPlayerId: string) => void;
     onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
     onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => void;
     onToggleOwnGoal?: (entryId: string) => void;
@@ -38,6 +40,14 @@ interface HistoryItem {
     description: string;
     entryType: string;
     isOwnGoal?: boolean;
+    /**
+     * 編集で直せる行か。
+     *
+     * コーチ・ベンチのファウルは移す先の選手行が無いので直せない。
+     * ここを見ずに「編集」を出していたため、開いても保存しても
+     * 何も起きない行が混ざっていた。
+     */
+    canEdit: boolean;
 }
 
 export function ActionHistory({
@@ -51,6 +61,7 @@ export function ActionHistory({
     onRemoveFoul,
     onEditScore,
     onEditStat,
+    onEditFoul,
     onConvertScoreToMiss,
     onConvertMissToScore,
     onToggleOwnGoal,
@@ -145,6 +156,7 @@ export function ActionHistory({
                 description: (s.isOwnGoal ? '▲OG ' : '') + getScoreLabel(s.scoreType, s.points),
                 entryType: s.scoreType,
                 isOwnGoal: s.isOwnGoal || false,
+                canEdit: !!onEditScore,
             })),
         ...statHistory
             .filter(s => s.teamId === teamId)
@@ -157,6 +169,7 @@ export function ActionHistory({
                 playerName: getPlayerName(s.playerId),
                 description: getStatLabel(s.statType),
                 entryType: s.statType,
+                canEdit: !!onEditStat,
             })),
         ...foulHistory
             .filter(f => f.teamId === teamId)
@@ -169,6 +182,8 @@ export function ActionHistory({
                 playerName: f.isCoachOrBench ? 'ベンチ' : getPlayerName(f.playerId || ''),
                 description: getFoulLabel(f.foulType, f.isCoachOrBench, f.freeThrows) + formatFtResult(f.freeThrows, f.freeThrowResults),
                 entryType: f.foulType,
+                // コーチ・ベンチのファウルは選手行に無いので付け替えられない
+                canEdit: !!onEditFoul && !f.isCoachOrBench && !!f.playerId,
             })),
     ].sort((a, b) => b.timestamp - a.timestamp);
 
@@ -316,9 +331,12 @@ export function ActionHistory({
             onEditScore(itemId, newPlayerId, newType as ScoreType);
         } else if (editingItem.type === 'stat' && onEditStat) {
             onEditStat(itemId, newPlayerId, newType as StatType);
+        } else if (editingItem.type === 'foul' && onEditFoul) {
+            // ファウルは選手だけ付け替える（newType は元の種別のまま返ってくる）
+            onEditFoul(itemId, newPlayerId);
         }
         setEditingItem(null);
-    }, [editingItem, onEditScore, onEditStat]);
+    }, [editingItem, onEditScore, onEditStat, onEditFoul]);
 
     const handleConvertScoreToMiss = useCallback((entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => {
         if (onConvertScoreToMiss) {
@@ -380,13 +398,11 @@ export function ActionHistory({
                                 {selectedItemId === item.id && (
                                     <div className="action-menu">
                                         {/*
-                                          ファウルには編集を出さない。EditActionModal は得点・スタッツ用で、
-                                          ファウルを渡すとスタッツ種別（OREB等）を選ばせたうえに保存が
-                                          何もしない。ファウルはチームファウル・コーチ行のB・FTの得点まで
-                                          巻き戻す必要があり、それを正しく行えるのは削除の経路だけなので、
-                                          そちらへ案内する
+                                          直せない行に編集を出さない。ファウルは選手の付け替えだけを
+                                          扱い（EDIT_FOUL）、コーチ・ベンチのファウルは移す先の選手行が
+                                          無いので canEdit が false になる
                                         */}
-                                        {item.type !== 'foul' && (onEditScore || onEditStat) && (
+                                        {item.canEdit && (
                                             <button className="btn btn-primary btn-small" onClick={() => handleEdit(item)}>
                                                 編集
                                             </button>
@@ -397,9 +413,9 @@ export function ActionHistory({
                                         <button className="btn btn-secondary btn-small" onClick={handleCancel}>
                                             キャンセル
                                         </button>
-                                        {item.type === 'foul' && (
+                                        {item.type === 'foul' && !item.canEdit && (
                                             <span className="action-menu-note">
-                                                ファウルは削除して入力し直してください
+                                                ベンチのファウルは削除して入力し直してください
                                             </span>
                                         )}
                                     </div>
@@ -437,7 +453,7 @@ export function ActionHistory({
             {/* 編集モーダル */}
             {editingItem && (
                 <EditActionModal
-                    item={editingItem}
+                    item={{ ...editingItem, typeLabel: editingItem.description }}
                     players={players}
                     onSave={handleEditSave}
                     onConvertScoreToMiss={handleConvertScoreToMiss}
