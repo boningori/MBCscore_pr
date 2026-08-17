@@ -650,17 +650,23 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 const isThreePointA = entryA?.scoreType === '3P';
                                                 const isThreePointB = entryB?.scoreType === '3P';
 
-                                                const isQuarterEndA = entryA && scoreHistory
+                                                // クォーター終了の丸は、そのクォーターが終わってから付ける。
+                                                // 進行中のクォーターに付けると、得点が入るたびに丸が
+                                                // 次の行へ移っていく（まだ最後の得点ではない）
+                                                const isEndedQuarter = (q?: number) =>
+                                                    q !== undefined && (isGameFinished || q < currentQuarter);
+                                                const isQuarterEndA = entryA && isEndedQuarter(quarterA) && scoreHistory
                                                     .filter(s => s.teamId === 'teamA' && s.quarter === quarterA)
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
-                                                const isQuarterEndB = entryB && scoreHistory
+                                                const isQuarterEndB = entryB && isEndedQuarter(quarterB) && scoreHistory
                                                     .filter(s => s.teamId === 'teamB' && s.quarter === quarterB)
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
 
-                                                const isGameEndA = entryA && scoreHistory
+                                                // 試合終了の丸も同じ。試合中は「いま最後の得点」でしかない
+                                                const isGameEndA = isGameFinished && entryA && scoreHistory
                                                     .filter(s => s.teamId === 'teamA')
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
-                                                const isGameEndB = entryB && scoreHistory
+                                                const isGameEndB = isGameFinished && entryB && scoreHistory
                                                     .filter(s => s.teamId === 'teamB')
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
 
@@ -721,7 +727,13 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                         </div>
                         <div className="rs-winner">
                             <span className="rs-result-label">勝利チーム</span>
-                            <span className="rs-result-value">{finalScoreA > finalScoreB ? teamA.name : finalScoreB > finalScoreA ? teamB.name : '引き分け'}</span>
+                            {/* 試合中は空欄のままにする。シートは進行中でも出力できるので、
+                                途中経過の首位を書くと確定した記録として読まれてしまう */}
+                            <span className="rs-result-value">
+                                {isGameFinished
+                                    ? (finalScoreA > finalScoreB ? teamA.name : finalScoreB > finalScoreA ? teamB.name : '引き分け')
+                                    : ''}
+                            </span>
                         </div>
                         <div className="rs-game-end-time">
                             <span className="rs-result-label">試合終了時間</span>
