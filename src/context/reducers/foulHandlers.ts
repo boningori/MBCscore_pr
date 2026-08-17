@@ -322,6 +322,30 @@ function isSubstituteTech(entry: FoulEntry): boolean {
     return entry.playerId !== null && entry.coachFoulTarget === 'BENCH';
 }
 
+/**
+ * 指定ピリオドのチームファウルを1つ減らした配列を返す。
+ *
+ * OTの枠は直前ピリオドの数を種にして積み上がる（gameFlowHandlers の
+ * extendForOT）。つまりOT欄には第4Qで犯したファウルが含まれている。
+ * 第4Q以降のファウルを取り消すときは、それを含んでいる後続のOT欄も
+ * まとめて減らさないと通算が水増しのまま残り、ペナルティ判定
+ * （OT欄を見ている）が本来より早くFTに入る。
+ *
+ * Q1〜Q3は互いに独立なので、その枠だけを減らす。
+ */
+function decrementTeamFoul(teamFouls: number[], quarter: number): number[] {
+    const next = [...teamFouls];
+    const decrement = (index: number) => {
+        if (next[index] > 0) next[index]--;
+    };
+
+    decrement(quarter - 1);
+    if (quarter >= 4) {
+        for (let i = quarter; i < next.length; i++) decrement(i);
+    }
+    return next;
+}
+
 /** 配列から最初の該当を1つだけ取り除く。無ければ元の配列をそのまま返す */
 function removeOneFoul(list: FoulType[], target: FoulType): FoulType[] {
     const index = list.findIndex(f => f === target);
@@ -409,13 +433,9 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
             return { ...team, players, coachFouls: removeOneFoul(team.coachFouls, 'BT') };
         }
 
-        // 通常のプレイヤーファウルはチームファウルも減算
-        const newTeamFouls = [...team.teamFouls];
-        if (newTeamFouls[entry.quarter - 1] > 0) {
-            newTeamFouls[entry.quarter - 1]--;
-        }
-
-        return { ...team, teamFouls: newTeamFouls, players };
+        // 通常のプレイヤーファウルはチームファウルも減算。
+        // OT欄は第4Qからの通算なので、後続の枠にも伝える（decrementTeamFoul）
+        return { ...team, teamFouls: decrementTeamFoul(team.teamFouls, entry.quarter), players };
     };
 
     // バスケットカウント(and-1)の得点（削除時に戻すため）
