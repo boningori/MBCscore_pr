@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { actionLabel } from '../../utils/actionLabels';
+import { ConfirmModal } from '../Modal';
 import './PendingActionPanel.css';
 
 interface PendingActionPanelProps {
@@ -24,6 +25,8 @@ export function PendingActionPanel({
     // 折りたたみ状態（既定: バッジ表示）。展開中のパネルは下の操作を覆うため、
     // 使うときだけ開き、外側タップで閉じる
     const [open, setOpen] = useState(false);
+    // 削除の確認待ち（取り消せない操作なので一段挟む）
+    const [removeTarget, setRemoveTarget] = useState<PendingAction | null>(null);
     const rootRef = useRef<HTMLDivElement>(null);
 
     // 展開中に外側をタップしたら折りたたむ
@@ -82,7 +85,9 @@ export function PendingActionPanel({
         setExpandedId(null);
     };
 
-    // 削除
+    // 削除。取り消せないうえ、得点の保留を消すと試合終了時の
+    // 「未割り当ての記録があります」警告にも掛からなくなる（もう存在しないため）。
+    // 確定ボタンの隣にある一発操作なので、必ず確認を挟む
     const handleRemove = (pendingId: string) => {
         onRemove(pendingId);
         setSelectedPlayerIds(prev => {
@@ -91,6 +96,7 @@ export function PendingActionPanel({
             return newState;
         });
         setExpandedId(null);
+        setRemoveTarget(null);
     };
 
     // 不明選択可能か（得点とファウルは不可）
@@ -183,7 +189,7 @@ export function PendingActionPanel({
                                         )}
                                         <button
                                             className="btn btn-secondary btn-small"
-                                            onClick={() => handleRemove(pending.id)}
+                                            onClick={() => setRemoveTarget(pending)}
                                         >
                                             削除
                                         </button>
@@ -194,6 +200,18 @@ export function PendingActionPanel({
                     );
                 })}
             </div>
+
+            {/* 確認はパネルの中に描く。外に出すと、オーバーレイへのタップが
+                「外側タップ」と判定されてパネルごと畳まれてしまう */}
+            {removeTarget && (
+                <ConfirmModal
+                    title="保留記録の削除"
+                    message={`Q${removeTarget.quarter} の「${actionLabel(removeTarget.actionType, removeTarget.value)}」を削除します`}
+                    note="※この操作は取り消せません。未割り当ての記録は最終スコアに入っていないため、消すと後から辿れなくなります"
+                    onConfirm={() => handleRemove(removeTarget.id)}
+                    onCancel={() => setRemoveTarget(null)}
+                />
+            )}
         </div>
     );
 }
