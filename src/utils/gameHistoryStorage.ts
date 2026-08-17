@@ -212,6 +212,17 @@ export function applySavedTeamIdBackfill(myTeams: MyTeamRef[]): boolean {
     return true;
 }
 
+/**
+ * 試合履歴をまるごと差し替える（インポート用）。保存できたら true。
+ *
+ * インポートは localStorage.setItem を直接呼んでいたため、容量超過の検知と
+ * 保存失敗の通知（createStorage）を素通りしていた。成否を返すのは、
+ * 呼び出し側が「保存できたか」で分岐できないと成功と偽って報告できてしまうため。
+ */
+export function saveGameHistory(records: GameRecord[]): boolean {
+    return historyStorage.save(records);
+}
+
 // 試合履歴一覧取得（旧バージョン由来の重複IDはこの時点で修復する）
 export function loadGameHistory(): GameRecord[] {
     const history = historyStorage.load();
