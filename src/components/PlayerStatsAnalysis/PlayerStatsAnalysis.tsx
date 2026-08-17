@@ -26,7 +26,7 @@ interface PlayerStatsAnalysisProps {
 }
 
 /** 一覧が空になった理由（案内の文面を選ぶ） */
-type EmptyReason = 'period' | 'hidden' | 'noData';
+type EmptyReason = 'period' | 'hidden' | 'noPlayerRecords' | 'noData';
 
 function EmptyState({ reason, hiddenPlayerCount }: { reason: EmptyReason; hiddenPlayerCount: number }) {
     if (reason === 'period') {
@@ -44,6 +44,18 @@ function EmptyState({ reason, hiddenPlayerCount }: { reason: EmptyReason; hidden
                 <div className="empty-icon">🙈</div>
                 <h3>表示できる選手がいません</h3>
                 <p>{hiddenPlayerCount}人を選手スタッツ一覧に非表示にしています</p>
+            </div>
+        );
+    }
+    // 試合はあるのに集計対象の選手が1人もいない。
+    // 「試合データがありません」と言うと、すぐ上のチームサマリーの試合数と
+    // 矛盾したうえ、記録済みの利用者に「まだ記録していない」と案内してしまう
+    if (reason === 'noPlayerRecords') {
+        return (
+            <div className="empty-state">
+                <div className="empty-icon">🧍</div>
+                <h3>選手の記録がありません</h3>
+                <p>試合は記録されていますが、どの選手にもスタッツと出場クォーターが残っていません</p>
             </div>
         );
     }
@@ -138,6 +150,10 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         if (playerStats.length > 0) return null;
         if (hasDateFilter && (teamRecord?.totalGames ?? 0) === 0) return 'period';
         if (hiddenPlayerCount > 0) return 'hidden';
+        // 試合はあるのに集計できる選手がいない（保留のまま保存した、スタメンを
+        // 確定しないまま記録した等）。「試合データがありません」と言うと、
+        // すぐ上のチームサマリーが出している試合数と食い違う
+        if ((teamRecord?.totalGames ?? 0) > 0) return 'noPlayerRecords';
         return 'noData';
     }, [playerStats.length, hasDateFilter, teamRecord, hiddenPlayerCount]);
 
