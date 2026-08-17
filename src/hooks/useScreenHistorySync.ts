@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { closeTopModal } from '../components/Modal/modalStack';
 
 interface HistoryState<S extends string> {
     appScreen?: S;
@@ -57,9 +58,32 @@ export function useScreenHistorySync<S extends string>(
         }
     }, [screen, homeScreen]);
 
+    // 戻る操作でモーダルを閉じたあと、いまの画面のエントリを積み直すために使う。
+    // popstateリスナーは貼り替えたくないので依存には入れずrefで読む
+    const screenRef = useRef(screen);
+    useEffect(() => {
+        screenRef.current = screen;
+    });
+
     // 戻る/進む操作への追従
     useEffect(() => {
         const handlePopState = (e: PopStateEvent) => {
+            // 端末の戻る操作は、まず最前面のモーダルを閉じる。
+            // ここを通さないと、入力途中のダイアログを開いたまま画面ごと
+            // ホームへ飛ばされる（Androidのエッジスワイプで日常的に起きる）。
+            // Modal は Escape も見ているが、タブレットにEscapeキーは無い
+            if (closeTopModal()) {
+                const current = screenRef.current;
+                // ブラウザは既に1段戻っているので、閉じる前の画面へ積み直す。
+                // ホームは基点なので積み増さず、stateだけ整合させる
+                if (current === homeScreen) {
+                    window.history.replaceState({ appScreen: homeScreen }, '');
+                } else {
+                    window.history.pushState({ appScreen: current }, '');
+                }
+                return;
+            }
+
             let target = (e.state as HistoryState<S> | null)?.appScreen ?? homeScreen;
             if (guardedScreens.includes(target) && !canShowGuarded) {
                 target = homeScreen;

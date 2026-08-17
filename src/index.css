@@ -898,6 +898,14 @@ textarea,
   cursor: not-allowed;
 }
 
+/* 記録済み。押せなくはせず「取り消せる」ことを示す。
+   薄いだけだと disabled と見分けが付かないので、色で使用済みだと分かるようにする */
+.btn-timeout-chip.used:not(:disabled) {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
 /* モーダル
    z-indexは他のモーダル系オーバーレイ(FoulInputFlow等)と同じ1000に統一。
    保留パネル(500)より上・Toast(10000)より下 */

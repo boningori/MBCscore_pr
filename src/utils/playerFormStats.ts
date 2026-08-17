@@ -14,6 +14,17 @@ export interface RecentForm {
     overallAvg: FormStats;
     deltas: FormStats;     // recentAvg - overallAvg
     isPartial: boolean;    // recentGames < recentN
+    /**
+     * 全試合が直近ウィンドウに収まっているか（試合数 <= recentN）。
+     *
+     * このとき直近平均と通算平均は同じ集合なので、差は必ず0になる。
+     * 「vs 通算平均」と称して ±0.0 を並べると、実際には毎試合伸びている選手が
+     * 「通算と変わらない」と読めてしまう（実測: 6→8→10→12→14点の5試合で
+     * 全項目が ± 0.0）。比較が成立しないことは呼び出し側が明示する必要がある。
+     */
+    coversAllGames: boolean;
+    /** 比較が成立し始める試合数（= recentN + 1）。案内文で使う */
+    comparableFrom: number;
 }
 
 export interface SplitStats {
@@ -68,6 +79,8 @@ export function getRecentForm(gameHistory: PlayerGameRecord[], recentN = 5): Rec
             assists: recentAvg.assists - overallAvg.assists,
         },
         isPartial: recentGames < recentN,
+        coversAllGames: gameHistory.length <= recentN,
+        comparableFrom: recentN + 1,
     };
 }
 

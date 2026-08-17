@@ -62,6 +62,7 @@ describe('EditActionModal のオウンゴール', () => {
         fireEvent.click(screen.getByRole('button', { name: '変換' }));
 
         expect(calls).toEqual(['toggleOwnGoal', 'convertToMiss']);
-        expect(onConvertScoreToMiss).toHaveBeenCalledWith('s1', '2PA');
+        // 変換にも選手を渡す（付け替えていなければ元の選手がそのまま乗る）
+        expect(onConvertScoreToMiss).toHaveBeenCalledWith('s1', '2PA', 'p1');
     });
 });

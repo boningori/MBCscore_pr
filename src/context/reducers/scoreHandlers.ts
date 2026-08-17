@@ -167,9 +167,31 @@ export function handleEditScore(state: Game, payload: PayloadOf<'EDIT_SCORE'>): 
     };
 }
 
+/**
+ * 訂正後の記録を付ける選手を決める。
+ *
+ * 指定が無い、または指定された選手がそのチームに居ない場合は元の選手を返す。
+ * チーム外を許すと、加算側の map が誰にも当たらずスタッツだけが消える
+ * （減算は元のチームに対して走るため、合計が静かに減る）。
+ */
+function resolveTargetPlayer(
+    state: Game,
+    teamId: string,
+    currentPlayerId: string,
+    newPlayerId: string | undefined,
+): { playerId: string; playerNumber: number | null } {
+    const team = teamId === 'teamA' ? state.teamA : state.teamB;
+    if (!newPlayerId || newPlayerId === currentPlayerId) {
+        return { playerId: currentPlayerId, playerNumber: null };
+    }
+    const target = team.players.find(p => p.id === newPlayerId);
+    if (!target) return { playerId: currentPlayerId, playerNumber: null };
+    return { playerId: target.id, playerNumber: target.number };
+}
+
 export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVERT_SCORE_TO_MISS'>): Game {
     // 成功 → ミスへの変換
-    const { entryId, newMissType } = payload;
+    const { entryId, newMissType, newPlayerId } = payload;
     const entry = state.scoreHistory.find(s => s.id === entryId);
     if (!entry) return state;
     // 「入らなかったオウンゴール」は存在しない。通すと、番号を借りただけの選手に
@@ -178,6 +200,7 @@ export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVER
     if (entry.isOwnGoal) return state;
 
     const oldPoints = entry.points;
+    const target = resolveTargetPlayer(state, entry.teamId, entry.playerId, newPlayerId);
 
     // 元の選手からスコア分を減算
     const removeScore = (team: typeof state.teamA, isTarget: boolean) => {
@@ -195,13 +218,13 @@ export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVER
         };
     };
 
-    // ミスのアテンプトを加算
+    // ミスのアテンプトを加算（選手を付け替えたときは新しい選手へ）
     const addMiss = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
         return {
             ...team,
             players: team.players.map(p => {
-                if (p.id !== entry.playerId) return p;
+                if (p.id !== target.playerId) return p;
                 const stats = { ...p.stats };
                 if (newMissType === '2PA') { stats.twoPointAttempt++; }
                 else if (newMissType === '3PA') { stats.threePointAttempt++; }
@@ -220,8 +243,8 @@ export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVER
     const newStatEntry: StatEntry = {
         id: crypto.randomUUID(),
         teamId: entry.teamId,
-        playerId: entry.playerId,
-        playerNumber: entry.playerNumber,
+        playerId: target.playerId,
+        playerNumber: target.playerNumber ?? entry.playerNumber,
         statType: newMissType,
         quarter: entry.quarter,
         timestamp: entry.timestamp, // 元のタイムスタンプを維持
@@ -245,7 +268,7 @@ export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVER
 
 export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVERT_MISS_TO_SCORE'>): Game {
     // ミス → 成功への変換
-    const { entryId, newScoreType } = payload;
+    const { entryId, newScoreType, newPlayerId } = payload;
     const entry = state.statHistory.find(s => s.id === entryId);
     if (!entry) return state;
 
@@ -253,6 +276,7 @@ export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVER
     if (!['2PA', '3PA', 'FTA'].includes(entry.statType)) return state;
 
     const newPoints = newScoreType === '3P' ? 3 : newScoreType === '2P' ? 2 : 1;
+    const target = resolveTargetPlayer(state, entry.teamId, entry.playerId, newPlayerId);
 
     // 元の選手からミスのアテンプトを減算
     const removeMiss = (team: typeof state.teamA, isTarget: boolean) => {
@@ -270,13 +294,13 @@ export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVER
         };
     };
 
-    // 得点を加算
+    // 得点を加算（選手を付け替えたときは新しい選手へ）
     const addScore = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
         return {
             ...team,
             players: team.players.map(p => {
-                if (p.id !== entry.playerId) return p;
+                if (p.id !== target.playerId) return p;
                 const stats = { ...p.stats, points: p.stats.points + newPoints };
                 if (newScoreType === '2P') { stats.twoPointMade++; stats.twoPointAttempt++; }
                 else if (newScoreType === '3P') { stats.threePointMade++; stats.threePointAttempt++; }
@@ -295,8 +319,8 @@ export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVER
     const newScoreEntry: ScoreEntry = {
         id: crypto.randomUUID(),
         teamId: entry.teamId,
-        playerId: entry.playerId,
-        playerNumber: entry.playerNumber,
+        playerId: target.playerId,
+        playerNumber: target.playerNumber ?? entry.playerNumber,
         scoreType: newScoreType,
         points: newPoints,
         quarter: entry.quarter,

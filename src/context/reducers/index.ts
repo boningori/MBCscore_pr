@@ -35,6 +35,7 @@ import {
     handleEndQuarter,
     handleUndoQuarterEnd,
     handleAddTimeout,
+    handleRemoveTimeout,
     handleSubstitutePlayer,
     handleAddPlayerToTeam,
     handleSelectPlayer,
@@ -86,6 +87,9 @@ export function gameReducer(state: Game, action: GameAction): Game {
 
         case 'ADD_TIMEOUT':
             return handleAddTimeout(state, action.payload);
+
+        case 'REMOVE_TIMEOUT':
+            return handleRemoveTimeout(state, action.payload);
 
         case 'SUBSTITUTE_PLAYER':
             return handleSubstitutePlayer(state, action.payload);

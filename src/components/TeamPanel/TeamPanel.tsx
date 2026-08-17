@@ -9,8 +9,8 @@ interface ActionHistoryHandlers {
   onRemoveFoul: (entryId: string) => void;
   onEditScore: (entryId: string, newPlayerId: string, newScoreType: ScoreType) => void;
   onEditStat: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
-  onConvertScoreToMiss: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => void;
-  onConvertMissToScore: (entryId: string, newScoreType: '2P' | '3P' | 'FT') => void;
+  onConvertScoreToMiss: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
+  onConvertMissToScore: (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => void;
   onToggleOwnGoal: (entryId: string) => void;
 }
 
@@ -37,6 +37,14 @@ interface TeamPanelProps {
   timeoutUsed?: boolean;
   /** タイムアウト記録の要求（指定時のみヘッダーに⏱チップを表示） */
   onTimeoutRequest?: () => void;
+  /**
+   * 記録済みタイムアウトの取り消し要求。
+   *
+   * 以前は記録するとチップを disabled にしていたが、タイムアウトは
+   * アクション履歴に載らず他に導線も無いため、経過分の打ち間違いが
+   * 試合中ずっと直せず、そのまま公式様式に印字されていた。
+   */
+  onTimeoutCancel?: () => void;
 }
 
 export function TeamPanel({
@@ -57,8 +65,11 @@ export function TeamPanel({
   teamFouls,
   timeoutUsed,
   onTimeoutRequest,
+  onTimeoutCancel,
 }: TeamPanelProps) {
   const side = teamId === 'teamA' ? 'team-a' : 'team-b';
+  // 記録済みなら取り消し、未記録なら記録。取り消し先が無い場合だけ従来どおり押せなくする
+  const timeoutAction = timeoutUsed ? onTimeoutCancel : onTimeoutRequest;
 
   return (
     <div className={`team-panel ${side} color-${teamColor} ${isActive ? 'active' : ''}`}>
@@ -71,11 +82,11 @@ export function TeamPanel({
           )}
           {onTimeoutRequest && (
             <button
-              className="btn-timeout-chip"
-              onClick={onTimeoutRequest}
-              disabled={timeoutUsed}
-              aria-label="タイムアウト"
-              title="タイムアウト"
+              className={`btn-timeout-chip ${timeoutUsed ? 'used' : ''}`}
+              onClick={timeoutAction}
+              disabled={!timeoutAction}
+              aria-label={timeoutUsed ? 'タイムアウトを取り消す' : 'タイムアウト'}
+              title={timeoutUsed ? 'タイムアウト記録済み（タップで取り消し）' : 'タイムアウト'}
             >
               ⏱ {timeoutUsed ? '済' : '残1'}
             </button>

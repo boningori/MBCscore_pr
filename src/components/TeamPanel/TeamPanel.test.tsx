@@ -56,10 +56,21 @@ describe('TeamPanel: ヘッダーのTF・タイムアウト表示', () => {
         expect(onTimeoutRequest).toHaveBeenCalledTimes(1);
     });
 
-    it('タイムアウト使用済みは「済」で無効化される', () => {
-        renderPanel({ teamFouls: 0, timeoutUsed: true, onTimeoutRequest: vi.fn() });
-        const chip = screen.getByRole('button', { name: 'タイムアウト' }) as HTMLButtonElement;
+    // タイムアウトはアクション履歴に載らないため、チップを押せなくすると
+    // 経過分の打ち間違いを試合中ずっと直せず、そのまま公式様式に印字される
+    it('タイムアウト使用済みは「済」で、押すと取り消しが呼ばれる', () => {
+        const onTimeoutCancel = vi.fn();
+        renderPanel({ teamFouls: 0, timeoutUsed: true, onTimeoutRequest: vi.fn(), onTimeoutCancel });
+        const chip = screen.getByRole('button', { name: 'タイムアウトを取り消す' }) as HTMLButtonElement;
         expect(chip.textContent).toContain('済');
+        expect(chip.disabled).toBe(false);
+        fireEvent.click(chip);
+        expect(onTimeoutCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('取り消し先が無ければ従来どおり押せない', () => {
+        renderPanel({ teamFouls: 0, timeoutUsed: true, onTimeoutRequest: vi.fn() });
+        const chip = screen.getByRole('button', { name: 'タイムアウトを取り消す' }) as HTMLButtonElement;
         expect(chip.disabled).toBe(true);
     });
 

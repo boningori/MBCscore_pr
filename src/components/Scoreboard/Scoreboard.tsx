@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Modal } from '../Modal';
+import { quarterLabel } from '../../utils/quarterLabel';
 import './Scoreboard.css';
 
 interface ScoreboardProps {
@@ -18,9 +19,9 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
 
     const { currentQuarter, phase } = state;
 
-    const quarterLabel = currentQuarter <= 4
-        ? `Q${currentQuarter}`
-        : currentQuarter === 5 ? 'OT' : `OT${currentQuarter - 4}`;
+    // 表記は共通のヘルパーに集約する（utils/quarterLabel）。
+    // 画面ごとに組み立てると同じピリオドが別名で出る
+    const periodLabel = quarterLabel(currentQuarter);
 
     // クォーター色（1Q/3Qは赤、2Q/4Q/OTは黒）。QuarterLineup.tsx と同じ規則。
     const quarterClass = currentQuarter > 4
@@ -67,7 +68,7 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
             contentClassName="modal-content end-game-confirm-modal"
             labelledBy="quarter-end-confirm-title"
         >
-            <h3 id="quarter-end-confirm-title">{quarterLabel}を終了しますか？</h3>
+            <h3 id="quarter-end-confirm-title">{periodLabel}を終了しますか？</h3>
             <p className="end-game-confirm-message">
                 終了すると次のクォーターのスタメン選択に進みます。
             </p>
@@ -125,18 +126,18 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
 
                 {/* クォーター表示 */}
                 <div className="quarter-section">
-                    <span className={`quarter-badge-large ${quarterClass}`}>{quarterLabel}</span>
+                    <span className={`quarter-badge-large ${quarterClass}`}>{periodLabel}</span>
                     <div className="quarter-controls">
                         {phase === 'playing' && (
                             <button className="btn btn-quarter-end btn-small" onClick={handleQuarterManagement}>
                                 <span aria-hidden="true">🏁</span>
-                                <span>{quarterLabel}終了</span>
+                                <span>{periodLabel}終了</span>
                             </button>
                         )}
                         {phase === 'quarterEnd' && (
                             <button className="btn btn-primary btn-small" onClick={handleQuarterManagement}>
                                 <span aria-hidden="true">▶</span>
-                                <span>{currentQuarter <= 4 ? `Q${currentQuarter}へ` : `${quarterLabel}へ`}</span>
+                                <span>{`${periodLabel}へ`}</span>
                             </button>
                         )}
                         {openLineupButton}

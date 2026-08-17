@@ -22,6 +22,9 @@ export function useGameAutoSave(
   phase: Game['phase'],
 ): void {
   const saveTimeoutRef = useRef<number | null>(null);
+  // デバウンス待ちの書き込み内容。試合系画面から離れた瞬間に取りこぼさないため、
+  // 「まだ書けていないもの」をここに置いておく
+  const pendingSaveRef = useRef<{ state: Game; gameName: string; date: string } | null>(null);
   // 離脱時に書き出す値。リスナーの中から「その瞬間の最新」を読みたいが、
   // 依存配列に入れて貼り替えると記録のたびに add/remove を繰り返すため ref で渡す
   const latestRef = useRef({ state, screen, gameName, date, phase });
@@ -35,17 +38,34 @@ export function useGameAutoSave(
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      pendingSaveRef.current = { state, gameName, date };
       // 500ms後に保存（UIブロックを防止）
       saveTimeoutRef.current = window.setTimeout(() => {
         saveGameSession(state, gameName, date);
+        pendingSaveRef.current = null;
         maybeSnapshot();
       }, 500);
+      return () => {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+      };
     }
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
+
+    // 試合系画面から離れた。クリーンアップがタイマーを消すだけだと、
+    // 直前500ms以内の記録がセッションに残らない（記録した直後にホームへ
+    // 抜けて「試合を再開」すると、その1点が消える）。ここで書き切る。
+    //
+    // ただし終了済みの試合では書かない。「保存して終了」も「保存せずにホームへ」も
+    // clearGameSession のあとにホームへ移るので、ここで書き戻すと終わったはずの
+    // 試合が「再開できる中断試合」として蘇る。ホームへ抜ける導線のうち
+    // セッションを消すのはこの2つだけで、どちらも phase === 'finished' から来る
+    if (pendingSaveRef.current && phase !== 'finished') {
+      const pending = pendingSaveRef.current;
+      saveGameSession(pending.state, pending.gameName, pending.date);
+      maybeSnapshot();
+    }
+    pendingSaveRef.current = null;
   }, [state, screen, gameName, date, phase]);
 
   // 画面が隠れたら、デバウンスを待たずにその場で書き出す。
@@ -59,6 +79,7 @@ export function useGameAutoSave(
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
+      pendingSaveRef.current = null;
       saveGameSession(current.state, current.gameName, current.date);
       maybeSnapshot();
     };

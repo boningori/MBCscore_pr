@@ -298,7 +298,11 @@ describe('gameReducer: showThreePoint（3P表示フラグ）', () => {
         expect(state.showThreePoint).toBe(true);
     });
 
-    it('RESTORE_GAMEでshowThreePointが無い試合はtrueに補完される', () => {
+    // 既定は false にそろえる。createInitialGame も GameSetup の初期値も
+    // History.recordToGame も false なのに、ここだけ true を補っていたため、
+    // この項目を保存していなかった頃の中断セッションを再開すると3Pボタンが出て、
+    // 同じ試合を履歴から開いたときと前提が食い違っていた
+    it('RESTORE_GAMEでshowThreePointが無い試合はfalseに補完される', () => {
         const legacy = createInitialGame();
         // 既存データを模擬: フィールドを削除
         delete (legacy as Partial<Game>).showThreePoint;
@@ -306,10 +310,19 @@ describe('gameReducer: showThreePoint（3P表示フラグ）', () => {
             type: 'RESTORE_GAME',
             payload: { game: legacy },
         });
+        expect(state.showThreePoint).toBe(false);
+    });
+
+    it('RESTORE_GAMEで明示的なshowThreePoint:trueは保持される', () => {
+        const saved = { ...createInitialGame(), showThreePoint: true };
+        const state = gameReducer(createInitialGame(), {
+            type: 'RESTORE_GAME',
+            payload: { game: saved },
+        });
         expect(state.showThreePoint).toBe(true);
     });
 
-    it('RESTORE_GAMEで明示的なshowThreePoint:falseは保持される（trueに上書きしない）', () => {
+    it('RESTORE_GAMEで明示的なshowThreePoint:falseは保持される', () => {
         const saved = { ...createInitialGame(), showThreePoint: false };
         const state = gameReducer(createInitialGame(), {
             type: 'RESTORE_GAME',

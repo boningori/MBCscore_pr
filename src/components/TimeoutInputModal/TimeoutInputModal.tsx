@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Modal } from '../Modal';
+import { quarterLabel } from '../../utils/quarterLabel';
 import './TimeoutInputModal.css';
 
 interface TimeoutInputModalProps {
@@ -47,10 +48,10 @@ export function TimeoutInputModal({
         return elapsedSeconds <= 0 ? 0 : Math.ceil(elapsedSeconds / 60);
     }, [remainingMin, remainingSec, quarterDuration]);
 
-    // クォーター表示
-    const quarterLabel = currentQuarter > 4
-        ? `OT${currentQuarter - 4}`
-        : `${currentQuarter}Q`;
+    // クォーター表示は共通のヘルパーに任せる。
+    // ここだけ独自に組み立てていたため、延長1回目をスコアボードは「OT」、
+    // この入力だけ「OT1」と出していた（同じピリオドが画面で別名になる）
+    const periodLabel = quarterLabel(currentQuarter);
 
     const handleConfirm = () => {
         onConfirm(elapsedMinutes);
@@ -70,7 +71,7 @@ export function TimeoutInputModal({
                     <span className={`timeout-modal-team ${teamColor}`}>
                         {teamName}（{teamColor === 'white' ? '白' : '青'}）
                     </span>
-                    <span className="timeout-modal-quarter">{quarterLabel}</span>
+                    <span className="timeout-modal-quarter">{periodLabel}</span>
                 </div>
 
                 <div className="timeout-modal-body">

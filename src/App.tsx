@@ -38,7 +38,7 @@ import { RunningScoresheet } from './components/RunningScoresheet';
 import { AppSettingsModal } from './components/Settings/AppSettingsModal';
 import { ToastContainer } from './components/Toast/Toast';
 import { showToast } from './components/Toast/toastApi';
-import { Modal } from './components/Modal';
+import { Modal, ConfirmModal } from './components/Modal';
 import { UndoSnackbar } from './components/UndoSnackbar/UndoSnackbar';
 import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
@@ -642,6 +642,17 @@ function AppContent() {
   // フルモード: TeamPanelのタイムアウトチップから開く入力モーダル
   const [timeoutModalTeam, setTimeoutModalTeam] = useState<'teamA' | 'teamB' | null>(null);
 
+  // 記録済みタイムアウトの取り消し確認。
+  // 経過分を打ち間違えても直せず、そのまま公式様式に印字されていたため、
+  // 記録済みチップから取り消せるようにする（誤タップで消えないよう確認を挟む）
+  const [timeoutCancelTeam, setTimeoutCancelTeam] = useState<'teamA' | 'teamB' | null>(null);
+
+  const handleTimeoutCancel = () => {
+    if (!timeoutCancelTeam) return;
+    dispatch({ type: 'REMOVE_TIMEOUT', payload: { teamId: timeoutCancelTeam, quarter: currentQuarter } });
+    setTimeoutCancelTeam(null);
+  };
+
   // 試合オプションモーダル（3P設定の途中変更など）
   const [showGameOptions, setShowGameOptions] = useState(false);
 
@@ -840,14 +851,14 @@ function AppContent() {
     dispatch({ type: 'EDIT_STAT', payload: { entryId, newPlayerId, newStatType } });
   };
 
-  // 成功 → ミス変換
-  const handleConvertScoreToMiss = (entryId: string, newMissType: '2PA' | '3PA' | 'FTA') => {
-    dispatch({ type: 'CONVERT_SCORE_TO_MISS', payload: { entryId, newMissType } });
+  // 成功 → ミス変換（選手の付け替えを伴うことがある）
+  const handleConvertScoreToMiss = (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => {
+    dispatch({ type: 'CONVERT_SCORE_TO_MISS', payload: { entryId, newMissType, newPlayerId } });
   };
 
-  // ミス → 成功変換
-  const handleConvertMissToScore = (entryId: string, newScoreType: '2P' | '3P' | 'FT') => {
-    dispatch({ type: 'CONVERT_MISS_TO_SCORE', payload: { entryId, newScoreType } });
+  // ミス → 成功変換（選手の付け替えを伴うことがある）
+  const handleConvertMissToScore = (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => {
+    dispatch({ type: 'CONVERT_MISS_TO_SCORE', payload: { entryId, newScoreType, newPlayerId } });
   };
 
   // オウンゴールトグル
@@ -1134,6 +1145,7 @@ function AppContent() {
                 teamFouls={state.teamA.teamFouls[currentQuarter - 1] || 0}
                 timeoutUsed={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
                 onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamA') : undefined}
+                onTimeoutCancel={() => setTimeoutCancelTeam('teamA')}
               />
 
               {/* Center: Scoreboard + Action Buttons */}
@@ -1189,6 +1201,7 @@ function AppContent() {
                 teamFouls={state.teamB.teamFouls[currentQuarter - 1] || 0}
                 timeoutUsed={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
                 onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamB') : undefined}
+                onTimeoutCancel={() => setTimeoutCancelTeam('teamB')}
               />
             </div>
           </>
@@ -1740,6 +1753,18 @@ function AppContent() {
         }}
         onCancel={() => setTimeoutModalTeam(null)}
       />
+
+      {/* 記録済みタイムアウトの取り消し確認 */}
+      {timeoutCancelTeam && (
+        <ConfirmModal
+          title="タイムアウトの取り消し"
+          message={`${timeoutCancelTeam === 'teamA' ? state.teamA.name : state.teamB.name} の ${quarterLabel(currentQuarter)} のタイムアウトを取り消します`}
+          note="取り消すと、このクォーターにもう一度記録できます"
+          confirmLabel="取り消す"
+          onConfirm={handleTimeoutCancel}
+          onCancel={() => setTimeoutCancelTeam(null)}
+        />
+      )}
     </div>
   );
   };

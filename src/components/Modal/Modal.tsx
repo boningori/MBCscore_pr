@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { registerModal, unregisterModal } from './modalStack';
 
 interface ModalProps {
     /** モーダルを閉じる要求（Escape / オーバーレイクリック / 明示クローズ） */
@@ -45,6 +46,18 @@ export function Modal({
 }: ModalProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const previouslyFocused = useRef<HTMLElement | null>(null);
+
+    // 端末の戻る操作で閉じられるよう、重なり順のレジストリに載せる。
+    // onClose は呼び出し側で毎レンダー作り直されることが多いので、
+    // 登録するのは ref を読むラッパにして、登録/解除はマウント時の1回に保つ
+    const onCloseRef = useRef(onClose);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    });
+    useEffect(() => {
+        const id = registerModal(() => onCloseRef.current());
+        return () => unregisterModal(id);
+    }, []);
 
     // 開いた時点のフォーカス要素を記録し、閉じたら復帰
     useEffect(() => {

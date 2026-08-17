@@ -150,3 +150,58 @@ describe('useGameAutoSave: 離脱時の書き出し', () => {
         expect(loadGameSession()?.game.currentQuarter).toBe(2);
     });
 });
+
+// 試合画面からホームへ抜けるのはアプリ内の「中断」導線。visibilitychange も
+// pagehide も飛ばないため、デバウンス待ちの書き込みはクリーンアップで
+// 捨てられていた。記録した直後にホームへ抜けて「試合を再開」すると、
+// その1点が消える経路になっていた。
+describe('useGameAutoSave: 試合系画面から離れるとき', () => {
+    it('デバウンス待ちの記録を書き切ってからホームへ移る', () => {
+        const { rerender } = renderHook(
+            ({ game, screen }: { game: Game; screen: string }) =>
+                useGameAutoSave(game, screen, '練習試合', '2026-08-06', game.phase),
+            { initialProps: { game: makeGame('playing', 1), screen: 'game' } },
+        );
+        flushDebounce();
+        expect(loadGameSession()?.game.currentQuarter).toBe(1);
+
+        // Q2の記録が入った直後（デバウンス中）にホームへ抜ける
+        rerender({ game: makeGame('playing', 2), screen: 'game' });
+        rerender({ game: makeGame('playing', 2), screen: 'home' });
+
+        expect(loadGameSession()?.game.currentQuarter).toBe(2);
+    });
+
+    // 「保存して終了」「保存せずにホームへ」は clearGameSession のあとホームへ移る。
+    // そこで書き戻すと、終わったはずの試合が「再開できる中断試合」として蘇る
+    it('終了済みの試合は書き戻さない（終了・破棄した試合を蘇らせない）', () => {
+        const { rerender } = renderHook(
+            ({ game, screen }: { game: Game; screen: string }) =>
+                useGameAutoSave(game, screen, '練習試合', '2026-08-06', game.phase),
+            { initialProps: { game: makeGame('playing', 4), screen: 'game' } },
+        );
+        flushDebounce();
+
+        // 試合終了 → 保存してセッションを消す → ホームへ、の順を再現する
+        rerender({ game: makeGame('finished', 4), screen: 'game' });
+        localStorage.clear();
+        rerender({ game: makeGame('finished', 4), screen: 'home' });
+
+        expect(loadGameSession()).toBeNull();
+    });
+
+    it('一度書き切ったら、ホームで再描画されても繰り返し書き込まない', () => {
+        const { rerender } = renderHook(
+            ({ game, screen }: { game: Game; screen: string }) =>
+                useGameAutoSave(game, screen, '練習試合', '2026-08-06', game.phase),
+            { initialProps: { game: makeGame('playing', 2), screen: 'game' } },
+        );
+        rerender({ game: makeGame('playing', 2), screen: 'home' });
+        expect(loadGameSession()?.game.currentQuarter).toBe(2);
+
+        localStorage.clear();
+        rerender({ game: makeGame('playing', 3), screen: 'home' });
+
+        expect(loadGameSession()).toBeNull();
+    });
+});

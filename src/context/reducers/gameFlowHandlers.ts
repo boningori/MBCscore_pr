@@ -127,6 +127,31 @@ export function handleAddTimeout(state: Game, payload: PayloadOf<'ADD_TIMEOUT'>)
     };
 }
 
+/**
+ * 記録済みタイムアウトの取り消し。
+ *
+ * そのピリオドの最後の1件だけを消す。まとめて消さないのは、復元データ等で
+ * 同じピリオドに複数入っている場合に、取り消したつもりのない記録まで失うため。
+ * 該当が無ければ元の state をそのまま返す（no-op が state を作り替えると、
+ * 自動保存や再描画が無駄に走る）。
+ */
+export function handleRemoveTimeout(state: Game, payload: PayloadOf<'REMOVE_TIMEOUT'>): Game {
+    const { teamId, quarter } = payload;
+
+    const team = teamId === 'teamA' ? state.teamA : teamId === 'teamB' ? state.teamB : null;
+    if (!team) return state;
+
+    const lastIndex = team.timeouts.map(t => t.quarter).lastIndexOf(quarter);
+    if (lastIndex === -1) return state;
+
+    const timeouts = [...team.timeouts];
+    timeouts.splice(lastIndex, 1);
+
+    return teamId === 'teamA'
+        ? { ...state, teamA: { ...state.teamA, timeouts } }
+        : { ...state, teamB: { ...state.teamB, timeouts } };
+}
+
 export function handleSubstitutePlayer(state: Game, payload: PayloadOf<'SUBSTITUTE_PLAYER'>): Game {
     const { teamId, playerInId, playerOutId } = payload;
 
@@ -233,7 +258,11 @@ export function handleRestoreGame(payload: PayloadOf<'RESTORE_GAME'>): Game {
         ...game,
         teamA: migrateTeam(game.teamA),
         teamB: migrateTeam(game.teamB),
-        showThreePoint: game.showThreePoint ?? true,
+        // 既定は false にそろえる。createInitialGame も History の recordToGame も
+        // false を既定にしているのに、ここだけ true だったため、この項目を
+        // 保存していなかった頃の中断セッションを再開すると3Pボタンが出て、
+        // 同じ試合を履歴から開いたときと前提が食い違っていた（ミニバスは通常3Pを使わない）
+        showThreePoint: game.showThreePoint ?? false,
         quarterMinutes: game.quarterMinutes ?? DEFAULT_QUARTER_MINUTES,
     };
 }
