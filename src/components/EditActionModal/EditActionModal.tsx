@@ -71,15 +71,28 @@ export function EditActionModal({
     // OGチェックボックスを表示するか（得点の成功系のみ）
     const showOwnGoal = isOriginalShotRelated && item.type === 'score' && isScoreType(selectedType);
 
-    // シュート関連の場合は統合リスト、それ以外は非シュート系のみ
+    // シュート関連の場合は統合リスト、それ以外は非シュート系のみ。
+    // OG中はミスを出さない —— 「入らなかったオウンゴール」は存在せず、
+    // reducerも変換を受け付けない（scoreHandlers）。残すと選んでも何も起きない
     const types = isOriginalShotRelated
-        ? SHOT_TYPES.map(t => ({ value: t.value, label: t.label }))
+        ? SHOT_TYPES
+            .filter(t => !isOwnGoal || t.category === 'score')
+            .map(t => ({ value: t.value, label: t.label }))
         : OTHER_STAT_TYPES;
 
     const handleSave = () => {
         const originalCategory = item.type; // 'score' or 'stat'
         const selectedShotType = SHOT_TYPES.find(t => t.value === selectedType);
         const newCategory = selectedShotType?.category;
+
+        // OGの変更はいちばん先に反映する。
+        // reducerはOGの得点をミスへ変換しない（scoreHandlers）ので、解除を変換より
+        // 後に投げると「まだOG」と判定されて変換が黙って捨てられる。
+        // 種別が得点かどうかで絞らないのは、この「OGを外してミスへ直す」訂正が
+        // まさに種別を変えながらOGを解除する操作だから
+        if (item.type === 'score' && isOwnGoal !== (item.isOwnGoal ?? false)) {
+            onToggleOwnGoal?.(item.id);
+        }
 
         // シュート関連の変換チェック
         if (isOriginalShotRelated && isSelectedShotRelated) {
@@ -96,13 +109,6 @@ export function EditActionModal({
                     onConvertMissToScore(item.id, selectedType as '2P' | '3P' | 'FT');
                     return;
                 }
-            }
-        }
-
-        // OGフラグの変更があれば適用
-        if (item.type === 'score' && isScoreType(selectedType) && isOwnGoal !== (item.isOwnGoal ?? false)) {
-            if (onToggleOwnGoal) {
-                onToggleOwnGoal(item.id);
             }
         }
 
