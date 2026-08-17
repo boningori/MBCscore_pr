@@ -248,6 +248,9 @@ export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVER
         statType: newMissType,
         quarter: entry.quarter,
         timestamp: entry.timestamp, // 元のタイムスタンプを維持
+        // ファウルが生んだFTなら、ミスへ直しても由来を引き継ぐ。
+        // 落とすとファウルを取り消しても試投だけが残る（StatEntry.sourceFoulId）
+        ...(entry.sourceFoulId ? { sourceFoulId: entry.sourceFoulId } : {}),
     };
 
     // scoreHistoryから削除し、statHistoryに追加
@@ -327,6 +330,11 @@ export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVER
         timestamp: entry.timestamp, // 元のタイムスタンプを維持
         runningScoreA: 0, // 後で再計算
         runningScoreB: 0, // 後で再計算
+        // ミスへ直したときに引き継いだ由来を、成功へ戻すときも保つ。
+        // 落とすとファウルとの紐付けが切れ、取り消しは「同じシューター・1秒以内」の
+        // 旧データ向けの推測に頼ることになる。シューターを付け替えるとその推測が
+        // 外れ、ファウルを消しても得点だけが残っていた
+        ...(entry.sourceFoulId ? { sourceFoulId: entry.sourceFoulId } : {}),
     };
 
     // statHistoryから削除し、scoreHistoryに追加

@@ -1,4 +1,7 @@
-import type { Game, PayloadOf, StatEntry } from '../../types/game';
+import type { Game, PayloadOf, StatEntry, StatType } from '../../types/game';
+
+/** シュートの試投（ミス）を表す種別。ファウルとの紐付けが意味を持つのはこの3つだけ */
+const SHOT_ATTEMPT_TYPES: StatType[] = ['2PA', '3PA', 'FTA'];
 
 export function handleAddStat(state: Game, payload: PayloadOf<'ADD_STAT'>): Game {
     const { teamId, playerId, statType, entryId } = payload;
@@ -159,6 +162,12 @@ export function handleEditStat(state: Game, payload: PayloadOf<'EDIT_STAT'>): Ga
         playerNumber: newPlayer?.number || entry.playerNumber,
         statType: newStatType,
     };
+    // シュートのミスでなくなったら、ファウルとの紐付けは意味を失う。
+    // 残すと「FTミスではなくリバウンドだった」と直した記録まで、
+    // ファウルの取り消しに巻き込まれて消える（StatEntry.sourceFoulId）
+    if (updatedEntry.sourceFoulId && !SHOT_ATTEMPT_TYPES.includes(newStatType)) {
+        delete updatedEntry.sourceFoulId;
+    }
 
     // まず元の選手から減算
     let teamA = removeFromPlayer(state.teamA, entry.teamId === 'teamA');
