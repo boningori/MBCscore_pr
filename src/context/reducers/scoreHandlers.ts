@@ -67,15 +67,19 @@ export function handleRemoveScore(state: Game, payload: PayloadOf<'REMOVE_SCORE'
             players: team.players.map(p => {
                 if (p.id !== entry.playerId) return p;
                 const stats = { ...p.stats, points: p.stats.points - points };
-                if (entry.scoreType === '2P') {
-                    stats.twoPointMade--;
-                    stats.twoPointAttempt--;
-                } else if (entry.scoreType === '3P') {
-                    stats.threePointMade--;
-                    stats.threePointAttempt--;
-                } else {
-                    stats.freeThrowMade--;
-                    stats.freeThrowAttempt--;
+                // OGはシュート成績に数えていない（handleToggleOwnGoal）ので、
+                // 戻す対象も無い。無条件に引くと成功・試投が負になる
+                if (!entry.isOwnGoal) {
+                    if (entry.scoreType === '2P') {
+                        stats.twoPointMade--;
+                        stats.twoPointAttempt--;
+                    } else if (entry.scoreType === '3P') {
+                        stats.threePointMade--;
+                        stats.threePointAttempt--;
+                    } else {
+                        stats.freeThrowMade--;
+                        stats.freeThrowAttempt--;
+                    }
                 }
                 return { ...p, stats };
             })
@@ -107,9 +111,12 @@ export function handleEditScore(state: Game, payload: PayloadOf<'EDIT_SCORE'>): 
             players: team.players.map(p => {
                 if (p.id !== entry.playerId) return p;
                 const stats = { ...p.stats, points: p.stats.points - oldPoints };
-                if (entry.scoreType === '2P') { stats.twoPointMade--; stats.twoPointAttempt--; }
-                else if (entry.scoreType === '3P') { stats.threePointMade--; stats.threePointAttempt--; }
-                else { stats.freeThrowMade--; stats.freeThrowAttempt--; }
+                // OGはシュート成績に数えていないので戻す対象も無い（handleToggleOwnGoal）
+                if (!entry.isOwnGoal) {
+                    if (entry.scoreType === '2P') { stats.twoPointMade--; stats.twoPointAttempt--; }
+                    else if (entry.scoreType === '3P') { stats.threePointMade--; stats.threePointAttempt--; }
+                    else { stats.freeThrowMade--; stats.freeThrowAttempt--; }
+                }
                 return { ...p, stats };
             })
         };
@@ -123,9 +130,13 @@ export function handleEditScore(state: Game, payload: PayloadOf<'EDIT_SCORE'>): 
             players: team.players.map(p => {
                 if (p.id !== newPlayerId) return p;
                 const stats = { ...p.stats, points: p.stats.points + newPoints };
-                if (newScoreType === '2P') { stats.twoPointMade++; stats.twoPointAttempt++; }
-                else if (newScoreType === '3P') { stats.threePointMade++; stats.threePointAttempt++; }
-                else { stats.freeThrowMade++; stats.freeThrowAttempt++; }
+                // 付け替えてもOGはOGのまま（updatedEntryがフラグを引き継ぐ）。
+                // 番号を借りただけの選手にシュートを打たせない
+                if (!entry.isOwnGoal) {
+                    if (newScoreType === '2P') { stats.twoPointMade++; stats.twoPointAttempt++; }
+                    else if (newScoreType === '3P') { stats.threePointMade++; stats.threePointAttempt++; }
+                    else { stats.freeThrowMade++; stats.freeThrowAttempt++; }
+                }
                 return { ...p, stats };
             })
         };
@@ -161,6 +172,10 @@ export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVER
     const { entryId, newMissType } = payload;
     const entry = state.scoreHistory.find(s => s.id === entryId);
     if (!entry) return state;
+    // 「入らなかったオウンゴール」は存在しない。通すと、番号を借りただけの選手に
+    // 試投が付き（OGはシュート成績に数えていないので成功数が負にもなる）、
+    // ▲の目印も失われる。UI側でも選ばせない（EditActionModal）
+    if (entry.isOwnGoal) return state;
 
     const oldPoints = entry.points;
 
@@ -308,12 +323,36 @@ export function handleConvertMissToScore(state: Game, payload: PayloadOf<'CONVER
 
 export function handleToggleOwnGoal(state: Game, payload: PayloadOf<'TOGGLE_OWN_GOAL'>): Game {
     const { entryId } = payload;
+    const entry = state.scoreHistory.find(s => s.id === entryId);
+    if (!entry) return state;
+
+    const nextOwnGoal = !entry.isOwnGoal;
+    // 相手のオウンゴールで入った点は、番号を借りた選手が打ったシュートではない。
+    // 成功・試投から外す（OGを解除したら戻す）。得点(points)はチーム得点・
+    // ランニングスコア・最終スコアの導出元なので触らない
+    const delta = nextOwnGoal ? -1 : 1;
+
+    const updateTeam = (team: typeof state.teamA, isTarget: boolean) => {
+        if (!isTarget) return team;
+        return {
+            ...team,
+            players: team.players.map(p => {
+                if (p.id !== entry.playerId) return p;
+                const stats = { ...p.stats };
+                if (entry.scoreType === '2P') { stats.twoPointMade += delta; stats.twoPointAttempt += delta; }
+                else if (entry.scoreType === '3P') { stats.threePointMade += delta; stats.threePointAttempt += delta; }
+                else { stats.freeThrowMade += delta; stats.freeThrowAttempt += delta; }
+                return { ...p, stats };
+            })
+        };
+    };
+
     return {
         ...state,
-        scoreHistory: state.scoreHistory.map(entry =>
-            entry.id === entryId
-                ? { ...entry, isOwnGoal: !entry.isOwnGoal }
-                : entry
+        teamA: updateTeam(state.teamA, entry.teamId === 'teamA'),
+        teamB: updateTeam(state.teamB, entry.teamId === 'teamB'),
+        scoreHistory: state.scoreHistory.map(s =>
+            s.id === entryId ? { ...s, isOwnGoal: nextOwnGoal } : s
         ),
     };
 }

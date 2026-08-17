@@ -37,6 +37,18 @@
     color: var(--text-primary);
 }
 
+/* 長押しの案内。名前と件数のあいだで、狭いときは真っ先に縮む */
+.action-history .history-header .history-hint {
+    font-size: var(--font-size-xs);
+    /* 地色が --bg-hover と明るいため、item-count と同じ理由で --text-primary */
+    color: var(--text-primary);
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 .action-history .history-body {
     display: flex;
     flex: 1;
@@ -119,6 +131,26 @@
 
 .action-history .history-item.selected {
     background: var(--bg-hover);
+}
+
+/* 行の操作子。長押し／Enterでメニューを開くbuttonだが、
+   見た目は行そのものなので素のボタン装飾を落とす */
+.action-history .history-item-main {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
 .action-history .history-item .player-number {

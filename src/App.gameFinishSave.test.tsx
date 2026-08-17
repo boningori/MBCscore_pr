@@ -21,10 +21,11 @@ const myTeam = {
 };
 
 /** 試合終了直後（保存待ち）の中断セッションを仕込む */
-function seedFinishedSession() {
+function seedFinishedSession(options: { endTime?: Date } = {}) {
     const game = createInitialGame();
     game.phase = 'finished';
     game.currentQuarter = 4;
+    game.endTime = options.endTime ?? null;
     game.teamA = { ...createTeam('teamA', 'テストチーム', 'コーチ'), players: [
         { ...createPlayer('teamA-player-0', 4, '選手4'), isOnCourt: true },
     ] };
@@ -94,6 +95,20 @@ describe('App: 試合終了時の保存', () => {
         const history = JSON.parse(localStorage.getItem('minibasket-game-history') ?? '[]');
         expect(history).toHaveLength(1);
         expect(history[0].gameName).toBe('決勝戦');
+    });
+
+    // 公式様式の「試合終了時間」は GameInfoModal で入れられ、試合中のスコアシートには
+    // 出るのに、GameRecord に持ち場が無く保存で消えていた。履歴から出したPDFだけ
+    // createdAt（保存を押した時刻）に化ける
+    it('試合終了時間も履歴に残す', async () => {
+        const endTime = new Date('2026-08-06T11:45:00');
+        seedFinishedSession({ endTime });
+
+        fireEvent.click(await openFinishedGame());
+
+        await screen.findByText('新規試合開始');
+        const history = JSON.parse(localStorage.getItem('minibasket-game-history') ?? '[]');
+        expect(history[0].endTime).toBe(endTime.toISOString());
     });
 
     // 保存に失敗したのにセッションを消すと、履歴にもセッションにも残らない

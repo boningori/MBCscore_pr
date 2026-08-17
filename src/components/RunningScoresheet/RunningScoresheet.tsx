@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { Game, GameInfo } from '../../types/game';
+import type { Game, GameInfo, FoulEntry } from '../../types/game';
 import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
@@ -28,6 +28,30 @@ interface RunningScoresheetProps {
 function fourthPeriodFouls(teamFouls: number[]): number {
     if (teamFouls.length <= 4) return teamFouls[3] ?? 0;
     return teamFouls[teamFouls.length - 1] ?? 0;
+}
+
+/**
+ * このファウルが公式様式のコーチ行（team.coachFouls）に積まれるか。
+ *
+ * コーチ行にはコーチ本人のT（表示「C」）だけでなく、A.コーチ・ベンチ関係者・
+ * 交代要員のテクニカルが「B」として二重計上される（foulHandlers）。
+ * 記入色を coachFoulTarget === 'COACH' の履歴だけから引くと、2つの列の
+ * 長さが揃わず i 番目どうしが別のファウルを指してしまう。
+ *
+ * ベンチ側は記録フローで行き先が分かれる。FT入力フロー
+ * （handleAddFoulWithFreeThrows）はコーチ行のBへ、ADD_FOUL 経由は
+ * benchFouls へ書く。両者は freeThrows を持つかどうかで見分けられる
+ * （findFoulIndex と同じ判別）。
+ */
+function writesToCoachRow(foul: FoulEntry): boolean {
+    // コーチ本人はどちらのフローでもコーチ行
+    if (foul.coachFoulTarget === 'COACH') return true;
+    // ADD_FOUL 由来のベンチ系はベンチ行に入るのでコーチ行には出ない
+    if (foul.freeThrows === undefined) return false;
+    return foul.coachFoulTarget === 'ACOACH'      // A.コーチのTに伴うB
+        || foul.coachFoulTarget === 'BENCH'        // ベンチ関係者・交代要員のB
+        // 種別を持たない古いベンチテクニカル
+        || (foul.isCoachOrBench && foul.coachFoulTarget == null);
 }
 
 export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo, onEndTimeChange }: RunningScoresheetProps) {
@@ -362,12 +386,21 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 );
                                             })}
                                             {(() => {
-                                                const otTimeout = team.timeouts.find(t => t.quarter > 4);
-                                                const hasOtTimeout = !!otTimeout;
+                                                // 様式のOT欄は1マスだが、記録はOTピリオドごとに1回できる。
+                                                // 片方だけ出すと必ずもう片方の記録を捨てるので、紙で書くときと
+                                                // 同じようにこのマスへ全部並べる（枠は増やさない）
+                                                const otTimeouts = team.timeouts
+                                                    .filter(t => t.quarter > 4)
+                                                    .sort((a, b) => a.quarter - b.quarter);
+                                                const hasOtTimeout = otTimeouts.length > 0;
                                                 const isOtUnused = isGameFinished && !hasOtTimeout;
                                                 return (
                                                     <td className={`to-cell-val ot ${hasOtTimeout ? 'to-has-value q-black' : ''} ${isOtUnused ? 'to-unused' : ''}`}>
-                                                        {hasOtTimeout && <span className="to-elapsed-minutes">{otTimeout.elapsedMinutes}</span>}
+                                                        {hasOtTimeout && (
+                                                            <span className={`to-elapsed-minutes ${otTimeouts.length > 1 ? 'to-multiple' : ''}`}>
+                                                                {otTimeouts.map(t => t.elapsedMinutes).join(',')}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 );
                                             })()}
@@ -450,9 +483,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 {team.coachName}
                                             </td>
                                             {(() => {
-                                                // コーチのファウル履歴をfoulHistoryから取得
+                                                // コーチ行に積まれたファウルを、積まれた順に取得。
+                                                // A.コーチ・ベンチ・交代要員のBも含めないと
+                                                // team.coachFouls と並びがずれる（writesToCoachRow）
                                                 const coachFoulHistory = foulHistory
-                                                    .filter(f => f.teamId === team.id && f.coachFoulTarget === 'COACH')
+                                                    .filter(f => f.teamId === team.id && writesToCoachRow(f))
                                                     .sort((a, b) => a.timestamp - b.timestamp);
                                                 return [0, 1, 2].map(i => {
                                                     const f = team.coachFouls[i];
@@ -615,17 +650,23 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                                 const isThreePointA = entryA?.scoreType === '3P';
                                                 const isThreePointB = entryB?.scoreType === '3P';
 
-                                                const isQuarterEndA = entryA && scoreHistory
+                                                // クォーター終了の丸は、そのクォーターが終わってから付ける。
+                                                // 進行中のクォーターに付けると、得点が入るたびに丸が
+                                                // 次の行へ移っていく（まだ最後の得点ではない）
+                                                const isEndedQuarter = (q?: number) =>
+                                                    q !== undefined && (isGameFinished || q < currentQuarter);
+                                                const isQuarterEndA = entryA && isEndedQuarter(quarterA) && scoreHistory
                                                     .filter(s => s.teamId === 'teamA' && s.quarter === quarterA)
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
-                                                const isQuarterEndB = entryB && scoreHistory
+                                                const isQuarterEndB = entryB && isEndedQuarter(quarterB) && scoreHistory
                                                     .filter(s => s.teamId === 'teamB' && s.quarter === quarterB)
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
 
-                                                const isGameEndA = entryA && scoreHistory
+                                                // 試合終了の丸も同じ。試合中は「いま最後の得点」でしかない
+                                                const isGameEndA = isGameFinished && entryA && scoreHistory
                                                     .filter(s => s.teamId === 'teamA')
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryA.id;
-                                                const isGameEndB = entryB && scoreHistory
+                                                const isGameEndB = isGameFinished && entryB && scoreHistory
                                                     .filter(s => s.teamId === 'teamB')
                                                     .sort((a, b) => b.timestamp - a.timestamp)[0]?.id === entryB.id;
 
@@ -686,7 +727,13 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                         </div>
                         <div className="rs-winner">
                             <span className="rs-result-label">勝利チーム</span>
-                            <span className="rs-result-value">{finalScoreA > finalScoreB ? teamA.name : finalScoreB > finalScoreA ? teamB.name : '引き分け'}</span>
+                            {/* 試合中は空欄のままにする。シートは進行中でも出力できるので、
+                                途中経過の首位を書くと確定した記録として読まれてしまう */}
+                            <span className="rs-result-value">
+                                {isGameFinished
+                                    ? (finalScoreA > finalScoreB ? teamA.name : finalScoreB > finalScoreA ? teamB.name : '引き分け')
+                                    : ''}
+                            </span>
                         </div>
                         <div className="rs-game-end-time">
                             <span className="rs-result-label">試合終了時間</span>

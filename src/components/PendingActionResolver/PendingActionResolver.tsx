@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { actionLabel } from '../../utils/actionLabels';
+import { quarterLabel } from '../../utils/quarterLabel';
 import { Modal } from '../Modal';
 import './PendingActionResolver.css';
 
@@ -50,7 +51,7 @@ export function PendingActionResolver({
                         {actionLabel(pendingAction.actionType, pendingAction.value)}
                     </div>
                     <div className="resolver-meta">
-                        <span className="resolver-quarter">Q{pendingAction.quarter}</span>
+                        <span className="resolver-quarter">{quarterLabel(pendingAction.quarter)}</span>
                         <span className="resolver-time">{formatTime(pendingAction.timestamp)}</span>
                     </div>
                 </div>

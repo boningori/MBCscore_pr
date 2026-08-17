@@ -62,7 +62,12 @@ export function ActionHistory({
     const dialRef = useRef<HTMLDivElement>(null);
     const [dialAngle, setDialAngle] = useState(0);
     const lastAngle = useRef(0);
-    const isDragging = useRef(false);
+    // ドラッグ中かどうかは state で持つ。
+    // ref にすると、これを見て document のリスナーを貼る useEffect が
+    // 「掴んだ」ことに気づけない（依存が安定した useCallback だけなので
+    // マウント時の1回しか走らず、その時点では常に false）。
+    // 結果、マウスでは mousemove が一度も登録されず、つまみが動かなかった
+    const [isDragging, setIsDragging] = useState(false);
 
     // 選手名を取得
     const getPlayerName = (playerId: string) => {
@@ -177,12 +182,12 @@ export function ActionHistory({
     }, []);
 
     const handleDialStart = useCallback((clientY: number) => {
-        isDragging.current = true;
+        setIsDragging(true);
         lastAngle.current = getAngleFromTouch(clientY);
     }, [getAngleFromTouch]);
 
     const handleDialMove = useCallback((clientY: number) => {
-        if (!isDragging.current || !listRef.current) return;
+        if (!listRef.current) return;
 
         const currentAngle = getAngleFromTouch(clientY);
         const delta = currentAngle - lastAngle.current;
@@ -196,7 +201,7 @@ export function ActionHistory({
     }, [getAngleFromTouch]);
 
     const handleDialEnd = useCallback(() => {
-        isDragging.current = false;
+        setIsDragging(false);
     }, []);
 
     // タッチイベント
@@ -215,20 +220,22 @@ export function ActionHistory({
         handleDialStart(e.clientY);
     }, [handleDialStart]);
 
+    // 掴んでいる間だけ document を見る。つまみの外へカーソルが出ても
+    // 追従させたいので、要素ではなく document に貼る
     useEffect(() => {
+        if (!isDragging) return;
+
         const handleMouseMove = (e: MouseEvent) => handleDialMove(e.clientY);
         const handleMouseUp = () => handleDialEnd();
 
-        if (isDragging.current) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
 
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [handleDialMove, handleDialEnd]);
+    }, [isDragging, handleDialMove, handleDialEnd]);
 
     const handleTouchStart = useCallback((itemId: string, e: React.MouseEvent | React.TouchEvent) => {
         // 右クリックは無視
@@ -264,6 +271,24 @@ export function ActionHistory({
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;
         }
+    }, []);
+
+    /**
+     * 行のキーボード操作。
+     *
+     * この行はポインタの長押しでメニューを開く作りで onClick を持たない。
+     * キーボードのEnter/Spaceが発火させるのは click なので、記録の訂正が
+     * キーボード・支援技術から一切できなかった。
+     * 長押しの分岐は残したまま（一覧をスクロールするだけで開くのを避ける）、
+     * 同じ操作子にキー操作を足す。FoulInputFlow のPファウルと同じ作法。
+     */
+    const handleItemKeyDown = useCallback((itemId: string, e: React.KeyboardEvent) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        // 押しっぱなしのキーリピートで開閉を繰り返さない
+        if (e.repeat) return;
+        // Spaceのスクロールと、Enterが起こす合成clickを止める
+        e.preventDefault();
+        setSelectedItemId(prev => (prev === itemId ? null : itemId));
     }, []);
 
     const handleRemove = useCallback((item: HistoryItem) => {
@@ -317,6 +342,8 @@ export function ActionHistory({
         <div className="action-history">
             <div className="history-header">
                 <span className="team-name">アクション履歴</span>
+                {/* 長押しでしか開かないメニューは、書いていないと存在に気づけない */}
+                {allItems.length > 0 && <span className="history-hint">長押しで編集・削除</span>}
                 <span className="item-count">{allItems.length}件</span>
             </div>
             <div className="history-body">
@@ -328,15 +355,28 @@ export function ActionHistory({
                             <div
                                 key={item.id}
                                 className={`history-item ${item.type} ${selectedItemId === item.id ? 'selected' : ''} ${index % 2 === 0 ? 'even' : 'odd'}`}
-                                onTouchStart={(e) => handleTouchStart(item.id, e)}
-                                onTouchEnd={handleTouchEnd}
-                                onMouseDown={(e) => handleTouchStart(item.id, e)}
-                                onMouseUp={handleTouchEnd}
-                                onMouseLeave={handleTouchEnd}
-                                onContextMenu={(e) => e.preventDefault()}
                             >
-                                <span className="player-number">#{item.playerNumber === -1 ? '?' : formatPlayerNumber(item.playerNumber)}</span>
-                                <span className="action-desc">{item.description}</span>
+                                {/*
+                                  操作子をbuttonに切り出す。行そのものをbuttonにはできない
+                                  （中の編集・削除と入れ子になる）ので、メニューは兄弟に置く
+                                */}
+                                <button
+                                    type="button"
+                                    className="history-item-main"
+                                    onTouchStart={(e) => handleTouchStart(item.id, e)}
+                                    onTouchEnd={handleTouchEnd}
+                                    onMouseDown={(e) => handleTouchStart(item.id, e)}
+                                    onMouseUp={handleTouchEnd}
+                                    onMouseLeave={handleTouchEnd}
+                                    onKeyDown={(e) => handleItemKeyDown(item.id, e)}
+                                    onContextMenu={(e) => e.preventDefault()}
+                                    aria-expanded={selectedItemId === item.id}
+                                    aria-keyshortcuts="Enter"
+                                    title="長押し、またはEnterで編集・削除"
+                                >
+                                    <span className="player-number">#{item.playerNumber === -1 ? '?' : formatPlayerNumber(item.playerNumber)}</span>
+                                    <span className="action-desc">{item.description}</span>
+                                </button>
                                 {selectedItemId === item.id && (
                                     <div className="action-menu">
                                         {(onEditScore || onEditStat) && (

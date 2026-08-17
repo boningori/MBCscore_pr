@@ -1016,6 +1016,13 @@
     font-style: italic;
 }
 
+/* OT欄に複数のタイムアウトが入るとき（OT2以降）。
+   1マスに「1,2」と並ぶため、既定の10ptでは枠から溢れる */
+.running-scoresheet-container .to-elapsed-minutes.to-multiple {
+    font-size: 7pt;
+    letter-spacing: -0.02em;
+}
+
 /* 1Q/3Q: 赤色の数字 */
 .running-scoresheet-container .to-cell-val.to-has-value.q-red .to-elapsed-minutes {
     color: #f00;

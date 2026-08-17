@@ -1,6 +1,6 @@
 import type { Player, ScoreEntry, StatEntry, FoulEntry, ScoreType, StatType } from '../../types/game';
-import { MAX_PERSONAL_FOULS } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
 import { ActionHistory } from '../ActionHistory';
 
 interface ActionHistoryHandlers {
@@ -85,9 +85,12 @@ export function TeamPanel({
       <div className="team-players">
         {players.filter(p => p.isOnCourt).map(player => {
           const displayName = player.courtName || player.name;
-          // 5個目は審判へ即時に伝える必要がある。4個目と同じ見た目だと気づけない。
+          // 退場・失格は審判へ即時に伝える必要がある。4個目と同じ見た目だと気づけない。
+          // 5ファウルだけでなく D 1つ・T/U 2つも見る。どちらも5個目より先に来るため、
+          // 数だけで判定すると失格した選手が通常表示のまま残る（詳細は disqualification.ts）。
           // ただしコートからは外さない（練習試合では同意のうえで続行する運用がある）
-          const fouledOut = player.fouls.length >= MAX_PERSONAL_FOULS;
+          const disqualification = getDisqualification(player.fouls);
+          const fouledOut = disqualification !== null;
           return (
             <button
               type="button"
@@ -95,7 +98,7 @@ export function TeamPanel({
               className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
               onClick={() => onPlayerSelect(player.id, teamId)}
               aria-pressed={selectedPlayerId === player.id}
-              aria-label={`#${formatPlayerNumber(player.number)} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}${fouledOut ? ' 退場' : ''}`}
+              aria-label={`#${formatPlayerNumber(player.number)} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}${disqualification ? ` ${shortDisqualificationLabel(disqualification)}` : ''}`}
             >
               {/* 名前はフルモードなら両チームとも出す。相手の得点・ファウル・FTも
                   このアプリで記録するので、相手だけ番号で人を選ばせる理由がない。

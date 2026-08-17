@@ -66,4 +66,22 @@ describe('試合履歴の未割り当ての記録', () => {
 
         expect(screen.queryByText(/未割り当ての記録/)).toBeNull();
     });
+
+    // 延長は quarter 5,6,… で入る。まとめて「OT」と出すと、
+    // 2回目の延長で記録した分がどのピリオドのものか分からなくなる
+    it('2回目の延長は OT2 と出す', () => {
+        seed([createPendingAction('SCORE', '2P', 'teamA', 6, [])]);
+        openDetail();
+
+        const section = document.querySelector('.history-pending-section') as HTMLElement;
+        expect(within(section).getByText('OT2')).toBeTruthy();
+    });
+
+    it('最初の延長は OT と出す', () => {
+        seed([createPendingAction('SCORE', '2P', 'teamA', 5, [])]);
+        openDetail();
+
+        const section = document.querySelector('.history-pending-section') as HTMLElement;
+        expect(within(section).getByText('OT')).toBeTruthy();
+    });
 });

@@ -153,6 +153,42 @@ describe('TeamPanel: ファウルアウトの表示', () => {
     });
 });
 
+// 退場は5ファウルだけではない。D 1つ、T/U 合わせて2つでも失格で、いずれも
+// 5個目より先に来る（詳細は utils/disqualification.ts）。
+// スタッツ表・スタメン選択・ファウル入力・到達トーストは判定を移行済みで、
+// 試合中いちばん見るこのカードだけが数だけを見ていた。
+describe('TeamPanel: 5ファウル以外の失格の表示', () => {
+    const withFoulTypes = (types: ('P' | 'T' | 'U' | 'D')[]) => ({
+        ...createPlayer('a1', 4, '選手4'),
+        isOnCourt: true,
+        fouls: types.map(type => ({ type, freeThrows: 0 }) as FoulRecord),
+    });
+
+    it('Dファウル1つで fouled-out が付く', () => {
+        renderPanel({ players: [withFoulTypes(['D'])] });
+        const badge = screen.getByRole('button', { name: /選手4/ }).querySelector('.player-fouls');
+        expect(badge?.className).toContain('fouled-out');
+    });
+
+    it('T・U 合わせて2つで fouled-out が付く', () => {
+        renderPanel({ players: [withFoulTypes(['T', 'U'])] });
+        const badge = screen.getByRole('button', { name: /選手4/ }).querySelector('.player-fouls');
+        expect(badge?.className).toContain('fouled-out');
+    });
+
+    it('読み上げでは失格の理由まで分かる', () => {
+        renderPanel({ players: [withFoulTypes(['D'])] });
+        const label = screen.getByRole('button', { name: /選手4/ }).getAttribute('aria-label');
+        expect(label).toContain('失格(D)');
+    });
+
+    it('Pファウル2つでは失格にしない', () => {
+        renderPanel({ players: [withFoulTypes(['P', 'P'])] });
+        const badge = screen.getByRole('button', { name: /選手4/ }).querySelector('.player-fouls');
+        expect(badge?.className).not.toContain('fouled-out');
+    });
+});
+
 // 相手チームの選手も、ファウル・FT・得点まで全部このアプリで記録する。
 // フルモードでマイチームだけ名前を出していたため、相手だけ番号で人を選ばされていた。
 // しかも aria-label には名前が入っていたので、読み上げ利用者だけが名前を読める

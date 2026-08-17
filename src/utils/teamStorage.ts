@@ -91,6 +91,17 @@ export function saveMyTeam(team: SavedTeam): void {
     myTeamsStorage.save(teams);
 }
 
+/**
+ * マイチーム一覧をまるごと差し替える（インポート用）。保存できたら true。
+ *
+ * インポートは localStorage.setItem を直接呼んでいたため、容量超過の検知と
+ * 保存失敗の通知（createStorage）を素通りしていた。成否を返すのは、
+ * 呼び出し側が「保存できたか」で分岐できないと成功と偽って報告できてしまうため。
+ */
+export function saveMyTeams(teams: SavedTeam[]): boolean {
+    return myTeamsStorage.save(teams);
+}
+
 // マイチーム一覧取得
 export function loadMyTeams(): SavedTeam[] {
     return myTeamsStorage.load();
@@ -143,6 +154,11 @@ export function saveOpponent(team: SavedTeam): void {
     }
 
     opponentsStorage.save(teams);
+}
+
+/** 対戦チーム一覧をまるごと差し替える（インポート用）。理由は saveMyTeams と同じ */
+export function saveOpponents(teams: SavedTeam[]): boolean {
+    return opponentsStorage.save(teams);
 }
 
 // 対戦チーム一覧取得

@@ -2,10 +2,10 @@
 
 import type { GameRecord } from './gameHistoryStorage';
 import type { QuarterPlayType } from '../types/game';
-import { loadGameHistory, createGameId } from './gameHistoryStorage';
+import { loadGameHistory, createGameId, saveGameHistory } from './gameHistoryStorage';
 import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
-import { loadMyTeams, loadOpponents, loadRecentOpponents } from './teamStorage';
+import { loadMyTeams, loadOpponents, loadRecentOpponents, saveMyTeams, saveOpponents } from './teamStorage';
 import type { AppSettings } from './appSettings';
 import { loadAppSettings } from './appSettings';
 import type { GameSession } from './gameSessionStorage';
@@ -840,6 +840,21 @@ export function executeImport(parsed: ParsedImportData, options?: { teamTarget?:
 }
 
 /**
+ * 保存できなかったときの結果。
+ *
+ * 保存関数（createJsonStorage 経由）が失敗を返した時点で、
+ * 容量超過の通知イベントはすでに飛んでいる。ここでは利用者に
+ * 何をすればよいかを返す。
+ */
+function storageFullResult(): ImportResult {
+    return {
+        success: false,
+        message: '端末の空き容量が足りず保存できませんでした',
+        errors: ['空き容量を作るか、先にバックアップを取り出してからやり直してください'],
+    };
+}
+
+/**
  * 単一試合データのインポート
  */
 function importSingleGame(data: GameExportData): ImportResult {
@@ -857,7 +872,8 @@ function importSingleGame(data: GameExportData): ImportResult {
         const { merged, updatedGames } = mergeGameRecords(loadGameHistory(), [game], { prepend: true });
         const isUpdate = updatedGames > 0;
 
-        localStorage.setItem('minibasket-game-history', JSON.stringify(merged));
+        // 直接 setItem すると、容量超過の検知と保存失敗の通知を素通りする
+        if (!saveGameHistory(merged)) return storageFullResult();
 
         return {
             success: true,
@@ -900,7 +916,7 @@ export function importTeamAsMyTeam(rawTeam: SavedTeam): ImportResult {
             myTeams.push(team);
         }
 
-        localStorage.setItem('minibasket-my-teams', JSON.stringify(myTeams));
+        if (!saveMyTeams(myTeams)) return storageFullResult();
 
         return {
             success: true,
@@ -941,7 +957,7 @@ export function importTeamAsOpponent(rawTeam: SavedTeam): ImportResult {
             opponents.push(team);
         }
 
-        localStorage.setItem('minibasket-saved-opponents', JSON.stringify(opponents));
+        if (!saveOpponents(opponents)) return storageFullResult();
 
         return {
             success: true,

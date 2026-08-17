@@ -136,9 +136,11 @@ export function StatsPanel({
                     <span className="stats-col-num"></span>
                     <span className="stats-col-name">合計</span>
                     <span className="stats-col stats-points">{total('points')}</span>
-                    <span className="stats-col">{total('twoPointMade')}/{total('twoPointAttempt')}</span>
-                    <span className="stats-col">{total('threePointMade')}/{total('threePointAttempt')}</span>
-                    <span className="stats-col">{total('freeThrowMade')}/{total('freeThrowAttempt')}</span>
+                    {/* 選手行と同じ formatShot を通す。直接書いていたため、
+                        誰も打っていない種別が「0/0」と出て書き方が揃っていなかった */}
+                    <span className="stats-col">{formatShot(total('twoPointMade'), total('twoPointAttempt'))}</span>
+                    <span className="stats-col">{formatShot(total('threePointMade'), total('threePointAttempt'))}</span>
+                    <span className="stats-col">{formatShot(total('freeThrowMade'), total('freeThrowAttempt'))}</span>
                     <span className="stats-col">{total('offensiveRebounds') + total('defensiveRebounds')}</span>
                     <span className="stats-col">{total('assists')}</span>
                     <span className="stats-col">{total('steals')}</span>

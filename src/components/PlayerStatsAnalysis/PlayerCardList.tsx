@@ -20,6 +20,9 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                 const quartersPerGame = player.gamesWithQuarters > 0
                     ? (player.totalQuartersPlayed / player.gamesWithQuarters).toFixed(1)
                     : null;
+                // 「n試合」と「平均◯Q」は母数が違う。注記が無いと、通算が
+                // n×◯Q だと読めてしまう（詳細画面の1Qあたりも同じ理由で明記している）
+                const isPartialQuarters = player.gamesWithQuarters < player.gamesPlayed;
 
                 return (
                     <button
@@ -33,7 +36,19 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                             <span className="player-name">{player.name}</span>
                             <span className="player-games">
                                 {player.gamesPlayed}試合
-                                {quartersPerGame && <span className="player-quarters">平均{quartersPerGame}Q</span>}
+                                {quartersPerGame && (
+                                    <span
+                                        className="player-quarters"
+                                        title={isPartialQuarters
+                                            ? `出場クォーターが記録されている${player.gamesWithQuarters}試合のみの平均です`
+                                            : undefined}
+                                    >
+                                        平均{quartersPerGame}Q
+                                        {isPartialQuarters && (
+                                            <span className="player-quarters-basis">{player.gamesWithQuarters}試合分</span>
+                                        )}
+                                    </span>
+                                )}
                             </span>
                         </div>
                         <div className="player-stats-grid">

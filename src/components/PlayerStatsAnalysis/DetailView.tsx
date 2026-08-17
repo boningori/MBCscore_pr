@@ -28,6 +28,9 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
     const avgRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
     // 平均は足してよいが標準偏差は足せない。理由は AggregatedPlayerStats.reboundsStdDev のコメント
     const stdDevRebounds = player.reboundsStdDev;
+    // フィールドゴール＝2P+3P。FTは含めない（一覧のFG%・並べ替えと同じ定義）
+    const fieldGoalMade = player.totalStats.twoPointMade + player.totalStats.threePointMade;
+    const fieldGoalAttempt = player.totalStats.twoPointAttempt + player.totalStats.threePointAttempt;
 
     const playerName = player.name || `#${formatPlayerNumber(player.number)}`;
     const title = `#${formatPlayerNumber(player.number)} ${player.name}（${player.gamesPlayed}試合）`;
@@ -144,6 +147,19 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                                 made={player.totalStats.freeThrowMade}
                                 attempt={player.totalStats.freeThrowAttempt}
                             />
+                            {/*
+                              一覧のカードと並べ替え（FG%が高い順）が使っている数字。
+                              詳細に無いと、一覧で見て並べ替えた根拠がここで消える。
+                              FTはフィールドゴールではないので含めない（一覧と同じ定義）
+                            */}
+                            <div className="shooting-total">
+                                <ShootingBar
+                                    label="FG"
+                                    made={fieldGoalMade}
+                                    attempt={fieldGoalAttempt}
+                                />
+                                <span className="shooting-total-note">FG＝2P+3P（FTは含みません）</span>
+                            </div>
                         </div>
                     </div>
 
