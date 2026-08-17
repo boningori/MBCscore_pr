@@ -6,7 +6,6 @@ import {
     aggregatePlayerStats,
     getAvailableMyTeams,
     getTeamRecord,
-    generatePlayerKey,
     togglePlayerHidden,
     isPlayerHidden,
     loadHiddenPlayers,
@@ -14,6 +13,7 @@ import {
     type TeamRecord,
 } from '../../utils/playerStatsAnalysis';
 import { startOfInputDateUtc, endOfInputDateUtc } from '../../utils/localDate';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import { formatWinRate } from './winRate';
 import { sortPlayers, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSort';
 import { PlayerCardList } from './PlayerCardList';
@@ -125,15 +125,21 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setViewMode('detail');
     };
 
-    const handleBackToSummary = () => {
+    const handleBackToSummary = useCallback(() => {
         setViewMode('summary');
         setSelectedPlayer(null);
-    };
+    }, []);
 
+    // 端末の戻る操作は詳細を閉じて一覧へ。ここを受け取らないと、画面上の
+    // 「← 一覧」と挙動が食い違い、ホームまで飛ぶ（useBackHandler）
+    useBackHandler(viewMode === 'detail', handleBackToSummary);
+
+    // 集計が使っているキーをそのまま使う。氏名から組み直すと、同姓同名で
+    // 背番号込みに分けたキー（buildPlayerKeys）と食い違い、片方を非表示に
+    // したつもりで2人とも消える
     const handleTogglePlayerHidden = useCallback(() => {
         if (!selectedTeam || !selectedPlayer) return;
-        const playerKey = generatePlayerKey(selectedPlayer.name, selectedPlayer.licenseNo);
-        togglePlayerHidden(selectedTeam.id, playerKey);
+        togglePlayerHidden(selectedTeam.id, selectedPlayer.playerKey);
         setHiddenPlayerCount(loadHiddenPlayers(selectedTeam.id).length);
         setHiddenToggleKey(prev => prev + 1); // 再描画をトリガー
     }, [selectedTeam, selectedPlayer]);
@@ -159,8 +165,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
 
     const isSelectedPlayerHidden = useMemo(() => {
         if (!selectedTeam || !selectedPlayer) return false;
-        const playerKey = generatePlayerKey(selectedPlayer.name, selectedPlayer.licenseNo);
-        return isPlayerHidden(selectedTeam.id, playerKey);
+        return isPlayerHidden(selectedTeam.id, selectedPlayer.playerKey);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedTeam, selectedPlayer, hiddenToggleKey]);
 

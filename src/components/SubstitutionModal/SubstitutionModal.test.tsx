@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { SubstitutionModal } from './SubstitutionModal';
 import { createPlayer } from '../../types/game';
-import type { Player } from '../../types/game';
+import type { Player, FoulRecord } from '../../types/game';
 
 afterEach(cleanup);
 
@@ -106,5 +106,74 @@ describe('SubstitutionModal 登録人数の上限', () => {
         fireEvent.click(screen.getByRole('button', { name: '追加' }));
 
         expect(onAddPlayer).toHaveBeenCalledWith(77, '選手77');
+    });
+});
+
+// 「退場」を5ファウルだけで判定していた。競技規則では D 1つ、U/T 合わせて2つでも
+// 失格で、いずれも5個目より先に来る。スタメン選択・選手カード・統計表は
+// disqualification.ts に移行済みだったが、クォーター途中で戻す経路である
+// この交代モーダルだけ古い判定のままだった。
+describe('SubstitutionModal 失格の併記（5ファウル以外の理由）', () => {
+    function playerWithFouls(id: string, number: number, name: string, fouls: FoulRecord[]): Player {
+        return { ...createPlayer(id, number, name), isOnCourt: false, fouls };
+    }
+
+    it('Dファウル1つのベンチ選手に失格を併記する', () => {
+        render(
+            <SubstitutionModal
+                teamName="白チーム"
+                teamId="teamA"
+                players={[
+                    player('onCourt', 4, 'コート上', true),
+                    playerWithFouls('dq', 9, '失格者', [{ type: 'D', freeThrows: 2 }]),
+                ]}
+                onSubstitute={vi.fn()}
+                onClose={() => {}}
+            />,
+        );
+
+        expect(screen.getByRole('button', { name: /失格者/ }).textContent).toContain('失格(D)');
+    });
+
+    it('U2つのベンチ選手に失格を併記する', () => {
+        render(
+            <SubstitutionModal
+                teamName="白チーム"
+                teamId="teamA"
+                players={[
+                    player('onCourt', 4, 'コート上', true),
+                    playerWithFouls('dq', 9, '失格者', [
+                        { type: 'U', freeThrows: 2 },
+                        { type: 'U', freeThrows: 2 },
+                    ]),
+                ]}
+                onSubstitute={vi.fn()}
+                onClose={() => {}}
+            />,
+        );
+
+        expect(screen.getByRole('button', { name: /失格者/ }).textContent).toContain('失格(2回)');
+    });
+
+    it('ファウル2つだけの選手には何も併記しない', () => {
+        render(
+            <SubstitutionModal
+                teamName="白チーム"
+                teamId="teamA"
+                players={[
+                    player('onCourt', 4, 'コート上', true),
+                    playerWithFouls('ok', 9, '通常', [
+                        { type: 'P', freeThrows: 0 },
+                        { type: 'P', freeThrows: 0 },
+                    ]),
+                ]}
+                onSubstitute={vi.fn()}
+                onClose={() => {}}
+            />,
+        );
+
+        const card = screen.getByRole('button', { name: /通常/ }).textContent ?? '';
+        expect(card).not.toContain('失格');
+        expect(card).not.toContain('退場');
     });
 });

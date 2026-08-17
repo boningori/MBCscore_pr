@@ -523,6 +523,9 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
                 const stats = { ...p.stats };
                 for (const s of mine) {
                     stats.points -= s.points;
+                    // OGはシュート成績に数えていない（handleToggleOwnGoal）ので戻す対象も無い。
+                    // 無条件に引くと成功・試投が負になる。REMOVE_SCORE / EDIT_SCORE と同じ扱い
+                    if (s.isOwnGoal) continue;
                     if (s.scoreType === '2P') { stats.twoPointMade--; stats.twoPointAttempt--; }
                     else if (s.scoreType === '3P') { stats.threePointMade--; stats.threePointAttempt--; }
                     else { stats.freeThrowMade--; stats.freeThrowAttempt--; }

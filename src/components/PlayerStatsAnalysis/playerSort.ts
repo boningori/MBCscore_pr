@@ -8,13 +8,17 @@ import type { AggregatedPlayerStats } from '../../utils/playerStatsAnalysis';
 
 export type PlayerSortKey = 'number' | 'points' | 'rebounds' | 'assists' | 'fgPercent' | 'quarters';
 
+// ラベルには基準（平均か通算か）を書く。
+// 得点・REB・ASTは avgStats、出場Qは通算で並べているのに、どれも
+// 「◯が多い順」だった。「得点が多い順」で1試合30点の選手が10試合100点の
+// 選手より上に来るのに、ラベルからはそう読めない。
 export const PLAYER_SORT_OPTIONS: { key: PlayerSortKey; label: string }[] = [
     { key: 'number', label: '背番号順' },
-    { key: 'points', label: '得点が多い順' },
-    { key: 'rebounds', label: 'REBが多い順' },
-    { key: 'assists', label: 'ASTが多い順' },
+    { key: 'points', label: '平均得点が多い順' },
+    { key: 'rebounds', label: '平均REBが多い順' },
+    { key: 'assists', label: '平均ASTが多い順' },
     { key: 'fgPercent', label: 'FG%が高い順' },
-    { key: 'quarters', label: '出場Qが多い順' },
+    { key: 'quarters', label: '通算出場Qが多い順' },
 ];
 
 const rebounds = (p: AggregatedPlayerStats) =>

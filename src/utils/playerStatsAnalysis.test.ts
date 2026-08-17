@@ -239,3 +239,125 @@ describe('playerStatsAnalysis', () => {
         expect(stats[0].totalStats.points).toBe(20);
     });
 });
+
+// ファウルだけが記録された選手。
+//
+// 集計対象かどうかを PlayerStats（得点・試投・REB・AST・STL・BLK・TO）と
+// 出場クォーターだけで決めていたため、スタメンを確定しないまま記録した試合で
+// ファウルしかしていない選手が丸ごと落ちていた。詳細画面は「ファウル n個」
+// 「退場・失格 n試合」を出すのに、その選手の記録がどこにも現れない。
+describe('playerStatsAnalysis: ファウルだけの選手', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    /** スタッツ0・出場Q未記録で、ファウルだけを持つ選手の試合を1件保存する */
+    function recordFoulOnlyGame(fouls: FoulRecord[]) {
+        const teamA = createTeam('teamA', 'マイチーム', 'コーチ');
+        teamA.isMyTeam = true;
+        const player = createPlayer('teamA-player-0', 4, '選手A', true);
+        player.fouls = fouls;
+        player.quartersPlayed = [false, false, false, false];
+        teamA.players = [player];
+
+        const teamB = createTeam('teamB', '相手チーム', '相手コーチ');
+        teamB.players = [createPlayer('teamB-player-0', 6, '相手選手', true)];
+
+        saveGameResult('テスト大会', teamA, teamB, [], [], [], new Date('2026-06-01'));
+    }
+
+    it('スタッツも出場Qも無くファウルだけの選手が集計に残る', () => {
+        recordFoulOnlyGame([
+            { type: 'P', freeThrows: 0 },
+            { type: 'P', freeThrows: 0 },
+            { type: 'P', freeThrows: 0 },
+        ]);
+
+        const result = aggregatePlayerStats(myTeam);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].gamesPlayed).toBe(1);
+        expect(result[0].totalFouls).toBe(3);
+    });
+
+    it('ファウルによる失格も退場試合数に数える', () => {
+        recordFoulOnlyGame([{ type: 'D', freeThrows: 2 }]);
+
+        const result = aggregatePlayerStats(myTeam);
+
+        expect(result[0].foulOutGames).toBe(1);
+    });
+
+    it('スタッツもファウルも出場Qも無い選手は従来どおり集計しない', () => {
+        recordFoulOnlyGame([]);
+
+        expect(aggregatePlayerStats(myTeam)).toHaveLength(0);
+    });
+});
+
+// 同姓同名でライセンスNo.が未入力の2選手。
+//
+// 識別キーは「氏名_ライセンスNo」で、ライセンスNo.は任意入力。空だと氏名だけに
+// なるため、同じ姓の2人が1人に合算されていた。1試合しか無いのに gamesPlayed が
+// 2になり、実在しない「2試合◯点/試合」の選手カードが出て、もう1人は一覧から
+// 消える（チームサマリーの試合数とも食い違う）。
+describe('playerStatsAnalysis: 同姓同名でライセンスNo.が無い場合', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    /** 同名の2選手が出場した試合を1件保存する */
+    function recordSameNameGame(date: Date) {
+        const teamA = createTeam('teamA', 'マイチーム', 'コーチ');
+        teamA.isMyTeam = true;
+        const first = createPlayer('teamA-player-0', 4, '佐藤', true);
+        first.stats.points = 10;
+        first.quartersPlayed = ['starter', 'starter', false, false];
+        const second = createPlayer('teamA-player-1', 7, '佐藤');
+        second.stats.points = 2;
+        second.quartersPlayed = ['starter', false, false, false];
+        teamA.players = [first, second];
+
+        const teamB = createTeam('teamB', '相手チーム', '相手コーチ');
+        teamB.players = [createPlayer('teamB-player-0', 6, '相手選手', true)];
+
+        saveGameResult('テスト大会', teamA, teamB, [], [], [], date);
+    }
+
+    it('背番号で別人として分けて集計する', () => {
+        recordSameNameGame(new Date('2026-06-01'));
+
+        const result = aggregatePlayerStats(myTeam);
+
+        expect(result).toHaveLength(2);
+        expect(result.map(r => r.number)).toEqual([4, 7]);
+        expect(result.map(r => r.totalStats.points)).toEqual([10, 2]);
+    });
+
+    it('1試合を二重に数えない', () => {
+        recordSameNameGame(new Date('2026-06-01'));
+
+        const result = aggregatePlayerStats(myTeam);
+
+        expect(result.every(r => r.gamesPlayed === 1)).toBe(true);
+    });
+
+    it('複数試合にまたがっても背番号で同じ選手として繋がる', () => {
+        recordSameNameGame(new Date('2026-06-01'));
+        recordSameNameGame(new Date('2026-06-08'));
+
+        const result = aggregatePlayerStats(myTeam);
+
+        expect(result).toHaveLength(2);
+        expect(result.map(r => r.gamesPlayed)).toEqual([2, 2]);
+        expect(result.map(r => r.totalStats.points)).toEqual([20, 4]);
+    });
+
+    it('名前が重複しない選手のキーは従来どおり（非表示設定などを壊さない）', () => {
+        recordGame(10, 8, new Date('2026-06-01'));
+
+        const result = aggregatePlayerStats(myTeam);
+
+        expect(result[0].playerKey).toBe(generatePlayerKey('選手A', undefined));
+    });
+});

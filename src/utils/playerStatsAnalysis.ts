@@ -137,6 +137,42 @@ export function generatePlayerKey(name: string, licenseNo?: string): string {
     return name;
 }
 
+/** 識別キーを決めるのに要る最小限の選手情報 */
+interface KeyablePlayer {
+    name: string;
+    licenseNo?: string;
+    number: number;
+}
+
+/**
+ * 1試合の名簿から、選手ごとの識別キーを決める（名簿と同じ並びで返す）。
+ *
+ * 基本は generatePlayerKey。ライセンスNo.は任意入力なので、未入力だとキーが
+ * 氏名だけになり、同じ姓の2人が1人に合算されていた。1試合しか無いのに
+ * gamesPlayed が2になり、実在しない「2試合◯点/試合」の選手カードが出て、
+ * もう1人は一覧から消える（チームサマリーの試合数とも食い違う）。
+ * カードに出るのは氏名で、ミニバスで同じ姓は珍しくない。
+ *
+ * 名簿内で衝突したときだけ背番号を足して分ける。衝突しない選手のキーは
+ * 変えない —— 非表示選手の設定は playerKey で保存されているため、
+ * 既存の設定を壊してはいけない。背番号で分けると、その2人はシーズンを
+ * またぐ背番号変更で別人に割れるが、別人が1人に混ざるより直しやすい
+ * （ライセンスNo.を入れれば根本的に解決する）。
+ */
+function buildPlayerKeys(players: KeyablePlayer[]): string[] {
+    const baseKeys = players.map(p => generatePlayerKey(p.name, p.licenseNo));
+
+    const duplicated = new Set<string>();
+    const seen = new Set<string>();
+    for (const key of baseKeys) {
+        if (seen.has(key)) duplicated.add(key);
+        seen.add(key);
+    }
+
+    return baseKeys.map((key, i) =>
+        duplicated.has(key) ? `${key}#${players[i].number}` : key);
+}
+
 // 空のPlayerStatsを作成
 function createEmptyStats(): PlayerStats {
     return {
@@ -327,9 +363,11 @@ export function aggregatePlayerStats(
             myScore > opponentScore ? 'win' :
                 myScore < opponentScore ? 'loss' : 'draw';
 
-        for (const player of myTeamData.players) {
-            // 氏名 + ライセンスNo. で識別
-            const key = generatePlayerKey(player.name, player.licenseNo);
+        // 氏名 + ライセンスNo. で識別。名簿内で衝突したら背番号で分ける（buildPlayerKeys）
+        const playerKeys = buildPlayerKeys(myTeamData.players);
+
+        for (const [playerIndex, player] of myTeamData.players.entries()) {
+            const key = playerKeys[playerIndex];
 
             // 非表示選手をスキップ
             if (hiddenPlayers.includes(key)) continue;
@@ -347,8 +385,13 @@ export function aggregatePlayerStats(
             // 'starter' | 'sub' | 'both'（と旧boolean形式の true）が出場。false / 未記録は非出場
             const quartersPlayed = player.quartersPlayed?.filter(q => q !== false && !!q).length ?? 0;
             const hasPlayedQuarters = quartersPlayed > 0;
+            // ファウルも「出場した証拠」。ここを見ていなかったため、スタメンを
+            // 確定しないまま記録した試合でファウルしかしていない選手が丸ごと
+            // 落ちていた（詳細画面はファウル数と退場試合数を出すのに、その
+            // 選手だけ一覧にも集計にも現れない）
+            const hasFouls = (player.fouls?.length ?? 0) > 0;
 
-            if (!hasStats && !hasPlayedQuarters) continue;
+            if (!hasStats && !hasPlayedQuarters && !hasFouls) continue;
 
             const gameRecord: PlayerGameRecord = {
                 gameId: record.id,

@@ -31,7 +31,7 @@ describe('getRecentForm', () => {
     // 全試合が直近ウィンドウに収まる間は、差が0なのは「変化が無い」からではなく
     // 同じ集合どうしを引いているから。呼び出し側が区別できないと表示が嘘になる
     it('ちょうどrecentN試合ではcoversAllGames=true（isPartialはfalseのまま）', () => {
-        const gh = [6, 5, 4, 3, 2].map((d, i) =>
+        const gh = [6, 5, 4, 3, 2].map((_, i) =>
             rec(`2026-06-0${6 - i}`, 'win', { points: (5 - i) * 2 }));
         const form = getRecentForm(gh);
         expect(form.recentGames).toBe(5);

@@ -81,10 +81,16 @@ export function handleUndoQuarterEnd(state: Game): Game {
     const prevQuarter = newQuarter - 1;
     if (prevQuarter < 1) return state;
 
+    // 保留アクションも新クォーターの記録として数える。
+    // 保留は作成時のピリオドを持ち続けるため、これを見ずに取り消すと、
+    // まだ始まっていないクォーターの記録として後から解決されてしまう。
+    // OT突入の取り消しではさらに、teamFouls が短くなったあとに quarter=5 の
+    // ファウルを足すことになり、チームファウルだけが黙って消えていた
     const hasEntriesInNewQuarter =
         state.scoreHistory.some(e => e.quarter === newQuarter) ||
         state.statHistory.some(e => e.quarter === newQuarter) ||
-        state.foulHistory.some(e => e.quarter === newQuarter);
+        state.foulHistory.some(e => e.quarter === newQuarter) ||
+        state.pendingActions.some(p => p.quarter === newQuarter);
     if (hasEntriesInNewQuarter) return state;
 
     const revertTeam = (team: typeof state.teamA) => ({

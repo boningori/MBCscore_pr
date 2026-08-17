@@ -313,6 +313,13 @@
     gap: 12px;
 }
 
+/* タイルの数値が平均か通算かの断り書き（PlayerCardList のコメント参照） */
+.player-stats-container .player-card-legend {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
 .player-stats-container .player-card {
     border-radius: 14px;
     padding: 16px 20px;

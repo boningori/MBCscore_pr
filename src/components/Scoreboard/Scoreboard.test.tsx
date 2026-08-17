@@ -165,6 +165,31 @@ describe('Scoreboard: クォーター終了の取り消し', () => {
         expect(screen.getByText('Q1終了')).toBeTruthy();
         expect(screen.queryByText('Q2へ')).toBeNull();
     });
+
+    // reducer側は新Qの保留が残っていると取り消しを拒む（handleUndoQuarterEnd）。
+    // ボタンの出し分けが同じ条件を見ていないと、押しても何も起きない
+    // ボタンが残り、記録者は「効かない」としか分からない
+    it('新Qの保留アクションが残っている間は「終了を取り消す」を出さない', () => {
+        renderScoreboard([
+            { type: 'END_QUARTER' },
+            {
+                type: 'ADD_PENDING_ACTION',
+                payload: {
+                    id: 'pending-1',
+                    actionType: 'FOUL',
+                    value: 'P',
+                    teamId: 'teamA',
+                    quarter: 2,
+                    timestamp: Date.now(),
+                    playersOnCourt: [],
+                    candidatePlayerIds: [],
+                },
+            },
+        ]);
+
+        expect(screen.getByText('Q2へ')).toBeTruthy();
+        expect(screen.queryByText('終了を取り消す')).toBeNull();
+    });
 });
 
 // クォーター色はJBA様式の「赤=1Q/3Q・黒=2Q/4Q」に統一する。
