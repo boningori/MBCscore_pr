@@ -17,6 +17,7 @@ import { actionLabel } from '../../utils/actionLabels';
 import { quarterLabel } from '../../utils/quarterLabel';
 import { filterAndSortRecords, type HistoryOrder } from './historyFilter';
 import { DeleteConfirmModal } from '../TeamShared';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import './History.css';
 
 interface HistoryProps {
@@ -36,6 +37,10 @@ export function History({ onBack }: HistoryProps) {
         () => filterAndSortRecords(records, { query, order }),
         [records, query, order],
     );
+
+    // 端末の戻る操作は試合詳細を閉じて一覧へ。ここを受け取らないと、画面上の
+    // 「← 一覧に戻る」と挙動が食い違い、ホームまで飛ぶ（useBackHandler）
+    useBackHandler(selectedRecord !== null, () => setSelectedRecord(null));
 
     // 「開く」がカード全体ではなく専用のbuttonになったので、
     // 共有・削除のクリックがそちらへ伝わることはない（stopPropagation不要）

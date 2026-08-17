@@ -15,6 +15,7 @@ import {
     generateTeamFilename,
 } from '../../utils/dataBackup';
 import { parsePlayerNumber, formatPlayerNumber } from '../../utils/playerNumber';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import {
     useTeamImportExport,
     TextImportPanel,
@@ -35,6 +36,10 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
     const [teams, setTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+    // 端末の戻る操作は編集フォームを閉じて一覧へ。ここを受け取らないと、
+    // 画面ごとホームへ飛んで未保存の名簿が確認なく消える（useBackHandler）
+    useBackHandler(editingTeam !== null, () => setEditingTeam(null));
 
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
 

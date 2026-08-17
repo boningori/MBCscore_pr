@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Modal } from '../Modal';
 import type { Player } from '../../types/game';
-import { MAX_PERSONAL_FOULS, MAX_PLAYERS_PER_TEAM } from '../../types/game';
+import { MAX_PLAYERS_PER_TEAM } from '../../types/game';
+import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
 import {
     formatPlayerNumber,
     parsePlayerNumber,
@@ -120,7 +121,12 @@ export function SubstitutionModal({
                         <h3 className="sub-column-title">ベンチ (IN)</h3>
                         <div className="sub-player-list">
                             {benchPlayers.map(player => {
-                                const fouledOut = player.fouls.length >= MAX_PERSONAL_FOULS;
+                                // 退場は5ファウルだけではない（D 1つ / U・T 2つ）。
+                                // どれも5個目より先に来るので、数だけで見ると失格済みの選手が
+                                // 何の断りもなくIN候補に並ぶ。スタメン選択・選手カード・統計表と
+                                // 同じ disqualification.ts の判定に揃える
+                                const disqualification = getDisqualification(player.fouls);
+                                const fouledOut = disqualification !== null;
                                 return (
                                     <button
                                         type="button"
@@ -131,7 +137,11 @@ export function SubstitutionModal({
                                     >
                                         <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
                                         <span className="sub-player-name">{player.name}</span>
-                                        {fouledOut && <span className="sub-player-fouled-out">退場</span>}
+                                        {disqualification && (
+                                            <span className="sub-player-fouled-out">
+                                                {shortDisqualificationLabel(disqualification)}
+                                            </span>
+                                        )}
                                         <span className="sub-player-quarters">
                                             Q: {player.quartersPlayed.map((q, i) => q ? i + 1 : '').filter(Boolean).join(',') || '-'}
                                         </span>

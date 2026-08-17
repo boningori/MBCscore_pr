@@ -357,9 +357,17 @@ export function FoulInputFlow({
     return (
         // 共通のModalに載せる。ここは試合中いちばん深い階層のオーバーレイで、
         // 開いている間は背後のスコアボードや選手カードを触らせてはいけない。
-        // dialog / フォーカストラップ / フォーカス復帰 / Escape をModalに任せる
+        // dialog / フォーカストラップ / フォーカス復帰 / Escape をModalに任せる。
+        //
+        // 閉じる要求（端末の戻る操作・Escape）は画面上の「← 戻る」と同じく
+        // 1ステップ戻す。onCancel に直結していたため、シューター選択やFT結果まで
+        // 進んでいても入力全部が消えていた。最初のステップには戻り先が無いので
+        // そこだけ従来どおり取り消しになる。
+        // オーバーレイのタップでは閉じない。記録中にダイアログの外を触るのは
+        // 日常的に起き、入力途中のファウルを捨てるには軽すぎる操作
         <Modal
-            onClose={onCancel}
+            onClose={step === 'foulType' ? onCancel : handleBack}
+            closeOnOverlayClick={false}
             overlayClassName="foul-input-flow-overlay"
             contentClassName="foul-input-flow"
             labelledBy="foul-input-title"

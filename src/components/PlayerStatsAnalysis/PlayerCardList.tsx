@@ -6,6 +6,15 @@ import { formatPlayerNumber } from '../../utils/playerNumber';
 export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) {
     return (
         <div className="player-card-list">
+            {/*
+              タイルはPTS/REB/ASTが1試合平均、FG%だけが通算という混在。
+              詳細画面は「得点/試合」「(累計成績)」と書き分けているのに、
+              一覧には手掛かりが無く通算だと読めてしまう。タイル1つずつに
+              単位を足すとカードが横に伸びるので、一覧の頭で一度だけ断る
+            */}
+            <p className="player-card-legend">
+                PTS・REB・ASTは1試合あたりの平均、FGは通算の成功率です
+            </p>
             {players.map(player => {
                 const totalRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
                 const attempts = player.totalStats.twoPointAttempt + player.totalStats.threePointAttempt;

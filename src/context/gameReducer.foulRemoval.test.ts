@@ -211,3 +211,48 @@ describe('gameReducer: FT得点を編集したあとのファウル取り消し'
         expect(state.teamB.players.find(p => p.id === 'b1')!.stats.points).toBe(2);
     });
 });
+
+describe('gameReducer: OGにした得点を生んだファウルの取り消し', () => {
+    // TOGGLE_OWN_GOAL はシュート成功・試投を成績から外す（handleToggleOwnGoal）。
+    // 外したあとにファウルを取り消すと、REMOVE_SCORE / EDIT_SCORE と同じく
+    // 「戻す対象が無い」扱いにしないと成功・試投が負になる。
+    it('FT得点をOGにしてからファウルを消しても、FT成績が負にならない', () => {
+        let state = makeGame();
+        state = gameReducer(state, {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P',
+                shotSituation: 'none', freeThrows: 1, freeThrowResults: ['made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+            },
+        });
+        state = gameReducer(state, { type: 'TOGGLE_OWN_GOAL', payload: { entryId: state.scoreHistory[0].id } });
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        const b1 = state.teamB.players.find(p => p.id === 'b1')!;
+        expect(b1.stats.freeThrowMade).toBe(0);
+        expect(b1.stats.freeThrowAttempt).toBe(0);
+        expect(b1.stats.points).toBe(0);
+    });
+
+    it('バスケットカウントの得点をOGにしてからファウルを消しても、2P成績が負にならない', () => {
+        let state = makeGame();
+        state = gameReducer(state, {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P',
+                shotSituation: '2P', shotMade: true, freeThrows: 1, freeThrowResults: ['missed'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+            },
+        });
+        const basket = state.scoreHistory.find(s => s.scoreType === '2P')!;
+        state = gameReducer(state, { type: 'TOGGLE_OWN_GOAL', payload: { entryId: basket.id } });
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        const b1 = state.teamB.players.find(p => p.id === 'b1')!;
+        expect(b1.stats.twoPointMade).toBe(0);
+        expect(b1.stats.twoPointAttempt).toBe(0);
+        expect(b1.stats.freeThrowAttempt).toBe(0);
+        expect(b1.stats.points).toBe(0);
+    });
+});

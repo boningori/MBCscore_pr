@@ -51,3 +51,45 @@ describe('FoulInputFlow のオーバーレイ', () => {
         expect(onCancel).toHaveBeenCalledTimes(1);
     });
 });
+
+// 端末の戻る操作（Androidの戻るボタン／エッジスワイプ）は popstate として届き、
+// useScreenHistorySync が最前面のモーダルへ閉じる要求を出す（modalStack）。
+// それが onCancel に繋がっていたため、シューター選択やFT結果まで進んでいても
+// 入力全部が消えていた。画面上の「← 戻る」は1ステップ戻すので、
+// 同じ「戻る」でハードとソフトの挙動が食い違っていたことになる。
+describe('FoulInputFlow の戻る操作', () => {
+    /** T（テクニカル）を選んでFT本数選択へ進む */
+    function advanceToFtCount() {
+        fireEvent.click(screen.getByText('テクニカルファウル').closest('button')!);
+    }
+
+    it('途中のステップでのEscapeは1ステップ戻すだけで、入力を捨てない', () => {
+        const onCancel = renderFlow();
+        advanceToFtCount();
+        expect(screen.getByText('フリースロー本数を選択')).toBeTruthy();
+
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+
+        expect(screen.getByText('ファウル種類を選択')).toBeTruthy();
+        expect(onCancel).not.toHaveBeenCalled();
+    });
+
+    it('最初のステップでのEscapeは従来どおり取り消し', () => {
+        const onCancel = renderFlow();
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+        expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    // 記録中にダイアログの外を触るのは日常的に起きる。試合終了確認などは
+    // すでに closeOnOverlayClick={false} を指定しているのに、いちばん入力量の
+    // 多いここだけ既定の true のままだった
+    it('オーバーレイを触っても閉じない', () => {
+        const onCancel = renderFlow();
+        advanceToFtCount();
+
+        fireEvent.click(document.querySelector('.foul-input-flow-overlay')!);
+
+        expect(onCancel).not.toHaveBeenCalled();
+        expect(screen.getByText('フリースロー本数を選択')).toBeTruthy();
+    });
+});

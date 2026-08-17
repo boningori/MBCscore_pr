@@ -86,3 +86,28 @@ describe('sortPlayers', () => {
         }
     });
 });
+
+// ラベルと実際の基準の食い違い。
+//
+// 得点・REB・ASTは avgStats（平均）、出場Qは totalQuartersPlayed（通算）で
+// 並べているのに、ラベルはどれも「◯が多い順」だった。「得点が多い順」で
+// 1試合30点の選手が10試合100点の選手より上に来るのに、そうは読めない。
+describe('並べ替えラベルが基準を示す', () => {
+    const labelOf = (key: PlayerSortKey) =>
+        PLAYER_SORT_OPTIONS.find(o => o.key === key)!.label;
+
+    it('平均で並べる項目のラベルに「平均」と入る', () => {
+        expect(labelOf('points')).toContain('平均');
+        expect(labelOf('rebounds')).toContain('平均');
+        expect(labelOf('assists')).toContain('平均');
+    });
+
+    it('通算で並べる項目のラベルに「通算」と入る', () => {
+        expect(labelOf('quarters')).toContain('通算');
+    });
+
+    it('背番号順とFG%には基準の但し書きを付けない', () => {
+        expect(labelOf('number')).toBe('背番号順');
+        expect(labelOf('fgPercent')).not.toContain('平均');
+    });
+});

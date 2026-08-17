@@ -70,3 +70,57 @@ describe('gameReducer: UNDO_QUARTER_END', () => {
         expect(state.teamA.players[0].quartersPlayed).toHaveLength(4);
     });
 });
+
+// 保留アクションも「新クォーターの記録」。
+//
+// 見ていなかったため、インターバル中に作った保留を残したまま取り消せた。
+// 保留は作成時のピリオドを持ち続けるので、Q1へ戻したあとに解決すると
+// まだ始まっていないQ2の記録として入る。OT突入を取り消した場合はさらに悪く、
+// teamFouls が長さ4に戻ったあとで quarter=5 のファウルを足すことになり、
+// 選手にはファウルが付くのにチームファウルだけが黙って消えていた
+// （ペナルティ判定＝5個目からFT の根拠が狂う）。
+describe('gameReducer: UNDO_QUARTER_END と保留アクション', () => {
+    const pendingFoul = (quarter: number) => ({
+        id: `pending-${quarter}`,
+        actionType: 'FOUL' as const,
+        value: 'P',
+        teamId: 'teamA' as const,
+        quarter,
+        timestamp: Date.now(),
+        playersOnCourt: [],
+        candidatePlayerIds: [],
+    });
+
+    it('新クォーターの保留アクションが残っている場合は取り消さない(no-op)', () => {
+        let state = gameReducer(makeGame(), { type: 'END_QUARTER' });
+        state = gameReducer(state, { type: 'ADD_PENDING_ACTION', payload: pendingFoul(2) });
+
+        const after = gameReducer(state, { type: 'UNDO_QUARTER_END' });
+
+        expect(after).toBe(state);
+        expect(after.currentQuarter).toBe(2);
+    });
+
+    it('前クォーターの保留アクションは取り消しを妨げない', () => {
+        let state = gameReducer(makeGame(), { type: 'ADD_PENDING_ACTION', payload: pendingFoul(1) });
+        state = gameReducer(state, { type: 'END_QUARTER' });
+
+        const after = gameReducer(state, { type: 'UNDO_QUARTER_END' });
+
+        expect(after.currentQuarter).toBe(1);
+        expect(after.phase).toBe('playing');
+    });
+
+    it('OT突入も、OTの保留が残っていれば取り消さない', () => {
+        let state = makeGame();
+        state.currentQuarter = 4;
+        state = gameReducer(state, { type: 'END_QUARTER' });
+        expect(state.currentQuarter).toBe(5);
+        state = gameReducer(state, { type: 'ADD_PENDING_ACTION', payload: pendingFoul(5) });
+
+        const after = gameReducer(state, { type: 'UNDO_QUARTER_END' });
+
+        expect(after.currentQuarter).toBe(5);
+        expect(after.teamA.teamFouls).toHaveLength(5);
+    });
+});

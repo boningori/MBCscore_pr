@@ -51,11 +51,14 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
         }
     };
 
-    // クォーター終了の取り消し（新Qとして記録済みのエントリがある場合は不可）
+    // クォーター終了の取り消し（新Qとして記録済みのエントリがある場合は不可）。
+    // 条件は handleUndoQuarterEnd と同じものを見ること。食い違うと、押しても
+    // 何も起きないボタンが出る（保留アクションが実際にそうだった）
     const canUndoQuarterEnd = phase === 'quarterEnd' && currentQuarter > 1 &&
         !state.scoreHistory.some(e => e.quarter === currentQuarter) &&
         !state.statHistory.some(e => e.quarter === currentQuarter) &&
-        !state.foulHistory.some(e => e.quarter === currentQuarter);
+        !state.foulHistory.some(e => e.quarter === currentQuarter) &&
+        !state.pendingActions.some(p => p.quarter === currentQuarter);
 
     const handleUndoQuarterEnd = () => {
         dispatch({ type: 'UNDO_QUARTER_END' });

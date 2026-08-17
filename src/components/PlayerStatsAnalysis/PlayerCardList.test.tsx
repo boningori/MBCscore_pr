@@ -111,3 +111,16 @@ describe('選手カードの平均出場クォーターの母数', () => {
         expect(screen.queryByText(/試合分/)).toBeNull();
     });
 });
+
+// カードのPTS/REB/ASTは1試合平均、FG%は通算という混在。
+// 詳細画面は「得点/試合」「(累計成績)」と書き分けているのに、
+// 一覧のタイルには基準の手掛かりが無く、通算だと読めてしまう。
+describe('選手カードの数値の基準', () => {
+    it('平均と通算の別を一覧の凡例で示す', () => {
+        render(<PlayerCardList players={[makePlayer()]} onPlayerClick={vi.fn()} />);
+
+        const legend = screen.getByText(/1試合あたりの平均/);
+        expect(legend.textContent).toContain('FG');
+        expect(legend.textContent).toContain('通算');
+    });
+});
