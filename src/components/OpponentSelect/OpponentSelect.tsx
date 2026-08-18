@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
     loadRecentOpponents,
@@ -13,6 +13,7 @@ import { recognizePlayerList, isOCRAvailable, getStoredApiKey } from '../../util
 import { showToast } from '../Toast/toastApi';
 import { DeleteConfirmModal } from '../TeamShared/DeleteConfirmModal';
 import { isPlayerLimitReached, playerLimitMessage } from '../TeamShared/playerLimit';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import {
     DOUBLE_ZERO_INTERNAL,
     formatPlayerNumber,
@@ -54,6 +55,16 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
         setEditingTeam(createEmptySavedTeam());
         setIsCreating(true);
     };
+
+    const closeEditor = useCallback(() => {
+        setEditingTeam(null);
+        setIsCreating(false);
+    }, []);
+
+    // 端末の戻る操作は入力フォームを閉じて一覧へ。受け取らないと、この画面を
+    // 抱えている試合設定のウィザードが1ステップ戻してしまい、入力中の名簿が
+    // 確認なく消える。画像取り込みで作った15人分がここに入ることもある
+    useBackHandler(isCreating && editingTeam !== null, closeEditor);
 
     const handleSaveNew = (team: SavedTeam, saveToRegistry: boolean) => {
         saveRecentOpponent(team);
@@ -109,10 +120,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
             <OpponentEditor
                 team={editingTeam}
                 onSave={handleSaveNew}
-                onCancel={() => {
-                    setEditingTeam(null);
-                    setIsCreating(false);
-                }}
+                onCancel={closeEditor}
                 onImageImport={handleImageImport}
                 isLoading={isLoading}
             />

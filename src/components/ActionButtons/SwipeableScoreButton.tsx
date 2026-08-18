@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSwipe } from '../../hooks/useSwipe';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import './SwipeableScoreButton.css';
 
 type ScoreType = '2P' | '3P' | 'FT';
@@ -70,6 +71,11 @@ export function SwipeableScoreButton({
         setShowSelector(false);
         onMiss(info.missType);
     };
+
+    // 端末の戻る操作はセレクターを閉じるだけにする。受け取らないと、
+    // 暗幕が出たまま記録画面ごとホームへ飛ばされる（modalStack）。
+    // 下の選手カードへタップを通す作りなので Modal には載せない
+    useBackHandler(showSelector, useCallback(() => setShowSelector(false), []));
 
     return (
         <div className="swipeable-score-wrapper" ref={wrapperRef}>
