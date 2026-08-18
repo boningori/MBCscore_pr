@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { SavedTeam } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { hasGameSession } from '../../utils/gameSessionStorage';
@@ -20,9 +19,16 @@ interface HomeProps {
 }
 
 export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onViewPlayerStats, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen }: HomeProps) {
-    const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
-    // 初回マウント時のみ判定（遅延初期化）
-    const [canResume] = useState(() => hasGameSession());
+    // 描画のたびに読み直す。
+    //
+    // アプリ設定はホームの上にモーダルで開くため、バックアップを取り込んでも
+    // ホームは再マウントされない。マウント時に一度だけ読んでいたころは、
+    // 取り込みが「進行中の試合: 復元」と成功を伝えているのに「試合を再開」が
+    // 現れず、リロードするまで到達できなかった。マイチーム数も同様に古いまま
+    // だった。設定を閉じると App が再描画されるので、ここで読み直せば追従する。
+    // どちらも小さなJSONの読み出しで、ホームの再描画はまれ。
+    const myTeams: SavedTeam[] = loadMyTeams();
+    const canResume = hasGameSession();
     const install = useInstallPrompt();
 
     const hasMyTeams = myTeams.length > 0;
