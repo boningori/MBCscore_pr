@@ -62,16 +62,33 @@ function findViolation(g: Game): string | null {
             seen.add(run);
         }
 
+        const periodCount = g[t].teamFouls.length;
+        const countsTowardTeamFoul = (quarterFrom: number, quarterTo: number) =>
+            g.foulHistory.filter(f =>
+                f.teamId === t && f.quarter >= quarterFrom && f.quarter <= quarterTo
+                && !f.isCoachOrBench && f.coachFoulTarget !== 'BENCH').length;
+
         // Q1〜Q3のチームファウルは、その期の通常ファウル数と一致する
-        // （Q4以降はOT欄へ通算されるため別ルール。ここでは検査しない）
         for (const q of [1, 2, 3]) {
-            const counted = g.foulHistory.filter(f =>
-                f.teamId === t && f.quarter === q && !f.isCoachOrBench && f.coachFoulTarget !== 'BENCH').length;
             const stored = g[t].teamFouls[q - 1] ?? 0;
+            const counted = countsTowardTeamFoul(q, q);
             if (stored !== counted) return `${t} Q${q}: teamFouls=${stored} 履歴=${counted}`;
         }
 
+        // Q4以降のOT欄は「第4Qからの通算」（gameFlowHandlers の extendForOT）。
+        // 4Q欄も含め、第4Q以降そのピリオドまでの累計と一致する
+        for (let q = 4; q <= periodCount; q++) {
+            const stored = g[t].teamFouls[q - 1] ?? 0;
+            const counted = countsTowardTeamFoul(4, q);
+            if (stored !== counted) return `${t} 第${q}期: teamFouls=${stored} 履歴の通算=${counted}`;
+        }
+
         for (const p of g[t].players) {
+            // 出場欄はピリオド数ぶん用意されている（OT突入で両方が伸びる）
+            if (p.quartersPlayed.length !== periodCount) {
+                return `${p.id}: quartersPlayed=${p.quartersPlayed.length} ピリオド数=${periodCount}`;
+            }
+
             const s = p.stats;
             for (const [k, v] of Object.entries(s)) {
                 if ((v as number) < 0) return `${p.id}: ${k}が負(${v})`;
@@ -80,10 +97,30 @@ function findViolation(g: Game): string | null {
             if (s.threePointMade > s.threePointAttempt) return `${p.id}: 3P成功>試投`;
             if (s.freeThrowMade > s.freeThrowAttempt) return `${p.id}: FT成功>試投`;
 
-            // 選手のファウル欄と履歴の件数が一致する
-            const fromHistory = g.foulHistory.filter(f => f.playerId === p.id && !f.isCoachOrBench).length;
-            if (p.fouls.length !== fromHistory) {
-                return `${p.id}: fouls=${p.fouls.length} 履歴=${fromHistory}`;
+            // 選手のファウル欄と履歴が、件数だけでなく並びまで一致する。
+            //
+            // 様式は fouls[i] の表記と、時刻順 i 番目の履歴のピリオド（記入色）を
+            // 対にして1マスを描く（RunningScoresheet.renderPlayerRow）。件数しか
+            // 見ていなかったため、取り消し・付け替えで中身が入れ替わっても素通り
+            // していた（実測: Q1のP・Q2のT1・Q3のP からQ3のPを取り消すと
+            // 欄1が「T1」でQ1の赤になる）。
+            const ordered = g.foulHistory
+                .filter(f => f.playerId === p.id && !f.isCoachOrBench)
+                .sort((x, y) => x.timestamp - y.timestamp);
+            if (p.fouls.length !== ordered.length) {
+                return `${p.id}: fouls=${p.fouls.length} 履歴=${ordered.length}`;
+            }
+            for (let i = 0; i < ordered.length; i++) {
+                const cell = p.fouls[i];
+                const cellType = typeof cell === 'string' ? cell : cell.type;
+                if (cellType !== ordered[i].foulType) {
+                    return `${p.id}: ファウル欄${i + 1}=${cellType} 履歴=${ordered[i].foulType}(Q${ordered[i].quarter})`;
+                }
+                const cellFt = typeof cell === 'string' ? undefined : cell.freeThrows;
+                if (cellFt !== undefined && ordered[i].freeThrows !== undefined
+                    && cellFt !== ordered[i].freeThrows) {
+                    return `${p.id}: ファウル欄${i + 1}のFT=${cellFt} 履歴=${ordered[i].freeThrows}`;
+                }
             }
 
             // 得点は個々のスタッツから導ける（オウンゴールはシュート成績に入らない）
@@ -93,6 +130,21 @@ function findViolation(g: Game): string | null {
             const derived = s.twoPointMade * 2 + s.threePointMade * 3 + s.freeThrowMade + og;
             if (s.points !== derived) return `${p.id}: points=${s.points} 導出=${derived}`;
         }
+
+        // 記録のピリオドは、存在するピリオドの範囲に収まる
+        for (const to of g[t].timeouts) {
+            if (to.quarter < 1 || to.quarter > periodCount) {
+                return `${t}: タイムアウトのピリオド=${to.quarter} ピリオド数=${periodCount}`;
+            }
+        }
+    }
+
+    const maxPeriod = Math.max(g.teamA.teamFouls.length, g.teamB.teamFouls.length);
+    for (const e of g.scoreHistory) {
+        if (e.quarter < 1 || e.quarter > maxPeriod) return `得点のピリオド=${e.quarter} ピリオド数=${maxPeriod}`;
+    }
+    for (const f of g.foulHistory) {
+        if (f.quarter < 1 || f.quarter > maxPeriod) return `ファウルのピリオド=${f.quarter} ピリオド数=${maxPeriod}`;
     }
     return null;
 }
@@ -120,11 +172,11 @@ function runGame(seed: number, steps: number): string | null {
         const r = rand();
         let action: GameAction | null = null;
 
-        if (r < 0.18) {
+        if (r < 0.14) {
             action = { type: 'ADD_SCORE', payload: { teamId, playerId: player.id, scoreType: pick(['2P', '3P', 'FT'] as const) } };
-        } else if (r < 0.30) {
+        } else if (r < 0.24) {
             action = { type: 'ADD_STAT', payload: { teamId, playerId: player.id, statType: pick(['OREB', 'DREB', 'AST', 'STL', 'BLK', 'TO', 'TO:DD', '2PA', '3PA', 'FTA'] as const) } };
-        } else if (r < 0.42 && oppOnCourt.length > 0) {
+        } else if (r < 0.34 && oppOnCourt.length > 0) {
             action = {
                 type: 'ADD_FOUL_WITH_FREE_THROWS',
                 payload: {
@@ -147,7 +199,7 @@ function runGame(seed: number, steps: number): string | null {
                     shooterPlayerId: pick(oppOnCourt).id,
                 },
             };
-        } else if (r < 0.46 && oppOnCourt.length > 0) {
+        } else if (r < 0.38 && oppOnCourt.length > 0) {
             // 交代要員のテクニカル（選手行にT・コーチ行にB／チームファウルには入らない）
             const bench = team.players.filter(p => !p.isOnCourt);
             if (bench.length > 0) {
@@ -162,7 +214,7 @@ function runGame(seed: number, steps: number): string | null {
                     },
                 };
             }
-        } else if (r < 0.50 && oppOnCourt.length > 0) {
+        } else if (r < 0.42 && oppOnCourt.length > 0) {
             // コーチ・ベンチのファウル
             action = {
                 type: 'ADD_FOUL_WITH_FREE_THROWS',
@@ -173,57 +225,109 @@ function runGame(seed: number, steps: number): string | null {
                     shooterTeamId: oppId, shooterPlayerId: pick(oppOnCourt).id,
                 },
             };
-        } else if (r < 0.58 && g.scoreHistory.length > 0) {
+        } else if (r < 0.50 && g.scoreHistory.length > 0) {
             action = { type: 'REMOVE_SCORE', payload: { entryId: pick(g.scoreHistory).id } };
-        } else if (r < 0.63 && g.statHistory.length > 0) {
+        } else if (r < 0.54 && g.statHistory.length > 0) {
             action = { type: 'REMOVE_STAT', payload: { entryId: pick(g.statHistory).id } };
-        } else if (r < 0.70 && g.foulHistory.length > 0) {
+        } else if (r < 0.60 && g.foulHistory.length > 0) {
             action = { type: 'REMOVE_FOUL', payload: { entryId: pick(g.foulHistory).id } };
-        } else if (r < 0.75 && g.scoreHistory.length > 0) {
+        } else if (r < 0.64 && g.scoreHistory.length > 0) {
             const e = pick(g.scoreHistory);
             action = { type: 'EDIT_SCORE', payload: { entryId: e.id, newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id, newScoreType: pick(['2P', '3P', 'FT'] as const) } };
-        } else if (r < 0.79 && g.statHistory.length > 0) {
+        } else if (r < 0.67 && g.statHistory.length > 0) {
             const e = pick(g.statHistory);
             action = { type: 'EDIT_STAT', payload: { entryId: e.id, newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id, newStatType: pick(['OREB', 'AST', 'TO', '2PA', 'FTA'] as const) } };
-        } else if (r < 0.83) {
+        } else if (r < 0.70) {
             const movable = g.foulHistory.filter(f => !f.isCoachOrBench && f.playerId);
             if (movable.length > 0) {
                 const e = pick(movable);
                 action = { type: 'EDIT_FOUL', payload: { entryId: e.id, newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id } };
             }
-        } else if (r < 0.86 && g.scoreHistory.length > 0) {
+        } else if (r < 0.73 && g.scoreHistory.length > 0) {
             action = { type: 'TOGGLE_OWN_GOAL', payload: { entryId: pick(g.scoreHistory).id } };
-        } else if (r < 0.90 && g.scoreHistory.length > 0) {
+        } else if (r < 0.77 && g.scoreHistory.length > 0) {
+            // 成否の訂正は選手の付け替えを伴うことがある（EditActionModal）
             const e = pick(g.scoreHistory);
             if (!e.isOwnGoal) {
-                action = { type: 'CONVERT_SCORE_TO_MISS', payload: { entryId: e.id, newMissType: e.scoreType === 'FT' ? 'FTA' : e.scoreType === '3P' ? '3PA' : '2PA' } };
+                action = {
+                    type: 'CONVERT_SCORE_TO_MISS',
+                    payload: {
+                        entryId: e.id,
+                        newMissType: e.scoreType === 'FT' ? 'FTA' : e.scoreType === '3P' ? '3PA' : '2PA',
+                        newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id,
+                    },
+                };
             }
-        } else if (r < 0.93) {
+        } else if (r < 0.80) {
             const misses = g.statHistory.filter(s => ['2PA', '3PA', 'FTA'].includes(s.statType) && s.playerId !== 'unknown');
             if (misses.length > 0) {
                 const e = pick(misses);
-                action = { type: 'CONVERT_MISS_TO_SCORE', payload: { entryId: e.id, newScoreType: e.statType === 'FTA' ? 'FT' : e.statType === '3PA' ? '3P' : '2P', newPlayerId: e.playerId } };
+                action = {
+                    type: 'CONVERT_MISS_TO_SCORE',
+                    payload: {
+                        entryId: e.id,
+                        newScoreType: e.statType === 'FTA' ? 'FT' : e.statType === '3PA' ? '3P' : '2P',
+                        newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id,
+                    },
+                };
             }
-        } else if (r < 0.955) {
-            // 保留アクションを作って、あとから解決する
-            const pending = createPendingAction(
-                pick(['SCORE', 'STAT', 'FOUL'] as const),
-                pick(['2P', 'OREB', 'P']),
-                teamId, g.currentQuarter, [], [],
-            );
-            action = { type: 'ADD_PENDING_ACTION', payload: pending };
-        } else if (r < 0.975 && g.pendingActions.length > 0) {
+        } else if (r < 0.845) {
+            // 保留アクションを作って、あとから解決する。
+            // value は種別ごとに正しいものを渡す（UIもそうしている）
+            const actionType = pick(['SCORE', 'STAT', 'FOUL'] as const);
+            const value = actionType === 'SCORE' ? pick(['2P', '3P', 'FT'])
+                : actionType === 'STAT' ? pick(['OREB', 'DREB', 'AST', 'TO'])
+                    : pick(['P', 'T', 'U']);
+            action = {
+                type: 'ADD_PENDING_ACTION',
+                payload: createPendingAction(actionType, value, teamId, g.currentQuarter, [], []),
+            };
+        } else if (r < 0.90 && g.pendingActions.length > 0) {
             const pa = pick(g.pendingActions);
-            action = rand() < 0.3 && pa.actionType === 'STAT'
-                ? { type: 'RESOLVE_PENDING_ACTION_UNKNOWN', payload: { pendingActionId: pa.id } }
-                : { type: 'RESOLVE_PENDING_ACTION', payload: { pendingActionId: pa.id, playerId: pick(g[pa.teamId].players).id } };
-        } else if (r < 0.99) {
+            const who = pick(g[pa.teamId].players).id;
+            const how = rand();
+            if (pa.actionType === 'FOUL' && how < 0.4) {
+                // FT付きで解決（記録当時のピリオドへ後から足す経路）
+                const shooterTeam = pa.teamId === 'teamA' ? 'teamB' : 'teamA';
+                const n = Math.floor(rand() * 3);
+                action = {
+                    type: 'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS',
+                    payload: {
+                        pendingActionId: pa.id,
+                        playerId: who,
+                        foulType: pick(['P', 'T', 'U'] as const),
+                        shotSituation: pick(['none', '2P'] as const),
+                        shotMade: rand() < 0.3,
+                        freeThrows: n,
+                        freeThrowResults: Array.from({ length: n }, () => (rand() < 0.5 ? 'made' : 'missed') as 'made' | 'missed'),
+                        shooterTeamId: shooterTeam,
+                        shooterPlayerId: pick(g[shooterTeam].players).id,
+                    },
+                };
+            } else if (pa.actionType === 'FOUL' && how < 0.7) {
+                action = {
+                    type: 'RESOLVE_PENDING_ACTION_WITH_FOUL_TYPE',
+                    payload: { pendingActionId: pa.id, playerId: who, foulType: pick(['P', 'T', 'U'] as const) },
+                };
+            } else if (pa.actionType === 'STAT' && how < 0.85) {
+                action = { type: 'RESOLVE_PENDING_ACTION_UNKNOWN', payload: { pendingActionId: pa.id } };
+            } else {
+                action = { type: 'RESOLVE_PENDING_ACTION', payload: { pendingActionId: pa.id, playerId: who } };
+            }
+        } else if (r < 0.93) {
             const bench = team.players.filter(p => !p.isOnCourt);
             if (bench.length > 0) {
                 action = { type: 'SUBSTITUTE_PLAYER', payload: { teamId, playerInId: pick(bench).id, playerOutId: player.id } };
             }
-        } else {
+        } else if (r < 0.95) {
+            action = { type: 'ADD_TIMEOUT', payload: { teamId, elapsedMinutes: Math.floor(rand() * 6) } };
+        } else if (r < 0.965) {
+            action = { type: 'REMOVE_TIMEOUT', payload: { teamId, quarter: g.currentQuarter } };
+        } else if (r < 0.985) {
             action = { type: 'END_QUARTER' };
+        } else {
+            // クォーター終了の取り消し（新Qに記録があれば reducer 側で no-op）
+            action = { type: 'UNDO_QUARTER_END' };
         }
 
         if (!action) continue;
@@ -234,10 +338,11 @@ function runGame(seed: number, steps: number): string | null {
         vi.setSystemTime(clock);
 
         g = gameReducer(g, action);
-        // 終了・クォーター終了はすぐ次の期へ進めて記録を続ける
-        if (g.phase === 'quarterEnd') g = { ...g, phase: 'playing' };
-        if (g.phase === 'finished') g = { ...g, phase: 'playing', currentQuarter: 1 };
-        trace.push(action.type);
+        // クォーター終了中も記録は続けられる（様式の注意書きどおり）。
+        // 半分は quarterEnd のまま進めて、その経路も踏ませる
+        if (g.phase === 'quarterEnd' && rand() < 0.5) g = { ...g, phase: 'playing' };
+        if (g.phase === 'finished') g = { ...g, phase: 'playing' };
+        trace.push(`${action.type}@Q${g.currentQuarter}`);
 
         const violation = findViolation(g);
         if (violation) {
@@ -253,8 +358,8 @@ describe('gameReducer: 疑似試合の不変条件', () => {
     it('得点・ファウル・保留・訂正を混ぜても整合が保たれる', () => {
         vi.useFakeTimers();
         const failures: string[] = [];
-        for (let seed = 1; seed <= 20; seed++) {
-            const v = runGame(seed, 800);
+        for (let seed = 1; seed <= 40; seed++) {
+            const v = runGame(seed, 1000);
             if (v) failures.push(v);
         }
         if (failures.length > 0) {
