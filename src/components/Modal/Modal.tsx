@@ -16,6 +16,13 @@ interface ModalProps {
     closeOnOverlayClick?: boolean;
     /** Escapeキーで閉じるか（既定: true） */
     closeOnEsc?: boolean;
+    /**
+     * 端末の戻る操作で閉じるか（既定: true）。
+     *
+     * false でも重なり順の登録からは外れない。外すと戻るが下の画面へ抜けて、
+     * ダイアログを開いたままホームへ飛ぶ（modalStack）。閉じずに受け止める。
+     */
+    closeOnBack?: boolean;
     children: ReactNode;
 }
 
@@ -42,6 +49,7 @@ export function Modal({
     contentClassName = 'modal-content',
     closeOnOverlayClick = true,
     closeOnEsc = true,
+    closeOnBack = true,
     children,
 }: ModalProps) {
     const contentRef = useRef<HTMLDivElement>(null);
@@ -49,13 +57,23 @@ export function Modal({
 
     // 端末の戻る操作で閉じられるよう、重なり順のレジストリに載せる。
     // onClose は呼び出し側で毎レンダー作り直されることが多いので、
-    // 登録するのは ref を読むラッパにして、登録/解除はマウント時の1回に保つ
+    // 登録するのは ref を読むラッパにして、登録/解除はマウント時の1回に保つ。
+    //
+    // closeOnBack も ref で読む。登録し直すと重なり順が入れ替わるうえ、
+    // 途中で false になった瞬間だけ登録が外れて戻るが下の画面へ抜ける
     const onCloseRef = useRef(onClose);
+    const closeOnBackRef = useRef(closeOnBack);
     useEffect(() => {
         onCloseRef.current = onClose;
+        closeOnBackRef.current = closeOnBack;
     });
     useEffect(() => {
-        const id = registerModal(() => onCloseRef.current());
+        const id = registerModal(() => {
+            // 閉じない作りでも登録は保つ。戻るをここで受け止めないと、
+            // 画面遷移として扱われてダイアログごとホームへ飛ぶ
+            if (!closeOnBackRef.current) return;
+            onCloseRef.current();
+        });
         return () => unregisterModal(id);
     }, []);
 
