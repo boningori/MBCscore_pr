@@ -1,7 +1,7 @@
 // 成長比較コンポーネント
 
 import { useState, useMemo } from 'react';
-import { buildAxisTicks, TICK_COUNT } from './chartAxis';
+import { buildAxisTicks, formatBarValue, formatTick, TICK_COUNT } from './chartAxis';
 // 年をまたぐと「6月／6月」「Q2／Q2」が並んで区別できなくなる。
 // 判定には並び全体が要るので、1つずつではなくまとめて組み立てる
 import { buildXLabels } from './chartXLabel';
@@ -17,13 +17,6 @@ import {
     type StatType,
     type GrowthComparisonProps,
 } from './types';
-
-// Y軸目盛りラベルのフォーマット
-function formatTick(value: number): string {
-    if (value === 0) return '0';
-    if (Number.isInteger(value)) return value.toString();
-    return value.toFixed(1);
-}
 
 export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
     const [periodType, setPeriodType] = useState<PeriodType>('game');
@@ -59,6 +52,8 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
         const ticks = buildAxisTicks(values);
         const niceMax = ticks[0];
         const tickCount = TICK_COUNT;
+        // 試合単位は回数そのもの、それ以外は期間平均（詳細は chartAxis.formatBarValue）
+        const wholeNumbers = periodType === 'game';
 
         return (
             <div className="standard-chart" key={statType}>
@@ -94,7 +89,7 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
                                                 backgroundColor: STAT_COLORS[statType]
                                             }}
                                         />
-                                        <span className="bar-value">{getStatValue(p, statType).toFixed(1)}</span>
+                                        <span className="bar-value">{formatBarValue(getStatValue(p, statType), wholeNumbers)}</span>
                                     </div>
                                 </div>
                             ))}

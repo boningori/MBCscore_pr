@@ -50,3 +50,32 @@ function niceStep(minStep: number, integerOnly: boolean): number {
 function round(value: number): number {
     return Math.round(value * 1000) / 1000;
 }
+
+/**
+ * 目盛りの表示文字列。目盛り値そのものを桁を落とさずに出す。
+ *
+ * 以前は一律 toFixed(1) だった。間隔が 0.25 になる軸（月平均のAST・STL・BLKなど
+ * 最大値が1以下のとき、niceStep が 2.5×10⁻¹ を選ぶ）で 0.75→「0.8」・
+ * 0.25→「0.3」と表示され、線の位置と数字が食い違っていた。並びも
+ * 1 / 0.8 / 0.5 / 0.3 / 0 と不等間隔に見える。
+ * buildAxisTicks が3桁に丸めた値なので、そのまま出せば足りる。
+ */
+export function formatTick(value: number): string {
+    return String(round(value));
+}
+
+/**
+ * 棒の上に出す値の表示文字列。
+ *
+ * 軸が整数だけの試合単位グラフ（スティール0〜3など）で、棒のラベルだけ
+ * toFixed(1) の「2.0」「0.0」になっていた。同じグラフの中で桁がそろわない。
+ *
+ * 判断は「回数そのものか平均値か」＝期間の単位で決める。値が整数かどうかで
+ * 決めると、月平均がたまたま 1.0 / 1.0 / 1.0 になった月だけ「1」と出て、
+ * 隣の「3.7」のグラフと桁がそろわなくなる。
+ *
+ * @param wholeNumbers 回数そのもの（試合単位）なら true。平均値なら false
+ */
+export function formatBarValue(value: number, wholeNumbers: boolean): string {
+    return wholeNumbers ? String(round(value)) : value.toFixed(1);
+}
