@@ -32,7 +32,7 @@ function makeGame(): Game {
 /** 保留の 2Pミス を「選手不明」で解決した状態を作り、その StatEntry のidを返す */
 function withUnknownMiss(): { state: Game; entryId: string } {
     let state = makeGame();
-    const pending = createPendingAction('STAT', '2PA', 'teamA', 1, [], []);
+    const pending = createPendingAction('STAT', '2PA', 'teamA', 1, []);
     state = gameReducer(state, { type: 'ADD_PENDING_ACTION', payload: pending });
     state = gameReducer(state, {
         type: 'RESOLVE_PENDING_ACTION_UNKNOWN',

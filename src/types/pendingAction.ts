@@ -17,7 +17,6 @@ export interface PendingAction {
     quarter: number;
     timestamp: number; // Date.now()
     playersOnCourt: PlayerSnapshot[]; // その時点でコート上にいた選手
-    candidatePlayerIds: string[]; // 候補として選択された選手ID（任意）
 }
 
 // 保留アクション作成ヘルパー
@@ -27,7 +26,6 @@ export const createPendingAction = (
     teamId: 'teamA' | 'teamB',
     quarter: number,
     playersOnCourt: PlayerSnapshot[],
-    candidatePlayerIds: string[] = []
 ): PendingAction => ({
     id: crypto.randomUUID(),
     actionType,
@@ -36,5 +34,4 @@ export const createPendingAction = (
     quarter,
     timestamp: Date.now(),
     playersOnCourt,
-    candidatePlayerIds,
 });

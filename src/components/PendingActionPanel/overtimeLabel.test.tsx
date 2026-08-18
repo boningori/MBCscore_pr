@@ -1,4 +1,4 @@
-// 保留の一覧・解決モーダルが延長を「Q5」と出していた。
+// 保留の一覧が延長を「Q5」と出していた。
 //
 // スコアボード・スタメン選択・タイムアウト入力はすべて OT と表示するのに、
 // ここだけ内部表現がそのまま漏れていた。同じ試合の同じピリオドが
@@ -7,7 +7,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { PendingActionPanel } from './PendingActionPanel';
-import { PendingActionResolver } from '../PendingActionResolver';
 import type { PendingAction } from '../../types/pendingAction';
 
 afterEach(cleanup);
@@ -17,7 +16,6 @@ function makePending(quarter: number): PendingAction {
         id: 'pending-1', actionType: 'SCORE', value: '2P', teamId: 'teamA',
         quarter, timestamp: Date.now(),
         playersOnCourt: [{ id: 'a1', number: 4, name: '選手4' }],
-        candidatePlayerIds: [],
     } as PendingAction;
 }
 
@@ -25,20 +23,10 @@ function openPanel(quarter: number) {
     render(
         <PendingActionPanel
             pendingActions={[makePending(quarter)]}
-            onResolve={vi.fn()} onResolveUnknown={vi.fn()} onRemove={vi.fn()}
-            onUpdateCandidates={vi.fn()} onDirectResolve={vi.fn()}
+            onResolveUnknown={vi.fn()} onRemove={vi.fn()} onDirectResolve={vi.fn()}
         />,
     );
     fireEvent.click(screen.getByRole('button', { name: /保留/ }));
-}
-
-function renderResolver(quarter: number) {
-    render(
-        <PendingActionResolver
-            pendingAction={makePending(quarter)}
-            onResolve={vi.fn()} onCancel={vi.fn()}
-        />,
-    );
 }
 
 describe('保留の延長表示', () => {
@@ -56,12 +44,6 @@ describe('保留の延長表示', () => {
     it('保留一覧の通常クォーターは従来どおり', () => {
         openPanel(3);
         expect(screen.getByText('Q3')).toBeTruthy();
-    });
-
-    it('保留解決モーダルも延長を OT と出す', () => {
-        renderResolver(5);
-        expect(screen.getByText('OT')).toBeTruthy();
-        expect(screen.queryByText('Q5')).toBeNull();
     });
 
     it('削除確認も延長を OT と出す', () => {

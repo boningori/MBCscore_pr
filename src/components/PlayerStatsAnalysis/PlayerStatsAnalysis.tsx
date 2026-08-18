@@ -159,6 +159,15 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     // 並べ替えは表示順だけを変える。集計（playerStats）には影響しないので分けて持つ
     const sortedPlayers = useMemo(() => sortPlayers(playerStats, sortKey), [playerStats, sortKey]);
 
+    // 非表示にしている選手のキー。全員表示に切り替えたとき、どれが非表示なのかを
+    // カードに示すために使う。印が無いと、戻したい選手を1人ずつ詳細で確かめるしかない
+    const hiddenPlayerKeys = useMemo(() => {
+        if (!selectedTeam) return new Set<string>();
+        return new Set(loadHiddenPlayers(selectedTeam.id));
+        // hiddenToggleKey: 詳細画面での切り替えを取り込むための意図的な依存
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTeam, hiddenToggleKey]);
+
     const hasDateFilter = !!(dateRange.start || dateRange.end);
     // 開始が終了より後。両方入っているときだけ判定する（片方だけなら片側の絞り込み）
     const isRangeInverted = !!(dateRange.start && dateRange.end && dateRange.start > dateRange.end);
@@ -171,13 +180,17 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         // 範囲が逆さまなら必ず0件になる。試合の有無より先に理由として出す
         if (isRangeInverted) return 'invalidRange';
         if (hasDateFilter && (teamRecord?.totalGames ?? 0) === 0) return 'period';
-        if (hiddenPlayerCount > 0) return 'hidden';
+        // 全員表示にしているなら、非表示は0件の理由になっていない。
+        // ここを見ずに hiddenPlayerCount だけで決めていたため、トグルをONにしても
+        // 「N人を非表示にしています」と事実と違う案内を出し続けていた
+        // （名簿から消えた選手の設定だけが残っている場合などに起きる）
+        if (!showHiddenPlayers && hiddenPlayerCount > 0) return 'hidden';
         // 試合はあるのに集計できる選手がいない（保留のまま保存した、スタメンを
         // 確定しないまま記録した等）。「試合データがありません」と言うと、
         // すぐ上のチームサマリーが出している試合数と食い違う
         if ((teamRecord?.totalGames ?? 0) > 0) return 'noPlayerRecords';
         return 'noData';
-    }, [playerStats.length, isRangeInverted, hasDateFilter, teamRecord, hiddenPlayerCount]);
+    }, [playerStats.length, isRangeInverted, hasDateFilter, teamRecord, hiddenPlayerCount, showHiddenPlayers]);
 
     const isSelectedPlayerHidden = useMemo(() => {
         if (!selectedTeam || !selectedPlayer) return false;
@@ -320,7 +333,11 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     )}
 
                     {emptyReason === null
-                        ? <PlayerCardList players={sortedPlayers} onPlayerClick={handlePlayerClick} />
+                        ? <PlayerCardList
+                            players={sortedPlayers}
+                            hiddenPlayerKeys={hiddenPlayerKeys}
+                            onPlayerClick={handlePlayerClick}
+                        />
                         : <EmptyState reason={emptyReason} hiddenPlayerCount={hiddenPlayerCount} />}
 
                     {hiddenPlayerCount > 0 && (

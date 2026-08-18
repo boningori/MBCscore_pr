@@ -3,7 +3,7 @@
 import type { PlayerCardListProps } from './types';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 
-export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) {
+export function PlayerCardList({ players, hiddenPlayerKeys, onPlayerClick }: PlayerCardListProps) {
     // 「（n試合分）」が付く選手が1人でもいるか。
     //
     // この但し書きの意味は title 属性にしか書いていなかった。主な利用端末は
@@ -24,6 +24,10 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                 {hasPartialQuarters && '／「平均◯Q」の（n試合分）は、出場クォーターが記録されている試合だけの平均です'}
             </p>
             {players.map(player => {
+                // 非表示にしている選手。全員表示に切り替えたときだけ一覧に現れる。
+                // 印が無いと、どれを非表示にしたのか一覧からは分からず、
+                // 戻したい選手を1人ずつ詳細で開いて確かめるしかなかった
+                const isHidden = hiddenPlayerKeys?.has(player.playerKey) ?? false;
                 const totalRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
                 const attempts = player.totalStats.twoPointAttempt + player.totalStats.threePointAttempt;
                 // 試投0の選手に「-%」と出ていた。単位は数字があるときだけ付ける
@@ -45,12 +49,14 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                     <button
                         type="button"
                         key={player.playerKey}
-                        className="player-card"
+                        className={`player-card ${isHidden ? 'hidden-player' : ''}`}
                         onClick={() => onPlayerClick(player)}
                     >
                         <div className="player-info">
                             <span className="player-number">#{formatPlayerNumber(player.number)}</span>
                             <span className="player-name">{player.name}</span>
+                            {/* 色や枠だけでは伝わらないので文字でも出す */}
+                            {isHidden && <span className="player-hidden-badge">非表示</span>}
                             <span className="player-games">
                                 {player.gamesPlayed}試合
                                 {quartersPerGame && (

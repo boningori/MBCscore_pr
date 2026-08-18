@@ -8,7 +8,6 @@ import { formatPlayerNumber } from './utils/playerNumber';
 import { actionLabel, statLabel } from './utils/actionLabels';
 import { todayInputDate } from './utils/localDate';
 import { quarterLabel } from './utils/quarterLabel';
-import type { PendingAction } from './types/pendingAction';
 import { createPendingAction } from './types/pendingAction';
 import { saveRecentOpponent } from './utils/teamStorage';
 import { buildMatchTeams } from './utils/matchTeams';
@@ -31,7 +30,6 @@ import { TimeoutInputModal } from './components/TimeoutInputModal/TimeoutInputMo
 import { StatsPanel } from './components/StatsPanel';
 import { QuarterLineup } from './components/QuarterLineup';
 import { PendingActionPanel } from './components/PendingActionPanel';
-import { PendingActionResolver } from './components/PendingActionResolver';
 
 import { FoulInputFlow } from './components/FoulInputFlow';
 import { RunningScoresheet } from './components/RunningScoresheet';
@@ -113,7 +111,6 @@ function AppContent() {
   const [showFoulSelector, setShowFoulSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; value?: string } | null>(null);
   const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示（保留アクション化用）
-  const [resolvingPendingAction, setResolvingPendingAction] = useState<PendingAction | null>(null); // 解決中の保留アクション
   const [resolvingFoulPending, setResolvingFoulPending] = useState<{ pendingActionId: string; playerId: string; teamId: string } | null>(null); // ファウル種類選択待ち
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [endGameConfirmType, setEndGameConfirmType] = useState<'tied' | 'notTied' | null>(null);
@@ -550,7 +547,6 @@ function AppContent() {
       teamId,
       currentQuarter,
       playersOnCourt,
-      []
     );
 
     dispatch({
@@ -562,48 +558,11 @@ function AppContent() {
     setShowTeamSelector(false);
   };
 
-  // 保留アクション解決
-  const handleResolvePendingAction = (pending: PendingAction) => {
-    setResolvingPendingAction(pending);
-  };
-
-  // 保留アクション解決確定
-  const handleConfirmResolvePending = (playerId: string) => {
-    if (!resolvingPendingAction) return;
-
-    // ファウルタイプの場合はファウル種類選択モーダルを表示
-    if (resolvingPendingAction.actionType === 'FOUL') {
-      setResolvingFoulPending({
-        pendingActionId: resolvingPendingAction.id,
-        playerId,
-        teamId: resolvingPendingAction.teamId,
-      });
-      setActiveTab(resolvingPendingAction.teamId as 'teamA' | 'teamB');
-      setShowFoulSelector(true);
-      setResolvingPendingAction(null);
-      return;
-    }
-
-    dispatch({
-      type: 'RESOLVE_PENDING_ACTION',
-      payload: { pendingActionId: resolvingPendingAction.id, playerId },
-    });
-    setResolvingPendingAction(null);
-  };
-
   // 保留アクション削除
   const handleRemovePendingAction = (pendingActionId: string) => {
     dispatch({
       type: 'REMOVE_PENDING_ACTION',
       payload: { pendingActionId },
-    });
-  };
-
-  // 保留アクションの候補選手更新
-  const handleUpdatePendingCandidates = (pendingActionId: string, candidatePlayerIds: string[]) => {
-    dispatch({
-      type: 'UPDATE_PENDING_ACTION_CANDIDATES',
-      payload: { pendingActionId, candidatePlayerIds },
     });
   };
 
@@ -1352,10 +1311,8 @@ function AppContent() {
         <div className="pending-actions-floating-left">
           <PendingActionPanel
             pendingActions={pendingActions.filter(p => p.teamId === 'teamA')}
-            onResolve={handleResolvePendingAction}
             onResolveUnknown={handleResolveUnknown}
             onRemove={handleRemovePendingAction}
-            onUpdateCandidates={handleUpdatePendingCandidates}
             onDirectResolve={handleDirectResolvePending}
           />
         </div>
@@ -1366,24 +1323,12 @@ function AppContent() {
         <div className="pending-actions-floating-right">
           <PendingActionPanel
             pendingActions={pendingActions.filter(p => p.teamId === 'teamB')}
-            onResolve={handleResolvePendingAction}
             onResolveUnknown={handleResolveUnknown}
             onRemove={handleRemovePendingAction}
-            onUpdateCandidates={handleUpdatePendingCandidates}
             onDirectResolve={handleDirectResolvePending}
           />
         </div>
       )}
-
-      {/* 保留アクション解決モーダル */}
-      {resolvingPendingAction && (
-        <PendingActionResolver
-          pendingAction={resolvingPendingAction}
-          onResolve={handleConfirmResolvePending}
-          onCancel={() => setResolvingPendingAction(null)}
-        />
-      )}
-
 
       {/* 試合終了確認モーダル */}
       {endGameConfirmType && (

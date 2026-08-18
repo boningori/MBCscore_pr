@@ -33,6 +33,11 @@ export function RestorePrompt({ snapshot, onDismiss }: RestorePromptProps) {
             contentClassName="restore-prompt"
             closeOnOverlayClick={false}
             closeOnEsc={false}
+            // 戻る操作でも閉じない。ここを閉じると sessionStorage に「見送った」印が
+            // 付き、そのセッション中は二度と出ない＝消えたデータの復旧を取り逃がす。
+            // Escapeとオーバーレイを塞いでいるのに、いちばん誤爆しやすい
+            // エッジスワイプだけ通っていた
+            closeOnBack={false}
             labelledBy="restore-prompt-title"
         >
                 <h2 id="restore-prompt-title">💾 以前のデータが見つかりました</h2>
