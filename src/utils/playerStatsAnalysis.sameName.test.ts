@@ -87,3 +87,59 @@ describe('同姓選手の識別キー', () => {
         expect(result.map(r => r.playerKey)).toEqual(['佐藤_001', '佐藤_002']);
     });
 });
+
+// 試合に載る背番号は、試合設定で選んだ番号タイプで決まる（getPlayerNumber）。
+// 同姓はその番号でキーを分けているため、ビブスで記録した試合とユニフォームで
+// 記録した試合とで同一人物が2枚のカードに割れていた
+// （実測: 「佐藤#4」「佐藤#7」「佐藤#10」「佐藤#12」の4人が並ぶ）。
+describe('同姓選手の識別キー: ビブスとユニフォームの取り違え', () => {
+    const withRoster = (players: SavedTeam['players']): SavedTeam => ({ ...MY_TEAM, players });
+
+    const rosterPlayer = (name: string, bibNumber: number, uniformNumber: number) =>
+        ({ number: uniformNumber, bibNumber, uniformNumber, name, isCaptain: false });
+
+    it('番号タイプを切り替えても同じ選手として集計される', () => {
+        const team = withRoster([
+            rosterPlayer('佐藤', 4, 10),
+            rosterPlayer('佐藤', 7, 12),
+        ]);
+        // 第1節はビブス番号で記録
+        recordGame([scorer('p4', 4, '佐藤', 10), scorer('p7', 7, '佐藤', 6)], '2026-06-01');
+        // 第2節はユニフォーム番号で記録（同じ2人）
+        recordGame([scorer('p4', 10, '佐藤', 8), scorer('p7', 12, '佐藤', 4)], '2026-06-08');
+
+        const result = aggregatePlayerStats(team);
+
+        // 代表番号（ユニフォーム）に寄せて2人にまとまる
+        expect(result.map(r => r.playerKey).sort()).toEqual(['佐藤#10', '佐藤#12']);
+        const sato10 = result.find(r => r.playerKey === '佐藤#10')!;
+        expect(sato10.gamesPlayed).toBe(2);
+        expect(sato10.totalStats.points).toBe(18);
+        const sato12 = result.find(r => r.playerKey === '佐藤#12')!;
+        expect(sato12.gamesPlayed).toBe(2);
+        expect(sato12.totalStats.points).toBe(10);
+    });
+
+    it('どちらの選手の番号か決められないときは寄せない（別人を混ぜない）', () => {
+        // 一方のビブス番号(7)が、もう一方のユニフォーム番号(7)と同じ
+        const team = withRoster([
+            rosterPlayer('佐藤', 4, 10),
+            rosterPlayer('佐藤', 9, 7),
+        ]);
+        recordGame([scorer('p4', 4, '佐藤', 10), scorer('p7', 7, '佐藤', 6)], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        // 4 は一意なので寄せる。7 は決められないので記録どおりに残す
+        expect(result.map(r => r.playerKey).sort()).toEqual(['佐藤#10', '佐藤#7']);
+    });
+
+    it('名簿に居ない選手（退団後など）は記録どおりの番号で分ける', () => {
+        const team = withRoster([rosterPlayer('佐藤', 4, 10)]);
+        recordGame([scorer('p4', 4, '佐藤', 10), scorer('p7', 7, '佐藤', 6)], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey).sort()).toEqual(['佐藤#10', '佐藤#7']);
+    });
+});

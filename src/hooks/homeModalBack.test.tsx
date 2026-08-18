@@ -121,4 +121,37 @@ describe('ホームでモーダルを開いたときの戻る操作', () => {
 
         expect(setScreen).toHaveBeenCalledWith('home');
     });
+
+    // 閉じるのと同時にホームから移動するモーダルがある。
+    // 「進行中の試合があります」の『試合を再開する』『新規試合を開始』がそれで、
+    // 中断した試合を持つ利用者はほぼ必ずここを通る。
+    //
+    // モーダル用に積んだエントリを取り除く戻りは、降りた先が履歴の基点＝ホーム。
+    // そこへ「いまの画面」を書き込むと、ホームのエントリが遷移先の画面名で
+    // 上書きされて消える。実測（本番ビルド）: 再開後に戻ると何も起きず
+    // （試合画面のまま）、もう一度でPWAごと終了していた。
+    it('閉じるのと同時に画面遷移しても、ホームのエントリを上書きしない', () => {
+        const { view } = setupSync('home');
+        const modal = render(<Modal onClose={vi.fn()} ariaLabel="進行中の試合があります">中身</Modal>);
+
+        // 『試合を再開する』＝モーダルを閉じるのと画面遷移が同じ更新で起きる
+        act(() => {
+            modal.unmount();
+            view.rerender({ s: 'game' });
+        });
+
+        const replaceState = vi.spyOn(window.history, 'replaceState');
+        const pushState = vi.spyOn(window.history, 'pushState');
+        // モーダル解除で予約された戻りの popstate が遅れて届く
+        // （消費されるのは state が home のエントリ）
+        fireBack({ appScreen: 'home' });
+
+        // 基点は書き換えない。書き換えると戻るでホームへ帰れなくなる
+        expect(replaceState).not.toHaveBeenCalledWith({ appScreen: 'game' }, '');
+        // 代わりに、いまの画面のエントリを積み直す
+        expect(pushState).toHaveBeenCalledWith({ appScreen: 'game' }, '');
+
+        replaceState.mockRestore();
+        pushState.mockRestore();
+    });
 });

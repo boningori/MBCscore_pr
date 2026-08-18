@@ -3,7 +3,7 @@
 import type { PlayerStats } from '../types/game';
 import type { GameRecord } from './gameHistoryStorage';
 import { loadGameHistory } from './gameHistoryStorage';
-import { loadMyTeams, type SavedTeam } from './teamStorage';
+import { loadMyTeams, type SavedPlayer, type SavedTeam } from './teamStorage';
 import { createJsonStorage } from './createStorage';
 import { formatRecordDate, recordDateParts, recordInputDate } from './localDate';
 import { isDisqualified } from './disqualification';
@@ -170,6 +170,48 @@ function collectCollidingKeys(rosters: KeyablePlayer[][]): Set<string> {
 }
 
 /**
+ * 記録に残っている背番号を、登録名簿の「代表番号」へ寄せる対応表を作る。
+ *
+ * 試合に載る背番号は、試合設定で選んだ番号タイプで決まる（getPlayerNumber）。
+ * 同じ選手でも、ビブスで記録した試合と ユニフォームで記録した試合では別の数字が
+ * 入る。同姓の選手はその番号でキーを分けているため、番号タイプを切り替えただけで
+ * 同一人物が2枚のカードに割れ、通算・平均・成長グラフがどちらも実態と食い違う。
+ *
+ * 代表はユニフォーム番号（無ければビブス→既定値）。公式様式に載る番号で、
+ * 選手の識別としていちばん安定しているため。
+ *
+ * 寄せるのは対応が一意に決まるときだけ。同姓の一方のビブス番号が、もう一方の
+ * ユニフォーム番号と同じ数字だと、その数字がどちらの選手を指すか決められない。
+ * 決められない番号は対応表に入れず、記録どおりの数字のまま分ける（別人を1人に
+ * 混ぜるより、同一人物が割れるほうがまだ直しやすい）。
+ *
+ * @param roster 現在登録されているマイチームの名簿
+ */
+function buildNumberAliases(roster: SavedPlayer[]): Map<string, number> {
+    // 「識別キー + 記録に出うる番号」→ その番号を名乗る代表番号の一覧
+    const claims = new Map<string, number[]>();
+
+    for (const saved of roster) {
+        const canonical = saved.uniformNumber ?? saved.bibNumber ?? saved.number;
+        if (canonical === undefined) continue;
+        const identity = generatePlayerKey(saved.name, saved.licenseNo);
+        for (const recorded of [saved.bibNumber, saved.uniformNumber, saved.number]) {
+            if (recorded === undefined) continue;
+            const key = `${identity}||${recorded}`;
+            const claimed = claims.get(key) ?? [];
+            if (!claimed.includes(canonical)) claimed.push(canonical);
+            claims.set(key, claimed);
+        }
+    }
+
+    const aliases = new Map<string, number>();
+    for (const [key, claimed] of claims) {
+        if (claimed.length === 1) aliases.set(key, claimed[0]);
+    }
+    return aliases;
+}
+
+/**
  * 1試合の名簿から、選手ごとの識別キーを決める（名簿と同じ並びで返す）。
  *
  * 基本は generatePlayerKey。ライセンスNo.は任意入力なので、未入力だとキーが
@@ -180,16 +222,26 @@ function collectCollidingKeys(rosters: KeyablePlayer[][]): Set<string> {
  *
  * 衝突した氏名だけ背番号を足して分ける。衝突しない選手のキーは変えない
  * —— 非表示選手の設定は playerKey で保存されているため、既存の設定を
- * 壊してはいけない。背番号で分けると、その2人はシーズンをまたぐ背番号変更で
- * 別人に割れるが、別人が1人に混ざるより直しやすい（ライセンスNo.を入れれば
- * 根本的に解決する）。
+ * 壊してはいけない。
+ *
+ * 足す背番号は登録名簿の代表番号へ寄せる（buildNumberAliases）。記録に載る
+ * 数字はビブスかユニフォームかで変わるので、そのまま使うと番号タイプを
+ * 切り替えただけで同一人物が別人に割れる。シーズンをまたいで番号そのものを
+ * 変えた場合は依然として割れるが、そこはライセンスNo.を入れれば解決する。
  *
  * @param colliding 全試合を通した衝突キー（collectCollidingKeys）
+ * @param aliases 記録上の番号 → 代表番号（buildNumberAliases）
  */
-function buildPlayerKeys(players: KeyablePlayer[], colliding: ReadonlySet<string>): string[] {
+function buildPlayerKeys(
+    players: KeyablePlayer[],
+    colliding: ReadonlySet<string>,
+    aliases: ReadonlyMap<string, number>,
+): string[] {
     return players.map(p => {
         const key = generatePlayerKey(p.name, p.licenseNo);
-        return colliding.has(key) ? `${key}#${p.number}` : key;
+        if (!colliding.has(key)) return key;
+        const canonical = aliases.get(`${key}||${p.number}`) ?? p.number;
+        return `${key}#${canonical}`;
     });
 }
 
@@ -372,6 +424,8 @@ export function aggregatePlayerStats(
     const collidingKeys = collectCollidingKeys(
         games.map(({ record, isTeamA }) => (isTeamA ? record.teamA : record.teamB).players),
     );
+    // 同姓を分ける背番号は、ビブス／ユニフォームの違いを吸収してから使う
+    const numberAliases = buildNumberAliases(myTeam.players);
 
     for (const { record, isTeamA } of games) {
         const gameDate = new Date(record.date);
@@ -388,7 +442,7 @@ export function aggregatePlayerStats(
                 myScore < opponentScore ? 'loss' : 'draw';
 
         // 氏名 + ライセンスNo. で識別。衝突したら背番号で分ける（buildPlayerKeys）
-        const playerKeys = buildPlayerKeys(myTeamData.players, collidingKeys);
+        const playerKeys = buildPlayerKeys(myTeamData.players, collidingKeys, numberAliases);
 
         for (const [playerIndex, player] of myTeamData.players.entries()) {
             const key = playerKeys[playerIndex];
@@ -519,8 +573,14 @@ function getPeriodLabel(periodKey: string, periodType: PeriodType): string {
             return `${year}年${parseInt(month)}月`;
         }
         case 'quarter': {
+            // 「2026年Q1」とは書かない。このアプリで Q は試合のクォーター
+            // （出場Q・1クォーターあたり・Q1〜Q4）を指しているため、成長グラフの
+            // 軸に Q1 と出ると第1クォーターの成績だと読めてしまう。
+            // 月で範囲を示せば、月単位のグラフとも地続きに読める
             const [y, q] = periodKey.split('-');
-            return `${y}年${q}`;
+            const quarter = parseInt(q.replace('Q', ''));
+            if (!quarter) return `${y}年${q}`;
+            return `${y}年${quarter * 3 - 2}-${quarter * 3}月`;
         }
         case 'year':
             return `${periodKey}年`;

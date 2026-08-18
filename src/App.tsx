@@ -59,6 +59,7 @@ import { GAME_SCREENS, type AppScreen } from './types/screens';
 import { useWakeLock } from './hooks/useWakeLock';
 
 import { useScreenHistorySync } from './hooks/useScreenHistorySync';
+import { useBackHandler } from './hooks/useBackHandler';
 import './App.css';
 
 // 画面の識別子と試合系画面の集合は types/screens.ts に置く。
@@ -165,6 +166,18 @@ function AppContent() {
     guardedScreens: GAME_SCREENS,
     canShowGuarded: state.teamA.players.length > 0 && state.phase !== 'finished',
   });
+
+  // スコアシートとスタメン選択は、画面上の「戻る」が1段だけ戻す（試合画面・試合設定へ）。
+  // 端末の戻る操作は画面のエントリを消費してホームへ抜けるため、同じ「戻る」で
+  // 行き先が食い違っていた。試合中にシートを開いてエッジスワイプすると、
+  // 記録画面ではなくホームまで飛ぶ。サブビューと同じ扱いにして揃える
+  // （履歴側の辻褄は useScreenHistorySync が合わせる）。
+  useBackHandler(screen === 'scoresheet', useCallback(() => setScreen('game'), []));
+  useBackHandler(
+    screen === 'quarterLineup',
+    // 行き先は画面上の「戻る」と同じ規則（試合前は設定へ・試合中は試合画面へ）
+    useCallback(() => setScreen(phase === 'setup' ? 'gameSetup' : 'game'), [phase]),
+  );
 
   // 起動時: 過去の試合に登録マイチームのidを書き戻す。
   // 改名されるとその試合は名前で辿れなくなり選手スタッツ分析から消えるため、

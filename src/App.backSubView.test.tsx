@@ -35,6 +35,7 @@ const gameRecord = {
         timeouts: [],
         isMyTeam: true,
         savedTeamId: 'team-1',
+        coachFouls: [], assistantCoachFouls: [], benchFouls: [],
         players: myTeam.players.map((p, i) => ({
             id: `p${i}`,
             number: p.number,
@@ -54,6 +55,7 @@ const gameRecord = {
     teamB: {
         id: 't-blue', name: 'ブルーミニバス', color: 'blue', coachName: 'C',
         players: [], teamFouls: [0, 0, 0, 0], timeouts: [],
+        coachFouls: [], assistantCoachFouls: [], benchFouls: [],
     },
     finalScore: { teamA: 60, teamB: 20 },
     scoreHistory: [], statHistory: [], foulHistory: [],
@@ -125,5 +127,21 @@ describe('端末の戻る操作: 試合履歴の詳細', () => {
         expect(screen.queryByText('← 一覧に戻る')).toBeNull();
         expect(screen.queryByText('新規試合開始')).toBeNull();
         expect(document.querySelector('.history-card-main')).toBeTruthy();
+    });
+
+    // 様式は詳細の中のタブ。画面上の「閉じる」は1段だけ戻してスタッツ表示に
+    // するのに、端末の戻るだけ詳細ごと閉じていた（App のスコアシート画面と同じ食い違い）
+    it('様式を開いていたら、まず様式を閉じてスタッツ表示へ戻す', async () => {
+        render(<App />);
+        fireEvent.click(await screen.findByText('試合履歴'));
+        fireEvent.click(document.querySelector('.history-card-main')!);
+        fireEvent.click(await screen.findByText('スコアシート（保存/PDF）'));
+        expect(await screen.findByRole('button', { name: 'PDF出力' })).toBeTruthy();
+
+        pressBack();
+
+        expect(screen.queryByRole('button', { name: 'PDF出力' })).toBeNull();
+        // 詳細は開いたまま
+        expect(await screen.findByText('← 一覧に戻る')).toBeTruthy();
     });
 });

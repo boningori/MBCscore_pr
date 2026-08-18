@@ -6,7 +6,7 @@
 // ミニバスは学年をまたいで数年ぶん記録するので、複数年は例外ではない。
 
 import { describe, it, expect } from 'vitest';
-import { buildXLabels } from './chartXLabel';
+import { buildXLabels, labelColumnWidth } from './chartXLabel';
 
 describe('buildXLabels: 月単位', () => {
     it('同じ年のうちは月だけを出す（幅が狭いので冗長にしない）', () => {
@@ -21,13 +21,23 @@ describe('buildXLabels: 月単位', () => {
 });
 
 describe('buildXLabels: 四半期単位', () => {
-    it('同じ年のうちは四半期だけを出す', () => {
-        expect(buildXLabels(['2026年Q1', '2026年Q2'], 'quarter')).toEqual(['Q1', 'Q2']);
+    it('同じ年のうちは月の範囲だけを出す', () => {
+        expect(buildXLabels(['2026年1-3月', '2026年4-6月'], 'quarter')).toEqual(['1-3月', '4-6月']);
     });
 
     it('年をまたぐと年を添える', () => {
-        expect(buildXLabels(['2025年Q2', '2026年Q2'], 'quarter'))
-            .toEqual(["'25 Q2", "'26 Q2"]);
+        expect(buildXLabels(['2025年4-6月', '2026年4-6月'], 'quarter'))
+            .toEqual(["'25 4-6月", "'26 4-6月"]);
+    });
+
+    it('2桁の月（10-12月）も年と取り違えずに切り出せる', () => {
+        expect(buildXLabels(['2026年10-12月'], 'quarter')).toEqual(['10-12月']);
+    });
+
+    // 「Q1」は試合のクォーターと紛らわしいので使わなくなったが、
+    // 表記を変える前に作られたラベルが渡っても軸が壊れないようにしておく
+    it('旧表記のQ1も読める', () => {
+        expect(buildXLabels(['2026年Q1', '2026年Q2'], 'quarter')).toEqual(['Q1', 'Q2']);
     });
 });
 
@@ -60,5 +70,32 @@ describe('buildXLabels: 読めない入力', () => {
 
     it('空配列は空配列', () => {
         expect(buildXLabels([], 'month')).toEqual([]);
+    });
+});
+
+// 列幅はバー幅と同じ20px固定で、ラベルは overflow:hidden だった。年をまたぐと
+// 年を添えるのに、その年が入った瞬間に枠から溢れて省略される —— 年を添えた
+// 意味がそこで消えていた（実測: 「'25 11月」は37px、「'26 10-12月」は51px、枠は20px）。
+describe('labelColumnWidth', () => {
+    it('短いラベルではバー幅(20px)のまま', () => {
+        expect(labelColumnWidth(['6/1', '7/5'])).toBe(20);
+        expect(labelColumnWidth(["'25", "'26"])).toBe(20);
+    });
+
+    it('年を添えたラベルが収まる幅まで広げる', () => {
+        // 実測 30.5px（10px フォント）
+        expect(labelColumnWidth(["'25 6/1", "'26 6/1"])).toBeGreaterThanOrEqual(31);
+    });
+
+    it('いちばん長いラベルに合わせる（並びの中で幅をそろえる）', () => {
+        const widths = labelColumnWidth(["'26 1-3月", "'25 10-12月"]);
+        // 実測 51.4px
+        expect(widths).toBeGreaterThanOrEqual(52);
+        // 余らせすぎない（画面が無駄に横スクロールになる）
+        expect(widths).toBeLessThanOrEqual(64);
+    });
+
+    it('ラベルが無ければバー幅のまま', () => {
+        expect(labelColumnWidth([])).toBe(20);
     });
 });

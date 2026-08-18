@@ -39,8 +39,18 @@ export function History({ onBack }: HistoryProps) {
     );
 
     // 端末の戻る操作は試合詳細を閉じて一覧へ。ここを受け取らないと、画面上の
-    // 「← 一覧に戻る」と挙動が食い違い、ホームまで飛ぶ（useBackHandler）
-    useBackHandler(selectedRecord !== null, () => setSelectedRecord(null));
+    // 「← 一覧に戻る」と挙動が食い違い、ホームまで飛ぶ（useBackHandler）。
+    //
+    // 様式を開いているときは、まず様式を閉じてスタッツ表示へ戻す。画面上の
+    // 「閉じる」が1段だけ戻すのに、端末の戻るだけ詳細ごと閉じていたため、
+    // 同じ「戻る」で行き先が食い違っていた（App のスコアシート画面と同じ扱い）
+    useBackHandler(selectedRecord !== null, () => {
+        if (viewMode === 'scoresheet') {
+            setViewMode('stats');
+            return;
+        }
+        setSelectedRecord(null);
+    });
 
     /**
      * 保存した内容を、開いている詳細と一覧の複製の両方へ反映する。

@@ -1,10 +1,10 @@
 // 成長比較コンポーネント
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type CSSProperties } from 'react';
 import { buildAxisTicks, formatBarValue, formatTick, TICK_COUNT } from './chartAxis';
 // 年をまたぐと「6月／6月」「Q2／Q2」が並んで区別できなくなる。
 // 判定には並び全体が要るので、1つずつではなくまとめて組み立てる
-import { buildXLabels } from './chartXLabel';
+import { buildXLabels, labelColumnWidth } from './chartXLabel';
 import {
     aggregateByPeriod,
     type PeriodStats,
@@ -49,6 +49,9 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
         const reversed = periods.slice().reverse();
         const values = reversed.map(p => getStatValue(p, statType));
         const xLabels = buildXLabels(reversed.map(p => p.periodLabel), periodType);
+        // 列幅はラベルに合わせる。20px固定だと、年をまたいだときに添えた年ごと
+        // 省略されて読めなくなる（詳細は labelColumnWidth）
+        const columnWidth = labelColumnWidth(xLabels);
         const ticks = buildAxisTicks(values);
         const niceMax = ticks[0];
         const tickCount = TICK_COUNT;
@@ -56,7 +59,11 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
         const wholeNumbers = periodType === 'game';
 
         return (
-            <div className="standard-chart" key={statType}>
+            <div
+                className="standard-chart"
+                key={statType}
+                style={{ '--chart-col-width': `${columnWidth}px` } as CSSProperties}
+            >
                 <div className="chart-header">
                     <span className="chart-title" style={{ color: STAT_COLORS[statType] }}>
                         {STAT_LABELS[statType]}

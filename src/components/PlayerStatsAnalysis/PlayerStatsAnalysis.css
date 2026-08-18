@@ -1445,7 +1445,7 @@
 
 .player-stats-container .comparison-charts-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
 }
 
@@ -1456,13 +1456,13 @@
     }
 
     .player-stats-container .comparison-charts-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 640px) {
     .player-stats-container .comparison-charts-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -1471,6 +1471,11 @@
     background: var(--bg-secondary);
     border-radius: 10px;
     padding: 12px;
+    /* グリッドの列(1fr)は既定で中身の最小幅より縮まない。X軸ラベルに合わせて
+       列を広げると、その分だけグラフが枠を押し広げてページごと横スクロールに
+       なっていた。ここを縮められるようにして、溢れは chart-scroll-area の
+       横スクロールに引き受けさせる */
+    min-width: 0;
 }
 
 .player-stats-container .standard-chart .chart-header {
@@ -1549,8 +1554,10 @@
 
 .player-stats-container .standard-chart .bar-wrapper {
     flex: 0 0 auto;
-    width: 20px;
-    min-width: 20px;
+    /* 列幅はX軸ラベルに合わせて広がる（GrowthComparison が --chart-col-width を渡す）。
+       棒そのものは .bar-track の max-width で止まるので太らない */
+    width: var(--chart-col-width, 20px);
+    min-width: var(--chart-col-width, 20px);
     display: flex;
     z-index: 1;
     justify-content: center;
@@ -1593,12 +1600,14 @@
 
 .player-stats-container .standard-chart .x-label {
     flex: 0 0 auto;
-    width: 20px;
-    min-width: 20px;
+    /* バーの列と同じ幅にする。ここが20px固定だったため、年をまたいだときに
+       添えた年ごと省略されていた（実測: 「'25 11月」は37pxで枠は20px）。
+       幅は labelColumnWidth がラベルの実測幅から決める */
+    width: var(--chart-col-width, 20px);
+    min-width: var(--chart-col-width, 20px);
     text-align: center;
-    /* ここだけ他より小さい10px。目盛り枠はバー幅(20px)と揃える必要があり、
-       12pxにすると「6/10」が24pxになって枠から4px切れる。
-       アプリ共通の --font-size-xs の下限(10px)と同値なので下回ってはいない */
+    /* ここだけ他より小さい10px。アプリ共通の --font-size-xs の下限(10px)と
+       同値なので下回ってはいない */
     font-size: 0.625rem;
     color: var(--text-secondary);
     white-space: nowrap;
@@ -1958,7 +1967,7 @@
     }
 
     .player-stats-container .comparison-charts-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .player-stats-container .detail-export-area {
@@ -1972,7 +1981,18 @@
 }
 
 .player-stats-container .detail-export-area.exporting .comparison-charts-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* 出力時の列幅は画面と切り離して従来どおり(20px)に固定する。
+   出力は幅827pxの3列固定で、1グラフに使える横幅が161pxしかない。ここで
+   画面と同じ幅(試合単位46px/四半期56px)にすると7試合で半分以上の棒が
+   枠の外に出る。ラベルは従来どおり省略されるが、棒が消えるほうが痛い。
+   出力レイアウトそのものの作り直しは別件。 */
+.player-stats-container .detail-export-area.exporting .standard-chart {
+    /* 列幅は GrowthComparison が style 属性で渡すため、!important でないと
+       出力時の指定が負ける */
+    --chart-col-width: 20px !important;
 }
 
 .player-stats-container .detail-export-area.exporting .shooting-bar-row {
