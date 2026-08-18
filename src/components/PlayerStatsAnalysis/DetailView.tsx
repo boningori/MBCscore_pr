@@ -6,10 +6,13 @@ import { useExportAction } from '../../hooks/useExportAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { splitPercent } from '../../utils/percentSplit';
 import { GrowthComparison } from './GrowthComparison';
+// 表の日付は成長グラフのX軸と同じ規則で組む（年をまたぐときだけ年を添える）
+import { buildXLabels } from './chartXLabel';
 import { RecentForm } from './RecentForm';
 import { WinLossSplit } from './WinLossSplit';
 import { Workload } from './Workload';
-import { formatDate, type DetailViewProps } from './types';
+import { formatRecordDate } from '../../utils/localDate';
+import { type DetailViewProps } from './types';
 
 /**
  * 「±（標準偏差）」を出しはじめる試合数。
@@ -31,6 +34,16 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
     // フィールドゴール＝2P+3P。FTは含めない（一覧のFG%・並べ替えと同じ定義）
     const fieldGoalMade = player.totalStats.twoPointMade + player.totalStats.threePointMade;
     const fieldGoalAttempt = player.totalStats.twoPointAttempt + player.totalStats.threePointAttempt;
+
+    // 「試合別詳細」の日付。M/D だけを出していたため、シーズンをまたぐと
+    // 前年6/1と今年6/1が同じ「6/1」で並び、日付降順の一覧が壊れて見えていた
+    // （実測: 8/1・7/20・6/1・7/5・6/1）。すぐ下の成長グラフは同じデータを
+    // 「'25 6/1」「'26 6/1」と出しているので、同じ画面で書き分けないよう
+    // グラフと同じ buildXLabels に通す。
+    const gameDateLabels = buildXLabels(
+        player.gameHistory.map(g => formatRecordDate(g.date)),
+        'game',
+    );
 
     const playerName = player.name || `#${formatPlayerNumber(player.number)}`;
     const title = `#${formatPlayerNumber(player.number)} ${player.name}（${player.gamesPlayed}試合）`;
@@ -260,9 +273,9 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                         </div>
                     </div>
                     <div className="game-history-compact">
-                        {player.gameHistory.map(game => (
+                        {player.gameHistory.map((game, index) => (
                             <div key={game.gameId} className={`game-row ${game.result}`}>
-                                <span className="game-date">{formatDate(game.date)}</span>
+                                <span className="game-date">{gameDateLabels[index]}</span>
                                 <span className={`result-dot ${game.result}`}></span>
                                 <span className="game-opponent">{game.opponent}</span>
                                 <span className="game-score">{game.teamScore}-{game.opponentScore}</span>

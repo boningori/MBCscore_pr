@@ -379,6 +379,25 @@
     content: '・';
 }
 
+/* 非表示にしている選手のカード（「非表示選手も一覧に表示する」がONのときだけ並ぶ）。
+   落ち着かせるのは見分けるためで、読めなくするためではない。
+   判別は色や薄さに頼らず、隣のバッジの文字が担う */
+.player-stats-container .player-card.hidden-player {
+    opacity: 0.7;
+    border-style: dashed;
+}
+
+.player-stats-container .player-hidden-badge {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    background: var(--stats-surface-muted, rgba(148, 163, 184, 0.22));
+}
+
 /* FG合計。内訳(2P/3P/FT)とは意味が違うので区切って見せる */
 .player-stats-container .shooting-total {
     margin-top: 6px;
