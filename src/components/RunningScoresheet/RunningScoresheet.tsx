@@ -5,6 +5,7 @@ import { formatPlayerNumber } from '../../utils/playerNumber';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
 import { useExportAction } from '../../hooks/useExportAction';
 import { countFirstHalfFouls } from './halfTimeFouls';
+import { licenseDigits } from './licenseDigits';
 import { GameInfoModal } from '../GameInfoModal';
 import './RunningScoresheet.css';
 
@@ -125,17 +126,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
             <tr key={player.id}>
                 <td className="cell-no">{index + 1}</td>
                 <td className="cell-license">
-                    {(() => {
-                        const raw = player.licenseNo || '';
-                        const last3 = raw.length >= 3 ? raw.slice(-3) : raw.padStart(3, '');
-                        return (
-                            <div className="license-digits">
-                                <span className="license-digit">{last3[0] || ''}</span>
-                                <span className="license-digit">{last3[1] || ''}</span>
-                                <span className="license-digit">{last3[2] || ''}</span>
-                            </div>
-                        );
-                    })()}
+                    <div className="license-digits">
+                        {licenseDigits(player.licenseNo).map((digit, i) => (
+                            <span key={i} className="license-digit">{digit}</span>
+                        ))}
+                    </div>
                 </td>
                 <td className="cell-name">{player.name}</td>
                 <td className="cell-number">{formatPlayerNumber(player.number)}</td>
@@ -468,17 +463,9 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                             <td colSpan={2} className="coach-label">コーチ:</td>
                                             <td colSpan={6} className="coach-name">
                                                 <div className="coach-license-area">
-                                                    {(() => {
-                                                        const raw = team.coachLicenseNo || '';
-                                                        const last3 = raw.length >= 3 ? raw.slice(-3) : raw.padStart(3, '');
-                                                        return (
-                                                            <>
-                                                                <span className="license-digit">{last3[0] || ''}</span>
-                                                                <span className="license-digit">{last3[1] || ''}</span>
-                                                                <span className="license-digit">{last3[2] || ''}</span>
-                                                            </>
-                                                        );
-                                                    })()}
+                                                    {licenseDigits(team.coachLicenseNo).map((digit, i) => (
+                                                        <span key={i} className="license-digit">{digit}</span>
+                                                    ))}
                                                 </div>
                                                 {team.coachName}
                                             </td>
@@ -506,17 +493,9 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                             <td colSpan={2} className="coach-label">A.コーチ:</td>
                                             <td colSpan={6} className="coach-name">
                                                 <div className="coach-license-area">
-                                                    {(() => {
-                                                        const raw = team.assistantCoachLicenseNo || '';
-                                                        const last3 = raw.length >= 3 ? raw.slice(-3) : raw.padStart(3, '');
-                                                        return (
-                                                            <>
-                                                                <span className="license-digit">{last3[0] || ''}</span>
-                                                                <span className="license-digit">{last3[1] || ''}</span>
-                                                                <span className="license-digit">{last3[2] || ''}</span>
-                                                            </>
-                                                        );
-                                                    })()}
+                                                    {licenseDigits(team.assistantCoachLicenseNo).map((digit, i) => (
+                                                        <span key={i} className="license-digit">{digit}</span>
+                                                    ))}
                                                 </div>
                                                 {team.assistantCoachName}
                                             </td>
