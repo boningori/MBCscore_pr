@@ -1,6 +1,7 @@
 // マイチーム永続保存用ストレージ
 
 import type { Team } from '../types/game';
+import { unlinkSavedTeamId } from './gameHistoryStorage';
 import { createTeam, createPlayer } from '../types/game';
 import { createJsonStorage } from './createStorage';
 
@@ -117,6 +118,9 @@ export function loadMyTeam(teamId: string): SavedTeam | null {
 export function deleteMyTeam(teamId: string): void {
     const teams = loadMyTeams().filter(t => t.id !== teamId);
     myTeamsStorage.save(teams);
+    // 過去試合に残る紐付けを外す。放置すると、その試合は選手スタッツ分析から
+    // 二度と拾えなくなる（詳細は unlinkSavedTeamId）
+    unlinkSavedTeamId(teamId);
 }
 
 // 最近使用した対戦チーム保存（最大10件）
