@@ -8,6 +8,7 @@ import {
     parsePlayerNumber,
     isValidPlayerNumber,
 } from '../../utils/playerNumber';
+import { findOverflowPlayer } from '../TeamShared/playerLimit';
 import './SubstitutionModal.css';
 
 interface SubstitutionModalProps {
@@ -48,6 +49,21 @@ export function SubstitutionModal({
             onClose();
         }
     };
+
+    // 追加すると公式様式（15人分）から外れる選手。
+    //
+    // 外れるのは追加する選手とは限らない。名簿は背番号順に並ぶため、若い番号を
+    // 足すと番号の大きい既存選手が押し出される。従来は「これ以上は収まりません」
+    // とだけ出していたが、実際には得点を記録済みの既存選手が様式から消えており、
+    // 伝えている結果が事実と違っていた（実測: #24 が消えてチーム合計と
+    // 個人欄の合計が食い違った）。
+    const pendingNumber = parsePlayerNumber(newNumber);
+    const overflowTarget =
+        pendingNumber !== null &&
+        isValidPlayerNumber(pendingNumber) &&
+        !players.some(p => p.number === pendingNumber)
+            ? findOverflowPlayer(players, { number: pendingNumber, name: newName.trim() })
+            : null;
 
     const handleAddPlayer = () => {
         setAddError(null);
@@ -199,9 +215,11 @@ export function SubstitutionModal({
                                         */}
                                         {players.length >= MAX_PLAYERS_PER_TEAM && (
                                             <div className="add-player-notice" role="status">
-                                                すでに{players.length}人います。
-                                                スコアシートの選手欄は{MAX_PLAYERS_PER_TEAM}人分のため、
-                                                これ以上は印刷・出力に収まりません。
+                                                {overflowTarget === null
+                                                    ? `すでに${players.length}人います。スコアシートの選手欄は${MAX_PLAYERS_PER_TEAM}人分のため、追加すると1人が載らなくなります。`
+                                                    : overflowTarget.number === pendingNumber
+                                                        ? `スコアシートの選手欄は${MAX_PLAYERS_PER_TEAM}人分です。#${formatPlayerNumber(pendingNumber)} は印刷・出力に載りません（記録は残ります）。`
+                                                        : `スコアシートの選手欄は${MAX_PLAYERS_PER_TEAM}人分です。追加すると #${formatPlayerNumber(overflowTarget.number)} ${overflowTarget.name} が印刷・出力に載らなくなります（記録は残ります）。`}
                                             </div>
                                         )}
                                         <div className="add-player-actions">
