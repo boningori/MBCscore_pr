@@ -26,9 +26,21 @@ interface PlayerStatsAnalysisProps {
 }
 
 /** 一覧が空になった理由（案内の文面を選ぶ） */
-type EmptyReason = 'period' | 'hidden' | 'noPlayerRecords' | 'noData';
+type EmptyReason = 'invalidRange' | 'period' | 'hidden' | 'noPlayerRecords' | 'noData';
 
 function EmptyState({ reason, hiddenPlayerCount }: { reason: EmptyReason; hiddenPlayerCount: number }) {
+    // 開始が終了より後。日付入力の min/max で普通は選べないが、直接入力や
+    // 古い端末では通る。「この期間に試合がありません」と言うと、記録の有無の
+    // 問題に見えて、範囲が逆さまだと気づけない
+    if (reason === 'invalidRange') {
+        return (
+            <div className="empty-state">
+                <div className="empty-icon">↔️</div>
+                <h3>期間の開始と終了が逆になっています</h3>
+                <p>開始日が終了日より後になっています。日付を入れ直すか、✕ で絞り込みを解除してください</p>
+            </div>
+        );
+    }
     if (reason === 'period') {
         return (
             <div className="empty-state">
@@ -148,12 +160,16 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     const sortedPlayers = useMemo(() => sortPlayers(playerStats, sortKey), [playerStats, sortKey]);
 
     const hasDateFilter = !!(dateRange.start || dateRange.end);
+    // 開始が終了より後。両方入っているときだけ判定する（片方だけなら片側の絞り込み）
+    const isRangeInverted = !!(dateRange.start && dateRange.end && dateRange.start > dateRange.end);
 
     // 一覧が空になった理由。案内の文面と、抜け出すための操作子が変わる。
     // 「試合が無い」と「絞り込みで消えた」を混同すると、事実と違う案内をしたうえに
     // 元に戻す手掛かりも出せない。
     const emptyReason: EmptyReason | null = useMemo(() => {
         if (playerStats.length > 0) return null;
+        // 範囲が逆さまなら必ず0件になる。試合の有無より先に理由として出す
+        if (isRangeInverted) return 'invalidRange';
         if (hasDateFilter && (teamRecord?.totalGames ?? 0) === 0) return 'period';
         if (hiddenPlayerCount > 0) return 'hidden';
         // 試合はあるのに集計できる選手がいない（保留のまま保存した、スタメンを
@@ -161,7 +177,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         // すぐ上のチームサマリーが出している試合数と食い違う
         if ((teamRecord?.totalGames ?? 0) > 0) return 'noPlayerRecords';
         return 'noData';
-    }, [playerStats.length, hasDateFilter, teamRecord, hiddenPlayerCount]);
+    }, [playerStats.length, isRangeInverted, hasDateFilter, teamRecord, hiddenPlayerCount]);
 
     const isSelectedPlayerHidden = useMemo(() => {
         if (!selectedTeam || !selectedPlayer) return false;
@@ -236,11 +252,18 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
 
                         <div className="field-group">
                             <label className="field-label" htmlFor="stats-date-start">データ表示期間：</label>
-                            <div className="date-range">
+                            {/*
+                              相手側の日付を境にして、逆さまな範囲をそもそも選べなくする。
+                              入れられてしまうと必ず0件になり、「この期間に試合がありません」
+                              としか出ないので、範囲の向きが原因だと気づけない。
+                              直接入力で通ってしまう端末向けに、案内側でも invalidRange を出す
+                            */}
+                            <div className={`date-range ${isRangeInverted ? 'invalid' : ''}`}>
                             <input
                                 id="stats-date-start"
                                 type="date"
                                 aria-label="データ表示期間の開始日"
+                                max={dateRange.end || undefined}
                                 value={dateRange.start || ''}
                                 onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                             />
@@ -248,6 +271,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                             <input
                                 type="date"
                                 aria-label="データ表示期間の終了日"
+                                min={dateRange.start || undefined}
                                 value={dateRange.end || ''}
                                 onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                             />

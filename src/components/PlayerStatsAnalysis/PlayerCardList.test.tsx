@@ -123,4 +123,30 @@ describe('選手カードの数値の基準', () => {
         expect(legend.textContent).toContain('FG');
         expect(legend.textContent).toContain('通算');
     });
+
+    // 「（2試合分）」の意味は title 属性にしか書いていなかった。
+    // 主な利用端末はタブレットとスマホでホバーが無く、事実上どこにも出ていない
+    it('（n試合分）の意味を、ホバーに頼らず凡例に出す', () => {
+        render(
+            <PlayerCardList
+                players={[makePlayer({ gamesPlayed: 4, totalQuartersPlayed: 6, gamesWithQuarters: 2 })]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByText(/1試合あたりの平均/).textContent)
+            .toContain('出場クォーターが記録されている試合だけの平均');
+    });
+
+    it('全試合に出場Qがあれば凡例も増やさない', () => {
+        render(
+            <PlayerCardList
+                players={[makePlayer({ gamesPlayed: 4, totalQuartersPlayed: 10, gamesWithQuarters: 4 })]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByText(/1試合あたりの平均/).textContent)
+            .not.toContain('出場クォーターが記録されている試合だけの平均');
+    });
 });
