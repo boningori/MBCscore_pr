@@ -38,7 +38,10 @@ function withoutYear(label: string, periodType: PeriodType): string {
             return monthMatch ? `${monthMatch[1]}月` : label;
         }
         case 'quarter': {
-            // "2026年Q1" → "Q1"
+            // "2026年1-3月" → "1-3月"（Q1 と書かない理由は getPeriodLabel）
+            const rangeMatch = label.match(/(\d+-\d+月)/);
+            if (rangeMatch) return rangeMatch[1];
+            // 旧表記 "2026年Q1" も読めるようにしておく
             const qMatch = label.match(/(Q\d)/);
             return qMatch ? qMatch[1] : label;
         }

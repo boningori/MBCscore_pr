@@ -573,8 +573,14 @@ function getPeriodLabel(periodKey: string, periodType: PeriodType): string {
             return `${year}年${parseInt(month)}月`;
         }
         case 'quarter': {
+            // 「2026年Q1」とは書かない。このアプリで Q は試合のクォーター
+            // （出場Q・1クォーターあたり・Q1〜Q4）を指しているため、成長グラフの
+            // 軸に Q1 と出ると第1クォーターの成績だと読めてしまう。
+            // 月で範囲を示せば、月単位のグラフとも地続きに読める
             const [y, q] = periodKey.split('-');
-            return `${y}年${q}`;
+            const quarter = parseInt(q.replace('Q', ''));
+            if (!quarter) return `${y}年${q}`;
+            return `${y}年${quarter * 3 - 2}-${quarter * 3}月`;
         }
         case 'year':
             return `${periodKey}年`;

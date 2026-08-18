@@ -21,13 +21,23 @@ describe('buildXLabels: 月単位', () => {
 });
 
 describe('buildXLabels: 四半期単位', () => {
-    it('同じ年のうちは四半期だけを出す', () => {
-        expect(buildXLabels(['2026年Q1', '2026年Q2'], 'quarter')).toEqual(['Q1', 'Q2']);
+    it('同じ年のうちは月の範囲だけを出す', () => {
+        expect(buildXLabels(['2026年1-3月', '2026年4-6月'], 'quarter')).toEqual(['1-3月', '4-6月']);
     });
 
     it('年をまたぐと年を添える', () => {
-        expect(buildXLabels(['2025年Q2', '2026年Q2'], 'quarter'))
-            .toEqual(["'25 Q2", "'26 Q2"]);
+        expect(buildXLabels(['2025年4-6月', '2026年4-6月'], 'quarter'))
+            .toEqual(["'25 4-6月", "'26 4-6月"]);
+    });
+
+    it('2桁の月（10-12月）も年と取り違えずに切り出せる', () => {
+        expect(buildXLabels(['2026年10-12月'], 'quarter')).toEqual(['10-12月']);
+    });
+
+    // 「Q1」は試合のクォーターと紛らわしいので使わなくなったが、
+    // 表記を変える前に作られたラベルが渡っても軸が壊れないようにしておく
+    it('旧表記のQ1も読める', () => {
+        expect(buildXLabels(['2026年Q1', '2026年Q2'], 'quarter')).toEqual(['Q1', 'Q2']);
     });
 });
 
