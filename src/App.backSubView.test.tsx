@@ -35,7 +35,6 @@ const gameRecord = {
         timeouts: [],
         isMyTeam: true,
         savedTeamId: 'team-1',
-        coachFouls: [], assistantCoachFouls: [], benchFouls: [],
         players: myTeam.players.map((p, i) => ({
             id: `p${i}`,
             number: p.number,
@@ -54,8 +53,9 @@ const gameRecord = {
     },
     teamB: {
         id: 't-blue', name: 'ブルーミニバス', color: 'blue', coachName: 'C',
+        // coachFouls などをあえて持たせない。手で編集したバックアップを
+        // 取り込んだ記録がこの形で、様式は添字で引くので補完が無いと落ちる
         players: [], teamFouls: [0, 0, 0, 0], timeouts: [],
-        coachFouls: [], assistantCoachFouls: [], benchFouls: [],
     },
     finalScore: { teamA: 60, teamB: 20 },
     scoreHistory: [], statHistory: [], foulHistory: [],

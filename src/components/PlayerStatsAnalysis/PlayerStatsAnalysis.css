@@ -1980,19 +1980,21 @@
     grid-template-columns: repeat(3, 1fr);
 }
 
+/* 出力の成長グラフは1列にする。
+   出力は幅827px固定。3列だと1グラフに使える横幅が161pxしかなく、7試合ぶんの棒も
+   年付きのX軸ラベル（'25 11月 / '26 1-3月）も入らない。画面では横スクロールで
+   逃がせるが、出力は1枚の画像なので枠の外に出た棒はそのまま消える。
+   縦に伸びるぶんPDFのページは増えるが、棒が欠けた成長グラフよりは読める。 */
 .player-stats-container .detail-export-area.exporting .comparison-charts-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
 }
 
-/* 出力時の列幅は画面と切り離して従来どおり(20px)に固定する。
-   出力は幅827pxの3列固定で、1グラフに使える横幅が161pxしかない。ここで
-   画面と同じ幅(試合単位46px/四半期56px)にすると7試合で半分以上の棒が
-   枠の外に出る。ラベルは従来どおり省略されるが、棒が消えるほうが痛い。
-   出力レイアウトそのものの作り直しは別件。 */
-.player-stats-container .detail-export-area.exporting .standard-chart {
-    /* 列幅は GrowthComparison が style 属性で渡すため、!important でないと
-       出力時の指定が負ける */
-    --chart-col-width: 20px !important;
+/* 1列にすると1グラフが700px超になり、20〜56pxの列が左に寄って右半分が空く。
+   出力では列を伸ばして幅いっぱいに配る（棒自体は .bar-track の max-width で
+   止まるので太らない）。min-width は残すのでラベルは切れない。 */
+.player-stats-container .detail-export-area.exporting .bar-wrapper,
+.player-stats-container .detail-export-area.exporting .x-label {
+    flex: 1 1 var(--chart-col-width, 20px);
 }
 
 .player-stats-container .detail-export-area.exporting .shooting-bar-row {

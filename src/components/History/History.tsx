@@ -18,6 +18,7 @@ import { quarterLabel } from '../../utils/quarterLabel';
 import { filterAndSortRecords, type HistoryOrder } from './historyFilter';
 import { DeleteConfirmModal } from '../TeamShared';
 import { useBackHandler } from '../../hooks/useBackHandler';
+import { migrateTeam } from '../../utils/migrateTeam';
 import './History.css';
 
 interface HistoryProps {
@@ -116,8 +117,10 @@ export function History({ onBack }: HistoryProps) {
     // GameRecordからGame型に変換するヘルパー関数
     const recordToGame = (record: GameRecord): Game => ({
         id: record.id,
-        teamA: record.teamA,
-        teamB: record.teamB,
+        // 手で編集したバックアップや古い記録は、後から足した配列を持たないことがある。
+        // 様式は添字で引くので、欠けたまま渡すと画面ごと落ちる（utils/migrateTeam）
+        teamA: migrateTeam(record.teamA),
+        teamB: migrateTeam(record.teamB),
         scoreHistory: record.scoreHistory,
         statHistory: record.statHistory || [],
         foulHistory: record.foulHistory || [],
