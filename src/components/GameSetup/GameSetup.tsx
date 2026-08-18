@@ -7,6 +7,7 @@ import { todayInputDate } from '../../utils/localDate';
 import { MAX_PLAYERS_PER_TEAM } from '../../types/game';
 import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import './GameSetup.css';
 
 // 履歴（時計を巻き戻す）アイコン
@@ -67,7 +68,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     const [excludedPlayerIndices, setExcludedPlayerIndices] = useState<Set<number>>(new Set());
 
     // マイチーム簡易選択用
-    const [myTeams] = useState<SavedTeam[]>(loadMyTeams);
+    const [myTeams, setMyTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [showMyTeamManager, setShowMyTeamManager] = useState(false);
 
     // 試合名の候補（同日・最近の試合名）
@@ -138,7 +139,46 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
         setExcludedPlayerIndices(new Set());
         setStep('players');
         setShowMyTeamManager(false);
+        // 選んだのが管理画面の中なら、一覧側の複製も新しくしておく
+        setMyTeams(loadMyTeams());
     };
+
+    /**
+     * 埋め込みのマイチーム管理を閉じる。
+     *
+     * この中では名簿の新規登録・編集・削除ができるので、閉じたら必ず読み直す。
+     * 一覧はマウント時の複製のままだったため、ここで足した選手が試合設定に
+     * 出てこず、そのチームを選ぶと足す前の名簿で試合が始まっていた
+     * （記録画面に出ない選手ができる）。新規登録したチームも一覧に現れず、
+     * 設定を抜けて入り直すまで使えなかった。
+     */
+    const closeMyTeamManager = useCallback(() => {
+        setShowMyTeamManager(false);
+        const fresh = loadMyTeams();
+        setMyTeams(fresh);
+
+        if (!myTeam) return;
+        const updated = fresh.find(t => t.id === myTeam.id);
+        if (!updated) return;
+        setMyTeam(updated);
+        // 出場選手の除外は名簿の並び順で持っている。並びが変わったら別人を
+        // 指すので、名簿に手が入ったときだけ選び直させる
+        const sameRoster = updated.players.length === myTeam.players.length
+            && updated.players.every((p, i) => p.name === myTeam.players[i].name);
+        if (!sameRoster) setExcludedPlayerIndices(new Set());
+    }, [myTeam]);
+
+    // 端末の戻る操作を、画面上の「← 戻る」と同じ1段に合わせる。
+    //
+    // ウィザードのステップは AppScreen ではなくローカルstateなので履歴に無い。
+    // 受け取らないと、確認ステップまで入れた試合名・チーム・出場選手・
+    // 3P/クォーター設定が、戻るひと押しで確認もなく全部消えていた
+    // （画面上のボタンは1段だけ戻る）。
+    //
+    // マイチーム管理を開いている間はそちらを先に閉じる。登録の後先で
+    // 自然にLIFOになる（modalStack）
+    useBackHandler(step !== 'basic', () => setStep(prev => getPrevStep(prev)));
+    useBackHandler(showMyTeamManager, closeMyTeamManager);
 
     const togglePlayerExclusion = (index: number) => {
         setExcludedPlayerIndices(prev => {
@@ -220,7 +260,7 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
     if (showMyTeamManager) {
         return (
             <MyTeamManager
-                onBack={() => setShowMyTeamManager(false)}
+                onBack={closeMyTeamManager}
                 onSelectTeam={handleMyTeamSelect}
                 isSelectionMode={true}
             />
