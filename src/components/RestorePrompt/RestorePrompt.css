@@ -37,3 +37,15 @@
     flex: 1;
     min-height: 48px;
 }
+
+/* 復元に失敗したときの案内。注意を引く必要があるので警告色を使う */
+.restore-prompt-error {
+    margin: var(--spacing-md) 0 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    background: var(--danger-bg, rgba(220, 38, 38, 0.1));
+    color: var(--danger-text, #b91c1c);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-align: left;
+}

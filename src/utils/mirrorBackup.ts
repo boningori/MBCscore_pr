@@ -117,10 +117,45 @@ export async function getLatestSnapshot(): Promise<MirrorSnapshot | null> {
     return all[0] ?? null;
 }
 
-// スナップショットをlocalStorageへ書き戻す
-export function restoreSnapshot(snapshot: MirrorSnapshot): void {
-    for (const [key, value] of Object.entries(snapshot.entries)) {
-        localStorage.setItem(key, value);
+/**
+ * スナップショットをlocalStorageへ書き戻す（すべて書けたら true）。
+ *
+ * 途中で失敗したら、書けた分を巻き戻してから false を返す。部分的に書けた
+ * 状態を残すと、次回起動で hasAppData() が真になり復元プロンプト自体が
+ * 二度と出ない（やり直せない）。
+ *
+ * このプロンプトが出るのは「データが消えた」場面で、端末の容量が逼迫して
+ * いることは十分あり得る。呼び出し側は戻り値を見て、失敗を利用者に伝えること。
+ */
+export function restoreSnapshot(snapshot: MirrorSnapshot): boolean {
+    const entries = Object.entries(snapshot.entries);
+    const previous = entries.map(([key]) => [key, localStorage.getItem(key)] as const);
+    const applied: string[] = [];
+
+    try {
+        for (const [key, value] of entries) {
+            localStorage.setItem(key, value);
+            applied.push(key);
+        }
+        return true;
+    } catch (error) {
+        console.error('mirrorBackup: restoreSnapshot failed, rolling back:', error);
+        for (const key of applied) {
+            try {
+                localStorage.removeItem(key);
+            } catch {
+                // 削除にすら失敗する状況では打つ手がない。下の書き戻しに任せる
+            }
+        }
+        for (const [key, value] of previous) {
+            if (value === null || !applied.includes(key)) continue;
+            try {
+                localStorage.setItem(key, value);
+            } catch (restoreError) {
+                console.error(`mirrorBackup: failed to restore ${key}:`, restoreError);
+            }
+        }
+        return false;
     }
 }
 
