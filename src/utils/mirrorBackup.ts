@@ -10,8 +10,11 @@ const STORE_NAME = 'snapshots';
 const MAX_GENERATIONS = 10;
 const MIN_SNAPSHOT_INTERVAL_MS = 30_000;
 
-// バックアップ対象のlocalStorageキーのプレフィックス
-const APP_KEY_PREFIXES = ['minibasket-', 'mbc_'];
+// バックアップ対象のlocalStorageキーのプレフィックス。
+// storageUsage.ts の同名定数と必ず揃えること。片方にしか無いプレフィックスが
+// あると「使用量には数えるのに、端末内バックアップからは漏れる」キーが生まれる
+// （'mbc-' が実際にそうなっていた）。
+const APP_KEY_PREFIXES = ['minibasket-', 'mbc_', 'mbc-'];
 
 export interface MirrorSnapshot {
     timestamp: number;
