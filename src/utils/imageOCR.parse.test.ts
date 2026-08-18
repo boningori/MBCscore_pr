@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseOcrText } from './imageOCR';
+import { DOUBLE_ZERO_INTERNAL } from './playerNumber';
 
 describe('parseOcrText: 番号+名前の抽出', () => {
     it('半角数字＋スペース区切りの行を抽出する', () => {
@@ -44,5 +45,28 @@ describe('parseOcrText: 番号+名前の抽出', () => {
         const result = parseOcrText('4 田中\n5 佐藤\nゴミ行\n6 鈴木');
         expect(result.map(p => p.number)).toEqual([4, 5, 6]);
         expect(result.map(p => p.name)).toEqual(['田中', '佐藤', '鈴木']);
+    });
+});
+
+// 背番号 00 は 0 とは別の正規の番号で、アプリ内部では DOUBLE_ZERO_INTERNAL(100)
+// で表す（playerNumber.ts）。OCR だけ parseInt('00') = 0 として取り込んでおり、
+// 名簿写真に 00 がいると別番号の選手として登録されていた。
+describe('parseOcrText: 背番号00', () => {
+    it('00 は 0 ではなく 00 として取り込む', () => {
+        expect(parseOcrText('00 田中太郎')).toEqual([
+            { number: DOUBLE_ZERO_INTERNAL, name: '田中太郎', isCaptain: false },
+        ]);
+    });
+
+    it('0 は従来どおり 0 のまま', () => {
+        expect(parseOcrText('0 佐藤')).toEqual([
+            { number: 0, name: '佐藤', isCaptain: false },
+        ]);
+    });
+
+    it('接頭辞付きの 00 も拾う', () => {
+        expect(parseOcrText('No.00 鈴木')).toEqual([
+            { number: DOUBLE_ZERO_INTERNAL, name: '鈴木', isCaptain: false },
+        ]);
     });
 });

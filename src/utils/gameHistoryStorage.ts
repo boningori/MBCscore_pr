@@ -309,3 +309,41 @@ export function getGameNameSuggestions(targetDate?: string): string[] {
 
     return suggestions;
 }
+
+/**
+ * 指定した savedTeamId の紐付けを過去試合から外す（外した件数を返す）。
+ *
+ * マイチームを削除すると、その id は二度と一致しない。isMyTeamSide は
+ * savedTeamId があれば名前へフォールバックしないため（改名時の取り違え防止）、
+ * 記録は履歴に残るのに選手スタッツ分析からだけ消える。実測で
+ * getMyTeamGames が 1件 → 0件 になった。
+ *
+ * 削除の時点で紐付けを外し、savedTeamId を持たない旧データと同じ
+ * 名前照合の経路へ戻す。同名でチームを作り直せば、起動時の
+ * backfillSavedTeamIds が再び id を結び直す。
+ *
+ * 該当が無ければ書き込まない（保存のたびに履歴全体を書き戻さない）。
+ */
+export function unlinkSavedTeamId(teamId: string): number {
+    if (!teamId) return 0;
+    const history = loadGameHistory();
+    let unlinked = 0;
+
+    const strip = (team: Team): Team => {
+        if (team?.savedTeamId !== teamId) return team;
+        unlinked++;
+        const next = { ...team };
+        delete next.savedTeamId;
+        return next;
+    };
+
+    const next = history.map(record => ({
+        ...record,
+        teamA: strip(record.teamA),
+        teamB: strip(record.teamB),
+    }));
+
+    if (unlinked === 0) return 0;
+    historyStorage.save(next);
+    return unlinked;
+}

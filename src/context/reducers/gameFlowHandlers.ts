@@ -4,6 +4,7 @@ import type {
     Player,
 } from '../../types/game';
 import { createInitialGameInfo, DEFAULT_QUARTER_MINUTES } from '../../types/game';
+import { sortPlayersByNumber } from '../../utils/playerNumber';
 
 export function handleSetTeams(state: Game, payload: PayloadOf<'SET_TEAMS'>): Game {
     const { teamA, teamB, showThreePoint, quarterMinutes } = payload;
@@ -230,13 +231,11 @@ export function handleAddPlayerToTeam(state: Game, payload: PayloadOf<'ADD_PLAYE
 
     const addPlayerToTeam = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
-        // 背番号順にソートして追加
-        const players = [...team.players, newPlayer].sort((a, b) => {
-            // 00 (DOUBLE_ZERO_INTERNAL = 100) は最後
-            const numA = a.number === 100 ? 1000 : a.number;
-            const numB = b.number === 100 ? 1000 : b.number;
-            return numA - numB;
-        });
+        // 背番号順にソートして追加（00は最後）。
+        // 共通のコンパレータを使う。ここが様式に載る15人を決めるため、別実装で
+        // 並べると「誰が様式からあふれるか」の案内（findOverflowPlayer）と
+        // 実際の結果がずれる
+        const players = sortPlayersByNumber([...team.players, newPlayer]);
         return { ...team, players };
     };
 

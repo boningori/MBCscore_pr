@@ -2,6 +2,7 @@
 // Gemini API実装はコメントアウトして温存
 
 import type { SavedPlayer } from './teamStorage';
+import { parsePlayerNumber, isValidPlayerNumber } from './playerNumber';
 // tesseract.js は実行時に動的importする。静的importにすると、この
 // モジュールを読む OpponentManager / OpponentSelect 経由でエントリチャンクに
 // 載り、写真読込を一度も使わない利用者にも配られてしまう。
@@ -162,10 +163,13 @@ export function parseOcrText(text: string): SavedPlayer[] {
             const numStr = match[1];
             let nameStr = match[2].trim();
 
-            const number = parseInt(numStr, 10);
+            // "00" は 0 とは別の正規の背番号で、アプリ内部では
+            // DOUBLE_ZERO_INTERNAL(100) で表す。parseInt では 0 に潰れて
+            // 別番号の選手として登録されるため、共通の変換を通す
+            const number = parsePlayerNumber(numStr);
 
-            // 明らかに誤検知っぽいものを除外（番号が大きすぎる、名前が短すぎるなど）
-            if (number > 99) continue;
+            // 明らかに誤検知っぽいものを除外（番号が範囲外、名前が短すぎるなど）
+            if (number === null || !isValidPlayerNumber(number)) continue;
             if (nameStr.length < 1) continue;
 
             // ゴミ文字除去（末尾の記号など）
