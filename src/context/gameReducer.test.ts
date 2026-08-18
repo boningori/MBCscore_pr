@@ -110,7 +110,7 @@ describe('gameReducer: 保留アクション解決とランニングスコア整
         // 早い時刻(1000)の保留SCORE(teamA, 2P)を登録
         const pending = {
             id: 'p1', actionType: 'SCORE' as const, value: '2P', teamId: 'teamA' as const,
-            quarter: 1, timestamp: 1000, playersOnCourt: [], candidatePlayerIds: [],
+            quarter: 1, timestamp: 1000, playersOnCourt: [],
         };
         state = gameReducer(state, { type: 'ADD_PENDING_ACTION', payload: pending });
         // その後、直接 teamA a2 が 2P（現在時刻＝大きいtimestamp）

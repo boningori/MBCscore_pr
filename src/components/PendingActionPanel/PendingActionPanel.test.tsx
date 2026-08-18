@@ -17,7 +17,6 @@ function makePending(over: Partial<PendingAction> = {}): PendingAction {
             { id: 'a1', number: 4, name: '選手4' },
             { id: 'a2', number: 5, name: '選手5' },
         ],
-        candidatePlayerIds: [],
         ...over,
     } as PendingAction;
 }
@@ -29,10 +28,8 @@ function renderPanel(pendings: PendingAction[] = [makePending()]) {
             <button>外側のボタン</button>
             <PendingActionPanel
                 pendingActions={pendings}
-                onResolve={vi.fn()}
                 onResolveUnknown={vi.fn()}
                 onRemove={vi.fn()}
-                onUpdateCandidates={vi.fn()}
                 onDirectResolve={onDirectResolve}
             />
         </div>,

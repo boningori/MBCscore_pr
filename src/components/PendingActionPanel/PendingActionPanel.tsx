@@ -8,10 +8,9 @@ import './PendingActionPanel.css';
 
 interface PendingActionPanelProps {
     pendingActions: PendingAction[];
-    onResolve: (pendingAction: PendingAction) => void;
     onResolveUnknown: (pendingActionId: string) => void;
     onRemove: (pendingActionId: string) => void;
-    onUpdateCandidates: (pendingActionId: string, candidateIds: string[]) => void;
+    /** 選手を選んでその場で確定する。解決の導線はこれ1本 */
     onDirectResolve?: (pendingActionId: string, playerId: string) => void;
 }
 

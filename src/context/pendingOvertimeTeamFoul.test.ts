@@ -42,7 +42,7 @@ function pendingFoulInQuarter(quarter: number) {
     return createPendingAction('FOUL', 'P', 'teamA', quarter, [
         { id: 'a1', number: 4, name: '選手A1' },
         { id: 'a2', number: 5, name: '選手A2' },
-    ], []);
+    ]);
 }
 
 describe('保留ファウルの解決とOTのチームファウル通算', () => {

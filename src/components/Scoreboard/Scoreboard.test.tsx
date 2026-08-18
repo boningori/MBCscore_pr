@@ -182,7 +182,6 @@ describe('Scoreboard: クォーター終了の取り消し', () => {
                     quarter: 2,
                     timestamp: Date.now(),
                     playersOnCourt: [],
-                    candidatePlayerIds: [],
                 },
             },
         ]);

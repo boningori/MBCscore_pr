@@ -24,7 +24,6 @@ import {
 import {
     handleAddPendingAction,
     handleResolvePendingAction,
-    handleUpdatePendingActionCandidates,
     handleRemovePendingAction,
     handleResolvePendingActionWithFoulType,
     handleResolvePendingActionWithFreeThrows,
@@ -139,9 +138,6 @@ export function gameReducer(state: Game, action: GameAction): Game {
 
         case 'RESOLVE_PENDING_ACTION':
             return handleResolvePendingAction(state, action.payload);
-
-        case 'UPDATE_PENDING_ACTION_CANDIDATES':
-            return handleUpdatePendingActionCandidates(state, action.payload);
 
         case 'REMOVE_PENDING_ACTION':
             return handleRemovePendingAction(state, action.payload);

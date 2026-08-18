@@ -280,7 +280,7 @@ function runGame(seed: number, steps: number): string | null {
                     : pick(['P', 'T', 'U']);
             action = {
                 type: 'ADD_PENDING_ACTION',
-                payload: createPendingAction(actionType, value, teamId, g.currentQuarter, [], []),
+                payload: createPendingAction(actionType, value, teamId, g.currentQuarter, []),
             };
         } else if (r < 0.90 && g.pendingActions.length > 0) {
             const pa = pick(g.pendingActions);

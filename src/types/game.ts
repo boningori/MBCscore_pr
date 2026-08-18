@@ -239,7 +239,6 @@ export type GameActionType =
     | 'RESOLVE_PENDING_ACTION_WITH_FOUL_TYPE'
     | 'RESOLVE_PENDING_ACTION_WITH_FREE_THROWS'
     | 'RESOLVE_PENDING_ACTION_UNKNOWN'
-    | 'UPDATE_PENDING_ACTION_CANDIDATES'
     | 'REMOVE_PENDING_ACTION'
     | 'UPDATE_GAME_INFO'
     | 'TOGGLE_OWN_GOAL'
@@ -336,7 +335,6 @@ export type GameAction =
         payload: FoulWithFreeThrowsBase & { pendingActionId: string; playerId: string };
     }
     | { type: 'RESOLVE_PENDING_ACTION_UNKNOWN'; payload: { pendingActionId: string } }
-    | { type: 'UPDATE_PENDING_ACTION_CANDIDATES'; payload: { pendingActionId: string; candidatePlayerIds: string[] } }
     | { type: 'REMOVE_PENDING_ACTION'; payload: { pendingActionId: string } }
     // 設定・復元
     | { type: 'RESTORE_GAME'; payload: { game: Game } }

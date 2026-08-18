@@ -22,7 +22,6 @@ function makePending(over: Partial<PendingAction> = {}): PendingAction {
         quarter: 2,
         timestamp: Date.now(),
         playersOnCourt: [{ id: 'a1', number: 4, name: '選手4' }],
-        candidatePlayerIds: [],
         ...over,
     } as PendingAction;
 }
@@ -33,10 +32,8 @@ function openAndClickRemove(pending = makePending()) {
     render(
         <PendingActionPanel
             pendingActions={[pending]}
-            onResolve={vi.fn()}
             onResolveUnknown={vi.fn()}
             onRemove={onRemove}
-            onUpdateCandidates={vi.fn()}
             onDirectResolve={vi.fn()}
         />,
     );

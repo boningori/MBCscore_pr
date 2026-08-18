@@ -172,16 +172,6 @@ export function handleResolvePendingAction(state: Game, payload: PayloadOf<'RESO
     };
 }
 
-export function handleUpdatePendingActionCandidates(state: Game, payload: PayloadOf<'UPDATE_PENDING_ACTION_CANDIDATES'>): Game {
-    const { pendingActionId, candidatePlayerIds } = payload;
-    return {
-        ...state,
-        pendingActions: state.pendingActions.map(p =>
-            p.id === pendingActionId ? { ...p, candidatePlayerIds } : p
-        ),
-    };
-}
-
 export function handleRemovePendingAction(state: Game, payload: PayloadOf<'REMOVE_PENDING_ACTION'>): Game {
     const { pendingActionId } = payload;
     return {

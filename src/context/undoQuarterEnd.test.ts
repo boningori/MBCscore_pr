@@ -88,7 +88,6 @@ describe('gameReducer: UNDO_QUARTER_END と保留アクション', () => {
         quarter,
         timestamp: Date.now(),
         playersOnCourt: [],
-        candidatePlayerIds: [],
     });
 
     it('新クォーターの保留アクションが残っている場合は取り消さない(no-op)', () => {
