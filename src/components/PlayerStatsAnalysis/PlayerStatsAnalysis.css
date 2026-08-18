@@ -198,6 +198,12 @@
     border: none;
     background: transparent;}
 
+/* 開始と終了が逆さま。案内は一覧側の EmptyState が出すが、
+   直す対象がどれかは入力欄そのものを縁取って示す */
+.player-stats-container .date-range.invalid {
+    border-color: var(--danger);
+}
+
 .player-stats-container .date-separator {
     color: var(--text-secondary);
 }

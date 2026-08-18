@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Modal } from '../Modal';
 import './SwipeableTurnoverButton.css';
 
 interface SwipeableTurnoverButtonProps {
@@ -151,18 +152,22 @@ export function SwipeableTurnoverButton({
                 )}
             </button>
 
-            {/* タップ時のセレクター（ファウルスタイルに統一） */}
+            {/*
+              タップ時のセレクター（ファウルスタイルに統一）。
+              全画面を覆う実質のダイアログなので Modal に載せる。素の div のままだと
+              端末の戻る操作を受け取れず、閉じるどころか記録画面ごとホームへ
+              飛ばされていた（modalStack）。Escape・フォーカストラップ・
+              role="dialog" も Modal 側から付く
+            */}
             {showSelector && (
-                <div
-                    className="turnover-selector-overlay"
-                    onClick={handleCancelSelector}
-                    onTouchStart={e => e.stopPropagation()}
-                    onTouchEnd={e => e.stopPropagation()}
-                    onTouchMove={e => e.stopPropagation()}
+                <Modal
+                    onClose={handleCancelSelector}
+                    overlayClassName="turnover-selector-overlay"
+                    contentClassName="turnover-selector"
+                    labelledBy="turnover-selector-title"
                 >
-                    <div className="turnover-selector" onClick={e => e.stopPropagation()}>
                         <div className="selector-header">
-                            <h3>TO種類を選択</h3>
+                            <h3 id="turnover-selector-title">TO種類を選択</h3>
                         </div>
                         <div className="selector-options">
                             <button className="selector-btn" onClick={() => handleSelectType('TO')}>
@@ -187,12 +192,11 @@ export function SwipeableTurnoverButton({
                             </button>
                         </div>
                         <div className="selector-cancel">
-                            <button className="btn btn-secondary" onClick={handleCancelSelector}>
+                            <button className="btn btn-secondary" data-autofocus onClick={handleCancelSelector}>
                                 キャンセル
                             </button>
                         </div>
-                    </div>
-                </div>
+                </Modal>
             )}
         </div>
     );

@@ -4,6 +4,13 @@ import type { PlayerCardListProps } from './types';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 
 export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) {
+    // 「（n試合分）」が付く選手が1人でもいるか。
+    //
+    // この但し書きの意味は title 属性にしか書いていなかった。主な利用端末は
+    // タブレットとスマホで、そこにホバーは無いので事実上どこにも出ていない。
+    // カード1枚ずつに文章を足すと一覧が縦に伸びるので、凡例に一度だけ足す
+    const hasPartialQuarters = players.some(p => p.gamesWithQuarters > 0 && p.gamesWithQuarters < p.gamesPlayed);
+
     return (
         <div className="player-card-list">
             {/*
@@ -14,6 +21,7 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
             */}
             <p className="player-card-legend">
                 PTS・REB・ASTは1試合あたりの平均、FGは通算の成功率です
+                {hasPartialQuarters && '／「平均◯Q」の（n試合分）は、出場クォーターが記録されている試合だけの平均です'}
             </p>
             {players.map(player => {
                 const totalRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
@@ -46,13 +54,9 @@ export function PlayerCardList({ players, onPlayerClick }: PlayerCardListProps) 
                             <span className="player-games">
                                 {player.gamesPlayed}試合
                                 {quartersPerGame && (
-                                    <span
-                                        className="player-quarters"
-                                        title={isPartialQuarters
-                                            ? `出場クォーターが記録されている${player.gamesWithQuarters}試合のみの平均です`
-                                            : undefined}
-                                    >
+                                    <span className="player-quarters">
                                         平均{quartersPerGame}Q
+                                        {/* 但し書きの意味は凡例に出す（title はタッチ端末で読めない） */}
                                         {isPartialQuarters && (
                                             <span className="player-quarters-basis">{player.gamesWithQuarters}試合分</span>
                                         )}

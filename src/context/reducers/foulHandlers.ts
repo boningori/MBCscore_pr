@@ -326,14 +326,18 @@ function removeOneFoul(list: FoulType[], target: FoulType): FoulType[] {
 }
 
 /**
- * 取り消すファウルに対応する記録の位置を返す（見つからなければ -1）。
+ * 記録内容から、取り消すファウルの位置を推測する（見つからなければ -1）。
+ *
+ * 欄と履歴の件数が食い違う古いデータ向けの最後の手段。通常は時刻順の位置で
+ * 引く（findFoulIndex）。内容一致だと、同じ種別・同じFT本数のファウルを
+ * 2つ持つ選手で必ず先頭が当たるため、後の1つを訂正したつもりで前のマスが
+ * 消える。
  *
  * 同じ選手が同種のファウルを複数持つのは普通にある（P と P2 など）。
- * 種類だけで探すと先頭が消えてスコアシートの表記が入れ替わるため、
- * FT本数まで一致するものを優先する。一致が無いときだけ種類で妥協する
- * （レガシーの FoulType[] 形式や、記録内容が食い違う古いデータ向け）。
+ * 種類だけで探すと取り違えが増えるので、FT本数まで一致するものを優先し、
+ * 一致が無いときだけ種類で妥協する。
  */
-function findFoulIndex(fouls: (FoulType | FoulRecord)[], entry: FoulEntry): number {
+function findFoulIndexByContent(fouls: (FoulType | FoulRecord)[], entry: FoulEntry): number {
     if (entry.freeThrows === undefined) {
         // ADD_FOUL 由来はFoulType文字列で入っている
         const legacy = fouls.findIndex(f => typeof f === 'string' && f === entry.foulType);
@@ -344,6 +348,39 @@ function findFoulIndex(fouls: (FoulType | FoulRecord)[], entry: FoulEntry): numb
         if (exact !== -1) return exact;
     }
     return fouls.findIndex(f => (typeof f === 'string' ? f : f.type) === entry.foulType);
+}
+
+/**
+ * 取り消す・付け替えるファウルが、その選手のファウル欄の何番目かを返す
+ * （決められなければ -1）。
+ *
+ * 様式は player.fouls[i] の表記（P2 など）と、その選手の foulHistory を時刻順に
+ * 並べた i 番目のピリオド（記入色 1Q/3Q=赤・2Q/4Q/OT=黒）を対にして1マスを描く
+ * （RunningScoresheet.renderPlayerRow）。だから位置は履歴の時刻順で決まる。
+ * 追加側（insertFoulInOrder）と同じ手順で引くこと。
+ *
+ * 内容一致で探すと、同じ種別・同じFT本数のファウルを2つ持つ選手で必ず先頭が
+ * 当たる。実測: Q1にP・Q2にT1・Q3にP の選手からQ3のPを取り消すと、欄1が
+ * 「T1」でQ1の赤、欄2が「P」でQ2の色になり、残った2つとも別のファウルとして
+ * 印字されていた。P が2つ付くのは珍しくないので、訂正のたびに起きうる。
+ *
+ * @param foulHistory 取り消し・付け替えを反映する前の履歴（entry を含む）
+ */
+function findFoulIndex(
+    fouls: (FoulType | FoulRecord)[],
+    foulHistory: FoulEntry[],
+    entry: FoulEntry,
+): number {
+    const ordered = foulHistory
+        .filter(f => f.playerId === entry.playerId)
+        .sort((a, b) => a.timestamp - b.timestamp);
+    // 欄と履歴の件数が揃っているときだけ位置で引ける。
+    // 食い違う古いデータは従来どおり内容から推測する
+    if (ordered.length === fouls.length) {
+        const index = ordered.findIndex(f => f.id === entry.id);
+        if (index !== -1) return index;
+    }
+    return findFoulIndexByContent(fouls, entry);
 }
 
 /**
@@ -379,8 +416,8 @@ export function handleEditFoul(state: Game, payload: PayloadOf<'EDIT_FOUL'>): Ga
 
     const oldPlayer = team.players.find(p => p.id === entry.playerId);
     if (!oldPlayer) return state;
-    // 同じ種類が複数あっても取り違えないよう、FT本数まで見て1つだけ取り出す
-    const foulIndex = findFoulIndex(oldPlayer.fouls, entry);
+    // 同じ種類が複数あっても取り違えないよう、時刻順の位置で1つだけ取り出す
+    const foulIndex = findFoulIndex(oldPlayer.fouls, state.foulHistory, entry);
     if (foulIndex === -1) return state;
     const moved = oldPlayer.fouls[foulIndex];
 
@@ -459,7 +496,7 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
 
         const players = team.players.map(p => {
             if (p.id !== entry.playerId) return p;
-            const foulIndex = findFoulIndex(p.fouls, entry);
+            const foulIndex = findFoulIndex(p.fouls, state.foulHistory, entry);
             if (foulIndex === -1) return p;
             const fouls = [...p.fouls];
             fouls.splice(foulIndex, 1);

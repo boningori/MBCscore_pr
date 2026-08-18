@@ -145,6 +145,31 @@ interface KeyablePlayer {
 }
 
 /**
+ * このチームの試合を通して、一度でも同じ名簿の中で衝突した識別キーを集める。
+ *
+ * 判定は「1試合の名簿の中で重なったか」だが、結果は全試合に効かせる。
+ * 試合ごとに判定すると、同姓の相方が欠席した試合だけキーが氏名だけに戻り、
+ * 同一人物の履歴が2枚のカードに割れる（実測: 佐藤#4・佐藤#7 が居る試合と
+ * #4 だけの試合の2試合で、「佐藤」「佐藤#4」「佐藤#7」の3人が並び、#4 の
+ * 通算・平均・成長グラフがどちらのカードでも実態と違う値になっていた）。
+ *
+ * 期間で絞る前の全試合を渡すこと。絞り込みでキーが変わると、期間を変えた
+ * だけで別人扱いになり、playerKey で保存している非表示設定もずれる。
+ */
+function collectCollidingKeys(rosters: KeyablePlayer[][]): Set<string> {
+    const colliding = new Set<string>();
+    for (const players of rosters) {
+        const seen = new Set<string>();
+        for (const p of players) {
+            const key = generatePlayerKey(p.name, p.licenseNo);
+            if (seen.has(key)) colliding.add(key);
+            seen.add(key);
+        }
+    }
+    return colliding;
+}
+
+/**
  * 1試合の名簿から、選手ごとの識別キーを決める（名簿と同じ並びで返す）。
  *
  * 基本は generatePlayerKey。ライセンスNo.は任意入力なので、未入力だとキーが
@@ -153,24 +178,19 @@ interface KeyablePlayer {
  * もう1人は一覧から消える（チームサマリーの試合数とも食い違う）。
  * カードに出るのは氏名で、ミニバスで同じ姓は珍しくない。
  *
- * 名簿内で衝突したときだけ背番号を足して分ける。衝突しない選手のキーは
- * 変えない —— 非表示選手の設定は playerKey で保存されているため、
- * 既存の設定を壊してはいけない。背番号で分けると、その2人はシーズンを
- * またぐ背番号変更で別人に割れるが、別人が1人に混ざるより直しやすい
- * （ライセンスNo.を入れれば根本的に解決する）。
+ * 衝突した氏名だけ背番号を足して分ける。衝突しない選手のキーは変えない
+ * —— 非表示選手の設定は playerKey で保存されているため、既存の設定を
+ * 壊してはいけない。背番号で分けると、その2人はシーズンをまたぐ背番号変更で
+ * 別人に割れるが、別人が1人に混ざるより直しやすい（ライセンスNo.を入れれば
+ * 根本的に解決する）。
+ *
+ * @param colliding 全試合を通した衝突キー（collectCollidingKeys）
  */
-function buildPlayerKeys(players: KeyablePlayer[]): string[] {
-    const baseKeys = players.map(p => generatePlayerKey(p.name, p.licenseNo));
-
-    const duplicated = new Set<string>();
-    const seen = new Set<string>();
-    for (const key of baseKeys) {
-        if (seen.has(key)) duplicated.add(key);
-        seen.add(key);
-    }
-
-    return baseKeys.map((key, i) =>
-        duplicated.has(key) ? `${key}#${players[i].number}` : key);
+function buildPlayerKeys(players: KeyablePlayer[], colliding: ReadonlySet<string>): string[] {
+    return players.map(p => {
+        const key = generatePlayerKey(p.name, p.licenseNo);
+        return colliding.has(key) ? `${key}#${p.number}` : key;
+    });
 }
 
 // 空のPlayerStatsを作成
@@ -348,6 +368,10 @@ export function aggregatePlayerStats(
     // 選手ごとに「いま採用している背番号の試合日」。走査順は日付順とは限らない
     const latestNumberTime = new Map<string, number>();
     const hiddenPlayers = options?.includeHidden ? [] : loadHiddenPlayers(myTeam.id);
+    // 同姓の判定は期間で絞る前の全試合で行う。理由は collectCollidingKeys
+    const collidingKeys = collectCollidingKeys(
+        games.map(({ record, isTeamA }) => (isTeamA ? record.teamA : record.teamB).players),
+    );
 
     for (const { record, isTeamA } of games) {
         const gameDate = new Date(record.date);
@@ -363,8 +387,8 @@ export function aggregatePlayerStats(
             myScore > opponentScore ? 'win' :
                 myScore < opponentScore ? 'loss' : 'draw';
 
-        // 氏名 + ライセンスNo. で識別。名簿内で衝突したら背番号で分ける（buildPlayerKeys）
-        const playerKeys = buildPlayerKeys(myTeamData.players);
+        // 氏名 + ライセンスNo. で識別。衝突したら背番号で分ける（buildPlayerKeys）
+        const playerKeys = buildPlayerKeys(myTeamData.players, collidingKeys);
 
         for (const [playerIndex, player] of myTeamData.players.entries()) {
             const key = playerKeys[playerIndex];

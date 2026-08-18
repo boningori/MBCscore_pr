@@ -28,6 +28,7 @@ import {
     isPlayerLimitReached,
     playerLimitMessage,
 } from '../TeamShared';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import '../../styles/number-grid.css';
 import './OpponentManager.css';
 
@@ -116,6 +117,11 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         setEditingTeam(null);
         setIsCreating(false);
     };
+
+    // 端末の戻る操作は編集フォームを閉じて一覧へ。ここを受け取らないと、
+    // 画面ごとホームへ飛んで未保存の名簿が確認なく消える（useBackHandler）。
+    // マイチーム管理と同じ作りなので、同じ扱いにそろえる
+    useBackHandler(editingTeam !== null, handleCancel);
 
     const handleExportTeam = async (team: SavedTeam) => {
         const data = exportTeam(team);

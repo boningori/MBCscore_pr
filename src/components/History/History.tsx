@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { GameRecord } from '../../utils/gameHistoryStorage';
 import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo, updateGameRecordEndTime } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
@@ -41,6 +41,25 @@ export function History({ onBack }: HistoryProps) {
     // 端末の戻る操作は試合詳細を閉じて一覧へ。ここを受け取らないと、画面上の
     // 「← 一覧に戻る」と挙動が食い違い、ホームまで飛ぶ（useBackHandler）
     useBackHandler(selectedRecord !== null, () => setSelectedRecord(null));
+
+    /**
+     * 保存した内容を、開いている詳細と一覧の複製の両方へ反映する。
+     *
+     * 一覧（records）はマウント時に1回だけ読み込んでいる。詳細側だけ更新すると
+     * 一覧の複製が古いまま残り、一覧に戻って開き直した時点で入力が消えて見える。
+     * さらに次の編集はその古い複製を土台に上書きするため、前に入れた項目が
+     * 本当に失われていた（実測: 会場を入れた後にクルーチーフを入れると会場が空に戻る）。
+     *
+     * 差し替えではなく更新関数を受けるのは、1回の保存で2つの更新が続けて走るため。
+     * 試合情報モーダルの「保存」は onSave と onEndTimeChange を順に呼ぶので、
+     * それぞれが同じレンダーで捕まえた selectedRecord から新しい値を組み立てると、
+     * あとから走ったほうが前の変更ごと上書きする（実測: 終了時間の更新が
+     * 会場の入力を巻き戻していた）。
+     */
+    const applyRecordUpdate = useCallback((id: string, update: (record: GameRecord) => GameRecord) => {
+        setSelectedRecord(prev => (prev && prev.id === id ? update(prev) : prev));
+        setRecords(prev => prev.map(r => (r.id === id ? update(r) : r)));
+    }, []);
 
     // 「開く」がカード全体ではなく専用のbuttonになったので、
     // 共有・削除のクリックがそちらへ伝わることはない（stopPropagation不要）
@@ -199,16 +218,16 @@ export function History({ onBack }: HistoryProps) {
                             const currentGameInfo = selectedRecord.gameInfo || createInitialGameInfo();
                             const updatedGameInfo = { ...currentGameInfo, ...partialInfo };
                             updateGameRecordGameInfo(selectedRecord.id, updatedGameInfo);
-                            setSelectedRecord({ ...selectedRecord, gameInfo: updatedGameInfo });
+                            applyRecordUpdate(selectedRecord.id, r => ({ ...r, gameInfo: updatedGameInfo }));
                         }}
                         // 終了時間は gameInfo とは別フィールド。渡さないと、入力欄は
                         // 編集できて保存も押せるのに値がどこにも行かない
                         onEndTimeChange={(endTime) => {
                             updateGameRecordEndTime(selectedRecord.id, endTime);
-                            setSelectedRecord({
-                                ...selectedRecord,
+                            applyRecordUpdate(selectedRecord.id, r => ({
+                                ...r,
                                 endTime: endTime ? new Date(endTime).toISOString() : undefined,
-                            });
+                            }));
                         }}
                     />
                 )}
