@@ -72,3 +72,34 @@ export function buildXLabels(periodLabels: string[], periodType: PeriodType): st
         return year ? `${shortYear(year)} ${body}` : body;
     });
 }
+
+// X軸ラベル1つぶんの列幅（px）。
+//
+// 列幅はバー幅と同じ20px固定で、ラベルは overflow:hidden だった。年をまたぐと
+// 年を添える（'25 11月）のに、その年が入った瞬間に枠から溢れて「'2…」と
+// 省略される —— 年を添えた意味がそこで消えていた（実測: '25 11月 は37px、
+// '26 10-12月 は51px、枠は20px）。バー本体は .bar-track の max-width:24px で
+// 止まるので、列を広げても棒は太らない。溢れる分は chart-scroll-area が横に
+// スクロールする。
+const CHAR_WIDTH_DIGIT = 5.4;   // 10px フォントでの数字（実測 "2026"=21.6px）
+const CHAR_WIDTH_NARROW = 3.2;  // ' - / と空白
+const CHAR_WIDTH_WIDE = 10;     // 「月」などの全角
+const LABEL_PADDING = 4;
+/** バー幅。ラベルが短くてもここより狭くしない */
+const MIN_COLUMN_WIDTH = 20;
+
+/** 並びの中でいちばん長いラベルが収まる列幅を返す */
+export function labelColumnWidth(labels: string[]): number {
+    let widest = 0;
+    for (const label of labels) {
+        let width = 0;
+        for (const char of label) {
+            const code = char.codePointAt(0) ?? 0;
+            width += code > 0xff ? CHAR_WIDTH_WIDE
+                : char >= '0' && char <= '9' ? CHAR_WIDTH_DIGIT
+                    : CHAR_WIDTH_NARROW;
+        }
+        if (width > widest) widest = width;
+    }
+    return Math.max(MIN_COLUMN_WIDTH, Math.ceil(widest + LABEL_PADDING));
+}
