@@ -5,6 +5,7 @@ import type {
 } from '../../types/game';
 import { createInitialGameInfo, DEFAULT_QUARTER_MINUTES } from '../../types/game';
 import { sortPlayersByNumber } from '../../utils/playerNumber';
+import { migrateTeam } from '../../utils/migrateTeam';
 
 export function handleSetTeams(state: Game, payload: PayloadOf<'SET_TEAMS'>): Game {
     const { teamA, teamB, showThreePoint, quarterMinutes } = payload;
@@ -253,12 +254,7 @@ export function handleSelectPlayer(state: Game, payload: PayloadOf<'SELECT_PLAYE
 
 export function handleRestoreGame(payload: PayloadOf<'RESTORE_GAME'>): Game {
     const { game } = payload;
-    // 古いデータとの互換性のため、新しいフィールドを補完
-    const migrateTeam = (team: typeof game.teamA) => ({
-        ...team,
-        assistantCoachFouls: team.assistantCoachFouls || [],
-        benchFouls: team.benchFouls || [],
-    });
+    // 古いデータとの互換性のため、新しいフィールドを補完（utils/migrateTeam）
     return {
         ...game,
         teamA: migrateTeam(game.teamA),
