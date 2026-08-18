@@ -154,13 +154,28 @@ export async function exportElement(
         scale = 4,
     } = options;
 
+    // 先に本体を読み込む。
+    //
+    // 以前は 'exporting' を付けてから import していた。この動的importは
+    // 下の try/finally の外なので、失敗するとA4レイアウトを強制するクラスが
+    // 付いたまま残り、画面のスコアシート／選手詳細が崩れたままになる
+    // （エラートーストは出るが、画面を離れるまで戻らない）。
+    //
+    // SWは registerType: 'prompt' で更新を承諾するまで旧プリキャッシュを
+    // 保つので、デプロイ直後にチャンクが消える経路はほぼ塞がっている。
+    // それでも初回利用時にプリキャッシュが揃う前のオフライン、
+    // ストレージ逼迫によるキャッシュ破棄、SWが使えない環境では失敗しうる。
+    //
+    // 読み込みが済んでから付ければ、失敗しても付かない。
+    // 回線が遅いときの「読み込み中だけ崩れて見える」も無くなる。
+    const { default: html2canvas } = await import('html2canvas');
+
     // エクスポート中はレスポンシブの display:none を無効化してA4レイアウトを復元
     element.classList.add('exporting');
 
-    // SVG斜線の位置情報を収集（html2canvasがSVGを正しくレンダリングしないため）
+    // SVG斜線の位置情報を収集（html2canvasがSVGを正しくレンダリングしないため）。
+    // A4レイアウトを適用した状態で測る必要があるので、クラスを付けた後に行う
     const slashPositions = collectSlashLinePositions(element);
-
-    const { default: html2canvas } = await import('html2canvas');
 
     let canvas: HTMLCanvasElement;
     try {

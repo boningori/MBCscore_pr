@@ -14,7 +14,8 @@ export const LOCAL_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 /** この使用率を超えたら警告する */
 export const WARN_RATIO = 0.8;
 
-// バックアップ対象と同じ基準（mirrorBackup.ts の APP_KEY_PREFIXES と揃える）
+// バックアップ対象と同じ基準（mirrorBackup.ts の APP_KEY_PREFIXES と揃える）。
+// 揃っていることは mirrorBackup.prefix.test.ts が確かめている
 const APP_KEY_PREFIXES = ['minibasket-', 'mbc_', 'mbc-'];
 
 export interface StorageUsage {
