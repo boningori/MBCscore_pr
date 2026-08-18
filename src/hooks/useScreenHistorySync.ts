@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { closeTopModal } from '../components/Modal/modalStack';
+import { closeTopModal, subscribeModalCount } from '../components/Modal/modalStack';
 
 interface HistoryState<S extends string> {
     appScreen?: S;
@@ -23,18 +23,52 @@ interface ScreenHistorySyncOptions<S extends string> {
  * - 他画面 → ホーム（アプリ内の戻る操作）: history.back()で積んだエントリをポップ
  *
  * これにより戻る操作は常に「ホームへ戻る → もう一度でアプリ終了」となる。
+ *
+ * ただしホームは基点でエントリを持たないため、ホームでモーダルを開いている間だけは
+ * 「戻るで消費させる」エントリを1つ積む（modalGuard）。積まないと popstate 自体が
+ * 起きず、閉じるどころかアプリが終了していた。
  */
 export function useScreenHistorySync<S extends string>(
     screen: S,
     setScreen: (screen: S) => void,
     { homeScreen, guardedScreens, canShowGuarded }: ScreenHistorySyncOptions<S>,
 ) {
+    // いま表示している画面。popstateリスナーやモーダルの購読から「その瞬間の最新」を
+    // 読みたいが、依存に入れて貼り替えたくないので ref で渡す
+    const screenRef = useRef(screen);
+    useEffect(() => {
+        screenRef.current = screen;
+    });
+
+    // ホームでモーダルを開いている間だけ積んだ、戻る用のエントリがあるか。
+    // 積むのは常に1つまでで、戻るで消費したら次のモーダルで積み直す
+    const modalGuardRef = useRef(false);
+    // 上のエントリを取り除くために自分で呼んだ history.back() の待ち。
+    // この popstate は画面遷移ではないので setScreen まで通してはいけない
+    const guardPopPendingRef = useRef(false);
+
     // 初期エントリにホーム画面を記録
     useEffect(() => {
         window.history.replaceState({ appScreen: homeScreen }, '');
         // マウント時のみ（homeScreenは固定値の想定）
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // ホームでモーダルが開いている間だけ、戻るで消費させるエントリを持たせる
+    useEffect(() => subscribeModalCount(count => {
+        if (count > 0) {
+            // ホーム以外は画面のエントリが既にあるので積まない
+            if (modalGuardRef.current || screenRef.current !== homeScreen) return;
+            modalGuardRef.current = true;
+            window.history.pushState({ appScreen: homeScreen }, '');
+            return;
+        }
+        // 全部閉じた。戻る以外（ボタン・オーバーレイ）で閉じたなら積んだぶんが残るので取り除く
+        if (!modalGuardRef.current) return;
+        modalGuardRef.current = false;
+        guardPopPendingRef.current = true;
+        window.history.back();
+    }), [homeScreen]);
 
     // 画面遷移を履歴へ反映
     useEffect(() => {
@@ -58,16 +92,18 @@ export function useScreenHistorySync<S extends string>(
         }
     }, [screen, homeScreen]);
 
-    // 戻る操作でモーダルを閉じたあと、いまの画面のエントリを積み直すために使う。
-    // popstateリスナーは貼り替えたくないので依存には入れずrefで読む
-    const screenRef = useRef(screen);
-    useEffect(() => {
-        screenRef.current = screen;
-    });
-
     // 戻る/進む操作への追従
     useEffect(() => {
         const handlePopState = (e: PopStateEvent) => {
+            // モーダル用に積んだエントリを取り除くための、自分で呼んだ戻り。
+            // 画面遷移ではないので、いまの画面をこのエントリに書き込んで終わる
+            // （積み直すと余分なエントリが残る）
+            if (guardPopPendingRef.current) {
+                guardPopPendingRef.current = false;
+                window.history.replaceState({ appScreen: screenRef.current }, '');
+                return;
+            }
+
             // 端末の戻る操作は、まず最前面のモーダルを閉じる。
             // ここを通さないと、入力途中のダイアログを開いたまま画面ごと
             // ホームへ飛ばされる（Androidのエッジスワイプで日常的に起きる）。
@@ -77,6 +113,10 @@ export function useScreenHistorySync<S extends string>(
                 // ブラウザは既に1段戻っているので、閉じる前の画面へ積み直す。
                 // ホームは基点なので積み増さず、stateだけ整合させる
                 if (current === homeScreen) {
+                    // 消費されたのはモーダル用に積んだエントリ。
+                    // まだ下にモーダルが残っていれば、閉じた1枚のアンマウントで
+                    // 購読側が積み直す
+                    modalGuardRef.current = false;
                     window.history.replaceState({ appScreen: homeScreen }, '');
                 } else {
                     window.history.pushState({ appScreen: current }, '');

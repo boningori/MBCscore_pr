@@ -19,17 +19,51 @@ interface RegisteredModal {
 const stack: RegisteredModal[] = [];
 let nextId = 1;
 
+// 開いている枚数が変わったことを外から知るための購読口。
+//
+// ホーム画面は履歴の基点で、エントリを積まない（useScreenHistorySync）。
+// そのためホームでモーダルを開いても、戻る操作に消費できるエントリが無く、
+// popstate が起きないまま PWA ごと終了していた（実測: 新規タブで
+// history.length === 1 のままアプリ設定が開き、開いても 1 のまま）。
+// 「開いている間だけ戻る用のエントリを積む」という対処は履歴側の仕事なので、
+// 開閉の通知だけをここから出す。
+type ModalCountListener = (count: number) => void;
+
+const listeners = new Set<ModalCountListener>();
+
+function notifyCount(): void {
+    for (const listener of [...listeners]) listener(stack.length);
+}
+
+/**
+ * 開いている枚数の変化を購読する（購読した時点の枚数で1回呼ぶ）。
+ *
+ * 購読時にも呼ぶのは、Modal の登録が子→親の順で先に走るため。
+ * 変化だけを見ると、既にモーダルが開いた状態でマウントした購読者が
+ * 「1枚も開いていない」と誤認する。
+ */
+export function subscribeModalCount(listener: ModalCountListener): () => void {
+    listeners.add(listener);
+    listener(stack.length);
+    return () => {
+        listeners.delete(listener);
+    };
+}
+
 /** モーダルを最前面として登録し、解除に使うidを返す */
 export function registerModal(close: () => void): number {
     const id = nextId++;
     stack.push({ id, close });
+    notifyCount();
     return id;
 }
 
 /** 登録を解除する。閉じ順とアンマウント順が食い違っても壊れないようidで引く */
 export function unregisterModal(id: number): void {
     const index = stack.findIndex(m => m.id === id);
-    if (index !== -1) stack.splice(index, 1);
+    if (index === -1) return;
+    stack.splice(index, 1);
+    notifyCount();
 }
 
 /**
