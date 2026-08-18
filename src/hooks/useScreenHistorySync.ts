@@ -100,7 +100,18 @@ export function useScreenHistorySync<S extends string>(
             // （積み直すと余分なエントリが残る）
             if (guardPopPendingRef.current) {
                 guardPopPendingRef.current = false;
-                window.history.replaceState({ appScreen: screenRef.current }, '');
+                const current = screenRef.current;
+                if (current === homeScreen) {
+                    window.history.replaceState({ appScreen: homeScreen }, '');
+                    return;
+                }
+                // モーダルを閉じるのと同時にホームから移動した場合
+                // （「進行中の試合があります」の『試合を再開する』『新規試合を開始』）。
+                // この戻りが降りた先は履歴の基点＝ホームなので、そこへ遷移先の画面を
+                // 書き込むとホームのエントリが消える。実測: 再開後の戻るが何も
+                // 起きなくなり、もう一度でPWAごと終了していた。
+                // 基点は触らず、いまの画面のエントリを積み直す
+                window.history.pushState({ appScreen: current }, '');
                 return;
             }
 
