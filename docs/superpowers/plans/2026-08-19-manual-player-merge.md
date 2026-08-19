@@ -152,10 +152,13 @@ describe('mergedCanonicalKeys', () => {
     });
 });
 
+// 代表の選び方は3段。カードに出る氏名は名簿どおりであってほしいので、
+// 表記まで一致するものを最優先する。空白の有無だけが違うカードは、
+// 名簿と無関係な表記（コートネーム等）より優先する。
 describe('chooseCanonicalKey', () => {
     const card = (playerKey: string, name: string, latestDate: string) => ({ playerKey, name, latestDate });
 
-    it('氏名が名簿に一致するカードを代表にする', () => {
+    it('名簿と表記まで同じカードを代表にする（記録が古くても）', () => {
         const chosen = chooseCanonicalKey(
             [card('佐藤　太郎', '佐藤　太郎', '2026-07-01'), card('佐藤 太郎', '佐藤 太郎', '2026-04-01')],
             ['佐藤 太郎'],
@@ -163,7 +166,7 @@ describe('chooseCanonicalKey', () => {
         expect(chosen).toBe('佐藤 太郎');
     });
 
-    it('名簿との一致は空白を無視して見る', () => {
+    it('表記まで一致するものが無ければ、空白を無視して名簿に一致するカード', () => {
         const chosen = chooseCanonicalKey(
             [card('タロウ', 'タロウ', '2026-07-01'), card('佐藤　太郎', '佐藤　太郎', '2026-04-01')],
             ['佐藤 太郎'],
@@ -171,12 +174,13 @@ describe('chooseCanonicalKey', () => {
         expect(chosen).toBe('佐藤　太郎');
     });
 
-    it('名簿に一致が複数あれば、記録がいちばん新しいほう', () => {
+    // ライセンスNo.の打ち間違いで割れた場合、氏名はどちらも名簿どおり
+    it('優先度が同じなら、記録がいちばん新しいほう', () => {
         const chosen = chooseCanonicalKey(
-            [card('A', '佐藤 太郎', '2026-04-01'), card('B', '佐藤　太郎', '2026-07-01')],
+            [card('佐藤 太郎_123', '佐藤 太郎', '2026-04-01'), card('佐藤 太郎_456', '佐藤 太郎', '2026-07-01')],
             ['佐藤 太郎'],
         );
-        expect(chosen).toBe('B');
+        expect(chosen).toBe('佐藤 太郎_456');
     });
 
     it('どれも名簿に無ければ、記録がいちばん新しいほう', () => {
@@ -287,7 +291,9 @@ const mergedStorage = createJsonStorage<AllMergedPlayers>(
  * 日常的に混ざり、名簿を打ち直した年に必ず出る。
  */
 export function normalizeNameForMerge(name: string): string {
-    return name.replace(/[\s　]/g, '');
+    // \s は全角スペース(U+3000)も含む（実測）。文字クラスに全角スペースを直接
+    // 書くと lint の no-irregular-whitespace に掛かるうえ冗長になる
+    return name.replace(/\s/g, '');
 }
 
 export function loadAllMergedPlayers(): AllMergedPlayers {
@@ -365,9 +371,17 @@ export function mergedCanonicalKeys(map: MergeMap): Set<string> {
 /**
  * まとめる組のどれを代表にするか決める。
  *
- * 名簿は「いま正しい情報」なので、名簿の氏名に一致するカードを優先する
- * （既存の番号の寄せ方が、ユニフォーム番号を代表にするのと同じ考え方）。
- * 一致が複数あるとき、および1つも無いときは、記録がいちばん新しいカード。
+ * 代表の氏名がそのままカードに出るので、名簿どおりの表記になってほしい。
+ * 名簿は「いま正しい情報」だから（既存の番号の寄せ方が、ユニフォーム番号を
+ * 代表にするのと同じ考え方）。そこで優先度を3段にする:
+ *
+ *   0. 名簿と表記まで一致する
+ *   1. 空白を無視すれば名簿に一致する
+ *   2. 名簿に無い（コートネームや誤字）
+ *
+ * 空白を無視した一致だけで見ると、全角スペースと半角スペースのカードが
+ * どちらも名簿に一致してしまい、肝心の「どちらの表記を残すか」を決められない。
+ * 同じ優先度どうしは、記録がいちばん新しいカード。
  */
 export function chooseCanonicalKey(
     cards: readonly MergeChoice[],
@@ -375,13 +389,17 @@ export function chooseCanonicalKey(
 ): string {
     if (cards.length === 0) return '';
 
-    const roster = new Set(rosterNames.map(normalizeNameForMerge));
-    const inRoster = cards.filter(c => roster.has(normalizeNameForMerge(c.name)));
-    const pool = inRoster.length > 0 ? inRoster : cards;
+    const exact = new Set(rosterNames);
+    const loose = new Set(rosterNames.map(normalizeNameForMerge));
+    const rank = (card: MergeChoice): number =>
+        exact.has(card.name) ? 0
+            : loose.has(normalizeNameForMerge(card.name)) ? 1
+                : 2;
 
-    let best = pool[0];
-    for (const card of pool) {
-        if (card.latestDate > best.latestDate) best = card;
+    let best = cards[0];
+    for (const card of cards) {
+        const diff = rank(card) - rank(best);
+        if (diff < 0 || (diff === 0 && card.latestDate > best.latestDate)) best = card;
     }
     return best.playerKey;
 }
