@@ -6,7 +6,7 @@
 // ミニバスは学年をまたいで数年ぶん記録するので、複数年は例外ではない。
 
 import { describe, it, expect } from 'vitest';
-import { buildXLabels, labelColumnWidth } from './chartXLabel';
+import { buildXLabels, isExportLabelVisible, labelColumnWidth, labelStep } from './chartXLabel';
 
 describe('buildXLabels: 月単位', () => {
     it('同じ年のうちは月だけを出す（幅が狭いので冗長にしない）', () => {
@@ -97,5 +97,49 @@ describe('labelColumnWidth', () => {
 
     it('ラベルが無ければバー幅のまま', () => {
         expect(labelColumnWidth([])).toBe(20);
+    });
+});
+
+// 出力（PDF/JPEG）は幅827pxの1枚画像で、横スクロールで逃がせない。
+// 列を縮めて全部の棒を入れると、こんどはラベルが重なって読めなくなるので
+// ラベルだけ間引く。列を縮めなかったころは、収まらない棒がそのまま画像から
+// 消えていた（実測: 20試合の選手で13本しか描かれず、新しい6試合が欠落）。
+describe('labelStep', () => {
+    it('全部が収まるなら間引かない', () => {
+        expect(labelStep(10, 665, 46)).toBe(1);
+    });
+
+    it('収まらない分だけ間隔を空ける（20試合・出力幅665px・列46px）', () => {
+        // 665 / 46 = 14枠 → 20ラベルを14枠に収めるので1つ飛ばし
+        expect(labelStep(20, 665, 46)).toBe(2);
+    });
+
+    it('試合数が増えるほど間隔も広がる', () => {
+        expect(labelStep(52, 665, 46)).toBe(4);
+    });
+
+    it('1つも入らない幅でも間隔は有限（0除算・無限ループにしない）', () => {
+        expect(labelStep(100, 10, 46)).toBe(100);
+    });
+
+    it('ラベルが無い・幅が読めない場合は間引かない', () => {
+        expect(labelStep(0, 665, 46)).toBe(1);
+        expect(labelStep(20, 665, 0)).toBe(1);
+    });
+});
+
+// 間引く向きは「最新から遡る」。先頭から数えると、最新の試合のラベルが
+// 消える組み合わせが出る（20試合・1つ飛ばしで最後が偶数番目になる）。
+// 成長を見る画面で右端＝直近が無名になるのはいちばん困る
+describe('isExportLabelVisible', () => {
+    it('間引かないときは全部出す', () => {
+        expect([0, 1, 2].map(i => isExportLabelVisible(i, 3, 1))).toEqual([true, true, true]);
+    });
+
+    it('最新（最後）を必ず出し、そこから間隔ごとに遡る', () => {
+        expect([0, 1, 2, 3, 4].map(i => isExportLabelVisible(i, 5, 2)))
+            .toEqual([true, false, true, false, true]);
+        expect([0, 1, 2, 3].map(i => isExportLabelVisible(i, 4, 2)))
+            .toEqual([false, true, false, true]);
     });
 });

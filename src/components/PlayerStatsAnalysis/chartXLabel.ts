@@ -103,3 +103,45 @@ export function labelColumnWidth(labels: string[]): number {
     }
     return Math.max(MIN_COLUMN_WIDTH, Math.ceil(widest + LABEL_PADDING));
 }
+
+// 出力（PDF/JPEG）のX軸ラベルの間引き。
+//
+// 出力は幅827pxの1枚画像で、画面のように横スクロールで逃がせない。列幅を
+// 固定したままだと収まらない棒が枠の外へ出て、そのまま画像から消えていた
+// （実測: 20試合の選手で13本しか描かれず、新しい6試合が欠落）。
+// 出力時は列を縮めて全部の棒を入れる（CSSの min-width:0）ぶん、こんどは
+// ラベルが重なるので、ラベルだけ間引いて読めるようにする。
+//
+// 間引きをJS側で決められるのは、出力幅が固定だから。html2canvas は生きた
+// DOMを複製して windowWidth の枠で描き直すので、レイアウトはCSSが追随するが
+// JSは走らない。幅が可変な画面の側で同じことをするなら別の仕組みが要る。
+
+/** 出力時にX軸ラベルへ使える幅(px)。827px・1列での実測値（y軸36pxと余白を除いた分） */
+export const EXPORT_PLOT_WIDTH = 665;
+
+/**
+ * ラベルを availableWidth に収めるための表示間隔（1なら全部出す）。
+ *
+ * @param count ラベルの総数
+ * @param availableWidth 軸に使える幅(px)
+ * @param labelWidth ラベル1つに要る幅(px)。labelColumnWidth の戻り値
+ */
+export function labelStep(count: number, availableWidth: number, labelWidth: number): number {
+    if (count <= 0 || labelWidth <= 0) return 1;
+    // 1つも入らない幅でも最低1つは入るものとして扱う（0除算にしない）
+    const fits = Math.max(1, Math.floor(availableWidth / labelWidth));
+    if (count <= fits) return 1;
+    return Math.ceil(count / fits);
+}
+
+/**
+ * 出力でこの位置のラベルを出すか。
+ *
+ * 数えるのは最後（＝いちばん新しい期間）から。先頭から数えると、総数と間隔の
+ * 組み合わせ次第で右端のラベルが消える。成長を見るグラフで直近が無名になるのは
+ * いちばん困るので、最新を固定して遡る。
+ */
+export function isExportLabelVisible(index: number, count: number, step: number): boolean {
+    if (step <= 1) return true;
+    return (count - 1 - index) % step === 0;
+}
