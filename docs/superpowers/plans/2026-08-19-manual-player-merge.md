@@ -1412,6 +1412,8 @@ describe('統合の流れ', () => {
         expect(screen.getByText(/合計2試合/)).toBeTruthy();
     });
 
+    // 統合すると2枚が1枚になる。1枚では相手が居ないので入口のボタンも消えるのが正しい。
+    // 選択モードを抜けたことは、選択モード中だけ出る操作子が消えたことで確かめる
     it('統合したら選択モードを抜ける', () => {
         seedSplitPlayer();
         render(<PlayerStatsAnalysis onBack={() => { }} />);
@@ -1421,8 +1423,9 @@ describe('統合の流れ', () => {
         fireEvent.click(button('統合する'));
         fireEvent.click(button('この内容で統合'));
 
-        expect(button('選手を統合')).toBeTruthy();
         expect(screen.queryByRole('button', { name: '統合する' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'やめる' })).toBeNull();
+        expect(cards()).toHaveLength(1);
     });
 
     it('「確認する」を押すと候補の組が選ばれた状態になる', () => {
