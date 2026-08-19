@@ -198,6 +198,15 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         [playerStats, selectedTeam],
     );
 
+    // 選択の枚数を数えるとき、selectedKeys ではなく必ずこちらを見る。
+    // selectedKeys は「押されたキーの集合」であって、期間の絞り込みや
+    // 非表示トグルで playerStats から消えたキーもそのまま残り続ける。
+    // ツールバーの枚数表示やボタンの disabled を selectedKeys.size で
+    // 判定すると、絞り込みで1枚だけ一覧から消えた直後も「2枚選択中」の
+    // ままボタンが押せてしまい、確認モーダルの文面と実際にまとめる枚数が
+    // ずれる（実際に統合するのも常にこの selectedCards）。
+    // selectedKeys 自体はあえて生の集合のまま保持する。絞り込みを戻せば
+    // 選び直さずに済むため
     const selectedCards = useMemo(
         () => playerStats.filter(p => selectedKeys.has(p.playerKey)),
         [playerStats, selectedKeys],
@@ -235,7 +244,13 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     }, []);
 
     const handleMerge = useCallback(() => {
-        if (!selectedTeam || selectedCards.length < 2 || !canonicalKey) return;
+        if (!selectedTeam || selectedCards.length < 2 || !canonicalKey) {
+            // ここへ来るのは主に、確認モーダルを開いたあとに期間の絞り込みなどで
+            // selectedCards が2枚未満へ減った場合。押しても無反応のままモーダルが
+            // 残ると抜け出す手段が「やめる」しか無くなるため、保険として閉じる
+            setShowMergeConfirm(false);
+            return;
+        }
         const keys = selectedCards.map(p => p.playerKey);
         saveMergedPlayers(selectedTeam.id, mergeKeys(loadMergedPlayers(selectedTeam.id), keys, canonicalKey));
         // 統合するとキーが変わる。引き継がないと、非表示にしていた選手が
@@ -356,11 +371,11 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                         {selectionMode ? (
                             <>
                                 <span className="merge-toolbar-text">
-                                    同じ選手のカードを2枚以上選んでください（{selectedKeys.size}枚選択中）
+                                    同じ選手のカードを2枚以上選んでください（{selectedCards.length}枚選択中）
                                 </span>
                                 <button
                                     className="btn btn-primary btn-small"
-                                    disabled={selectedKeys.size < 2}
+                                    disabled={selectedCards.length < 2}
                                     onClick={() => setShowMergeConfirm(true)}
                                 >
                                     統合する

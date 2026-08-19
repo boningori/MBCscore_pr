@@ -87,6 +87,14 @@ const setSelect = (el: HTMLSelectElement, value: string) => {
     fireEvent.change(el);
 };
 
+// input[type="date"] はReactの制御コンポーネントなので、ネイティブのvalueセッターを
+// 経由しないとReactの内部状態が変わったことにならず、onChangeが発火しない
+const setInput = (el: HTMLInputElement, value: string) => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+    setter.call(el, value);
+    fireEvent.change(el);
+};
+
 const cards = () => [...document.querySelectorAll<HTMLButtonElement>('.player-card')];
 const button = (name: string) => screen.getByRole('button', { name });
 
@@ -203,6 +211,28 @@ describe('統合の流れ', () => {
         expect(screen.queryByRole('button', { name: 'やめる' })).toBeNull();
         // 切り替え後のどのカードも選択済み表示になっていない
         expect(cards().some(c => c.getAttribute('aria-pressed') === 'true')).toBe(false);
+    });
+
+    // 選択モード中に期間の絞り込みを変えて選択済みカードの1枚が一覧から
+    // 消えても、「統合する」は selectedCards（絞り込み後）を見て押せなくなる。
+    // selectedKeys（生の選択集合）のままだと2枚選択中の表示・ボタン活性が
+    // 残ってしまい、押しても handleMerge が早期returnして何も起きなかった
+    it('選択モード中に期間の絞り込みで選択中のカードが1枚消えると、統合するが押せなくなる', () => {
+        seedSplitPlayer();
+        render(<PlayerStatsAnalysis onBack={() => { }} />);
+        expect(cards()).toHaveLength(2);
+
+        fireEvent.click(button('選手を統合'));
+        cards().forEach(card => fireEvent.click(card));
+        expect((button('統合する') as HTMLButtonElement).disabled).toBe(false);
+
+        // 2026-05-01を開始日にすると、2026-04-01の試合（選択済みの1枚）が消え、
+        // 2026-06-01の試合（もう1枚）だけが残る
+        const startInput = document.getElementById('stats-date-start') as HTMLInputElement;
+        setInput(startInput, '2026-05-01');
+
+        expect(cards()).toHaveLength(1);
+        expect((button('統合する') as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('詳細から解除すると元の枚数に戻る', () => {
