@@ -12,6 +12,7 @@ import type { GameSession } from './gameSessionStorage';
 import { loadGameSession, hasGameSession } from './gameSessionStorage';
 import { recordBackup } from './lastBackupStorage';
 import { formatInputDate, formatRecordDate } from './localDate';
+import { loadAllMergedPlayers } from './mergedPlayers';
 
 // バックアップデータのバージョン
 export const BACKUP_VERSION = '2.0';
@@ -28,6 +29,8 @@ export interface BackupData {
         recentOpponents?: SavedTeam[];
         settings?: AppSettings;
         hiddenPlayers?: Record<string, string[]>;
+        /** 手動で統合した選手の対応表（チームID → 記録上のキー: 代表キー） */
+        mergedPlayers?: Record<string, Record<string, string>>;
         gameSession?: GameSession | null;
     };
 }
@@ -111,6 +114,7 @@ export function exportAllData(): BackupData {
 
     // 非表示選手情報を取得
     const hiddenPlayers = getHiddenPlayersData();
+    const mergedPlayers = loadAllMergedPlayers();
 
     return {
         version: BACKUP_VERSION,
@@ -123,6 +127,7 @@ export function exportAllData(): BackupData {
             recentOpponents,
             settings,
             hiddenPlayers,
+            mergedPlayers,
             gameSession,
         },
     };
@@ -1152,6 +1157,17 @@ function importFullBackup(data: BackupData): ImportResult {
                 mergedHidden[teamId] = [...new Set([...existing, ...playerIds])];
             }
             writes.push(['minibasket-hidden-players', JSON.stringify(mergedHidden)]);
+        }
+
+        // 統合設定のインポート（既存データとマージ）。
+        // チームごとに項目単位で重ねる。同じキーがあればバックアップ側を採る
+        if (data.data.mergedPlayers) {
+            const existingMerged = loadAllMergedPlayers();
+            const mergedAll: Record<string, Record<string, string>> = { ...existingMerged };
+            for (const [teamId, map] of Object.entries(data.data.mergedPlayers)) {
+                mergedAll[teamId] = { ...(mergedAll[teamId] ?? {}), ...map };
+            }
+            writes.push(['minibasket-merged-players', JSON.stringify(mergedAll)]);
         }
 
         // ここまでは何も書いていない。まとめて適用し、途中で失敗したら巻き戻す
