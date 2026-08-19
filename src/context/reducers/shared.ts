@@ -1,4 +1,4 @@
-import type { FoulEntry, FoulRecord, FoulType, ScoreEntry } from '../../types/game';
+import type { FoulEntry, FoulRecord, FoulType, Game, ScoreEntry } from '../../types/game';
 
 /**
  * 選手のファウル欄へ、発生時刻の順に収まる位置で1つ追加する。
@@ -95,4 +95,33 @@ export function recalculateRunningScores(
             runningScoreB: runningB,
         };
     });
+}
+
+/**
+ * 訂正後の記録を付ける選手を決める。
+ *
+ * 指定が無い、または指定された選手がそのチームに居ない場合は元の選手を返す。
+ * チーム外を許すと、加算側の map が誰にも当たらずスタッツだけが消える
+ * （減算は元のチームに対して走るため、合計が静かに減る）。得点なら
+ * スコアボードだけが減って得点履歴は残り、様式と食い違ったまま試合が終わる。
+ *
+ * 訂正の経路（EDIT_SCORE / EDIT_STAT / 成否の変換）はどれも同じ形をしているので、
+ * 守りもここに1つ置いて全部から使う。以前は変換系にしか無かった。
+ *
+ * 元の選手が名簿に居ない場合（保留を「選手不明」で解決した記録）はそのまま
+ * 返す。そこへ選手を割り当てるのが唯一の導線なので、塞いではいけない。
+ */
+export function resolveTargetPlayer(
+    state: Game,
+    teamId: string,
+    currentPlayerId: string,
+    newPlayerId: string | undefined,
+): { playerId: string; playerNumber: number | null } {
+    const team = teamId === 'teamA' ? state.teamA : state.teamB;
+    if (!newPlayerId || newPlayerId === currentPlayerId) {
+        return { playerId: currentPlayerId, playerNumber: null };
+    }
+    const target = team.players.find(p => p.id === newPlayerId);
+    if (!target) return { playerId: currentPlayerId, playerNumber: null };
+    return { playerId: target.id, playerNumber: target.number };
 }

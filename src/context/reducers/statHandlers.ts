@@ -1,4 +1,5 @@
 import type { Game, PayloadOf, StatEntry, StatType } from '../../types/game';
+import { resolveTargetPlayer } from './shared';
 
 /** シュートの試投（ミス）を表す種別。ファウルとの紐付けが意味を持つのはこの3つだけ */
 const SHOT_ATTEMPT_TYPES: StatType[] = ['2PA', '3PA', 'FTA'];
@@ -127,13 +128,16 @@ export function handleEditStat(state: Game, payload: PayloadOf<'EDIT_STAT'>): Ga
         };
     };
 
-    // 新しい選手にスタッツを加算
+    // 新しい選手にスタッツを加算。
+    // 付け替え先は resolveTargetPlayer で確かめる。相手チームの選手IDが来ると
+    // ここが誰にも当たらず、減算だけが効いてスタッツが消える（shared のコメント）
+    const target = resolveTargetPlayer(state, entry.teamId, entry.playerId, newPlayerId);
     const addToPlayer = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
         return {
             ...team,
             players: team.players.map(p => {
-                if (p.id !== newPlayerId) return p;
+                if (p.id !== target.playerId) return p;
                 const stats = { ...p.stats };
                 switch (newStatType) {
                     case 'OREB': stats.offensiveRebounds++; break;
@@ -155,11 +159,10 @@ export function handleEditStat(state: Game, payload: PayloadOf<'EDIT_STAT'>): Ga
         };
     };
 
-    const newPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === newPlayerId);
     const updatedEntry: StatEntry = {
         ...entry,
-        playerId: newPlayerId,
-        playerNumber: newPlayer?.number || entry.playerNumber,
+        playerId: target.playerId,
+        playerNumber: target.playerNumber ?? entry.playerNumber,
         statType: newStatType,
     };
     // シュートのミスでなくなったら、ファウルとの紐付けは意味を失う。
