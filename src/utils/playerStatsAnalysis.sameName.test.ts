@@ -143,3 +143,131 @@ describe('同姓選手の識別キー: ビブスとユニフォームの取り�
         expect(result.map(r => r.playerKey).sort()).toEqual(['佐藤#10', '佐藤#7']);
     });
 });
+
+// ライセンスNo.は任意入力で、名簿に後から書き足されることが多い
+// （JBA登録番号の下3桁。大会の申込みが近づいてから入れる、など）。
+// 識別キーは氏名＋ライセンスNo.なので、入力した瞬間にキーが変わり、
+// 入力前に記録した試合が別人のカードとして分かれてしまう
+// （実測: 2試合で「佐藤 太郎_123(1試合 8点)」「佐藤 太郎(1試合 10点)」の2枚。
+// どちらも通算・平均・成長グラフが実態と食い違う）。
+describe('同姓選手の識別キー: ライセンスNo.を後から入力した場合', () => {
+    const withRoster = (players: SavedTeam['players']): SavedTeam => ({ ...MY_TEAM, players });
+    const rosterPlayer = (name: string, number: number, licenseNo?: string) =>
+        ({ number, uniformNumber: number, name, licenseNo, isCaptain: false });
+
+    const licensed = (id: string, number: number, name: string, points: number, licenseNo?: string) => {
+        const p = scorer(id, number, name, points);
+        p.licenseNo = licenseNo;
+        return p;
+    };
+
+    it('入力前後の試合が同じ選手として合算される', () => {
+        const team = withRoster([rosterPlayer('佐藤 太郎', 4, '123')]);
+        recordGame([licensed('p4', 4, '佐藤 太郎', 10)], '2026-04-01');
+        recordGame([licensed('p4', 4, '佐藤 太郎', 8, '123')], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎_123']);
+        expect(result[0].gamesPlayed).toBe(2);
+        expect(result[0].totalStats.points).toBe(18);
+    });
+
+    it('名簿に同姓同名が2人いて片方だけ未入力なら寄せない（別人を混ぜない）', () => {
+        const team = withRoster([
+            rosterPlayer('佐藤 太郎', 4, '123'),
+            rosterPlayer('佐藤 太郎', 7),
+        ]);
+        recordGame([licensed('p4', 4, '佐藤 太郎', 10), licensed('p7', 7, '佐藤 太郎', 6)], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        // 記録どおりのキーで分かれたまま（背番号で分離される）
+        expect(result).toHaveLength(2);
+        expect(result[0].playerKey).not.toBe(result[1].playerKey);
+    });
+
+    it('名簿に居ない選手（退団後など）は記録どおりのキーのまま', () => {
+        const team = withRoster([rosterPlayer('佐藤 太郎', 4, '123')]);
+        recordGame([licensed('p9', 9, '田中 次郎', 6)], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey)).toEqual(['田中 次郎']);
+    });
+
+    it('ライセンスNo.を使っていないチームのキーは変わらない', () => {
+        const team = withRoster([rosterPlayer('佐藤 太郎', 4)]);
+        recordGame([licensed('p4', 4, '佐藤 太郎', 10)], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎']);
+    });
+});
+
+// ライセンスNo.は3桁を手入力するので打ち間違いが起きる。気づいて直すと、
+// 直す前に記録した試合が別人のカードとして残ってしまう。名簿から消した場合も同じ。
+// 「後から入力した」場合だけを救っても、この2つが残ると割れたままになる。
+describe('同姓選手の識別キー: ライセンスNo.を書き換え・削除した場合', () => {
+    const withRoster = (players: SavedTeam['players']): SavedTeam => ({ ...MY_TEAM, players });
+    const rosterPlayer = (name: string, number: number, licenseNo?: string) =>
+        ({ number, uniformNumber: number, name, licenseNo, isCaptain: false });
+
+    const licensed = (id: string, number: number, name: string, points: number, licenseNo?: string) => {
+        const p = scorer(id, number, name, points);
+        p.licenseNo = licenseNo;
+        return p;
+    };
+
+    it('打ち間違いを直したあとも、直す前の試合を同じ選手として合算する', () => {
+        const team = withRoster([rosterPlayer('佐藤 太郎', 4, '456')]);
+        recordGame([licensed('p4', 4, '佐藤 太郎', 10, '123')], '2026-04-01'); // 打ち間違い
+        recordGame([licensed('p4', 4, '佐藤 太郎', 8, '456')], '2026-06-01');  // 訂正後
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎_456']);
+        expect(result[0].gamesPlayed).toBe(2);
+        expect(result[0].totalStats.points).toBe(18);
+    });
+
+    it('名簿からライセンスNo.を消しても合算する', () => {
+        const team = withRoster([rosterPlayer('佐藤 太郎', 4)]);
+        recordGame([licensed('p4', 4, '佐藤 太郎', 10, '123')], '2026-04-01');
+        recordGame([licensed('p4', 4, '佐藤 太郎', 8)], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎']);
+        expect(result[0].gamesPlayed).toBe(2);
+        expect(result[0].totalStats.points).toBe(18);
+    });
+
+    it('未入力・打ち間違い・訂正後が混ざっても1人にまとまる', () => {
+        const team = withRoster([rosterPlayer('佐藤 太郎', 4, '456')]);
+        recordGame([licensed('p4', 4, '佐藤 太郎', 6)], '2026-04-01');
+        recordGame([licensed('p4', 4, '佐藤 太郎', 10, '123')], '2026-05-01');
+        recordGame([licensed('p4', 4, '佐藤 太郎', 8, '456')], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎_456']);
+        expect(result[0].gamesPlayed).toBe(3);
+        expect(result[0].totalStats.points).toBe(24);
+    });
+
+    // ライセンスNo.は本来ひとりに1つ。名簿で別々の番号を割り当てて区別している
+    // 2人を、記録側の番号違いだけで混ぜてはいけない
+    it('名簿で別のライセンスNo.が割り当てられている同姓同名は混ぜない', () => {
+        const team = withRoster([
+            rosterPlayer('佐藤 太郎', 4, '123'),
+            rosterPlayer('佐藤 太郎', 7, '456'),
+        ]);
+        recordGame([licensed('p4', 4, '佐藤 太郎', 10, '123'), licensed('p7', 7, '佐藤 太郎', 6, '456')], '2026-06-01');
+
+        const result = aggregatePlayerStats(team);
+
+        expect(result.map(r => r.playerKey).sort()).toEqual(['佐藤 太郎_123', '佐藤 太郎_456']);
+    });
+});
