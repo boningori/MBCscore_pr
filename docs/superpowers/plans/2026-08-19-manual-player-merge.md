@@ -336,7 +336,9 @@ export function mergeKeys(map: MergeMap, keys: readonly string[], canonical: str
 
     for (const [source, dest] of Object.entries(map)) {
         if (source === target) continue; // 代表自身への項目は残さない
-        next[source] = merging.has(dest) || dest === canonical ? target : dest;
+        // 深さ1を保っているので、代表自身が別へ寄っている場合そこを指す項目は存在しない。
+        // したがって「今回まとめるキーを指しているか」だけ見れば足りる
+        next[source] = merging.has(dest) ? target : dest;
     }
     for (const key of keys) {
         if (key === target) continue;
