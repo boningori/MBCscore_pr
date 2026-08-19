@@ -484,8 +484,10 @@ export function aggregatePlayerStats(
 ): AggregatedPlayerStats[] {
     const games = getMyTeamGames(myTeam);
     const playerMap = new Map<string, AggregatedPlayerStats>();
-    // 選手ごとに「いま採用している背番号の試合日」。走査順は日付順とは限らない
-    const latestNumberTime = new Map<string, number>();
+    // 代表キーの記録が1件も無いとき（対応表だけが残っている等）のフォールバック。
+    // このMapは背番号だけでなく氏名・ライセンスNo.の採否も一緒に決めている
+    // （どちらも下のapplyIdentityで一括して差し替えるため）。走査順は日付順とは限らない
+    const latestFallbackTime = new Map<string, number>();
     // 代表キーの記録だけを見る追跡。統合したカードの氏名・背番号は代表キーの
     // 記録から採る（まとめた相手の古い表記が出ないように）
     const latestCanonicalTime = new Map<string, number>();
@@ -622,9 +624,9 @@ export function aggregatePlayerStats(
                     applyIdentity();
                 }
             } else if (!latestCanonicalTime.has(key)) {
-                const latest = latestNumberTime.get(key);
+                const latest = latestFallbackTime.get(key);
                 if (latest === undefined || gameTime > latest) {
-                    latestNumberTime.set(key, gameTime);
+                    latestFallbackTime.set(key, gameTime);
                     applyIdentity();
                 }
             }

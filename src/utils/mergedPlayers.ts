@@ -151,6 +151,8 @@ export function chooseCanonicalKey(
     let best = cards[0];
     for (const card of cards) {
         const diff = rank(card) - rank(best);
+        // 優先度も日付も同値なら更新しない（`>` で `>=` ではない）ので、
+        // 先に現れたカードが勝つ。呼び出し順が変わらない限り毎回同じ結果になる
         if (diff < 0 || (diff === 0 && card.latestDate > best.latestDate)) best = card;
     }
     return best.playerKey;
