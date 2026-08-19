@@ -44,6 +44,14 @@ export interface PlayerCardListProps {
     /** 非表示にしている選手のキー。全員表示のときにどれが非表示かを示すために使う */
     hiddenPlayerKeys?: ReadonlySet<string>;
     onPlayerClick: (player: AggregatedPlayerStats) => void;
+    /** 選択モード中か。true のときカードのタップは選択の切り替えになる */
+    selectionMode?: boolean;
+    /** 選択中のキー */
+    selectedKeys?: ReadonlySet<string>;
+    /** 選択の切り替え（選択モード中のみ呼ばれる） */
+    onToggleSelect?: (playerKey: string) => void;
+    /** 統合済みの代表キー。まとめたことが一覧から分かるように印を出す */
+    mergedKeys?: ReadonlySet<string>;
 }
 
 export interface DetailViewProps {
@@ -51,6 +59,10 @@ export interface DetailViewProps {
     teamId: string;
     isHidden: boolean;
     onToggleHidden: () => void;
+    /** 他のカードをまとめた代表か（解除の操作子を出すかの判断） */
+    isMerged?: boolean;
+    /** 統合の解除 */
+    onUnmerge?: () => void;
 }
 
 export interface GrowthComparisonProps {

@@ -9,6 +9,7 @@ import {
     togglePlayerHidden,
     isPlayerHidden,
     loadHiddenPlayers,
+    saveHiddenPlayers,
     type AggregatedPlayerStats,
     type TeamRecord,
 } from '../../utils/playerStatsAnalysis';
@@ -19,6 +20,18 @@ import { sortPlayers, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSo
 import { PlayerCardList } from './PlayerCardList';
 import { DetailView } from './DetailView';
 import type { ViewMode } from './types';
+import {
+    loadMergedPlayers,
+    saveMergedPlayers,
+    mergeKeys,
+    unmergeKey,
+    mergedCanonicalKeys,
+    chooseCanonicalKey,
+    carryOverHidden,
+} from '../../utils/mergedPlayers';
+import { findMergeCandidates } from './mergeCandidates';
+import { ConfirmModal } from '../Modal';
+import { formatPlayerNumber } from '../../utils/playerNumber';
 import './PlayerStatsAnalysis.css';
 
 interface PlayerStatsAnalysisProps {
@@ -93,6 +106,11 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         myTeams[0] ? loadHiddenPlayers(myTeams[0].id).length : 0
     );
     const [hiddenToggleKey, setHiddenToggleKey] = useState(0);
+    // 統合の変更を集計へ反映させるためのカウンタ（hiddenToggleKey と同じ役割）
+    const [mergeToggleKey, setMergeToggleKey] = useState(0);
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set());
+    const [showMergeConfirm, setShowMergeConfirm] = useState(false);
 
     // 非表示選手数を更新（selectedTeam/viewModeの変化に応じたレンダー中の状態調整。
     // useEffectでのcascading render警告を避けるため）
@@ -113,9 +131,10 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     const playerStats = useMemo(() => {
         if (!selectedTeam) return [];
         return aggregatePlayerStats(selectedTeam, startDate, endDate, { includeHidden: showHiddenPlayers });
-        // hiddenToggleKey: 非表示選手の集合が変わった際に強制再計算するための意図的な依存
+        // hiddenToggleKey / mergeToggleKey: 非表示選手・統合の設定が変わった際に
+        // 強制再計算するための意図的な依存
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedTeam, startDate, endDate, showHiddenPlayers, hiddenToggleKey]);
+    }, [selectedTeam, startDate, endDate, showHiddenPlayers, hiddenToggleKey, mergeToggleKey]);
 
     const teamRecord = useMemo((): TeamRecord | null => {
         if (!selectedTeam) return null;
@@ -129,6 +148,12 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
             setSelectedPlayer(null);
             setViewMode('summary');
             setShowHiddenPlayers(false);
+            // 統合の選択状態もリセットする。playerKeyはチームIDを含まない
+            // （氏名＋ライセンスNo.）ため、切り替え先に同姓同名（ライセンスNo.未入力）の
+            // 選手がいると、リセットしないと選択済みのカードが乗り移って見える
+            setSelectionMode(false);
+            setSelectedKeys(new Set());
+            setShowMergeConfirm(false);
         }
     };
 
@@ -158,6 +183,95 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
 
     // 並べ替えは表示順だけを変える。集計（playerStats）には影響しないので分けて持つ
     const sortedPlayers = useMemo(() => sortPlayers(playerStats, sortKey), [playerStats, sortKey]);
+
+    // 統合済みの代表キー（カードの印に使う）
+    const mergedKeys = useMemo(() => {
+        if (!selectedTeam) return new Set<string>();
+        return mergedCanonicalKeys(loadMergedPlayers(selectedTeam.id));
+        // mergeToggleKey: 統合の切り替えを取り込むための意図的な依存
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTeam, mergeToggleKey]);
+
+    // 割れていそうな組。提案するだけで、確認なしには統合しない
+    const mergeCandidates = useMemo(
+        () => findMergeCandidates(playerStats, selectedTeam?.players.map(p => p.name) ?? []),
+        [playerStats, selectedTeam],
+    );
+
+    // 選択の枚数を数えるとき、selectedKeys ではなく必ずこちらを見る。
+    // selectedKeys は「押されたキーの集合」であって、期間の絞り込みや
+    // 非表示トグルで playerStats から消えたキーもそのまま残り続ける。
+    // ツールバーの枚数表示やボタンの disabled を selectedKeys.size で
+    // 判定すると、絞り込みで1枚だけ一覧から消えた直後も「2枚選択中」の
+    // ままボタンが押せてしまい、確認モーダルの文面と実際にまとめる枚数が
+    // ずれる（実際に統合するのも常にこの selectedCards）。
+    // selectedKeys 自体はあえて生の集合のまま保持する。絞り込みを戻せば
+    // 選び直さずに済むため
+    const selectedCards = useMemo(
+        () => playerStats.filter(p => selectedKeys.has(p.playerKey)),
+        [playerStats, selectedKeys],
+    );
+
+    // 代表は名簿に載っている側。詳細は mergedPlayers の chooseCanonicalKey
+    const canonicalKey = useMemo(
+        () => chooseCanonicalKey(
+            selectedCards.map(p => ({
+                playerKey: p.playerKey,
+                name: p.name,
+                latestDate: p.gameHistory[0]?.date ?? '',
+            })),
+            selectedTeam?.players.map(p => p.name) ?? [],
+        ),
+        [selectedCards, selectedTeam],
+    );
+
+    const canonicalCard = selectedCards.find(p => p.playerKey === canonicalKey) ?? null;
+    const mergedGames = selectedCards.reduce((sum, p) => sum + p.gamesPlayed, 0);
+
+    const handleToggleSelect = useCallback((playerKey: string) => {
+        setSelectedKeys(prev => {
+            const next = new Set(prev);
+            if (next.has(playerKey)) next.delete(playerKey);
+            else next.add(playerKey);
+            return next;
+        });
+    }, []);
+
+    const exitSelection = useCallback(() => {
+        setSelectionMode(false);
+        setSelectedKeys(new Set());
+        setShowMergeConfirm(false);
+    }, []);
+
+    const handleMerge = useCallback(() => {
+        if (!selectedTeam || selectedCards.length < 2 || !canonicalKey) {
+            // ここへ来るのは主に、確認モーダルを開いたあとに期間の絞り込みなどで
+            // selectedCards が2枚未満へ減った場合。押しても無反応のままモーダルが
+            // 残ると抜け出す手段が「やめる」しか無くなるため、保険として閉じる
+            setShowMergeConfirm(false);
+            return;
+        }
+        const keys = selectedCards.map(p => p.playerKey);
+        saveMergedPlayers(selectedTeam.id, mergeKeys(loadMergedPlayers(selectedTeam.id), keys, canonicalKey));
+        // 統合するとキーが変わる。引き継がないと、非表示にしていた選手が
+        // 統合した瞬間に一覧へ復活したように見える
+        saveHiddenPlayers(selectedTeam.id, carryOverHidden(loadHiddenPlayers(selectedTeam.id), keys, canonicalKey));
+        setHiddenPlayerCount(loadHiddenPlayers(selectedTeam.id).length);
+        setMergeToggleKey(prev => prev + 1);
+        setHiddenToggleKey(prev => prev + 1);
+        exitSelection();
+    }, [selectedTeam, selectedCards, canonicalKey, exitSelection]);
+
+    const handleUnmerge = useCallback(() => {
+        if (!selectedTeam || !selectedPlayer) return;
+        saveMergedPlayers(
+            selectedTeam.id,
+            unmergeKey(loadMergedPlayers(selectedTeam.id), selectedPlayer.playerKey),
+        );
+        setMergeToggleKey(prev => prev + 1);
+        // 解除すると元の枚数に戻る。開いていた詳細はもう同じ内容ではないので一覧へ
+        handleBackToSummary();
+    }, [selectedTeam, selectedPlayer, handleBackToSummary]);
 
     // 非表示にしている選手のキー。全員表示に切り替えたとき、どれが非表示なのかを
     // カードに示すために使う。印が無いと、戻したい選手を1人ずつ詳細で確かめるしかない
@@ -234,6 +348,56 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                       条件を変える手段が消えると、その条件から抜け出せなくなる
                       （期間・非表示選手のどちらでも起きた）。
                     */}
+                    {/* 割れているカードは利用者が気づかないと直しようがない。
+                        案内は提案だけで、確認なしには統合しない */}
+                    {!selectionMode && mergeCandidates.length > 0 && (
+                        <div className="merge-hint">
+                            <span className="merge-hint-text">
+                                同じ選手が分かれているかもしれません（{mergeCandidates.length}組）
+                            </span>
+                            <button
+                                className="btn btn-secondary btn-small"
+                                onClick={() => {
+                                    setSelectionMode(true);
+                                    setSelectedKeys(new Set(mergeCandidates[0].map(p => p.playerKey)));
+                                }}
+                            >
+                                確認する
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="merge-toolbar">
+                        {selectionMode ? (
+                            <>
+                                <span className="merge-toolbar-text">
+                                    同じ選手のカードを2枚以上選んでください（{selectedCards.length}枚選択中）
+                                </span>
+                                <button
+                                    className="btn btn-primary btn-small"
+                                    disabled={selectedCards.length < 2}
+                                    onClick={() => setShowMergeConfirm(true)}
+                                >
+                                    統合する
+                                </button>
+                                <button className="btn btn-secondary btn-small" onClick={exitSelection}>
+                                    やめる
+                                </button>
+                            </>
+                        ) : (
+                            // 統合すると2枚が1枚になる。1枚しか無ければ統合する
+                            // 相手が居ないので、入口のボタンごと消えるのが正しい
+                            playerStats.length >= 2 && (
+                                <button
+                                    className="btn btn-secondary btn-small"
+                                    onClick={() => setSelectionMode(true)}
+                                >
+                                    選手を統合
+                                </button>
+                            )
+                        )}
+                    </div>
+
                     <div className="controls-bar">
                         <div className="field-group">
                             <label className="field-label" htmlFor="stats-team-select">マイチーム選択：</label>
@@ -337,6 +501,10 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                             players={sortedPlayers}
                             hiddenPlayerKeys={hiddenPlayerKeys}
                             onPlayerClick={handlePlayerClick}
+                            selectionMode={selectionMode}
+                            selectedKeys={selectedKeys}
+                            onToggleSelect={handleToggleSelect}
+                            mergedKeys={mergedKeys}
                         />
                         : <EmptyState reason={emptyReason} hiddenPlayerCount={hiddenPlayerCount} />}
 
@@ -363,6 +531,20 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     teamId={selectedTeam.id}
                     isHidden={isSelectedPlayerHidden}
                     onToggleHidden={handleTogglePlayerHidden}
+                    isMerged={mergedKeys.has(selectedPlayer.playerKey)}
+                    onUnmerge={handleUnmerge}
+                />
+            )}
+
+            {showMergeConfirm && canonicalCard && (
+                <ConfirmModal
+                    title="選手を統合しますか？"
+                    message={`${selectedCards.length}枚のカードを1人としてまとめます。まとめたあとは #${formatPlayerNumber(canonicalCard.number)} ${canonicalCard.name}（合計${mergedGames}試合）として表示されます。`}
+                    note="試合の記録は変わりません。あとから解除できます。"
+                    confirmLabel="この内容で統合"
+                    cancelLabel="やめる"
+                    onConfirm={handleMerge}
+                    onCancel={() => setShowMergeConfirm(false)}
                 />
             )}
         </main>

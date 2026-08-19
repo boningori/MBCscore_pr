@@ -3,7 +3,15 @@
 import type { PlayerCardListProps } from './types';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 
-export function PlayerCardList({ players, hiddenPlayerKeys, onPlayerClick }: PlayerCardListProps) {
+export function PlayerCardList({
+    players,
+    hiddenPlayerKeys,
+    onPlayerClick,
+    selectionMode = false,
+    selectedKeys,
+    onToggleSelect,
+    mergedKeys,
+}: PlayerCardListProps) {
     // 「（n試合分）」が付く選手が1人でもいるか。
     //
     // この但し書きの意味は title 属性にしか書いていなかった。主な利用端末は
@@ -44,19 +52,28 @@ export function PlayerCardList({ players, hiddenPlayerKeys, onPlayerClick }: Pla
                 // 「n試合」と「平均◯Q」は母数が違う。注記が無いと、通算が
                 // n×◯Q だと読めてしまう（詳細画面の1Qあたりも同じ理由で明記している）
                 const isPartialQuarters = player.gamesWithQuarters < player.gamesPlayed;
+                const isSelected = selectedKeys?.has(player.playerKey) ?? false;
+                const isMerged = mergedKeys?.has(player.playerKey) ?? false;
 
                 return (
                     <button
                         type="button"
                         key={player.playerKey}
-                        className={`player-card ${isHidden ? 'hidden-player' : ''}`}
-                        onClick={() => onPlayerClick(player)}
+                        className={`player-card ${isHidden ? 'hidden-player' : ''} ${selectionMode ? 'selecting' : ''} ${isSelected ? 'selected' : ''}`}
+                        // 選択モード中に詳細が開くと統合する相手を選べない
+                        onClick={() => selectionMode
+                            ? onToggleSelect?.(player.playerKey)
+                            : onPlayerClick(player)}
+                        // 選択モード中は未選択も false として読み上げる（選べることが伝わる）
+                        aria-pressed={selectionMode ? isSelected : undefined}
                     >
                         <div className="player-info">
                             <span className="player-number">#{formatPlayerNumber(player.number)}</span>
                             <span className="player-name">{player.name}</span>
                             {/* 色や枠だけでは伝わらないので文字でも出す */}
                             {isHidden && <span className="player-hidden-badge">非表示</span>}
+                            {/* 色や枠だけでは伝わらないので文字でも出す（非表示の印と同じ扱い） */}
+                            {isMerged && <span className="player-merged-badge">統合済み</span>}
                             <span className="player-games">
                                 {player.gamesPlayed}試合
                                 {quartersPerGame && (

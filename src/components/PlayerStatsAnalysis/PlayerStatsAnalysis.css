@@ -2279,3 +2279,61 @@
         min-width: 0;
     }
 }
+
+/* 統合済みの印。非表示の印（.player-hidden-badge）と同じ作りにそろえる。
+   .player-info が flex-direction: column のため margin-left は左インデントとして
+   効く。ここが揃っていないと、非表示と統合済みの両方が出たカードでバッジの
+   位置が6pxずれる（色だけは統合済み用のまま変えない） */
+.player-stats-container .player-merged-badge {
+    margin-left: 6px;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-weight: 600;
+    background: var(--stats-success-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--stats-success-pale-2);
+    white-space: nowrap;
+}
+
+/* 選択モード中のカード。選択中は色・枠の2方向で示す */
+.player-stats-container .player-card.selecting {
+    border: 2px dashed var(--stats-text-dim);
+}
+
+.player-stats-container .player-card.selecting.selected {
+    border: 2px solid var(--stats-success);
+    background: var(--stats-success-bg);
+}
+
+/* 割れているカードの案内。一覧の先頭に置いて気づけるようにする */
+.player-stats-container .merge-hint {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    background: var(--stats-success-bg);
+    border: 1px solid var(--stats-success-pale-2);
+}
+
+.player-stats-container .merge-hint-text {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.player-stats-container .merge-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.player-stats-container .merge-toolbar-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-right: auto;
+}

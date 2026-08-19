@@ -23,7 +23,7 @@ import { type DetailViewProps } from './types';
  */
 const MIN_GAMES_FOR_STD_DEV = 3;
 
-export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps) {
+export function DetailView({ player, isHidden, onToggleHidden, isMerged = false, onUnmerge }: DetailViewProps) {
     const showStdDev = player.gamesPlayed >= MIN_GAMES_FOR_STD_DEV;
     const detailRef = useRef<HTMLDivElement>(null);
     const { isExporting, runExport } = useExportAction();
@@ -97,6 +97,13 @@ export function DetailView({ player, isHidden, onToggleHidden }: DetailViewProps
                     />
                     <span className="toggle-slider"></span>
                 </label>
+                {/* 統合は集計時の名寄せで記録を書き換えていないので、解除は
+                    まとめる前のカードに戻すだけ。確認は挟まない */}
+                {isMerged && (
+                    <button className="btn btn-secondary btn-small" onClick={onUnmerge}>
+                        統合を解除
+                    </button>
+                )}
             </div>
 
             <h2 className="detail-player-title">
