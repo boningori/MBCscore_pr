@@ -40,7 +40,7 @@ import { Modal, ConfirmModal } from './components/Modal';
 import { UndoSnackbar } from './components/UndoSnackbar/UndoSnackbar';
 import { RestorePrompt } from './components/RestorePrompt';
 import { BackupPrompt } from './components/BackupPrompt/BackupPrompt';
-import { UpdatePrompt, useAppUpdate } from './components/UpdatePrompt';
+import { UpdatePrompt, useAppUpdate, suppressesAppUpdate } from './components/UpdatePrompt';
 import { consumeLaunchShortcut, parseLaunchShortcut } from './utils/launchShortcut';
 import type { ShortcutTarget } from './utils/launchShortcut';
 import { useOfflineToast } from './hooks/useOfflineToast';
@@ -99,9 +99,13 @@ function initialScreen(): AppScreen {
   return resolveShortcut(LAUNCH_TARGET).screen;
 }
 
-function AppContent() {
+interface AppContentProps {
+  screen: AppScreen;
+  setScreen: (screen: AppScreen) => void;
+}
+
+function AppContent({ screen, setScreen }: AppContentProps) {
   const { state, dispatch } = useGame();
-  const [screen, setScreen] = useState<AppScreen>(initialScreen);
   const [gameName, setGameName] = useState('');
   const [date, setDate] = useState(todayInputDate);
   const [showSubstitutionModal, setShowSubstitutionModal] = useState(false);
@@ -143,7 +147,8 @@ function AppContent() {
       // 別のショートカットで移動したときに、前回の警告が残らないようにする
       setShowNewGameWarning(warnNewGame);
     });
-  }, []);
+    // マウント時のみ。setScreen は AppShell の useState のセッターで参照は変わらない
+  }, [setScreen]);
   // 記録直後のワンタップUndo（得点/スタッツのみ。ファウルは専用フローがあるため対象外）
   const [undoInfo, setUndoInfo] = useState<{ message: string; kind: 'score' | 'stat'; entryId: string } | null>(null);
 
@@ -172,11 +177,11 @@ function AppContent() {
   // 行き先が食い違っていた。試合中にシートを開いてエッジスワイプすると、
   // 記録画面ではなくホームまで飛ぶ。サブビューと同じ扱いにして揃える
   // （履歴側の辻褄は useScreenHistorySync が合わせる）。
-  useBackHandler(screen === 'scoresheet', useCallback(() => setScreen('game'), []));
+  useBackHandler(screen === 'scoresheet', useCallback(() => setScreen('game'), [setScreen]));
   useBackHandler(
     screen === 'quarterLineup',
     // 行き先は画面上の「戻る」と同じ規則（試合前は設定へ・試合中は試合画面へ）
-    useCallback(() => setScreen(phase === 'setup' ? 'gameSetup' : 'game'), [phase]),
+    useCallback(() => setScreen(phase === 'setup' ? 'gameSetup' : 'game'), [phase, setScreen]),
   );
 
   // 起動時: 過去の試合に登録マイチームのidを書き戻す。
@@ -703,7 +708,7 @@ function AppContent() {
     }
     dispatch({ type: 'END_QUARTER' });
     setScreen('quarterLineup');
-  }, [currentQuarter, dispatch, state.teamA, state.teamB]);
+  }, [currentQuarter, dispatch, setScreen, state.teamA, state.teamB]);
 
   const handleEndGameConfirm = useCallback(() => {
     setEndGameConfirmType(null);
@@ -718,7 +723,7 @@ function AppContent() {
     setEndGameConfirmType(null);
     dispatch({ type: 'END_QUARTER' });
     setScreen('quarterLineup');
-  }, [dispatch]);
+  }, [dispatch, setScreen]);
 
 
 
@@ -1119,6 +1124,7 @@ function AppContent() {
             {/* action-pending: アクション先行選択中は選手カードを強調表示 */}
             <div className={`game-main-area ${gameMode === 'simple' ? 'simple-mode' : 'full-mode'} ${pendingAction ? 'action-pending' : ''}`}>
               {/* Left: Team A */}
+              {/* disabled: 試合終了後はアクションボタンと同じ条件で選手カードも止める */}
               <TeamPanel
                 teamId="teamA"
                 teamName={state.teamA.name}
@@ -1127,6 +1133,7 @@ function AppContent() {
                 isActive={selectedTeamId === 'teamA'}
                 selectedPlayerId={selectedPlayerId}
                 gameMode={gameMode}
+                disabled={phase === 'finished'}
                 scoreHistory={state.scoreHistory}
                 statHistory={state.statHistory}
                 foulHistory={state.foulHistory}
@@ -1175,6 +1182,7 @@ function AppContent() {
               </div>
 
               {/* Right: Team B */}
+              {/* disabled: 試合終了後はアクションボタンと同じ条件で選手カードも止める */}
               <TeamPanel
                 teamId="teamB"
                 teamName={state.teamB.name}
@@ -1183,6 +1191,7 @@ function AppContent() {
                 isActive={selectedTeamId === 'teamB'}
                 selectedPlayerId={selectedPlayerId}
                 gameMode={gameMode}
+                disabled={phase === 'finished'}
                 scoreHistory={state.scoreHistory}
                 statHistory={state.statHistory}
                 foulHistory={state.foulHistory}
@@ -1787,24 +1796,39 @@ function AppContent() {
  * アプリ更新の案内バー。
  * AppContentは画面ごとに早期returnするため、どの画面でも出せるよう
  * 固定配置の要素として兄弟に置く。
- * 更新はリロードを伴うので、記録中（試合が進行中）は出さずに保留し、
- * 試合が終わる/ホームに戻ってから表示する。
+ * 更新はリロードを伴うので、作業の途中では出さずに保留し、
+ * ホームや閲覧系の画面に戻ってから表示する（suppressesAppUpdate）。
  */
-function AppUpdateBanner() {
+function AppUpdateBanner({ screen }: { screen: AppScreen }) {
   const { state } = useGame();
-  const isGameInProgress =
-    state.phase === 'playing' || state.phase === 'paused' || state.phase === 'quarterEnd';
-  const { show, apply, dismiss } = useAppUpdate(isGameInProgress);
+  const { show, apply, dismiss } = useAppUpdate(suppressesAppUpdate(screen, state.phase));
 
   if (!show) return null;
   return <UpdatePrompt onUpdate={apply} onDismiss={dismiss} />;
 }
 
+/**
+ * 表示中の画面を持つ層。
+ *
+ * AppContent の中に置いていたが、更新バーは AppContent の外（早期returnの
+ * 影響を受けない兄弟）に居るため、画面を知る手立てが無かった。そのせいで
+ * 判定が phase だけになり、試合設定ウィザードの途中でも更新バナーが出ていた。
+ */
+function AppShell() {
+  const [screen, setScreen] = useState<AppScreen>(initialScreen);
+
+  return (
+    <>
+      <AppContent screen={screen} setScreen={setScreen} />
+      <AppUpdateBanner screen={screen} />
+    </>
+  );
+}
+
 function App() {
   return (
     <GameProvider>
-      <AppContent />
-      <AppUpdateBanner />
+      <AppShell />
       <ToastContainer />
     </GameProvider>
   );
