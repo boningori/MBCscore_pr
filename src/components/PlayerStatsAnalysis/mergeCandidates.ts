@@ -1,9 +1,8 @@
 // 割れていそうな選手カードの検知。
 //
-// 割れているカードは利用者が気づかないと直しようがない。「佐藤 太郎」と
-// eslint-disable-next-line no-irregular-whitespace
-// 「佐藤　太郎」（全角スペース）は一覧に並んでも見分けが付かないので、
-// 気づく手掛かりを一覧の側から出す。
+// 割れているカードは利用者が気づかないと直しようがない。半角スペースの
+// 「佐藤 太郎」と、間に全角スペース(U+3000)を挟んだだけの同姓同名は
+// 一覧に並んでも見分けが付かないので、気づく手掛かりを一覧の側から出す。
 //
 // 検知は提案までで、確認なしには統合しない（別人を混ぜると通算・平均・
 // 成長グラフがまとめて狂う。自動で寄せてよいのは名簿から一意に決まるときだけ）。
@@ -20,7 +19,10 @@ import { normalizeNameForMerge } from '../../utils/mergedPlayers';
  *
  * @param rosterNames 現在の名簿の氏名。同じ氏名が2人以上いる場合、その氏名は
  *   名簿で意図的に分けている（別々のライセンスNo.を割り当てている等）とみなし、
- *   候補から外す。buildIdentityAliases が寄せない条件と同じ判断。
+ *   候補から外す。buildIdentityAliases（playerStatsAnalysis）と同じ
+ *   「あいまいなら候補にしない」という設計判断だが、判定基準は異なる。
+ *   buildIdentityAliases は生の氏名の完全一致で見るのに対し、こちらは
+ *   normalizeNameForMerge による空白除去後のキーで見る。
  */
 export function findMergeCandidates(
     players: readonly AggregatedPlayerStats[],
