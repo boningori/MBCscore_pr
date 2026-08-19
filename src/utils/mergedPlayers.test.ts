@@ -177,4 +177,12 @@ describe('保存と読み込み', () => {
         localStorage.setItem('minibasket-merged-players', JSON.stringify([1, 2]));
         expect(loadMergedPlayers('t1')).toEqual({});
     });
+
+    // トップレベルは素のオブジェクトとして正しくても、chunk[teamId]自体が
+    // 壊れている（手で編集したバックアップ等）場合に備える。ここを見ずに
+    // そのまま返すと、呼び出し側がMergeMapとして扱って落ちる
+    it('チーム単位の中身が壊れていたら統合なしとして扱う', () => {
+        localStorage.setItem('minibasket-merged-players', JSON.stringify({ t1: [1, 2] }));
+        expect(loadMergedPlayers('t1')).toEqual({});
+    });
 });
