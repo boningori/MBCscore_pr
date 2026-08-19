@@ -1,5 +1,5 @@
 import type { Game, PayloadOf, ScoreEntry, StatEntry } from '../../types/game';
-import { recalculateRunningScores } from './shared';
+import { recalculateRunningScores, resolveTargetPlayer } from './shared';
 
 export function handleAddScore(state: Game, payload: PayloadOf<'ADD_SCORE'>): Game {
     const { teamId, playerId, scoreType, entryId } = payload;
@@ -122,13 +122,16 @@ export function handleEditScore(state: Game, payload: PayloadOf<'EDIT_SCORE'>): 
         };
     };
 
-    // 新しい選手にスタッツを加算
+    // 新しい選手にスタッツを加算。
+    // 付け替え先は resolveTargetPlayer で確かめる。相手チームの選手IDが来ると
+    // ここが誰にも当たらず、減算だけが効いて得点が消える（shared のコメント）
+    const target = resolveTargetPlayer(state, entry.teamId, entry.playerId, newPlayerId);
     const addToPlayer = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
         return {
             ...team,
             players: team.players.map(p => {
-                if (p.id !== newPlayerId) return p;
+                if (p.id !== target.playerId) return p;
                 const stats = { ...p.stats, points: p.stats.points + newPoints };
                 // 付け替えてもOGはOGのまま（updatedEntryがフラグを引き継ぐ）。
                 // 番号を借りただけの選手にシュートを打たせない
@@ -142,11 +145,10 @@ export function handleEditScore(state: Game, payload: PayloadOf<'EDIT_SCORE'>): 
         };
     };
 
-    const newPlayer = [...state.teamA.players, ...state.teamB.players].find(p => p.id === newPlayerId);
     const updatedEntry: ScoreEntry = {
         ...entry,
-        playerId: newPlayerId,
-        playerNumber: newPlayer?.number || entry.playerNumber,
+        playerId: target.playerId,
+        playerNumber: target.playerNumber ?? entry.playerNumber,
         scoreType: newScoreType,
         points: newPoints,
     };
@@ -165,28 +167,6 @@ export function handleEditScore(state: Game, payload: PayloadOf<'EDIT_SCORE'>): 
         // 点数種別の変更で累計が変わるため再計算（公式スコアシートの整合性維持）
         scoreHistory: recalculateRunningScores(state.scoreHistory.map(s => s.id === entryId ? updatedEntry : s)),
     };
-}
-
-/**
- * 訂正後の記録を付ける選手を決める。
- *
- * 指定が無い、または指定された選手がそのチームに居ない場合は元の選手を返す。
- * チーム外を許すと、加算側の map が誰にも当たらずスタッツだけが消える
- * （減算は元のチームに対して走るため、合計が静かに減る）。
- */
-function resolveTargetPlayer(
-    state: Game,
-    teamId: string,
-    currentPlayerId: string,
-    newPlayerId: string | undefined,
-): { playerId: string; playerNumber: number | null } {
-    const team = teamId === 'teamA' ? state.teamA : state.teamB;
-    if (!newPlayerId || newPlayerId === currentPlayerId) {
-        return { playerId: currentPlayerId, playerNumber: null };
-    }
-    const target = team.players.find(p => p.id === newPlayerId);
-    if (!target) return { playerId: currentPlayerId, playerNumber: null };
-    return { playerId: target.id, playerNumber: target.number };
 }
 
 export function handleConvertScoreToMiss(state: Game, payload: PayloadOf<'CONVERT_SCORE_TO_MISS'>): Game {

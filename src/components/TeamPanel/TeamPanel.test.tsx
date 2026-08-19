@@ -245,3 +245,31 @@ describe('TeamPanel: ベンチ操作ボタンの色バリアント', () => {
         expect(foul.className).toContain('btn-danger');
     });
 });
+
+// 試合終了後は記録できない（アクションボタンが disabled になる）のに、
+// 選手カードだけは押せて選択マークが付いていた。押しても何も記録されない
+// 空振りの操作が残っているうえ、「終了するとデータの編集ができません」と
+// 確認したばかりの画面で選べてしまうのは、まだ記録できるように読める。
+describe('TeamPanel: 記録できない状態', () => {
+    it('disabled のとき選手カードは押せない', () => {
+        const onPlayerSelect = vi.fn();
+        renderPanel({ disabled: true, onPlayerSelect });
+
+        const card = screen.getByRole('button', { name: /選手4/ }) as HTMLButtonElement;
+        expect(card.disabled).toBe(true);
+
+        fireEvent.click(card);
+        expect(onPlayerSelect).not.toHaveBeenCalled();
+    });
+
+    it('既定（試合中）は押せる', () => {
+        const onPlayerSelect = vi.fn();
+        renderPanel({ onPlayerSelect });
+
+        const card = screen.getByRole('button', { name: /選手4/ }) as HTMLButtonElement;
+        expect(card.disabled).toBe(false);
+
+        fireEvent.click(card);
+        expect(onPlayerSelect).toHaveBeenCalledWith('a1', 'teamA');
+    });
+});

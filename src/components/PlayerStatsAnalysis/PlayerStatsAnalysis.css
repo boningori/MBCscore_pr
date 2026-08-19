@@ -1991,10 +1991,26 @@
 
 /* 1列にすると1グラフが700px超になり、20〜56pxの列が左に寄って右半分が空く。
    出力では列を伸ばして幅いっぱいに配る（棒自体は .bar-track の max-width で
-   止まるので太らない）。min-width は残すのでラベルは切れない。 */
+   止まるので太らない）。
+
+   min-width も外して縮められるようにする。列幅を固定したままだと、期間の数が
+   増えたときに枠(665px)へ収まらず、あふれた棒が .chart-scroll-area に切り落と
+   されて画像から消えていた（実測: 20試合の選手のJPEGに13本しか描かれず、
+   新しい6試合が欠落。1列化しただけでは 14本ぶんまでしか救えていなかった）。
+   画面は横スクロールで逃がせるので、縮めるのは出力のときだけにする。 */
 .player-stats-container .detail-export-area.exporting .bar-wrapper,
 .player-stats-container .detail-export-area.exporting .x-label {
     flex: 1 1 var(--chart-col-width, 20px);
+    min-width: 0;
+}
+
+/* 列を縮めるとラベルが枠に入らなくなる。1つずつ省略記号にすると全部読めなく
+   なるので、間引いて残したものだけを枠からはみ出させる。隣は非表示なので
+   重ならない（どれを残すかは chartXLabel の labelStep / isExportLabelVisible）。
+   visibility にしているのは、列と棒の位置をそろえたままにするため。 */
+.player-stats-container .detail-export-area.exporting .x-label {
+    visibility: var(--export-label-vis, visible);
+    overflow: visible;
 }
 
 .player-stats-container .detail-export-area.exporting .shooting-bar-row {

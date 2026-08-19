@@ -527,13 +527,20 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .app-container .mini-player-card:hover {
+  .app-container .mini-player-card:hover:not(:disabled) {
     background: var(--bg-primary);
   }
 }
 
-.app-container .mini-player-card:active {
+.app-container .mini-player-card:active:not(:disabled) {
   transform: scale(0.98);
+}
+
+/* 試合終了後は記録できない。アクションボタン(.action-btn:disabled)と同じ見せ方に
+   そろえる。押せるように見えて何も起きない状態を残さない */
+.app-container .mini-player-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* 選択中は色・面積・形の3方向で示す（枠＋背景＋外側リング＋左バー＋✓） */
