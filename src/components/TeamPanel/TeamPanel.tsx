@@ -47,6 +47,15 @@ interface TeamPanelProps {
    * 試合中ずっと直せず、そのまま公式様式に印字されていた。
    */
   onTimeoutCancel?: () => void;
+  /**
+   * 記録できない状態（試合終了後）。
+   *
+   * アクションボタンは phase === 'finished' で押せなくなるのに、選手カードだけは
+   * 押せて選択マークが付いていた。記録は入らないので空振りの操作が残るうえ、
+   * 「終了するとデータの編集ができません」と確認した直後の画面で選手を選べると、
+   * まだ記録できるように読める。
+   */
+  disabled?: boolean;
 }
 
 export function TeamPanel({
@@ -57,6 +66,7 @@ export function TeamPanel({
   isActive,
   selectedPlayerId,
   gameMode,
+  disabled = false,
   scoreHistory,
   statHistory,
   foulHistory,
@@ -110,6 +120,7 @@ export function TeamPanel({
               key={player.id}
               className={`mini-player-card ${selectedPlayerId === player.id ? 'selected' : ''}`}
               onClick={() => onPlayerSelect(player.id, teamId)}
+              disabled={disabled}
               aria-pressed={selectedPlayerId === player.id}
               aria-label={`#${formatPlayerNumber(player.number)} ${displayName} ${player.stats.points}点${player.fouls.length > 0 ? ` ファウル${player.fouls.length}` : ''}${disqualification ? ` ${shortDisqualificationLabel(disqualification)}` : ''}`}
             >
