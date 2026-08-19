@@ -7,6 +7,7 @@ import { loadMyTeams, type SavedPlayer, type SavedTeam } from './teamStorage';
 import { createJsonStorage } from './createStorage';
 import { formatRecordDate, recordDateParts, recordInputDate } from './localDate';
 import { isDisqualified } from './disqualification';
+import { loadMergedPlayers, resolveMergedKey } from './mergedPlayers';
 
 // 非表示選手ストレージ。
 // 配列やnullが入っているとチームIDでの索引が壊れるため、素のオブジェクトのみ受ける
@@ -485,6 +486,11 @@ export function aggregatePlayerStats(
     const playerMap = new Map<string, AggregatedPlayerStats>();
     // 選手ごとに「いま採用している背番号の試合日」。走査順は日付順とは限らない
     const latestNumberTime = new Map<string, number>();
+    // 代表キーの記録だけを見る追跡。統合したカードの氏名・背番号は代表キーの
+    // 記録から採る（まとめた相手の古い表記が出ないように）
+    const latestCanonicalTime = new Map<string, number>();
+    // 手動の統合。自動の名寄せの結果をさらに上書きする（詳細は mergedPlayers）
+    const mergeMap = loadMergedPlayers(myTeam.id);
     const hiddenPlayers = options?.includeHidden ? [] : loadHiddenPlayers(myTeam.id);
     // 名寄せも同姓の判定も、期間で絞る前の全試合を見る。
     // 絞り込みでキーが変わると、期間を変えただけで別人扱いになり、
@@ -516,7 +522,11 @@ export function aggregatePlayerStats(
         const playerKeys = buildPlayerKeys(myTeamData.players, collidingKeys, numberAliases, identityAliases);
 
         for (const [playerIndex, player] of myTeamData.players.entries()) {
-            const key = playerKeys[playerIndex];
+            // 利用者がカードで見たキー。手動の統合はこのキーに対して張られている
+            const builtKey = playerKeys[playerIndex];
+            // 手動が常に勝つ。自動判定は名簿からの推論にすぎず、人が「同じ人だ」と
+            // 言ったらそれが正しい
+            const key = resolveMergedKey(mergeMap, builtKey);
 
             // 非表示選手をスキップ
             if (hiddenPlayers.includes(key)) continue;
@@ -587,17 +597,36 @@ export function aggregatePlayerStats(
             aggregated.totalStats = addStats(aggregated.totalStats, player.stats);
             aggregated.gameHistory.push(gameRecord);
 
-            // 背番号はいちばん新しい試合のものを使う。
+            // 氏名・背番号はいちばん新しい試合のものを使う。
             //
             // 以前は push 済みの gameHistory[0]（＝最初に走査した試合）を基準にして
             // 「基準より新しければ上書き」としていた。基準より新しい試合が複数あると
             // 最大日付ではなく最後に走査したものが勝つ。履歴は保存順に並ぶので、
             // 過去の試合を後から入力すると日付順と食い違い、古い背番号が残っていた。
+            //
+            // 統合したカードでは代表キーの記録を優先する。まとめた相手の表記
+            // （全角スペース混じりの氏名やコートネーム）がカードに出ると、
+            // どちらへ寄せたのか分からなくなる。代表キーの記録が1件も無い場合
+            // （対応表だけが残っている）は、従来どおり組の中で新しいものを使う。
             const gameTime = new Date(record.date).getTime();
-            const latest = latestNumberTime.get(key);
-            if (latest === undefined || gameTime > latest) {
-                latestNumberTime.set(key, gameTime);
+            const isCanonicalRecord = builtKey === key;
+            const applyIdentity = () => {
                 aggregated.number = player.number;
+                aggregated.name = player.name;
+                aggregated.licenseNo = player.licenseNo;
+            };
+            if (isCanonicalRecord) {
+                const latest = latestCanonicalTime.get(key);
+                if (latest === undefined || gameTime > latest) {
+                    latestCanonicalTime.set(key, gameTime);
+                    applyIdentity();
+                }
+            } else if (!latestCanonicalTime.has(key)) {
+                const latest = latestNumberTime.get(key);
+                if (latest === undefined || gameTime > latest) {
+                    latestNumberTime.set(key, gameTime);
+                    applyIdentity();
+                }
             }
         }
     }
