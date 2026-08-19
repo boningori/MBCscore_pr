@@ -145,6 +145,66 @@ interface KeyablePlayer {
 }
 
 /**
+ * 記録に残っている識別キーを、登録名簿の「代表キー」へ寄せる対応表を作る。
+ *
+ * 識別キーは氏名＋ライセンスNo.（generatePlayerKey）。ライセンスNo.は任意入力の
+ * 3桁を手で打つ項目なので、シーズンの途中で動く:
+ *   - 後から書き足す（大会の申込みが近づいてから入れる）
+ *   - 打ち間違いに気づいて直す
+ *   - 名簿から消す
+ * どれもキーが変わるので、変える前に記録した試合が別人のカードとして分かれる
+ * （実測: 2試合で「佐藤 太郎_123(1試合 8点)」「佐藤 太郎(1試合 10点)」の2枚。
+ * 通算・平均・成長グラフがどちらも実態と食い違う）。
+ *
+ * 変わらないのは氏名のほうなので、氏名で名簿を引いて代表キーを決める。
+ * 記録に実在するキーだけを対象にし、名簿に該当する氏名がちょうど1人のときだけ
+ * 寄せる。同姓同名が名簿に2人いれば、その氏名のキーがどちらを指すか決められない
+ * ので寄せない —— 別人を1人に混ぜるより、同一人物が割れるほうがまだ直しやすい
+ * （buildNumberAliases と同じ判断）。名簿で別々のライセンスNo.を割り当てて区別
+ * している2人も、この条件で自動的に分かれたまま残る。
+ *
+ * 残る限界: 同姓同名の選手が退団していて、その人の記録が別のライセンスNo.で
+ * 残っている場合は、現役の1人に寄ってしまう。氏名も番号もライセンスも手掛かりに
+ * ならないため区別できない。
+ *
+ * @param recordedRosters 期間で絞る前の全試合の名簿（絞ると期間ごとにキーが変わる）
+ */
+function buildIdentityAliases(
+    roster: SavedPlayer[],
+    recordedRosters: KeyablePlayer[][],
+): Map<string, string> {
+    // 氏名 → 名簿での代表キー。同じ代表キーが2人ぶん出ても1つに畳む
+    // （同姓同名でどちらもライセンスNo.未入力の場合。従来どおり背番号で分ける）
+    const byName = new Map<string, string[]>();
+    for (const saved of roster) {
+        const canonical = generatePlayerKey(saved.name, saved.licenseNo);
+        const claimed = byName.get(saved.name) ?? [];
+        if (!claimed.includes(canonical)) claimed.push(canonical);
+        byName.set(saved.name, claimed);
+    }
+
+    const aliases = new Map<string, string>();
+    for (const players of recordedRosters) {
+        for (const p of players) {
+            const recorded = generatePlayerKey(p.name, p.licenseNo);
+            if (aliases.has(recorded)) continue;
+            const claimed = byName.get(p.name);
+            // 名簿に居ない（退団後など）／同姓同名が複数 → 記録どおりに残す
+            if (!claimed || claimed.length !== 1) continue;
+            if (claimed[0] === recorded) continue;
+            aliases.set(recorded, claimed[0]);
+        }
+    }
+    return aliases;
+}
+
+/** 記録上の選手を、名簿の代表キーへ寄せた識別キー（寄せ先が無ければ記録どおり） */
+function identityKey(player: KeyablePlayer, aliases: ReadonlyMap<string, string>): string {
+    const key = generatePlayerKey(player.name, player.licenseNo);
+    return aliases.get(key) ?? key;
+}
+
+/**
  * このチームの試合を通して、一度でも同じ名簿の中で衝突した識別キーを集める。
  *
  * 判定は「1試合の名簿の中で重なったか」だが、結果は全試合に効かせる。
@@ -156,12 +216,17 @@ interface KeyablePlayer {
  * 期間で絞る前の全試合を渡すこと。絞り込みでキーが変わると、期間を変えた
  * だけで別人扱いになり、playerKey で保存している非表示設定もずれる。
  */
-function collectCollidingKeys(rosters: KeyablePlayer[][]): Set<string> {
+function collectCollidingKeys(
+    rosters: KeyablePlayer[][],
+    identityAliases: ReadonlyMap<string, string>,
+): Set<string> {
     const colliding = new Set<string>();
     for (const players of rosters) {
         const seen = new Set<string>();
         for (const p of players) {
-            const key = generatePlayerKey(p.name, p.licenseNo);
+            // 寄せたあとのキーで判定する。寄せる前で見ると、ライセンスNo.の
+            // 入力前後で同じ選手が別キーになり衝突を取りこぼす
+            const key = identityKey(p, identityAliases);
             if (seen.has(key)) colliding.add(key);
             seen.add(key);
         }
@@ -236,9 +301,10 @@ function buildPlayerKeys(
     players: KeyablePlayer[],
     colliding: ReadonlySet<string>,
     aliases: ReadonlyMap<string, number>,
+    identityAliases: ReadonlyMap<string, string>,
 ): string[] {
     return players.map(p => {
-        const key = generatePlayerKey(p.name, p.licenseNo);
+        const key = identityKey(p, identityAliases);
         if (!colliding.has(key)) return key;
         const canonical = aliases.get(`${key}||${p.number}`) ?? p.number;
         return `${key}#${canonical}`;
@@ -420,10 +486,15 @@ export function aggregatePlayerStats(
     // 選手ごとに「いま採用している背番号の試合日」。走査順は日付順とは限らない
     const latestNumberTime = new Map<string, number>();
     const hiddenPlayers = options?.includeHidden ? [] : loadHiddenPlayers(myTeam.id);
-    // 同姓の判定は期間で絞る前の全試合で行う。理由は collectCollidingKeys
-    const collidingKeys = collectCollidingKeys(
-        games.map(({ record, isTeamA }) => (isTeamA ? record.teamA : record.teamB).players),
+    // 名寄せも同姓の判定も、期間で絞る前の全試合を見る。
+    // 絞り込みでキーが変わると、期間を変えただけで別人扱いになり、
+    // playerKey で保存している非表示設定もずれる（collectCollidingKeys）
+    const recordedRosters = games.map(
+        ({ record, isTeamA }) => (isTeamA ? record.teamA : record.teamB).players,
     );
+    // ライセンスNo.の入力・訂正・削除をまたいで同じ選手に寄せる（buildIdentityAliases）
+    const identityAliases = buildIdentityAliases(myTeam.players, recordedRosters);
+    const collidingKeys = collectCollidingKeys(recordedRosters, identityAliases);
     // 同姓を分ける背番号は、ビブス／ユニフォームの違いを吸収してから使う
     const numberAliases = buildNumberAliases(myTeam.players);
 
@@ -442,7 +513,7 @@ export function aggregatePlayerStats(
                 myScore < opponentScore ? 'loss' : 'draw';
 
         // 氏名 + ライセンスNo. で識別。衝突したら背番号で分ける（buildPlayerKeys）
-        const playerKeys = buildPlayerKeys(myTeamData.players, collidingKeys, numberAliases);
+        const playerKeys = buildPlayerKeys(myTeamData.players, collidingKeys, numberAliases, identityAliases);
 
         for (const [playerIndex, player] of myTeamData.players.entries()) {
             const key = playerKeys[playerIndex];
