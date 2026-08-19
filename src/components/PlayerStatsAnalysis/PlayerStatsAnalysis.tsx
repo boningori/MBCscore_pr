@@ -352,11 +352,9 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                                 </button>
                             </>
                         ) : (
-                            // 統合すると母数が減るため「>= 2」で判定すると、統合した直後に
-                            // 入口ごと消えてしまい、選手が1人だけの状態から抜け出せなくなる。
-                            // 1人でも入口は出しておき、選べない実害は選択モード側の
-                            // 「2枚以上」ガード（統合するボタンの disabled）に任せる
-                            playerStats.length >= 1 && (
+                            // 統合すると2枚が1枚になる。1枚しか無ければ統合する
+                            // 相手が居ないので、入口のボタンごと消えるのが正しい
+                            playerStats.length >= 2 && (
                                 <button
                                     className="btn btn-secondary btn-small"
                                     onClick={() => setSelectionMode(true)}
