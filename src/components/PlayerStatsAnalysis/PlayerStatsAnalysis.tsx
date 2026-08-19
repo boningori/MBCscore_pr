@@ -147,6 +147,12 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
             setSelectedPlayer(null);
             setViewMode('summary');
             setShowHiddenPlayers(false);
+            // 統合の選択状態もリセットする。playerKeyはチームIDを含まない
+            // （氏名＋ライセンスNo.）ため、切り替え先に同姓同名（ライセンスNo.未入力）の
+            // 選手がいると、リセットしないと選択済みのカードが乗り移って見える
+            setSelectionMode(false);
+            setSelectedKeys(new Set());
+            setShowMergeConfirm(false);
         }
     };
 

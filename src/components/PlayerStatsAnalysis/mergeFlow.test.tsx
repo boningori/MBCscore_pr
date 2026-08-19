@@ -44,6 +44,49 @@ function seedSplitPlayer() {
     recordGame('佐藤 太郎', 4, 8, '2026-06-01');
 }
 
+const TEAM_A_ID = 'ta';
+const TEAM_B_ID = 'tb';
+
+/**
+ * マイチームを2つ登録する。両チームに同姓同名（ライセンスNo.未入力）の
+ * 選手を1人ずつ置く。playerKey は氏名＋ライセンスNo.で、ライセンスNo.が
+ * 無ければ氏名そのものになるため、この2人は別チームでも同じ playerKey を持つ
+ * （チーム切り替え時の選択状態リセットの再現に使う）。
+ */
+function seedTwoTeams() {
+    const team = (id: string, name: string) => ({
+        id, name, coachName: 'C', assistantCoachName: '',
+        players: [
+            { number: 4, uniformNumber: 4, name: '田中 花子', isCaptain: false },
+            { number: 9, uniformNumber: 9, name: '鈴木 次郎', isCaptain: false },
+        ],
+        createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    localStorage.setItem('minibasket-my-teams', JSON.stringify([
+        team(TEAM_A_ID, 'チームA'),
+        team(TEAM_B_ID, 'チームB'),
+    ]));
+}
+
+function recordGameForTeam(teamId: string, teamName: string, name: string, number: number, points: number, date: string) {
+    const p = createPlayer('p', number, name);
+    p.stats = { ...p.stats, points };
+    p.quartersPlayed = ['starter', false, false, false];
+    const mine = createTeam(`${teamId}-game`, teamName, 'C');
+    mine.isMyTeam = true;
+    mine.savedTeamId = teamId;
+    mine.players = [p];
+    const other = createTeam('opponent', '相手', 'C');
+    other.players = [createPlayer('b', 9, '相手')];
+    saveGameResult('試合', mine, other, [], [], [], new Date(date));
+}
+
+const setSelect = (el: HTMLSelectElement, value: string) => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value')!.set!;
+    setter.call(el, value);
+    fireEvent.change(el);
+};
+
 const cards = () => [...document.querySelectorAll<HTMLButtonElement>('.player-card')];
 const button = (name: string) => screen.getByRole('button', { name });
 
@@ -132,5 +175,33 @@ describe('統合の流れ', () => {
 
         expect(cards().every(c => c.getAttribute('aria-pressed') === 'true')).toBe(true);
         expect((button('統合する') as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    // playerKey はチームIDを含まない（氏名＋ライセンスNo.）ため、切り替え先に
+    // 同姓同名（ライセンスNo.未入力）の選手がいると、リセットしなければ
+    // 選択状態がそのまま乗り移って見える
+    it('マイチームを切り替えると選択モードを抜け、切り替え後のカードも選択済みにならない', () => {
+        seedTwoTeams();
+        recordGameForTeam(TEAM_A_ID, 'チームA', '田中 花子', 4, 8, '2026-06-01');
+        recordGameForTeam(TEAM_A_ID, 'チームA', '鈴木 次郎', 9, 5, '2026-06-01');
+        recordGameForTeam(TEAM_B_ID, 'チームB', '田中 花子', 4, 3, '2026-06-02');
+        recordGameForTeam(TEAM_B_ID, 'チームB', '鈴木 次郎', 9, 6, '2026-06-02');
+
+        render(<PlayerStatsAnalysis onBack={() => { }} />);
+
+        fireEvent.click(button('選手を統合'));
+        const tanakaCard = cards().find(c => c.textContent?.includes('花子'));
+        expect(tanakaCard).toBeTruthy();
+        fireEvent.click(tanakaCard!);
+        expect(tanakaCard!.getAttribute('aria-pressed')).toBe('true');
+
+        const teamSelect = document.getElementById('stats-team-select') as HTMLSelectElement;
+        setSelect(teamSelect, TEAM_B_ID);
+
+        // 選択モードの操作子が消えている＝選択モードを抜けている
+        expect(screen.queryByRole('button', { name: '統合する' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'やめる' })).toBeNull();
+        // 切り替え後のどのカードも選択済み表示になっていない
+        expect(cards().some(c => c.getAttribute('aria-pressed') === 'true')).toBe(false);
     });
 });
