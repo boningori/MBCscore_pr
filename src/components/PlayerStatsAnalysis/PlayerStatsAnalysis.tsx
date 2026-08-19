@@ -24,6 +24,7 @@ import {
     loadMergedPlayers,
     saveMergedPlayers,
     mergeKeys,
+    unmergeKey,
     mergedCanonicalKeys,
     chooseCanonicalKey,
     carryOverHidden,
@@ -245,6 +246,17 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setHiddenToggleKey(prev => prev + 1);
         exitSelection();
     }, [selectedTeam, selectedCards, canonicalKey, exitSelection]);
+
+    const handleUnmerge = useCallback(() => {
+        if (!selectedTeam || !selectedPlayer) return;
+        saveMergedPlayers(
+            selectedTeam.id,
+            unmergeKey(loadMergedPlayers(selectedTeam.id), selectedPlayer.playerKey),
+        );
+        setMergeToggleKey(prev => prev + 1);
+        // 解除すると元の枚数に戻る。開いていた詳細はもう同じ内容ではないので一覧へ
+        handleBackToSummary();
+    }, [selectedTeam, selectedPlayer, handleBackToSummary]);
 
     // 非表示にしている選手のキー。全員表示に切り替えたとき、どれが非表示なのかを
     // カードに示すために使う。印が無いと、戻したい選手を1人ずつ詳細で確かめるしかない
@@ -504,6 +516,8 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                     teamId={selectedTeam.id}
                     isHidden={isSelectedPlayerHidden}
                     onToggleHidden={handleTogglePlayerHidden}
+                    isMerged={mergedKeys.has(selectedPlayer.playerKey)}
+                    onUnmerge={handleUnmerge}
                 />
             )}
 

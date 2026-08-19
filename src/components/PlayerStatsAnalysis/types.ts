@@ -59,6 +59,10 @@ export interface DetailViewProps {
     teamId: string;
     isHidden: boolean;
     onToggleHidden: () => void;
+    /** 他のカードをまとめた代表か（解除の操作子を出すかの判断） */
+    isMerged?: boolean;
+    /** 統合の解除 */
+    onUnmerge?: () => void;
 }
 
 export interface GrowthComparisonProps {

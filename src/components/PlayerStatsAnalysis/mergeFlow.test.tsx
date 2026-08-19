@@ -204,4 +204,22 @@ describe('統合の流れ', () => {
         // 切り替え後のどのカードも選択済み表示になっていない
         expect(cards().some(c => c.getAttribute('aria-pressed') === 'true')).toBe(false);
     });
+
+    it('詳細から解除すると元の枚数に戻る', () => {
+        seedSplitPlayer();
+        render(<PlayerStatsAnalysis onBack={() => { }} />);
+
+        fireEvent.click(button('選手を統合'));
+        cards().forEach(card => fireEvent.click(card));
+        fireEvent.click(button('統合する'));
+        fireEvent.click(button('この内容で統合'));
+        expect(cards()).toHaveLength(1);
+
+        fireEvent.click(cards()[0]);
+        fireEvent.click(button('統合を解除'));
+
+        expect(loadMergedPlayers(TEAM_ID)).toEqual({});
+        expect(cards()).toHaveLength(2);
+        expect(screen.queryByText('統合済み')).toBeNull();
+    });
 });
