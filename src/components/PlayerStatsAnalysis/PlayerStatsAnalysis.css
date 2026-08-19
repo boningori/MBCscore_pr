@@ -2280,11 +2280,16 @@
     }
 }
 
-/* 統合済みの印。非表示の印（.player-hidden-badge）と同じ作りにそろえる */
+/* 統合済みの印。非表示の印（.player-hidden-badge）と同じ作りにそろえる。
+   .player-info が flex-direction: column のため margin-left は左インデントとして
+   効く。ここが揃っていないと、非表示と統合済みの両方が出たカードでバッジの
+   位置が6pxずれる（色だけは統合済み用のまま変えない） */
 .player-stats-container .player-merged-badge {
+    margin-left: 6px;
     font-size: 0.7rem;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 999px;
+    font-weight: 600;
     background: var(--stats-success-bg);
     color: var(--text-primary);
     border: 1px solid var(--stats-success-pale-2);
