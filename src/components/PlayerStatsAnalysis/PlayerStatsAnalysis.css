@@ -2279,3 +2279,24 @@
         min-width: 0;
     }
 }
+
+/* 統合済みの印。非表示の印（.player-hidden-badge）と同じ作りにそろえる */
+.player-stats-container .player-merged-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--stats-success-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--stats-success-pale-2);
+    white-space: nowrap;
+}
+
+/* 選択モード中のカード。選択中は色・枠の2方向で示す */
+.player-stats-container .player-card.selecting {
+    border: 2px dashed var(--stats-text-dim);
+}
+
+.player-stats-container .player-card.selecting.selected {
+    border: 2px solid var(--stats-success);
+    background: var(--stats-success-bg);
+}
