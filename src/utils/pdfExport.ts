@@ -129,6 +129,29 @@ export function repaintPieCharts(root: HTMLElement): void {
     });
 }
 
+/**
+ * 横スクロール位置を控えて、あとで戻す関数を返す。
+ *
+ * 出力は生きたDOMに 'exporting' を付けて寸法を変える。成長グラフの軸は
+ * いちばん新しい期間が見える右端から始まる（chartScroll）が、出力用の
+ * レイアウトでは列が縮んで中身が枠に収まるため、ブラウザが scrollLeft を
+ * 0 に丸める。クラスを外すと再びあふれるのに位置は 0 のままで、出力した
+ * あとグラフ6枚がいちばん古い期間まで巻き戻っていた
+ * （実測: JPEG出力の前 594/594 → 後 0/594）。
+ *
+ * 出力は画像を作る処理であって画面を動かす処理ではないので、触った状態は
+ * 元に戻して返す。左端(0)だった要素は戻す必要が無いので控えない。
+ */
+export function captureScrollLeft(scrollers: Iterable<{ scrollLeft: number }>): () => void {
+    const saved: Array<[{ scrollLeft: number }, number]> = [];
+    for (const el of scrollers) {
+        if (el.scrollLeft !== 0) saved.push([el, el.scrollLeft]);
+    }
+    return () => {
+        for (const [el, left] of saved) el.scrollLeft = left;
+    };
+}
+
 interface ExportOptions {
     filename: string;
     format: 'pdf' | 'jpeg';
@@ -170,6 +193,9 @@ export async function exportElement(
     // 回線が遅いときの「読み込み中だけ崩れて見える」も無くなる。
     const { default: html2canvas } = await import('html2canvas');
 
+    // 出力用レイアウトは寸法を変えるので、横スクロール位置は控えてから戻す
+    const restoreScroll = captureScrollLeft(element.querySelectorAll<HTMLElement>('*'));
+
     // エクスポート中はレスポンシブの display:none を無効化してA4レイアウトを復元
     element.classList.add('exporting');
 
@@ -192,6 +218,8 @@ export async function exportElement(
         });
     } finally {
         element.classList.remove('exporting');
+        // クラスを外して寸法が戻ったあとに位置を書く（順序を逆にすると丸められる）
+        restoreScroll();
     }
 
     // html2canvasのCanvasを新しいCanvasにコピーして斜線を描画
