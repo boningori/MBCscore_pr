@@ -3,6 +3,7 @@ import type { ScoreEntry, StatEntry, FoulEntry, Player, ScoreType, StatType, Fre
 import { canEditFreeThrows } from '../../context/reducers/foulHandlers';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { EditActionModal } from '../EditActionModal';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import './ActionHistory.css';
 
 // FT結果をフォーマット（例: "(FT: 1/2)"）
@@ -385,6 +386,12 @@ export function ActionHistory({
     const handleCancel = useCallback(() => {
         setSelectedItemId(null);
     }, []);
+
+    // 長押しで開いた編集・削除メニューも、戻る操作で閉じるだけにする。
+    // 画面上の「キャンセル」と行き先を揃える（受け取らないと記録画面ごと
+    // ホームへ飛ぶ）。編集ダイアログはあとからマウントされる＝スタックの上に
+    // 載るので、開いている間はそちらが先に閉じる（modalStack の LIFO）
+    useBackHandler(selectedItemId !== null, handleCancel);
 
     return (
         <div className="action-history">
