@@ -1198,7 +1198,7 @@
 }
 
 /* 出場記録の斜め線スタイル */
-/* スターター（Q開始時の5人）: 右上から左下（＼） */
+/* スターター（Q開始時の5人）: 右上から左下へ引く線（／） */
 .running-scoresheet-container .cell-quarter.slash-starter {
     background-size: 100% 100%;
 }
@@ -1211,7 +1211,7 @@
     background-image: linear-gradient(to bottom right, transparent 47.7%, #000 48%, #000 52%, transparent 52.3%);
 }
 
-/* 途中交代: 左上から右下（／） */
+/* 途中交代: 左上から右下へ引く線（＼） */
 .running-scoresheet-container .cell-quarter.slash-sub {
     background-size: 100% 100%;
 }
