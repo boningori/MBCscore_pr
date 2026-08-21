@@ -442,21 +442,38 @@ export function FoulInputFlow({
                     )}
                 </div>
 
-                {/* ファウルアウト警告 */}
+                {/* ファウルアウト警告（対象選手の名乗りも兼ねる） */}
                 {hasSelectedPlayer && isFouledOut && (
                     <div className="foul-warning">
-                        ⚠️ {playerName || '選手'}は
+                        ⚠️ {confirmPlayerLabel}は
                         {disqualification
                             ? `既に${disqualificationMessage(disqualification)}（ファウル${currentFoulCount}個）`
                             : `既に${currentFoulCount}個のファウル（ファウルアウト済み）`}
                     </div>
                 )}
 
-                {/* 現在のファウル数表示 */}
-                {hasSelectedPlayer && !isFouledOut && currentFoulCount > 0 && step === 'foulType' && (
-                    <div className="foul-count-info">
-                        {playerName || '選手'}: 現在{currentFoulCount}個のファウル
-                        {currentFoulCount >= 4 && <span className="foul-trouble"> (ファウルトラブル)</span>}
+                {/*
+                  誰のファウルとして記録するかを、どの段でも出す。
+                  以前は「現在N個のファウル」を出すついでに名前が見えるだけで、
+                  条件が currentFoulCount > 0 だった。つまりその選手の1個目
+                  ——いちばん多いケース——では対象選手がどこにも出ず、
+                  「ファウル種類を選択／チームファウル: 0個」しか読めなかった。
+                  選手カードは暗幕の下なので、押し間違えても確定前に気づけない。
+                  ファウルは失格判定と公式様式に直結するので、確認は常に出す。
+                  ファウルアウト済みのときは上の警告が同じ名前を出しているので重ねない。
+                  ベンチ・コーチのファウル（hasSelectedPlayer が false）は対象が
+                  選手ではないので出さない。
+                */}
+                {hasSelectedPlayer && !isFouledOut && (
+                    <div className="foul-count-info foul-target-info">
+                        <span className="foul-target-label">ファウルした選手</span>
+                        <span className="foul-target-player">{confirmPlayerLabel}</span>
+                        {currentFoulCount > 0 && (
+                            <span className="foul-target-count">
+                                現在{currentFoulCount}個
+                                {currentFoulCount >= 4 && <span className="foul-trouble"> (ファウルトラブル)</span>}
+                            </span>
+                        )}
                     </div>
                 )}
 

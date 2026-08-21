@@ -27,24 +27,33 @@ function player(id: string, number: number, name: string, points: number) {
     };
 }
 
-// 統合の入口は2枚以上ないと出ない（1枚では統合する相手が居ない）
+// 統合の入口は2枚以上ないと出ない（1枚では統合する相手が居ない）。
+//
+// 2人を別々の試合に置くこと。同じ試合に一緒に出ている2枚は別人だと確定でき、
+// まとめるとその試合が二重に数えられるので「統合する」が押せない
+// （mergeCandidates の sharesSameGame）。ここで見たいのは戻る操作の扱いなので、
+// 統合そのものは成立する形にしておく
 function seed() {
     const team = {
         id: 't-red', name: 'レッドミニバス', coachName: 'C',
         players: [player('p4', 4, '山田太郎', 10), player('p5', 5, '鈴木花子', 8)],
         updatedAt: new Date().toISOString(),
     };
-    localStorage.setItem('minibasket-my-teams', JSON.stringify([team]));
-    localStorage.setItem('minibasket-game-history', JSON.stringify([{
-        id: 'g1', date: new Date(2026, 5, 5).toISOString(), gameName: '第1節',
-        teamA: { ...team, color: 'white', teamFouls: [0, 0, 0, 0], timeouts: [] },
+    const game = (id: string, day: number, players: ReturnType<typeof player>[]) => ({
+        id, date: new Date(2026, 5, day).toISOString(), gameName: id,
+        teamA: { ...team, players, color: 'white', teamFouls: [0, 0, 0, 0], timeouts: [] },
         teamB: {
             id: 't-blue', name: 'ブルーミニバス', color: 'blue', coachName: 'C',
             players: [], teamFouls: [0, 0, 0, 0], timeouts: [],
         },
         finalScore: { teamA: 30, teamB: 20 },
         scoreHistory: [], statHistory: [], foulHistory: [],
-    }]));
+    });
+    localStorage.setItem('minibasket-my-teams', JSON.stringify([team]));
+    localStorage.setItem('minibasket-game-history', JSON.stringify([
+        game('g1', 5, [player('p4', 4, '山田太郎', 10)]),
+        game('g2', 12, [player('p5', 5, '鈴木花子', 8)]),
+    ]));
 }
 
 function enterSelection() {

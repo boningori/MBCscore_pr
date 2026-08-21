@@ -2356,3 +2356,13 @@
     color: var(--text-secondary);
     margin-right: auto;
 }
+
+/* 「統合する」が押せない理由。ツールバーは flex-wrap なので、幅いっぱいを
+   取って必ず独立した行に落とす。ボタンの隣に押し込むと、長い文が枚数表示を
+   潰したうえに、灰色のボタンとの対応が読み取りにくくなる */
+.player-stats-container .merge-toolbar-warning {
+    flex-basis: 100%;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--warning-light);
+}

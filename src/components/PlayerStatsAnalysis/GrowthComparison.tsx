@@ -83,11 +83,13 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
         // 出力は幅固定の1枚画像で、横スクロールで逃がせない。列を縮めて全部の棒を
         // 入れるかわりに、重なるラベルだけ間引く（詳細は chartXLabel の labelStep）
         const exportStep = labelStep(xLabels.length, EXPORT_PLOT_WIDTH, columnWidth);
-        const ticks = buildAxisTicks(values);
+        // 試合単位は回数そのもの、それ以外は期間平均（詳細は chartAxis.formatBarValue）。
+        // 軸の刻みと棒の桁は同じ判断から出す。片方だけ値の整数性で決めていたため、
+        // 月平均がたまたま全部整数になった月だけ軸の刻みが変わっていた
+        const wholeNumbers = periodType === 'game';
+        const ticks = buildAxisTicks(values, wholeNumbers);
         const niceMax = ticks[0];
         const tickCount = TICK_COUNT;
-        // 試合単位は回数そのもの、それ以外は期間平均（詳細は chartAxis.formatBarValue）
-        const wholeNumbers = periodType === 'game';
 
         return (
             <div

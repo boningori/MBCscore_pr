@@ -4,47 +4,71 @@ import { buildAxisTicks, formatBarValue, formatTick } from './chartAxis';
 // 旧実装はキリの良い「最大値」を求めてから機械的に4等分していた。
 // スティール最大3なら 3 / 2.3 / 1.5 / 0.8 / 0 となり、
 // 「0.8回のスティール」という実在しない目盛りが出ていた。
-// 目盛り間隔を先に決め、さらに元データが全て整数なら間隔も整数にする。
-// （月単位・四半期単位は平均値になるため小数の目盛りが必要）
+// 目盛り間隔を先に決め、さらに回数そのものを描くグラフ（試合単位）なら
+// 間隔も整数にする。（月単位・四半期単位は平均値になるため小数の目盛りが必要）
+//
+// 整数かどうかは「値」ではなく「期間の単位」で決める。値で決めていたころは、
+// 月平均がたまたま全部整数になった月だけ軸の刻みが変わっていた。
+
+/** 回数そのもの（試合単位） */
+const counts = (values: number[]) => buildAxisTicks(values, true);
+/** 期間平均（月・四半期・年単位） */
+const averages = (values: number[]) => buildAxisTicks(values, false);
 
 describe('buildAxisTicks', () => {
     it('目盛りは常に5本で、降順・最後が0', () => {
         for (const values of [[0.5], [1], [2], [3], [7], [12], [45], [130]]) {
-            const ticks = buildAxisTicks(values);
-            expect(ticks).toHaveLength(5);
-            expect(ticks[4]).toBe(0);
-            for (let i = 1; i < ticks.length; i++) expect(ticks[i]).toBeLessThan(ticks[i - 1]);
+            for (const ticks of [counts(values), averages(values)]) {
+                expect(ticks).toHaveLength(5);
+                expect(ticks[4]).toBe(0);
+                for (let i = 1; i < ticks.length; i++) expect(ticks[i]).toBeLessThan(ticks[i - 1]);
+            }
         }
     });
 
     it('最大値を必ず含む高さになる', () => {
         for (const values of [[0.5], [1], [2, 1], [3], [7], [12], [45], [130]]) {
-            expect(buildAxisTicks(values)[0]).toBeGreaterThanOrEqual(Math.max(...values));
+            expect(counts(values)[0]).toBeGreaterThanOrEqual(Math.max(...values));
+            expect(averages(values)[0]).toBeGreaterThanOrEqual(Math.max(...values));
         }
     });
 
-    it('試合単位（整数）では目盛りも整数になる', () => {
+    it('試合単位（回数）では目盛りも整数になる', () => {
         // スティール 0〜3（旧: 3/2.3/1.5/0.8/0）
-        expect(buildAxisTicks([0, 1, 2, 2, 3, 1])).toEqual([4, 3, 2, 1, 0]);
+        expect(counts([0, 1, 2, 2, 3, 1])).toEqual([4, 3, 2, 1, 0]);
         // ブロック 0〜2（旧: 2/1.5/1/0.5/0）
-        expect(buildAxisTicks([0, 0, 1, 0, 1, 2])).toEqual([4, 3, 2, 1, 0]);
+        expect(counts([0, 0, 1, 0, 1, 2])).toEqual([4, 3, 2, 1, 0]);
         // 得点 6〜18
-        expect(buildAxisTicks([6, 9, 8, 14, 18, 16])).toEqual([20, 15, 10, 5, 0]);
+        expect(counts([6, 9, 8, 14, 18, 16])).toEqual([20, 15, 10, 5, 0]);
         // リバウンド 3〜10
-        expect(buildAxisTicks([3, 5, 5, 8, 10, 9])).toEqual([12, 9, 6, 3, 0]);
+        expect(counts([3, 5, 5, 8, 10, 9])).toEqual([12, 9, 6, 3, 0]);
     });
 
     it('平均値（小数）では小数の目盛りを許す', () => {
         // 月単位などは平均になる。整数に丸め上げると軸が粗くなりすぎる
-        const ticks = buildAxisTicks([0.5, 0.8, 1.2]);
+        const ticks = averages([0.5, 0.8, 1.2]);
         expect(ticks[0]).toBeGreaterThanOrEqual(1.2);
         expect(ticks).toHaveLength(5);
         expect(ticks.some(t => !Number.isInteger(t))).toBe(true);
     });
 
+    // 値で判断していたころ、月平均が 1.0/4.0/…/12.0 の月だけ軸が 12/9/6/3/0、
+    // 11.7 が混じる月は 20/15/10/5/0 になっていた。同じ画面に並ぶ6枚の
+    // グラフの間でも、データ次第で刻み方が食い違う
+    it('平均値の刻みは、値がたまたま整数でも変わらない', () => {
+        expect(averages([1, 4, 6, 8, 10, 12])).toEqual(averages([1, 4, 6, 8, 10, 11.7]));
+    });
+
+    it('平均値でも3の系列を使い、軸が間延びしない', () => {
+        // 1・2・5・10 だけだと最大11.7で間隔5・軸20となり、棒が6割までしか伸びない
+        expect(averages([1, 4, 6, 8, 10, 11.7])[0]).toBe(12);
+    });
+
     it('データが空・全て0でも軸が成立する', () => {
-        expect(buildAxisTicks([])[0]).toBeGreaterThan(0);
-        expect(buildAxisTicks([0, 0, 0])[0]).toBeGreaterThan(0);
+        for (const build of [counts, averages]) {
+            expect(build([])[0]).toBeGreaterThan(0);
+            expect(build([0, 0, 0])[0]).toBeGreaterThan(0);
+        }
     });
 });
 
@@ -53,18 +77,19 @@ describe('formatTick', () => {
         // 月平均のAST・STL・BLKなど最大値が1以下だと間隔が0.25になる。
         // 一律 toFixed(1) だと 0.75→「0.8」・0.25→「0.3」で線とずれ、
         // 並びも 1 / 0.8 / 0.5 / 0.3 / 0 と不等間隔に見えていた
-        expect(buildAxisTicks([0.4, 0.7, 1]).map(formatTick)).toEqual(['1', '0.75', '0.5', '0.25', '0']);
+        expect(averages([0.4, 0.7, 1]).map(formatTick)).toEqual(['1', '0.75', '0.5', '0.25', '0']);
     });
 
     it('整数と1桁小数はそのまま', () => {
-        expect(buildAxisTicks([6, 9, 14]).map(formatTick)).toEqual(['20', '15', '10', '5', '0']);
-        expect(buildAxisTicks([7, 9, 8.5]).map(formatTick)).toEqual(['10', '7.5', '5', '2.5', '0']);
+        expect(counts([6, 9, 14]).map(formatTick)).toEqual(['20', '15', '10', '5', '0']);
+        expect(averages([7, 9, 8.5]).map(formatTick)).toEqual(['10', '7.5', '5', '2.5', '0']);
     });
 
     it('表示した目盛りは、実際の目盛り値と読み戻して一致する', () => {
         for (const values of [[0.4, 0.7, 1], [0.05, 0.1], [3], [2, 1], [45], [130], [12.5]]) {
-            const ticks = buildAxisTicks(values);
-            expect(ticks.map(formatTick).map(Number)).toEqual(ticks);
+            for (const ticks of [counts(values), averages(values)]) {
+                expect(ticks.map(formatTick).map(Number)).toEqual(ticks);
+            }
         }
     });
 });

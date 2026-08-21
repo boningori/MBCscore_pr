@@ -184,6 +184,15 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     useCallback(() => setScreen(phase === 'setup' ? 'gameSetup' : 'game'), [phase, setScreen]),
   );
 
+  // アクション先行入力の「記録待ち」も、戻る操作で取り消せるようにする。
+  //
+  // この状態では選手タップが「選択」ではなく「即記録」に変わる。抜ける手段は
+  // ステータスバーの「キャンセル」だけで、受け取らないと記録画面ごとホームへ
+  // 飛ぶ（保留パネル・得点セレクターと同じ扱いに揃える）。
+  // 記録待ちのまま画面を離れても状態は残るので、戻ってくると次の選手タップが
+  // 意図しない記録になる——そこがいちばん困る
+  useBackHandler(pendingAction !== null, useCallback(() => setPendingAction(null), []));
+
   // 起動時: 過去の試合に登録マイチームのidを書き戻す。
   // 改名されるとその試合は名前で辿れなくなり選手スタッツ分析から消えるため、
   // 改名される前に帰属をidへ凍結しておく（走らせても分析結果は変わらない）。

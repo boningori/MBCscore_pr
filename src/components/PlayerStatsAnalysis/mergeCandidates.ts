@@ -11,6 +11,29 @@ import type { AggregatedPlayerStats } from '../../utils/playerStatsAnalysis';
 import { normalizeNameForMerge } from '../../utils/mergedPlayers';
 
 /**
+ * 組の中に「同じ試合に一緒に出ている2枚」が含まれているか。
+ *
+ * 1人の選手が1試合の名簿に2回載ることはないので、同じ試合に並んでいる2枚は
+ * 別人だと確定できる。まとめるとその試合が2回数えられ、通算・平均・
+ * 成長グラフがまとめてずれる（詳細は playerStatsAnalysis の
+ * collectConflictingMergeTargets）。提案からも操作からも除くために使う。
+ *
+ * 1枚のカードの中の重複は数えない。既に誤って統合されているカードを
+ * 「自分自身と衝突している」と判定しても直しようがないため
+ * （集計側が統合を適用しないことで元の2枚に戻る）。
+ */
+export function sharesSameGame(players: readonly AggregatedPlayerStats[]): boolean {
+    const seen = new Set<string>();
+    for (const player of players) {
+        for (const gameId of new Set(player.gameHistory.map(g => g.gameId))) {
+            if (seen.has(gameId)) return true;
+            seen.add(gameId);
+        }
+    }
+    return false;
+}
+
+/**
  * 空白の違いだけで割れているカードの組を返す（組が無ければ空配列）。
  *
  * 束ねるのは空白を取り除いた氏名。背番号の一致は使わない —— ミニバスは
@@ -47,6 +70,10 @@ export function findMergeCandidates(
     for (const [key, group] of groups) {
         if (group.length < 2) continue;
         if ((rosterCount.get(key) ?? 0) >= 2) continue;
+        // 一緒に試合に出ている＝別人。提案してはいけない（sharesSameGame）。
+        // 名簿から抜けた同姓の先輩の記録が残っていると、この条件だけが
+        // 「同姓2人」を見分ける手掛かりになる
+        if (sharesSameGame(group)) continue;
         result.push(group);
     }
     return result;

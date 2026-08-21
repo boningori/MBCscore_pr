@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { PendingAction, PlayerSnapshot } from '../../types/pendingAction';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { actionLabel } from '../../utils/actionLabels';
 import { quarterLabel } from '../../utils/quarterLabel';
 import { ConfirmModal } from '../Modal';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import './PendingActionPanel.css';
 
 interface PendingActionPanelProps {
@@ -40,6 +41,20 @@ export function PendingActionPanel({
         document.addEventListener('pointerdown', handlePointerDown);
         return () => document.removeEventListener('pointerdown', handlePointerDown);
     }, [open]);
+
+    // 端末の戻る操作は展開したパネルを畳むだけにする。
+    //
+    // 展開中のパネルは下の操作を覆っていて、外側タップと同じ「閉じる」意図の
+    // 操作なのに、ここを受け取らないと記録画面ごとホームへ飛んでいた（実測:
+    // 保留の選手を選んでいる途中でエッジスワイプするとホームに出る）。
+    // 記録は自動保存で残るが、試合中に「試合を再開」を押し直す羽目になる。
+    // 畳むのはパネル全体——画面上の閉じる手段（ヘッダー・外側タップ）が
+    // どちらも全体を畳むので、それと行き先を揃える。
+    //
+    // 削除の確認モーダルはあとからマウントされる＝スタックの上に載るので、
+    // 開いている間はそちらが先に閉じる（modalStack の LIFO）。
+    const closePanel = useCallback(() => setOpen(false), []);
+    useBackHandler(open && pendingActions.length > 0, closePanel);
 
     if (pendingActions.length === 0) {
         return null;
