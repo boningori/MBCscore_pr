@@ -265,11 +265,15 @@ export function DetailView({ player, isHidden, onToggleHidden, isMerged = false,
                         <span>対戦相手</span>
                         <span>スコア</span>
                         <span className="foul-header">F</span>
+                        {/* BLKだけ列が無く、「パフォーマンス」「累計記録」「推移グラフ」に
+                            出るのに試合別へ遡れなかった。STLと対になる守備の記録なので
+                            片方だけ落とす理由がない */}
                         <div className="stats-header">
                             <span>PTS</span>
                             <span>REB</span>
                             <span>AST</span>
                             <span>STL</span>
+                            <span>BLK</span>
                         </div>
                         <div className="to-header">
                             <span>TO</span>
@@ -295,6 +299,7 @@ export function DetailView({ player, isHidden, onToggleHidden, isMerged = false,
                                     <span className="stat-reb">{game.stats.offensiveRebounds + game.stats.defensiveRebounds}</span>
                                     <span className="stat-ast">{game.stats.assists}</span>
                                     <span className="stat-stl">{game.stats.steals}</span>
+                                    <span className="stat-blk">{game.stats.blocks}</span>
                                 </div>
                                 <div className="game-to-compact">
                                     <span className="to-total">{game.stats.turnovers}</span>
