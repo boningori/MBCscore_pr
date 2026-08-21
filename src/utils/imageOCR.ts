@@ -377,11 +377,28 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
         return {
             success: false,
             players: [],
-            error: error instanceof Error ? error.message : '画像認識に失敗しました',
+            error: tesseractFailureMessage(error),
             usedEngine: 'Tesseract',
             fallbackReason: fallbackReason // Geminiエラーも保持
         };
     }
+}
+
+/**
+ * Tesseractが起動できなかったときの文面。
+ *
+ * OCRアセット（worker/wasm/言語データ）はSWのプリキャッシュではなく
+ * runtimeCaching で持つようにしたため（vite.config.ts）、まだ取れていない
+ * 端末がオフラインで写真読込を開くと、fetchの生のエラーが出てしまう。
+ * 利用者が打てる手（一度オンラインで開く）に繋がる文面に置き換える。
+ */
+function tesseractFailureMessage(error: unknown): string {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return '写真読込に必要なデータがまだ端末にありません。'
+            + '一度オンラインでアプリを開くと、以降はオフラインでも使えます。'
+            + '（今は選手を手入力で追加できます）';
+    }
+    return error instanceof Error ? error.message : '画像認識に失敗しました';
 }
 
 // OCR機能自体は常に利用可能
