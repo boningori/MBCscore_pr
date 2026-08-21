@@ -10,30 +10,39 @@ const INTERVALS = TICK_COUNT - 1;
  * 最大3のスティールが 3 / 2.3 / 1.5 / 0.8 / 0 となり、
  * 「0.8回」という実在しない目盛りが出ていた。
  *
- * ここでは目盛り「間隔」を先に選び、最大値をその4倍にする。さらに、
- * 元データが全て整数（試合単位のスティール・ブロック等）なら間隔も整数に
- * 制限して、回数の軸に小数が出ないようにする。
- * 月単位・四半期単位は平均値になるため、その場合は小数の間隔を許す。
+ * ここでは目盛り「間隔」を先に選び、最大値をその4倍にする。回数そのものを
+ * 描くグラフ（試合単位）では間隔も整数に制限して、回数の軸に小数が出ない
+ * ようにする。月単位・四半期単位・年単位は平均値なので小数の間隔を許す。
+ *
+ * 判断の入力は formatBarValue と同じ「回数そのものか平均値か」＝期間の単位。
+ * 以前はここだけ値が整数かどうかで決めていたため、月平均がたまたま
+ * 全部整数になった月だけ軸の刻みが変わっていた（実測: 得点の月平均が
+ * 1.0/4.0/6.0… の月は軸が 12/9/6/3/0、11.7 が混じる月は 20/15/10/5/0）。
+ * 同じ画面に並ぶ6枚のグラフの間でも、データ次第で刻み方が食い違う。
+ *
+ * @param wholeNumbers 回数そのもの（試合単位）なら true。平均値なら false
  */
-export function buildAxisTicks(values: number[]): number[] {
+export function buildAxisTicks(values: number[], wholeNumbers: boolean): number[] {
     const rawMax = values.length > 0 ? Math.max(...values, 0) : 0;
-    const integerOnly = values.every(v => Number.isInteger(v));
-    const step = niceStep(rawMax / INTERVALS, integerOnly);
+    const step = niceStep(rawMax / INTERVALS, wholeNumbers);
     const max = step * INTERVALS;
     return Array.from({ length: TICK_COUNT }, (_, i) => round(max - step * i));
 }
 
 /**
- * 1・2・2.5・5・10… の系列から、必要な間隔以上で最も小さいものを選ぶ。
+ * 1・2・2.5・3・5・10… の系列から、必要な間隔以上で最も小さいものを選ぶ。
  *
- * integerOnly のときは整数の系列を使い、さらに3を含める。
- * 1・2・5・10 だけだと最大10のリバウンドで間隔5・軸20となり、
- * 棒が高さの半分までしか伸びず間延びする。3を許すと軸12に収まる。
+ * どちらの系列も3を含める。1・2・5・10 だけだと最大10のリバウンドで
+ * 間隔5・軸20となり、棒が高さの半分までしか伸びず間延びする。3を許すと
+ * 軸12に収まる。平均値の側にも同じことが起きる（最大11.7の月平均で軸20）。
+ *
+ * integerOnly のときは 2.5 を落とし、1未満へも落とさない
+ * （0.5回のスティールは存在しない）。
  */
 function niceStep(minStep: number, integerOnly: boolean): number {
     if (!(minStep > 0)) return 1;
     const magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
-    const factors = integerOnly ? [1, 2, 3, 5, 10] : [1, 2, 2.5, 5, 10];
+    const factors = integerOnly ? [1, 2, 3, 5, 10] : [1, 2, 2.5, 3, 5, 10];
     for (const factor of factors) {
         const candidate = factor * magnitude;
         if (candidate < minStep - 1e-9) continue;
