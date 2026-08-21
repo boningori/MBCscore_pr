@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { watchForUpdate, applyUpdate } from './swUpdate';
+import { watchForUpdate, applyUpdate, startUpdatePolling } from './swUpdate';
 
 // ServiceWorkerはjsdomに存在しないため、必要な部分だけを組み立てて差し込む。
 
@@ -15,6 +15,7 @@ class FakeWorker extends EventTarget {
 class FakeRegistration extends EventTarget {
     waiting: FakeWorker | null = null;
     installing: FakeWorker | null = null;
+    update = vi.fn().mockResolvedValue(undefined);
     /** ブラウザが新SWを見つけたときの流れを再現する */
     startInstall(): FakeWorker {
         const worker = new FakeWorker();
@@ -147,5 +148,112 @@ describe('applyUpdate', () => {
         const reload = vi.fn();
         await applyUpdate(reload);
         expect(reload).toHaveBeenCalledTimes(1);
+    });
+
+    it('controllerchangeが来なければ時間切れでリロードする（押して無反応にしない）', async () => {
+        vi.useFakeTimers();
+        try {
+            const waiting = new FakeWorker();
+            waiting.state = 'installed';
+            container.registration.waiting = waiting;
+
+            const reload = vi.fn();
+            await applyUpdate(reload);
+            expect(reload).not.toHaveBeenCalled();
+
+            await vi.advanceTimersByTimeAsync(10_000);
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('時間切れの保険は制御が移ったあと二重にリロードしない', async () => {
+        vi.useFakeTimers();
+        try {
+            const waiting = new FakeWorker();
+            waiting.state = 'installed';
+            container.registration.waiting = waiting;
+
+            const reload = vi.fn();
+            await applyUpdate(reload);
+            container.dispatchEvent(new Event('controllerchange'));
+            expect(reload).toHaveBeenCalledTimes(1);
+
+            await vi.advanceTimersByTimeAsync(30_000);
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
+
+describe('startUpdatePolling', () => {
+    // 記録用端末としてアプリを開きっぱなしにする使い方だと、ナビゲーションが
+    // 起きないままになる。SWの更新チェックはナビゲーション時にしか走らないので、
+    // 明示的に叩かないと新版に永久に気づけない。
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
+        vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('一定間隔で更新を問い合わせる', async () => {
+        const stop = startUpdatePolling(60_000);
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(container.registration.update).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(container.registration.update).toHaveBeenCalledTimes(2);
+        stop();
+    });
+
+    it('画面が隠れている間は問い合わせない（バックグラウンドで通信しない）', async () => {
+        vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+        const stop = startUpdatePolling(60_000);
+        await vi.advanceTimersByTimeAsync(180_000);
+        expect(container.registration.update).not.toHaveBeenCalled();
+        stop();
+    });
+
+    it('オフラインでは問い合わせない', async () => {
+        vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+        const stop = startUpdatePolling(60_000);
+        await vi.advanceTimersByTimeAsync(180_000);
+        expect(container.registration.update).not.toHaveBeenCalled();
+        stop();
+    });
+
+    it('画面に戻ってきた時にも問い合わせる', async () => {
+        const stop = startUpdatePolling(60_000);
+        document.dispatchEvent(new Event('visibilitychange'));
+        await vi.advanceTimersByTimeAsync(0);
+        expect(container.registration.update).toHaveBeenCalledTimes(1);
+        stop();
+    });
+
+    it('停止したら以後問い合わせない', async () => {
+        const stop = startUpdatePolling(60_000);
+        stop();
+        await vi.advanceTimersByTimeAsync(180_000);
+        document.dispatchEvent(new Event('visibilitychange'));
+        await vi.advanceTimersByTimeAsync(0);
+        expect(container.registration.update).not.toHaveBeenCalled();
+    });
+
+    it('update()が失敗しても例外を投げない', async () => {
+        container.registration.update.mockRejectedValue(new Error('offline'));
+        const stop = startUpdatePolling(60_000);
+        await expect(vi.advanceTimersByTimeAsync(60_000)).resolves.not.toThrow();
+        stop();
+    });
+
+    it('ServiceWorker非対応環境でも例外を投げない', () => {
+        Reflect.deleteProperty(navigator, 'serviceWorker');
+        expect(() => startUpdatePolling(60_000)()).not.toThrow();
     });
 });

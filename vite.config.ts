@@ -2,6 +2,15 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// 配布はするがアプリの一部ではない単独ページ（販促用）。
+// これらは2つの設定に同時に載せないと壊れる:
+//   1. globIgnores        … オフラインキャッシュに載せない
+//   2. navigateFallbackDenylist … SWのナビゲーションフォールバックから除外する
+// 2を忘れると、SWを入れた端末では NavigationRoute が index.html を返してしまい、
+// チラシのURLを開いてもアプリ本体が表示される（実際にそうなっていた）。
+// 片方だけ直す事故を防ぐため、両方をこの1つの配列から導出する。
+const STANDALONE_PAGES = ['FLYER.html', 'SNS_CARDS.html']
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/MBCscore_pr/',
@@ -133,27 +142,63 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Tesseractのwasmコア(.wasm.js)・言語データ(.gz)も含めてプリキャッシュし完全オフライン動作を保証
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,gz}'],
-        // 配布物ではあるがアプリの動作に不要なものはオフラインキャッシュから外す。
-        // FLYER/SNS_CARDSは販促用、vite.svgはテンプレートの名残で参照されていない。
+        // 配布物ではあるがアプリの起動に要らないものはプリキャッシュから外す。
+        // vite.svgはテンプレートの名残で参照されていない。
         // manual.htmlはホームからリンクする使用説明書なのでオフラインでも要るため残す。
-        // 紹介画像(screenshots/)もオフラインキャッシュから外す。インストール画面は
-        // ブラウザがオンラインで取得するもので、アプリの動作には要らない。
-        // 起動画像(splash/)もオフラインキャッシュから外す。iOSが起動時に読むもので、
-        // アプリの動作には要らない（screenshots/と同じ理由）
-        globIgnores: ['FLYER.html', 'SNS_CARDS.html', 'vite.svg', 'screenshots/**', 'splash/**'],
-        // wasmコア(.wasm.js)は約3.9MBあり、既定の2MB上限では除外されてしまうため引き上げる
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // 紹介画像(screenshots/)はインストール画面用でブラウザがオンラインで取得する。
+        //
+        // 起動画像(splash/)は40枚3.8MBあり、1台が使うのは自機種の縦横2枚だけ。
+        // 全部プリキャッシュするのは論外だが、外しっぱなしだと起動のたびに
+        // ネットワークへ出る（オフラインでは実際に取得失敗することを実測した）。
+        // 下の runtimeCaching で、その端末が使う2枚だけを実際に読まれた時に持つ。
+        //
+        // tesseract/ を外すのが要点。workboxのプリキャッシュはオール・オア・
+        // ナッシングで、1ファイルでも取得に失敗すると install ごと reject され
+        // SWが破棄される。OCRアセットは5.9MB（プリキャッシュ全体の約8割）あり、
+        // 体育館の細い回線で落ちると「オフラインで記録できる」という中核機能まで
+        // 道連れになっていた。任意機能に本体の可用性を握らせない。
+        // 代わりに下の runtimeCaching で個別にキャッシュし、
+        // src/utils/ocrAssetCache.ts が起動後に裏で取りにいく（従来どおり
+        // オフラインでもOCRが使える状態を保つ）。
+        globIgnores: [...STANDALONE_PAGES, 'vite.svg', 'screenshots/**', 'splash/**', 'tesseract/**'],
+        // 販促ページはSWのナビゲーションフォールバックの対象外にする。
+        // 除外しないと index.html が返り、チラシのURLでアプリが開く。
+        // pathname+search に対して評価される（workboxのNavigationRoute）
+        navigateFallbackDenylist: STANDALONE_PAGES.map(
+          page => new RegExp(`/${page.replace(/\./g, '\\.')}$`)
+        ),
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            // OCRアセット（worker / wasmコア / 言語データ）。
+            // 一度取れば以後はキャッシュから返るのでオフラインでもOCRが動く。
+            // CacheFirstなので、すでに持っていればネットワークに触らない＝
+            // ocrAssetCache.ts の事前取得を何度呼んでも無駄打ちにならない。
+            urlPattern: /\/tesseract\//,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'google-fonts-cache',
+              cacheName: 'mbc-ocr-assets',
               expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                // 現行3ファイル。tesseract.jsの更新でファイル名が変わっても
+                // 旧世代がひとつ残る余地だけ持たせ、際限なく積まないようにする
+                maxEntries: 6
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // 起動画像。読まれた1枚だけが入るので、端末あたり縦横2枚（約200KB）。
+            // maxEntriesは機種変更や画面回転で少し増える余地を見た値。
+            // iOSが「ホーム画面に追加」の時点で自前に控えるのか、起動のたびに
+            // 取りにいくのかは端末依存なので、これは保険であって保証ではない
+            urlPattern: /\/splash\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mbc-splash',
+              expiration: {
+                maxEntries: 4
               },
               cacheableResponse: {
                 statuses: [0, 200]

@@ -53,6 +53,47 @@ describe('useInstallPrompt', () => {
         expect(prompt).toHaveBeenCalledTimes(1);
     });
 
+    // beforeinstallprompt の prompt() は1イベントにつき1回しか呼べず、
+    // 2回目は InvalidStateError で reject する。イベントを持ち続けていると
+    // 「押しても何も起きないボタン」が画面に残る
+    it('promptは二度呼ばない（案内を引っ込めて死んだボタンを残さない）', () => {
+        const { result } = renderHook(() => useInstallPrompt());
+        const { prompt } = fireBeforeInstallPrompt();
+
+        act(() => { result.current.install(); });
+        expect(result.current.mode).toBe('none');
+
+        act(() => { result.current.install(); });
+        expect(prompt).toHaveBeenCalledTimes(1);
+    });
+
+    it('promptが失敗しても外に投げない', async () => {
+        const { result } = renderHook(() => useInstallPrompt());
+        const rejected = vi.fn().mockRejectedValue(new Error('InvalidStateError'));
+        const event = new Event('beforeinstallprompt') as Event & { prompt: () => Promise<void> };
+        event.prompt = rejected;
+        act(() => { window.dispatchEvent(event); });
+
+        act(() => { result.current.install(); });
+        await act(async () => { await Promise.resolve(); });
+        expect(rejected).toHaveBeenCalled();
+    });
+
+    it('インストールが完了したら案内を消し、次回以降も出さない', () => {
+        const { result, unmount } = renderHook(() => useInstallPrompt());
+        fireBeforeInstallPrompt();
+        expect(result.current.mode).toBe('prompt');
+
+        // ブラウザタブ側は standalone にならないため、appinstalled を見ないと
+        // インストール済みの人にカードが出続ける
+        act(() => { window.dispatchEvent(new Event('appinstalled')); });
+        expect(result.current.mode).toBe('none');
+        unmount();
+
+        const { result: again } = renderHook(() => useInstallPrompt());
+        expect(again.current.mode).toBe('none');
+    });
+
     it('iOSはbeforeinstallpromptが無いので手順案内を出す', () => {
         isIos.mockReturnValue(true);
         const { result } = renderHook(() => useInstallPrompt());

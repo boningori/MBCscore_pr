@@ -29,13 +29,16 @@ describe('UpdatePrompt', () => {
 // useAppUpdate は watchForUpdate の通知を受けて表示可否を決める
 const watchForUpdate = vi.hoisted(() => vi.fn());
 const applyUpdate = vi.hoisted(() => vi.fn());
-vi.mock('../../utils/swUpdate', () => ({ watchForUpdate, applyUpdate }));
+const startUpdatePolling = vi.hoisted(() => vi.fn());
+vi.mock('../../utils/swUpdate', () => ({ watchForUpdate, applyUpdate, startUpdatePolling }));
 
 describe('useAppUpdate', () => {
     beforeEach(() => {
         watchForUpdate.mockReset();
         applyUpdate.mockReset();
+        startUpdatePolling.mockReset();
         watchForUpdate.mockReturnValue(() => { });
+        startUpdatePolling.mockReturnValue(() => { });
     });
 
     /** watchForUpdate に渡されたコールバックを発火させる */
@@ -97,5 +100,23 @@ describe('useAppUpdate', () => {
         unmount();
 
         expect(unsubscribe).toHaveBeenCalledTimes(1);
+    });
+
+    // 検知（watchForUpdate）だけでは、ブラウザが新SWを探しにいかない限り何も
+    // 起きない。開きっぱなしの端末でも気づけるよう、こちらから問い合わせる
+    it('更新の定期問い合わせを開始し、アンマウントで止める', () => {
+        const stop = vi.fn();
+        startUpdatePolling.mockReturnValue(stop);
+
+        const { unmount } = renderHook(() => useAppUpdate(false));
+        expect(startUpdatePolling).toHaveBeenCalledTimes(1);
+
+        unmount();
+        expect(stop).toHaveBeenCalledTimes(1);
+    });
+
+    it('記録中でも問い合わせは止めない（保留するのは案内の表示だけ）', () => {
+        renderHook(() => useAppUpdate(true));
+        expect(startUpdatePolling).toHaveBeenCalledTimes(1);
     });
 });

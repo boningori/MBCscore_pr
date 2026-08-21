@@ -36,8 +36,10 @@ export const SPLASH_TARGETS = [
     { w: 768, h: 1024, dpr: 2 },  // iPad 9.7"（第5世代以前。miniは6世代以降744x1133のため別枠）
     { w: 810, h: 1080, dpr: 2 },  // iPad 10.2"
     { w: 834, h: 1112, dpr: 2 },  // iPad Air 10.5"
-    { w: 834, h: 1194, dpr: 2 },  // iPad Pro 11"
-    { w: 1024, h: 1366, dpr: 2 }, // iPad Pro 12.9"
+    { w: 834, h: 1194, dpr: 2 },  // iPad Pro 11"（M2以前）
+    { w: 1024, h: 1366, dpr: 2 }, // iPad Pro 12.9"（M2以前）
+    { w: 834, h: 1210, dpr: 2 },  // iPad Pro 11"（M4以降。1668x2420で高さが変わった）
+    { w: 1032, h: 1376, dpr: 2 }, // iPad Pro 13"（M4以降。2064x2752）
     { w: 820, h: 1180, dpr: 2 },  // iPad Air 4/5・11" / iPad 10th/11th gen
     { w: 744, h: 1133, dpr: 2 },  // iPad mini 6/7
     { w: 402, h: 874, dpr: 3 },   // iPhone 16 Pro

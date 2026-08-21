@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { applyUpdate, watchForUpdate } from '../../utils/swUpdate';
+import { applyUpdate, startUpdatePolling, watchForUpdate } from '../../utils/swUpdate';
 
 export interface UseAppUpdateResult {
     /** 更新バーを表示してよいか */
@@ -22,6 +22,11 @@ export function useAppUpdate(suppressed: boolean): UseAppUpdateResult {
     const [dismissed, setDismissed] = useState(false);
 
     useEffect(() => watchForUpdate(() => setUpdateReady(true)), []);
+
+    // 検知だけでは足りない。ブラウザが新SWを探すのはナビゲーション時が中心で、
+    // 記録用端末としてアプリを開きっぱなしにするとその機会が来ないため、
+    // こちらから定期的に問い合わせる（watchForUpdate がその結果を拾う）
+    useEffect(() => startUpdatePolling(), []);
 
     const apply = useCallback(() => { applyUpdate(); }, []);
     const dismiss = useCallback(() => setDismissed(true), []);

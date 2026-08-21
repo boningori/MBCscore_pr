@@ -47,6 +47,7 @@ import { useOfflineToast } from './hooks/useOfflineToast';
 import { useFoulOutNotice } from './hooks/useFoulOutNotice';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
 import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
+import { startOcrAssetWarmup } from './utils/ocrAssetCache';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
 import { isBackupDue } from './utils/lastBackupStorage';
 import { shareBackup } from './utils/dataBackup';
@@ -200,6 +201,13 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   useEffect(() => {
     migrateSavedTeamIds();
   }, []);
+
+  // 起動後: OCRアセットを裏で取っておく。
+  // プリキャッシュから外した（1本でも落ちるとSWのinstallごと失敗し、オフライン
+  // 記録まで道連れになるため。vite.config.ts）代わりに、ここで従来どおり
+  // 「体育館でオフラインでも写真読込が使える」状態を保つ。
+  // 失敗しても黙って諦める（ocrAssetCache.ts）
+  useEffect(() => startOcrAssetWarmup(), []);
 
   // 起動時: 永続ストレージ要求・データ消失検知・起動スナップショット
   useEffect(() => {
