@@ -48,8 +48,31 @@ export function useInstallPrompt(): UseInstallPromptResult {
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
+    // インストールが済んだらカードを引っ込める。
+    // ブラウザのタブは追加後も standalone にならないので、isStandalone() では
+    // 判定できず、見ないとインストール済みの人に案内が出続ける。
+    // 記録も残す（タブを開き直しても再び出さないため）
+    useEffect(() => {
+        const handler = () => {
+            dismissInstallGuide();
+            setDismissed(true);
+            setDeferred(null);
+        };
+        window.addEventListener('appinstalled', handler);
+        return () => window.removeEventListener('appinstalled', handler);
+    }, []);
+
     const install = useCallback(() => {
-        deferred?.prompt();
+        if (!deferred) return;
+        // prompt() は1イベントにつき1回しか呼べず、2回目は InvalidStateError で
+        // rejectする。しかもChromeは同一ページ内で beforeinstallprompt を
+        // 撃ち直さないため、イベントを持ち続けると「押しても何も起きない
+        // ボタン」が残る。呼んだ時点で捨て、案内ごと引っ込める。
+        // 追加をやめた場合は、次にブラウザが撃ってきたときにまた出る
+        setDeferred(null);
+        deferred.prompt().catch(() => {
+            // 追加を断られた場合も含め、ここで打てる手は無い
+        });
     }, [deferred]);
 
     const dismiss = useCallback(() => {
