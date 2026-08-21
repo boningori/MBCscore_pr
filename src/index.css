@@ -951,6 +951,17 @@ textarea,
   flex: 1;
 }
 
+/* 同点で終えたときだけ出す理由書き。下の本文より先に読ませたいので、
+   本文（--text-secondary）より強い色で置く */
+.end-game-confirm-tied {
+  text-align: center;
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  line-height: 1.6;
+  margin: var(--spacing-lg) 0 0;
+}
+
 .end-game-confirm-message {
   text-align: center;
   color: var(--text-secondary);

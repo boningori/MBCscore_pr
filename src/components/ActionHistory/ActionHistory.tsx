@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { ScoreEntry, StatEntry, FoulEntry, Player, ScoreType, StatType } from '../../types/game';
+import type { ScoreEntry, StatEntry, FoulEntry, Player, ScoreType, StatType, FreeThrowResult } from '../../types/game';
+import { canEditFreeThrows } from '../../context/reducers/foulHandlers';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { EditActionModal } from '../EditActionModal';
 import './ActionHistory.css';
@@ -25,6 +26,8 @@ interface ActionHistoryProps {
     onEditStat?: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
     /** ファウルをした選手の付け替え（種別とFTは変えない。理由は handleEditFoul） */
     onEditFoul?: (entryId: string, newPlayerId: string) => void;
+    /** FTの成否の訂正（本数と種別は変えない。理由は handleEditFoulFreeThrows） */
+    onEditFoulFreeThrows?: (entryId: string, freeThrowResults: FreeThrowResult[]) => void;
     onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
     onConvertMissToScore?: (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => void;
     onToggleOwnGoal?: (entryId: string) => void;
@@ -48,6 +51,23 @@ interface HistoryItem {
      * 何も起きない行が混ざっていた。
      */
     canEdit: boolean;
+    /**
+     * フリースローを伴うファウルか。
+     *
+     * 外したFTは記録を1件も作らない（本数だけシューターのスタッツに入る）ので、
+     * シューター側の履歴には現れない。この行がFTの成否を持っている唯一の記録。
+     */
+    hasFreeThrows?: boolean;
+    /** いまのFT結果（編集ダイアログの初期値） */
+    freeThrowResults?: FreeThrowResult[];
+    /**
+     * FTの成否を直せるか。
+     *
+     * ミスへ変換した・シューターを付け替えた記録は、本数と得点エントリが
+     * 1対1で対応しないため直せない（canEditFreeThrows）。その場合は
+     * 「削除して入れ直す」案内だけを出す。
+     */
+    canEditFreeThrows?: boolean;
 }
 
 export function ActionHistory({
@@ -62,6 +82,7 @@ export function ActionHistory({
     onEditScore,
     onEditStat,
     onEditFoul,
+    onEditFoulFreeThrows,
     onConvertScoreToMiss,
     onConvertMissToScore,
     onToggleOwnGoal,
@@ -184,6 +205,10 @@ export function ActionHistory({
                 entryType: f.foulType,
                 // コーチ・ベンチのファウルは選手行に無いので付け替えられない
                 canEdit: !!onEditFoul && !f.isCoachOrBench && !!f.playerId,
+                hasFreeThrows: (f.freeThrows ?? 0) > 0,
+                freeThrowResults: f.freeThrowResults,
+                canEditFreeThrows: !!onEditFoulFreeThrows
+                    && canEditFreeThrows(f, scoreHistory, statHistory),
             })),
     ].sort((a, b) => b.timestamp - a.timestamp);
 
@@ -338,6 +363,11 @@ export function ActionHistory({
         setEditingItem(null);
     }, [editingItem, onEditScore, onEditStat, onEditFoul]);
 
+    const handleEditFreeThrows = useCallback((entryId: string, freeThrowResults: FreeThrowResult[]) => {
+        onEditFoulFreeThrows?.(entryId, freeThrowResults);
+        setEditingItem(null);
+    }, [onEditFoulFreeThrows]);
+
     const handleConvertScoreToMiss = useCallback((entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => {
         if (onConvertScoreToMiss) {
             onConvertScoreToMiss(entryId, newMissType, newPlayerId);
@@ -456,6 +486,7 @@ export function ActionHistory({
                     item={{ ...editingItem, typeLabel: editingItem.description }}
                     players={players}
                     onSave={handleEditSave}
+                    onEditFreeThrows={handleEditFreeThrows}
                     onConvertScoreToMiss={handleConvertScoreToMiss}
                     onConvertMissToScore={handleConvertMissToScore}
                     onToggleOwnGoal={onToggleOwnGoal}

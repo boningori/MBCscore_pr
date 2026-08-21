@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Player } from '../../types/game';
+import type { Player, FreeThrowResult } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { wouldOverflowFoulColumns } from '../../utils/foulColumns';
 import { Modal } from '../Modal';
@@ -15,9 +15,17 @@ interface EditActionModalProps {
         isOwnGoal?: boolean;
         /** ファウルの種別を読める形で（種別は変えられないので表示専用） */
         typeLabel?: string;
+        /** フリースローを伴うファウルか */
+        hasFreeThrows?: boolean;
+        /** いまのFT結果（編集の初期値） */
+        freeThrowResults?: FreeThrowResult[];
+        /** FTの成否を直せるか（紐付きが崩れている記録は直せない。canEditFreeThrows） */
+        canEditFreeThrows?: boolean;
     };
     players: Player[];
     onSave: (itemId: string, newPlayerId: string, newType: string) => void;
+    /** FTの成否だけを直す（本数と種別は変えない） */
+    onEditFreeThrows?: (entryId: string, freeThrowResults: FreeThrowResult[]) => void;
     // 変換にも選手を渡す。「誰の記録か」と「成功／ミス」は同時に間違えるので、
     // 変換経路で選手を捨てると訂正したはずの付け替えが黙って消える
     onConvertScoreToMiss?: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
@@ -70,6 +78,7 @@ export function EditActionModal({
     item,
     players,
     onSave,
+    onEditFreeThrows,
     onConvertScoreToMiss,
     onConvertMissToScore,
     onToggleOwnGoal,
@@ -78,6 +87,8 @@ export function EditActionModal({
     const [selectedPlayerId, setSelectedPlayerId] = useState(item.playerId);
     const [selectedType, setSelectedType] = useState(item.entryType);
     const [isOwnGoal, setIsOwnGoal] = useState(item.isOwnGoal ?? false);
+    // FTの成否。件数は本数のまま固定で、○×だけを差し替える
+    const [ftResults, setFtResults] = useState<FreeThrowResult[]>(() => item.freeThrowResults ?? []);
 
     // 元の記録が名簿の誰にも結び付いていない（保留を「選手不明」で解決した記録）。
     //
@@ -97,6 +108,13 @@ export function EditActionModal({
     // 種別の選択肢を出さないのは、ファウルの entryType（'P' 等）が
     // 「シュート関連ではない」と判定され、OREB/DREB… が並んでいたのも兼ねる
     const isFoul = item.type === 'foul';
+
+    // FTの成否を直せる行か。直せない記録（ミスへ変換した・シューターを付け替えた）は
+    // 従来どおり「削除して入れ直す」案内だけを出す
+    const canEditFt = isFoul && !!item.canEditFreeThrows && !!onEditFreeThrows && ftResults.length > 0;
+    const ftChanged = canEditFt
+        && (item.freeThrowResults ?? []).some((r, i) => r !== ftResults[i]);
+    const ftMade = ftResults.filter(r => r === 'made').length;
 
     // 付け替え先が既に5ファウルなら、移した瞬間に6個目になり公式様式の
     // ファウル欄（5枠）から漏れる。handleEditFoul は付け替え先の個数を
@@ -123,9 +141,19 @@ export function EditActionModal({
         : OTHER_STAT_TYPES;
 
     const handleSave = () => {
-        // ファウルは選手だけ。種別はそのまま返して呼び出し側の分岐に渡す
+        // ファウルは選手とFTの成否だけ。種別はそのまま返して呼び出し側の分岐に渡す
         if (isFoul) {
-            onSave(item.id, selectedPlayerId, item.entryType);
+            // 成否を触っていれば、そちらを先に確定する。
+            // 付け替えと同時に直しても両方が残るよう、別々のアクションで投げる
+            if (ftChanged) {
+                onEditFreeThrows?.(item.id, ftResults);
+            }
+            if (selectedPlayerId !== item.playerId) {
+                onSave(item.id, selectedPlayerId, item.entryType);
+            } else if (!ftChanged) {
+                // どちらも変えていない場合も、閉じる挙動は従来どおりに保つ
+                onSave(item.id, selectedPlayerId, item.entryType);
+            }
             return;
         }
 
@@ -206,8 +234,12 @@ export function EditActionModal({
                             <span className="form-label-static">ファウル種類</span>
                             {/* 何を直しているのかが分からないと選手だけ選ばせても危うい */}
                             <p className="edit-readonly-value">{item.typeLabel || item.entryType}</p>
+                            {/* すぐ下にFTの成否の選択が出るので、「フリースローは変更できません」
+                                とだけ言うと真下のUIと食い違う。変えられないのは種類と本数 */}
                             <p className="edit-readonly-note">
-                                種類とフリースローは変更できません。変える場合は削除して記録し直してください。
+                                {canEditFt
+                                    ? '種類とフリースローの本数は変更できません。変える場合は削除して記録し直してください。'
+                                    : '種類とフリースローは変更できません。変える場合は削除して記録し直してください。'}
                             </p>
                         </div>
                     ) : (
@@ -243,6 +275,51 @@ export function EditActionModal({
                     {isConversion() && (
                         <div className="conversion-notice">
                             ⚠️ {item.type === 'score' ? '成功→ミス' : 'ミス→成功'}に変換されます
+                        </div>
+                    )}
+
+                    {/* 外したFTは記録を1件も作らない（本数だけシューターのスタッツに入る）ため、
+                        シューター側の履歴には現れない。この行がFTの成否を持っている唯一の
+                        記録なので、ここで直せるようにする。動かすのは成否だけ——本数と種別まで
+                        変えられるようにすると、公式様式の表記とFTの本数が辻褄の合わない
+                        組み合わせを作れてしまう（handleEditFoulFreeThrows） */}
+                    {canEditFt && (
+                        <div className="form-group ft-edit-group">
+                            <label id="ft-edit-label">フリースローの結果</label>
+                            <div className="ft-edit-rows">
+                                {ftResults.map((result, index) => (
+                                    <div className="ft-edit-row" key={index}>
+                                        <span className="ft-edit-index">{index + 1}本目</span>
+                                        <div className="ft-edit-choices" role="radiogroup" aria-label={`${index + 1}本目の結果`}>
+                                            {(['made', 'missed'] as const).map(value => (
+                                                <button
+                                                    key={value}
+                                                    type="button"
+                                                    role="radio"
+                                                    aria-checked={result === value}
+                                                    className={`ft-edit-choice ${result === value ? 'selected' : ''} ${value}`}
+                                                    onClick={() => setFtResults(prev =>
+                                                        prev.map((r, i) => (i === index ? value : r)))}
+                                                >
+                                                    {value === 'made' ? '○ 成功' : '× 失敗'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="ft-edit-summary">
+                                結果: {ftMade}/{ftResults.length} 成功
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 直せない記録（FTをミスへ変換した・シューターを付け替えた）は、
+                        本数と得点エントリが1対1で対応しないため差分を当てられない。
+                        入れ直しが要ることを言わないと、利用者は直す場所を探し続ける */}
+                    {isFoul && item.hasFreeThrows && !canEditFt && (
+                        <div className="edit-hint">
+                            FTの成否を直すには、この記録を削除して入れ直してください（ここで直せるのは選手だけです）
                         </div>
                     )}
 

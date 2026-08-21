@@ -847,6 +847,11 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     dispatch({ type: 'EDIT_FOUL', payload: { entryId, newPlayerId } });
   };
 
+  // FTの成否の訂正（本数と種別は変えない。理由は handleEditFoulFreeThrows）
+  const handleEditFoulFreeThrows = (entryId: string, freeThrowResults: FreeThrowResult[]) => {
+    dispatch({ type: 'EDIT_FOUL_FREE_THROWS', payload: { entryId, freeThrowResults } });
+  };
+
   // 成功 → ミス変換（選手の付け替えを伴うことがある）
   const handleConvertScoreToMiss = (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => {
     dispatch({ type: 'CONVERT_SCORE_TO_MISS', payload: { entryId, newMissType, newPlayerId } });
@@ -870,6 +875,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     onEditScore: handleEditScore,
     onEditStat: handleEditStat,
     onEditFoul: handleEditFoul,
+    onEditFoulFreeThrows: handleEditFoulFreeThrows,
     onConvertScoreToMiss: handleConvertScoreToMiss,
     onConvertMissToScore: handleConvertMissToScore,
     onToggleOwnGoal: handleToggleOwnGoal,
@@ -1361,6 +1367,13 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           labelledBy="end-game-confirm-title"
         >
           <h3 id="end-game-confirm-title">試合終了の確認</h3>
+          {/* 同点で終えたときだけ「延長戦へ」が増える。なぜ選択肢が変わったのかを
+              本文が言わないと、押し間違いに見える。先頭に理由を置く */}
+          {endGameConfirmType === 'tied' && (
+            <p className="end-game-confirm-tied">
+              同点で終了しました。延長戦を行いますか？
+            </p>
+          )}
           <p className="end-game-confirm-message">
             試合を終了するとデータの編集ができません。<br />
             試合を終了しますか？
