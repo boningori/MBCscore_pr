@@ -192,11 +192,24 @@ body {
   overscroll-behavior-y: contain;
   /* ノッチ・ホームインジケータを避ける（viewport-fit=cover + standalone表示時） */
   padding: var(--safe-top, 0px) var(--safe-right, 0px) var(--safe-bottom, 0px) var(--safe-left, 0px);
+  /* 更新バーのぶんの逃げ場。表示中だけ下の .has-update-prompt が値を入れる */
+  padding-bottom: calc(var(--safe-bottom, 0px) + var(--update-prompt-space, 0px));
   -webkit-font-smoothing: antialiased;
   /* タッチデバイスでの長押し時テキスト選択を防止 */
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* 更新バー（.update-prompt）は position: fixed で最前面に浮くため、ページ側に
+   同じ高さの逃げ場を作らないと画面下端の操作要素を覆う。375x812で実測すると、
+   ホーム画面の「📖 使用説明書」がバーの出ている間はタップ判定ごと奪われていた。
+   ページ末尾にある要素なので、スクロールして下から逃がすこともできない。
+   高さは実測値を UpdatePrompt.tsx が --update-prompt-height に入れる
+   （狭い画面では縦積みになって変わる）。バー自身の浮き上がり（--spacing-md）と
+   バーと内容の間隔で、その2倍を足す。 */
+body.has-update-prompt {
+  --update-prompt-space: calc(var(--update-prompt-height, 0px) + var(--spacing-md) * 2);
 }
 
 #root {

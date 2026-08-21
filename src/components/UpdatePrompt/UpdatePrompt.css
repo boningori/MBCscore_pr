@@ -1,8 +1,11 @@
 /*
-  更新バー。試合中は表示されない（useAppUpdateが抑止する）ため、
-  ホーム・履歴などの閲覧系画面で下部に出る想定。
+  更新バー。記録中と入力中は表示されない（useAppUpdate / updateSuppression が
+  抑止する）ため、ホーム・履歴などの閲覧系画面で下部に出る。
   トースト(z-index 10000)より奥、モーダル(1000)より奥に置き、
   記録UIより手前に来ないようにする。
+
+  position: fixed で浮くぶんの逃げ場は index.css の body.has-update-prompt が
+  作る（無いと画面下端のボタンを覆って押せなくする。UpdatePrompt.tsx）。
 */
 .update-prompt {
     position: fixed;
