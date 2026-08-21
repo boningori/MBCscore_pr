@@ -59,8 +59,19 @@ export function ActionButtons({
     return (
         <div className="action-buttons-container">
             {/* ステータスバー（常設・高さ固定でレイアウトシフトを防ぐ）。
-                アクション選択中はガイドと保留/キャンセル操作を表示する */}
-            <div className={`action-status-bar ${activeAction ? 'active' : ''}`} role="status">
+                アクション選択中はガイドと保留/キャンセル操作を表示する。
+
+                has-notice はクォーター間などの注意書きを出している状態の目印。
+                シンプルモードはアイドルの案内文を隠して画面高を稼ぐが、
+                その指定が `:not(.active)` だったため注意書きも巻き添えで
+                消えていた（実測: 文言は入っているのに高さ0）。
+                注意書きは「いま記録すると次のQとして保存される」ことを伝える
+                唯一の手掛かりで、あとからピリオドを直す導線は無い。
+                隠してよいのはアイドルの案内文だけなので、両者をクラスで分ける */}
+            <div
+                className={`action-status-bar ${activeAction ? 'active' : idleNotice ? 'has-notice' : ''}`}
+                role="status"
+            >
                 {activeAction ? (
                     <>
                         {/* この状態では選手タップが「選択」ではなく「即記録」になるため、

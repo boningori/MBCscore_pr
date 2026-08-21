@@ -1124,13 +1124,19 @@
 }
 
 /* シンプルモードのステータスバー: 横並び行を圧迫しないよう全幅の独立行にする。
-   画面フィット優先のため、アイドル時は非表示・アクション選択中のみ表示 */
+   画面フィット優先のため、アイドルの案内文だけのときは非表示にする。
+
+   隠してよいのは「選手とアクションをタップして記録」だけ。記録待ち(.active)と
+   クォーター間の注意書き(.has-notice)は、どちらも出さないと記録が意図しない
+   ものになる。以前は `:not(.active)` だけだったため、注意書きも display:none に
+   なっていた（実測: 「⚠ 今の記録は Q2 として保存されます」が高さ0で見えない）。
+   契約は statusNoticeVisibility.test.tsx が固定する */
 .app-container .game-main-area.simple-mode .action-status-bar {
   flex: 1 1 100%;
   height: 48px;
 }
 
-.app-container .game-main-area.simple-mode .action-status-bar:not(.active) {
+.app-container .game-main-area.simple-mode .action-status-bar:not(.active):not(.has-notice) {
   display: none;
 }
 
