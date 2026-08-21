@@ -1,6 +1,8 @@
 // スワイプ操作の共通フック
 // 上フリック=onSwipeUp、下フリック=onSwipeDown、タップ判定はconsumeSwipeFlagで行う
-// SwipeableScoreButton / SwipeableReboundButton / SwipeableTurnoverButton の重複ロジックを統合
+// SwipeableScoreButton / SwipeableTurnoverButton の重複ロジックを統合
+// （SwipeableReboundButton も使っていたが、REBは OR/DR の2ボタンに分かれていて
+//  この部品はどこからも描画されていなかったため削除した）
 
 import { useState, useRef, useCallback } from 'react';
 
