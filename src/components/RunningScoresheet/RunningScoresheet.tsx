@@ -370,13 +370,23 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                                         </tr>
                                         <tr className="timeout-value-row">
                                             {[1, 2, 3, 4].map(q => {
-                                                const timeout = team.timeouts.find(t => t.quarter === q);
-                                                const hasTimeout = !!timeout;
+                                                // OT欄と同じ扱い。UIは1ピリオド1回しか押させないが、
+                                                // 同じピリオドに複数入りうることは記録側も認めている
+                                                // （handleRemoveTimeout のコメント）。find で最初の1件だけを
+                                                // 出すと、2件目は記録に残るのにシートから消える
+                                                const minutes = team.timeouts
+                                                    .filter(t => t.quarter === q)
+                                                    .map(t => t.elapsedMinutes);
+                                                const hasTimeout = minutes.length > 0;
                                                 const colorClass = (q === 1 || q === 3) ? 'q-red' : 'q-black';
                                                 const isUnused = isGameFinished && !hasTimeout;
                                                 return (
                                                     <td key={q} className={`to-cell-val ${hasTimeout ? `to-has-value ${colorClass}` : ''} ${isUnused ? `to-unused ${colorClass}` : ''}`}>
-                                                        {hasTimeout && <span className="to-elapsed-minutes">{timeout.elapsedMinutes}</span>}
+                                                        {hasTimeout && (
+                                                            <span className={`to-elapsed-minutes ${minutes.length > 1 ? 'to-multiple' : ''}`}>
+                                                                {minutes.join(',')}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 );
                                             })}
