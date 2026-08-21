@@ -1687,6 +1687,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
       {/* 記録直後のワンタップUndo */}
       {undoInfo && phase !== 'finished' && (
         <UndoSnackbar
+          recordId={undoInfo.entryId}
           message={undoInfo.message}
           onUndo={handleUndoLast}
           onDismiss={handleDismissUndo}

@@ -74,3 +74,49 @@ describe('UndoSnackbar', () => {
         expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 });
+
+// 同じ選手が同じ種別を続けて記録するのは普通にある（#4 の 2P が2連続など）。
+// リセットの判定を文言だけで見ていたため、2件目のタイマーが1件目のものを
+// 引き継ぎ、取り消せる時間が短くなっていた（極端な場合はほぼ0）。
+// 取り消しの対象は記録そのものなので、記録の識別子で判定する。
+describe('UndoSnackbar: 同じ文言の記録が続いたとき', () => {
+    it('記録が変われば文言が同じでもタイマーがリセットされる', () => {
+        vi.useFakeTimers();
+        const onDismiss = vi.fn();
+        const { rerender } = render(
+            <UndoSnackbar recordId="entry-1" message="#4 2P成功 +2" onUndo={vi.fn()} onDismiss={onDismiss} />,
+        );
+        act(() => {
+            vi.advanceTimersByTime(4000);
+        });
+        rerender(
+            <UndoSnackbar recordId="entry-2" message="#4 2P成功 +2" onUndo={vi.fn()} onDismiss={onDismiss} />,
+        );
+        act(() => {
+            vi.advanceTimersByTime(4000);
+        });
+        expect(onDismiss).not.toHaveBeenCalled();
+        act(() => {
+            vi.advanceTimersByTime(1100);
+        });
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('同じ記録のまま再描画されてもタイマーは延びない', () => {
+        vi.useFakeTimers();
+        const onDismiss = vi.fn();
+        const { rerender } = render(
+            <UndoSnackbar recordId="entry-1" message="#4 2P成功 +2" onUndo={vi.fn()} onDismiss={onDismiss} />,
+        );
+        act(() => {
+            vi.advanceTimersByTime(4000);
+        });
+        rerender(
+            <UndoSnackbar recordId="entry-1" message="#4 2P成功 +2" onUndo={vi.fn()} onDismiss={onDismiss} />,
+        );
+        act(() => {
+            vi.advanceTimersByTime(1100);
+        });
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+});
