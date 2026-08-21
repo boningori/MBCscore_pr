@@ -46,6 +46,64 @@ describe('選手カードのFG%', () => {
     });
 });
 
+// 率だけでは 1/1 と 19/19 のどちらも「100%」で、一覧からは見分けられない。
+// ミニバスは1人あたりの試投数が少なく、1本だけの100%が並ぶのは珍しくないので、
+// 母数の違いが見えるように分母を添える（並び順は playerSort が別に決める）
+describe('選手カードのFG分母', () => {
+    it('成功/試投を添える', () => {
+        render(
+            <PlayerCardList
+                players={[makePlayer({ totalStats: { twoPointMade: 18, twoPointAttempt: 24 } })]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByText('75%')).toBeTruthy();
+        expect(screen.getByText('18/24')).toBeTruthy();
+    });
+
+    it('3Pも合わせて数える（FGは2P+3P、FTは含めない）', () => {
+        render(
+            <PlayerCardList
+                players={[makePlayer({
+                    totalStats: {
+                        twoPointMade: 4, twoPointAttempt: 6,
+                        threePointMade: 1, threePointAttempt: 2,
+                        freeThrowMade: 3, freeThrowAttempt: 8,
+                    },
+                })]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByText('5/8')).toBeTruthy();
+    });
+
+    // 同じ「100%」でも母数が違うことが一覧で分かること
+    it('1本だけの100%と、続けている100%を見分けられる', () => {
+        render(
+            <PlayerCardList
+                players={[
+                    makePlayer({ totalStats: { twoPointMade: 1, twoPointAttempt: 1 } }),
+                    makePlayer({ totalStats: { twoPointMade: 19, twoPointAttempt: 19 } }),
+                ]}
+                onPlayerClick={vi.fn()}
+            />,
+        );
+
+        expect(screen.getAllByText('100%')).toHaveLength(2);
+        expect(screen.getByText('1/1')).toBeTruthy();
+        expect(screen.getByText('19/19')).toBeTruthy();
+    });
+
+    // 試投0は「-」だけ。0/0 と出すと打ったのに全部外したように読める
+    it('試投が0なら分母を出さない', () => {
+        render(<PlayerCardList players={[makePlayer()]} onPlayerClick={vi.fn()} />);
+
+        expect(screen.queryByText('0/0')).toBeNull();
+    });
+});
+
 describe('選手カードの平均出場クォーター', () => {
     it('出場クォーターが記録されていれば併記する', () => {
         render(

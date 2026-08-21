@@ -103,6 +103,15 @@ export function PlayerCardList({
                             <div className="stat-box">
                                 <span className="stat-value">{fgPercent}</span>
                                 <span className="stat-label">FG</span>
+                                {/* 率だけでは 1/1 と 19/19 のどちらも「100%」で、
+                                    一覧からは見分けられない。ミニバスは1人あたりの
+                                    試投数が少なく、1本だけの100%が並ぶのは珍しくない
+                                    ので、分母を添えて母数の違いが見えるようにする */}
+                                {attempts > 0 && (
+                                    <span className="stat-sub">
+                                        {player.totalStats.twoPointMade + player.totalStats.threePointMade}/{attempts}
+                                    </span>
+                                )}
                             </div>
                         </div>
                         <div className="card-arrow">›</div>

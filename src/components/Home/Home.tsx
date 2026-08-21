@@ -1,6 +1,6 @@
 import type { SavedTeam } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
-import { hasGameSession } from '../../utils/gameSessionStorage';
+import { getGameSessionState } from '../../utils/gameSessionStorage';
 import { InstallPrompt, useInstallPrompt } from '../InstallPrompt';
 import './Home.css';
 
@@ -28,7 +28,13 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
     // だった。設定を閉じると App が再描画されるので、ここで読み直せば追従する。
     // どちらも小さなJSONの読み出しで、ホームの再描画はまれ。
     const myTeams: SavedTeam[] = loadMyTeams();
-    const canResume = hasGameSession();
+    const sessionState = getGameSessionState();
+    const canResume = sessionState !== 'none';
+    // 終了したのに保存していない試合。試合終了の画面は端末の戻るで素通りできる
+    // （オーバーレイであってモーダルではない）ため、ホームがその状態を
+    // 引き受ける。「中断した試合を続ける」としか出ていないと、保存し忘れて
+    // いることがホームからは読み取れない
+    const isUnsavedResult = sessionState === 'finished';
     const install = useInstallPrompt();
 
     const hasMyTeams = myTeams.length > 0;
@@ -83,9 +89,13 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
 
                         {canResume && onResumeGame && (
                             <button className="home-menu-item resume" onClick={onResumeGame}>
-                                <span className="menu-icon">▶️</span>
-                                <span className="menu-label">試合を再開</span>
-                                <span className="menu-description">中断した試合を続ける</span>
+                                <span className="menu-icon">{isUnsavedResult ? '💾' : '▶️'}</span>
+                                <span className="menu-label">
+                                    {isUnsavedResult ? '試合結果を保存' : '試合を再開'}
+                                </span>
+                                <span className="menu-description">
+                                    {isUnsavedResult ? '終了した試合が未保存です' : '中断した試合を続ける'}
+                                </span>
                             </button>
                         )}
 

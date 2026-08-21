@@ -13,6 +13,7 @@ const noopHandlers = {
     onEditScore: vi.fn(),
     onEditStat: vi.fn(),
     onEditFoul: vi.fn(),
+    onEditFoulFreeThrows: vi.fn(),
     onConvertScoreToMiss: vi.fn(),
     onConvertMissToScore: vi.fn(),
     onToggleOwnGoal: vi.fn(),

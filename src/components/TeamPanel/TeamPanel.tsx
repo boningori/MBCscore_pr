@@ -1,4 +1,4 @@
-import type { Player, ScoreEntry, StatEntry, FoulEntry, ScoreType, StatType } from '../../types/game';
+import type { Player, ScoreEntry, StatEntry, FoulEntry, ScoreType, StatType, FreeThrowResult } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
 import { ActionHistory } from '../ActionHistory';
@@ -11,6 +11,8 @@ interface ActionHistoryHandlers {
   onEditStat: (entryId: string, newPlayerId: string, newStatType: StatType) => void;
   /** ファウルをした選手の付け替え（種別とFTは変えない。理由は handleEditFoul） */
   onEditFoul: (entryId: string, newPlayerId: string) => void;
+  /** FTの成否の訂正（本数と種別は変えない。理由は handleEditFoulFreeThrows） */
+  onEditFoulFreeThrows: (entryId: string, freeThrowResults: FreeThrowResult[]) => void;
   onConvertScoreToMiss: (entryId: string, newMissType: '2PA' | '3PA' | 'FTA', newPlayerId: string) => void;
   onConvertMissToScore: (entryId: string, newScoreType: '2P' | '3P' | 'FT', newPlayerId: string) => void;
   onToggleOwnGoal: (entryId: string) => void;

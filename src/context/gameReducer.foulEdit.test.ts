@@ -156,8 +156,14 @@ describe('EDIT_FOUL: ファウルをした選手の付け替え', () => {
 
     it('コーチ・ベンチのファウルは付け替えない（移す先の選手行が無い）', () => {
         let state = makeGame();
+        // コーチのテクニカルはFT付きフローだけが記録できる（ADD_FOUL は受け付けない）
         state = gameReducer(state, {
-            type: 'ADD_FOUL', payload: { teamId: 'teamA', playerId: 'COACH', foulType: 'T' },
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'COACH', foulType: 'T', shotSituation: 'none',
+                freeThrows: 1, freeThrowResults: ['made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1', benchTechType: 'HC',
+            },
         });
 
         const next = gameReducer(state, {

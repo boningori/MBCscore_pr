@@ -457,6 +457,17 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;}
 
+/* FGタイルにだけ添える分母（19/19）。
+   .player-stats-grid は align-items 未指定＝stretch で、.stat-box も
+   justify-content を持たないため、数値とラベルは4タイルとも上端で揃ったまま
+   この行だけが下に足される。タイルの高さを揃えるためのCSSは要らない。 */
+.player-stats-container .stat-box .stat-sub {
+    font-size: 0.7rem;
+    line-height: 1.2;
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+}
+
 .player-stats-container .stat-box.primary .stat-value {
     color: white;
 }
@@ -1153,7 +1164,9 @@
 /* ヘッダー行 */
 .player-stats-container .game-history-header {
     display: grid;
-    grid-template-columns: 44px 12px 1fr 56px 28px 100px 100px;
+    /* PTS/REB/AST/STL/BLK の5列ぶん。BLKを足したぶん 100px から広げる
+       （1列20pxだと0.75remの数字にパディングを足して詰まる） */
+    grid-template-columns: 44px 12px 1fr 56px 28px 124px 100px;
     gap: 6px;
     align-items: center;
     padding: 4px 8px;
@@ -1191,7 +1204,7 @@
 
 .player-stats-container .game-row {
     display: grid;
-    grid-template-columns: 44px 12px 1fr 56px 28px 100px 100px;
+    grid-template-columns: 44px 12px 1fr 56px 28px 124px 100px;
     gap: 6px;
     align-items: center;
     padding: 6px 8px;
@@ -1306,6 +1319,12 @@
 .player-stats-container .stat-stl {
     background: rgba(139, 92, 246, 0.15);
     color: var(--team-blue-light);
+}
+
+.player-stats-container .stat-blk {
+    /* 推移グラフのブロック色（STAT_COLORS.blocks = #ec4899）に合わせる */
+    background: var(--stats-pink-bg);
+    color: var(--active-highlight-light);
 }
 
 .player-stats-container .stat-to {

@@ -219,6 +219,7 @@ export type GameActionType =
     | 'ADD_FOUL'
     | 'ADD_FOUL_WITH_FREE_THROWS'
     | 'EDIT_FOUL'
+    | 'EDIT_FOUL_FREE_THROWS'
     | 'ADD_TIMEOUT'
     | 'REMOVE_TIMEOUT'
     | 'SUBSTITUTE_PLAYER'
@@ -316,6 +317,8 @@ export type GameAction =
     }
     // ファウルをした選手の付け替え。種別とFTは動かさない（理由は handleEditFoul）
     | { type: 'EDIT_FOUL'; payload: { entryId: string; newPlayerId: string } }
+    // FTの成否だけを直す。本数と種別は変えない（変えると様式の表記と辻褄が合わなくなる）
+    | { type: 'EDIT_FOUL_FREE_THROWS'; payload: { entryId: string; freeThrowResults: FreeThrowResult[] } }
     | { type: 'REMOVE_FOUL'; payload: { entryId: string } }
     // 管理
     | { type: 'SUBSTITUTE_PLAYER'; payload: { teamId: string; playerInId: string; playerOutId: string } }

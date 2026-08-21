@@ -243,6 +243,19 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setShowMergeConfirm(false);
     }, []);
 
+    // 端末の戻る操作は選択モードを抜けるだけにする。
+    //
+    // 選択モードは画面の中の一段で、抜ける手段（「やめる」）も画面にある。
+    // ここを受け取らないと、統合する相手を何枚か選んだ状態でエッジスワイプした
+    // 瞬間に、選択ごとホームまで飛ぶ（実測）。このアプリはサブ状態すべてを
+    // useBackHandler で受けている——詳細ビュー・名簿の編集フォーム・スコアシート・
+    // スタメン選択・ファウルフローの各ステップ・得点セレクタ——ので、ここだけ
+    // 例外にする理由がない。
+    //
+    // 確認モーダルはあとからマウントされる＝スタックの上に載るので、
+    // 開いている間はモーダルが先に閉じる（modalStack の LIFO）。
+    useBackHandler(selectionMode, exitSelection);
+
     const handleMerge = useCallback(() => {
         if (!selectedTeam || selectedCards.length < 2 || !canonicalKey) {
             // ここへ来るのは主に、確認モーダルを開いたあとに期間の絞り込みなどで

@@ -22,18 +22,22 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-/** 設定確認ステップまで進める */
-function goToConfirmStep() {
+/** 出場選手ステップまで進める */
+function goToPlayersStep() {
     render(<GameSetup onComplete={() => { }} onBack={() => { }} />);
     fireEvent.click(screen.getByRole('button', { name: '次へ' }));
     fireEvent.click(screen.getByText('ホームチーム'));
+}
+
+/** 設定確認ステップまで進める */
+function goToConfirmStep() {
+    goToPlayersStep();
     fireEvent.click(screen.getByRole('button', { name: '次へ' }));
     fireEvent.click(screen.getByText('アウェイチーム'));
 }
 
 describe('設定確認ステップの選択肢グループ', () => {
     it.each([
-        'マイチームの使用番号',
         '3Pシュート',
         'クォーター時間',
     ])('「%s」が選択肢グループとして読み上げられる', groupName => {
@@ -45,8 +49,27 @@ describe('設定確認ステップの選択肢グループ', () => {
         expect(screen.getByRole('radiogroup', { name: groupName })).toBeTruthy();
     });
 
-    it('各グループの選択肢はそのグループの中に属している', () => {
+    // 番号タイプは出場選手ステップ（番号が最初に出る場所）へ移した。
+    // 同じ操作子を2つのステップに置くと、どちらが効いているのか分からなくなる
+    it('マイチームの使用番号は確認ステップでは操作子を出さない', () => {
         goToConfirmStep();
+
+        expect(screen.queryByRole('radiogroup', { name: 'マイチームの使用番号' })).toBeNull();
+        // 選んだ結果は読める
+        expect(screen.getByText('マイチームの使用番号')).toBeTruthy();
+        expect(screen.getByText('ビブス番号')).toBeTruthy();
+    });
+});
+
+describe('出場選手ステップの番号タイプ', () => {
+    it('選択肢グループとして読み上げられる', () => {
+        goToPlayersStep();
+
+        expect(screen.getByRole('radiogroup', { name: 'マイチームの使用番号' })).toBeTruthy();
+    });
+
+    it('各グループの選択肢はそのグループの中に属している', () => {
+        goToPlayersStep();
 
         const numberGroup = screen.getByRole('radiogroup', { name: 'マイチームの使用番号' });
         const radios = numberGroup.querySelectorAll('input[type="radio"]');

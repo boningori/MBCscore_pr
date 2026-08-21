@@ -69,6 +69,48 @@ describe('sortPlayers', () => {
         expect(numbersOf(list, 'fgPercent')).toEqual([4, 9]);
     });
 
+    // 規定試投（＝一覧の最多出場試合数×1本）。下限が無いと、1試合で1本だけ
+    // 決めた選手が 18/22 の選手より上に来る。カードに出るのは率だけなので
+    // 一覧からは見分けられず、「誰がよく決めているか」を掴む並び順が一番外れる
+    it('FG%: 規定試投に満たない選手は最後に回す', () => {
+        const list = [
+            p(13, { games: 1, made: 1, attempts: 1 }),   // 100% だが1本だけ
+            p(4, { games: 3, made: 18, attempts: 24 }),  // 75%
+            p(5, { games: 3, made: 9, attempts: 15 }),   // 60%
+        ];
+        // 下限は 3本（最多出場3試合 × 1本）。#13 は1本なので末尾へ
+        expect(numbersOf(list, 'fgPercent')).toEqual([4, 5, 13]);
+    });
+
+    it('FG%: 規定試投を満たしていれば率どおりに並ぶ', () => {
+        const list = [
+            p(4, { games: 3, made: 2, attempts: 4 }),   // 50%
+            p(5, { games: 3, made: 3, attempts: 3 }),   // 100%・下限ちょうど
+        ];
+        expect(numbersOf(list, 'fgPercent')).toEqual([5, 4]);
+    });
+
+    // 記録が1試合しかない時期に全員が下限割れすると、並び順そのものが機能しない。
+    // 試合数に比例させているので、1試合なら下限も1本まで下がる
+    it('FG%: 記録が1試合しかなくても並びが空にならない', () => {
+        const list = [
+            p(9, { games: 1, made: 0, attempts: 0 }),
+            p(4, { games: 1, made: 1, attempts: 1 }),
+            p(5, { games: 1, made: 1, attempts: 4 }),
+        ];
+        // 下限1本。試投0の#9だけが末尾
+        expect(numbersOf(list, 'fgPercent')).toEqual([4, 5, 9]);
+    });
+
+    // 下限は他の並び順には効かない（率ではないので母数の大小で歪まない）
+    it('FG%以外の並び順は試投数に左右されない', () => {
+        const list = [
+            p(13, { games: 1, points: 30, attempts: 1 }),
+            p(4, { games: 3, points: 12, attempts: 24 }),
+        ];
+        expect(numbersOf(list, 'points')).toEqual([13, 4]);
+    });
+
     it('同値なら背番号順で安定する', () => {
         const list = [p(9, { points: 5 }), p(4, { points: 5 }), p(6, { points: 5 })];
         expect(numbersOf(list, 'points')).toEqual([4, 6, 9]);

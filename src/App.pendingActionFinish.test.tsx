@@ -46,9 +46,11 @@ function seedFinishedSessionWithPending(pendingCount: number) {
     }));
 }
 
+// 終了済みのセッションなので、ホームの導線は「試合を再開」ではなく
+// 未保存であることを名乗る（Home.tsx / getGameSessionState）
 async function openFinishedGame() {
     render(<App />);
-    fireEvent.click(await screen.findByText('試合を再開'));
+    fireEvent.click(await screen.findByText('試合結果を保存'));
     return screen.findByText('保存して終了');
 }
 

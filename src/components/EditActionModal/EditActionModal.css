@@ -116,3 +116,78 @@
     font-size: var(--font-size-sm);
     text-align: center;
 }
+
+/* FTの直し方の案内。conversion-notice（⚠️＝このまま保存すると何かが変わる）とは
+   性質が違い、「ここではできないこと」を伝えるだけなので警告色にしない。
+   同じ黄色にすると、付け替えの警告と並んだときにどちらが要注意か分からなくなる */
+.edit-action-modal .edit-hint {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* FTの成否の訂正。FoulInputFlow の結果入力と同じ並び（○成功／×失敗）にそろえる。
+   同じことを2箇所で聞かれるので、見た目が違うと別の設定に見える */
+.edit-action-modal .ft-edit-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.edit-action-modal .ft-edit-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.edit-action-modal .ft-edit-index {
+    flex: 0 0 4.5em;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.edit-action-modal .ft-edit-choices {
+    display: flex;
+    flex: 1;
+    gap: var(--spacing-sm);
+}
+
+.edit-action-modal .ft-edit-choice {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: var(--font-size-md);
+    /* 試合中の連打で選び直すので、指で押せる大きさを確保する */
+    min-height: 44px;
+    cursor: pointer;
+}
+
+/* 選択は色と枠の2方向で示す（色だけでは伝わらない） */
+.edit-action-modal .ft-edit-choice.selected.made {
+    background: var(--stats-success-bg, rgba(34, 197, 94, 0.15));
+    border-color: var(--secondary-light);
+    color: var(--secondary-light);
+    font-weight: 700;
+}
+
+.edit-action-modal .ft-edit-choice.selected.missed {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--danger-light);
+    color: var(--danger-light);
+    font-weight: 700;
+}
+
+.edit-action-modal .ft-edit-summary {
+    margin-top: var(--spacing-sm);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}

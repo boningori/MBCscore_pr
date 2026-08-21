@@ -141,15 +141,86 @@ describe('gameReducer: ADD_FOUL', () => {
         expect(state.foulHistory[0].isCoachOrBench).toBe(false);
     });
 
-    it('コーチテクニカルはチームファウルに加算されない', () => {
-        const state = gameReducer(makeGame(), {
+    // コーチ・ベンチのテクニカルはFT付きフローだけが記録する。
+    // ADD_FOUL の分岐は benchFouls（様式のどこにも描かれない配列）へ書いていて、
+    // A.コーチもコーチ行のBを対で入れていなかった。UIからは到達しないまま
+    // 不整合だけを抱えていたので塞いだ（handleAddFoul の isCoachOrBenchId）
+    it('コーチテクニカルは受け付けない（FT付きフローで記録する）', () => {
+        const before = makeGame();
+        const state = gameReducer(before, {
             type: 'ADD_FOUL',
             payload: { teamId: 'teamA', playerId: 'COACH', foulType: 'T' },
+        });
+        expect(state).toBe(before);
+    });
+
+    it('FT付きフローならコーチテクニカルはチームファウルに加算されない', () => {
+        const state = gameReducer(makeGame(), {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'COACH', foulType: 'T', shotSituation: 'none',
+                freeThrows: 1, freeThrowResults: ['made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1', benchTechType: 'HC',
+            },
         });
         expect(state.teamA.teamFouls[0]).toBe(0);
         expect(state.teamA.coachFouls).toEqual(['T']);
         expect(state.foulHistory[0].isCoachOrBench).toBe(true);
         expect(state.foulHistory[0].coachFoulTarget).toBe('COACH');
+    });
+});
+
+describe('gameReducer: ADD_PLAYER_TO_TEAM', () => {
+    /** 両チームを延長まで進める（END_QUARTER は同点のときだけOTへ入る） */
+    function toOvertime(): Game {
+        let state = makeGame();
+        for (let q = 1; q <= 4; q++) {
+            state = gameReducer({ ...state, phase: 'playing' }, { type: 'END_QUARTER' });
+        }
+        return state;
+    }
+
+    it('背番号順に差し込まれる（00は最後）', () => {
+        let state = gameReducer(makeGame(), {
+            type: 'ADD_PLAYER_TO_TEAM', payload: { teamId: 'teamA', number: 0, name: '遅刻' },
+        });
+        state = gameReducer(state, {
+            type: 'ADD_PLAYER_TO_TEAM', payload: { teamId: 'teamA', number: 100, name: 'ダブルゼロ' },
+        });
+
+        expect(state.teamA.players.map(p => p.number)).toEqual([0, 4, 5, 100]);
+        // 相手チームには足さない
+        expect(state.teamB.players).toHaveLength(2);
+    });
+
+    it('途中から入るので、それまでのクォーターは未出場', () => {
+        const state = gameReducer(makeGame(), {
+            type: 'ADD_PLAYER_TO_TEAM', payload: { teamId: 'teamA', number: 9, name: '遅刻' },
+        });
+        const added = state.teamA.players.find(p => p.number === 9)!;
+
+        expect(added.quartersPlayed).toEqual([false, false, false, false]);
+        expect(added.isOnCourt).toBe(false);
+        expect(added.stats.points).toBe(0);
+    });
+
+    /**
+     * 出場欄はピリオド数ぶん要る。延長に入ってから足す選手も同じ。
+     *
+     * handleAddPlayerToTeam は枠数を Math.max(4, state.teamA.teamFouls.length) で
+     * 決めていて、teamB へ足すときも teamA を読む。いまは END_QUARTER が両チームを
+     * 揃えて伸ばすので一致するが、その結合を保証しているものは無い。
+     * 片方だけピリオドが伸びるようになったら、ここと疑似試合のフューズが落ちる。
+     */
+    it.each(['teamA', 'teamB'] as const)('延長中に足した選手の出場欄がピリオド数と揃う（%s）', teamId => {
+        const state = gameReducer(toOvertime(), {
+            type: 'ADD_PLAYER_TO_TEAM', payload: { teamId, number: 9, name: '遅刻' },
+        });
+
+        expect(state[teamId].teamFouls).toHaveLength(5);
+        const added = state[teamId].players.find(p => p.number === 9)!;
+        expect(added.quartersPlayed).toHaveLength(state[teamId].teamFouls.length);
+        expect(added.quartersPlayed).toEqual([false, false, false, false, false]);
     });
 });
 
