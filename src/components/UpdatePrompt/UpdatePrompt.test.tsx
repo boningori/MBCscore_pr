@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, act, renderHook } from '@testing-library/react';
-import { UpdatePrompt } from './UpdatePrompt';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { UpdatePrompt, UPDATE_PROMPT_BODY_CLASS, UPDATE_PROMPT_HEIGHT_VAR } from './UpdatePrompt';
 import { useAppUpdate } from './useAppUpdate';
 
 afterEach(cleanup);
@@ -23,6 +25,34 @@ describe('UpdatePrompt', () => {
 
         fireEvent.click(screen.getByRole('button', { name: '後で' }));
         expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    // バーは position: fixed で最前面に浮くため、ページ側に同じ高さの逃げ場を
+    // 作らないと画面下端の操作要素を覆う。375x812で実測したところ、ホーム画面の
+    // 「📖 使用説明書」とチーム編集の「キャンセル」が、バーが出ている間は
+    // タップ判定ごと奪われていた（どちらもページ末尾にあり、スクロールで
+    // 逃がすこともできない）。
+    it('表示中はページ下部に逃げ場を確保し、消えたら元に戻す', () => {
+        const { unmount } = render(<UpdatePrompt onUpdate={() => { }} onDismiss={() => { }} />);
+
+        expect(document.body.classList.contains(UPDATE_PROMPT_BODY_CLASS)).toBe(true);
+        // 高さは狭い画面で縦積みになって変わるため、実測値を変数で渡す
+        expect(document.documentElement.style.getPropertyValue(UPDATE_PROMPT_HEIGHT_VAR)).not.toBe('');
+
+        unmount();
+
+        expect(document.body.classList.contains(UPDATE_PROMPT_BODY_CLASS)).toBe(false);
+        expect(document.documentElement.style.getPropertyValue(UPDATE_PROMPT_HEIGHT_VAR)).toBe('');
+    });
+
+    // 逃げ場は「TSがクラスと変数を出す」「CSSがそれを受けて余白にする」の
+    // 二段構えなので、片方だけ消えても画面上は静かに元の不具合へ戻る。
+    // 受け側が生きていることをここで押さえる。
+    it('確保した高さを index.css が余白として受けている', () => {
+        const indexCss = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf-8');
+
+        expect(indexCss).toContain(`body.${UPDATE_PROMPT_BODY_CLASS}`);
+        expect(indexCss).toContain(UPDATE_PROMPT_HEIGHT_VAR);
     });
 });
 
