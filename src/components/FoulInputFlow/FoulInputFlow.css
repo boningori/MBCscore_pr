@@ -462,6 +462,27 @@
     font-size: var(--font-size-sm);
 }
 
+/* 対象選手の名乗り。背番号と氏名は本文より強く出す——スコアラーが
+   照合するのはここで、周りのファウル数より先に読ませたい */
+.foul-input-flow .foul-target-info {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs) var(--spacing-sm);
+}
+
+.foul-input-flow .foul-target-label {
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.foul-input-flow .foul-target-player {
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+}
+
 .foul-input-flow .foul-trouble {
     color: var(--warning);
     font-weight: 600;
