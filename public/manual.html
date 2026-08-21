@@ -339,6 +339,27 @@
   }
   .print-btn:hover { background: #1d4ed8; }
 
+  /* アプリへ戻る導線。
+     standalone（ホーム画面から起動したPWA）で開くとアドレスバーも戻るボタンも
+     無く、この説明書から自力で戻れなくなるため必ず置く。
+     リンク先は "./" ＝ 同ディレクトリのindex.html。配置パス（GitHub Pagesの
+     サブディレクトリ）が変わっても追従する */
+  .back-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: var(--bg-dark);
+    color: white;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 12pt;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 1000;
+  }
+  .back-btn:hover { background: #334155; }
+
   /* レイアウト図 */
   .layout-diagram {
     border: 2px solid var(--border);
@@ -369,6 +390,9 @@
 </head>
 <body>
 
+<!-- アプリへ戻る（standaloneでは他に戻る手段が無い） -->
+<a class="back-btn no-print" href="./">← MBCscore に戻る</a>
+
 <!-- 印刷ボタン -->
 <button class="print-btn no-print" onclick="window.print()">PDF保存 / 印刷</button>
 
@@ -379,7 +403,7 @@
   <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">Version 1.1.0</div>
+  <div class="cover-version">v1.3 対応</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -1363,7 +1387,8 @@
     MBC<span class="logo-score">score</span>
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
-  <p>使用説明書 Version 1.1.0</p>
+  <!-- アプリ本体のマイナーバージョンと揃える（ずれたら manualVersion.test.ts が落ちる） -->
+  <p>使用説明書 v1.3 対応</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
