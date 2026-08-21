@@ -25,12 +25,20 @@ describe('suppressesAppUpdate', () => {
         expect(suppressesAppUpdate('home', 'quarterEnd')).toBe(true);
     });
 
+    // チーム管理も未保存の入力を持つ画面で、失うものは設定ウィザードと変わらない。
+    // 名簿を打ち込んでいる途中でリロードすると、選手の番号・氏名・JBA番号が
+    // まとめて消える（保存は「保存」ボタンを押すまで走らない）。
+    // 戻る操作については MyTeamManager / OpponentManager 側で既に確認を挟んで
+    // いるのに、更新バーからだけ確認なしで消せる状態になっていた。
+    it('チーム編集の画面では出さない（未保存の名簿が消える）', () => {
+        expect(suppressesAppUpdate('myTeamManager', 'setup')).toBe(true);
+        expect(suppressesAppUpdate('opponentManager', 'setup')).toBe(true);
+    });
+
     it('ホームや閲覧系の画面では出す（ここで更新してもらう）', () => {
         expect(suppressesAppUpdate('home', 'setup')).toBe(false);
         expect(suppressesAppUpdate('home', 'finished')).toBe(false);
         expect(suppressesAppUpdate('history', 'setup')).toBe(false);
         expect(suppressesAppUpdate('playerStats', 'setup')).toBe(false);
-        expect(suppressesAppUpdate('myTeamManager', 'setup')).toBe(false);
-        expect(suppressesAppUpdate('opponentManager', 'setup')).toBe(false);
     });
 });
