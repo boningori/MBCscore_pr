@@ -10,6 +10,7 @@ import {
     isPlayerHidden,
     loadHiddenPlayers,
     saveHiddenPlayers,
+    effectiveMergedKeys,
     type AggregatedPlayerStats,
     type TeamRecord,
 } from '../../utils/playerStatsAnalysis';
@@ -25,11 +26,10 @@ import {
     saveMergedPlayers,
     mergeKeys,
     unmergeKey,
-    mergedCanonicalKeys,
     chooseCanonicalKey,
     carryOverHidden,
 } from '../../utils/mergedPlayers';
-import { findMergeCandidates } from './mergeCandidates';
+import { findMergeCandidates, sharesSameGame } from './mergeCandidates';
 import { ConfirmModal } from '../Modal';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import './PlayerStatsAnalysis.css';
@@ -184,10 +184,12 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     // 並べ替えは表示順だけを変える。集計（playerStats）には影響しないので分けて持つ
     const sortedPlayers = useMemo(() => sortPlayers(playerStats, sortKey), [playerStats, sortKey]);
 
-    // 統合済みの代表キー（カードの印に使う）
+    // 統合済みの代表キー（カードの印に使う）。
+    // 対応表をそのまま読まないのは、集計側が適用を拒む項目があるため
+    // （同じ試合に一緒に出ている2枚。詳細は effectiveMergedKeys）
     const mergedKeys = useMemo(() => {
         if (!selectedTeam) return new Set<string>();
-        return mergedCanonicalKeys(loadMergedPlayers(selectedTeam.id));
+        return effectiveMergedKeys(selectedTeam);
         // mergeToggleKey: 統合の切り替えを取り込むための意図的な依存
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedTeam, mergeToggleKey]);
@@ -211,6 +213,13 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         () => playerStats.filter(p => selectedKeys.has(p.playerKey)),
         [playerStats, selectedKeys],
     );
+
+    // 選んだ2枚が同じ試合に一緒に出ている＝別人。まとめるとその試合が2回
+    // 数えられ、通算・平均・成長グラフがまとめてずれる（sharesSameGame）。
+    // 集計側も適用を拒むが、押せてしまうと「統合したのに1枚に戻る」ように
+    // 見えるので、ここで止めて理由を出す
+    const selectionSharesGame = useMemo(() => sharesSameGame(selectedCards), [selectedCards]);
+    const canMergeSelection = selectedCards.length >= 2 && !selectionSharesGame;
 
     // 代表は名簿に載っている側。詳細は mergedPlayers の chooseCanonicalKey
     const canonicalKey = useMemo(
@@ -257,9 +266,10 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     useBackHandler(selectionMode, exitSelection);
 
     const handleMerge = useCallback(() => {
-        if (!selectedTeam || selectedCards.length < 2 || !canonicalKey) {
+        if (!selectedTeam || !canMergeSelection || !canonicalKey) {
             // ここへ来るのは主に、確認モーダルを開いたあとに期間の絞り込みなどで
-            // selectedCards が2枚未満へ減った場合。押しても無反応のままモーダルが
+            // selectedCards が2枚未満へ減った場合、または絞り込みを戻した結果
+            // 同じ試合に並ぶ2枚になった場合。押しても無反応のままモーダルが
             // 残ると抜け出す手段が「やめる」しか無くなるため、保険として閉じる
             setShowMergeConfirm(false);
             return;
@@ -273,7 +283,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
         setMergeToggleKey(prev => prev + 1);
         setHiddenToggleKey(prev => prev + 1);
         exitSelection();
-    }, [selectedTeam, selectedCards, canonicalKey, exitSelection]);
+    }, [selectedTeam, selectedCards, canMergeSelection, canonicalKey, exitSelection]);
 
     const handleUnmerge = useCallback(() => {
         if (!selectedTeam || !selectedPlayer) return;
@@ -386,9 +396,16 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                                 <span className="merge-toolbar-text">
                                     同じ選手のカードを2枚以上選んでください（{selectedCards.length}枚選択中）
                                 </span>
+                                {/* 押せない理由は必ず文字で出す。ボタンが灰色なだけだと、
+                                    枚数が足りないのか別の理由なのか区別が付かない */}
+                                {selectionSharesGame && (
+                                    <span className="merge-toolbar-warning" role="status">
+                                        同じ試合に一緒に出ているカードが含まれています。別の選手なのでまとめられません
+                                    </span>
+                                )}
                                 <button
                                     className="btn btn-primary btn-small"
-                                    disabled={selectedCards.length < 2}
+                                    disabled={!canMergeSelection}
                                     onClick={() => setShowMergeConfirm(true)}
                                 >
                                     統合する

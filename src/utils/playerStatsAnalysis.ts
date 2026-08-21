@@ -7,7 +7,7 @@ import { loadMyTeams, type SavedPlayer, type SavedTeam } from './teamStorage';
 import { createJsonStorage } from './createStorage';
 import { formatRecordDate, recordDateParts, recordInputDate } from './localDate';
 import { isDisqualified } from './disqualification';
-import { loadMergedPlayers, resolveMergedKey } from './mergedPlayers';
+import { loadMergedPlayers, mergedCanonicalKeys, resolveMergedKey, type MergeMap } from './mergedPlayers';
 
 // 非表示選手ストレージ。
 // 配列やnullが入っているとチームIDでの索引が壊れるため、素のオブジェクトのみ受ける
@@ -203,6 +203,43 @@ function buildIdentityAliases(
 function identityKey(player: KeyablePlayer, aliases: ReadonlyMap<string, string>): string {
     const key = generatePlayerKey(player.name, player.licenseNo);
     return aliases.get(key) ?? key;
+}
+
+/**
+ * 手動の統合（mergedPlayers）のうち、適用してはいけない代表キーを集める。
+ *
+ * 同じ試合の名簿に並んでいる2枚は、別人だと確定できる。1人の選手が1試合の
+ * 名簿に2回載ることはないため。それを1枚にまとめると、その試合が2回数えられる
+ * （実測: 佐藤#4 と 佐藤#7 が一緒に出た2試合を統合すると gamesPlayed が 4 に
+ * なり、通算・平均・標準偏差・1Qあたり・直近フォーム・勝敗別・成長グラフが
+ * まとめてずれる。試合別詳細と推移グラフには同じ試合の行が2本並ぶ）。
+ *
+ * 自動の名寄せ側は collectCollidingKeys が同じ判定をして背番号で分けているが、
+ * 手動の統合はその後に適用されるため保護を素通りしていた。ここで塞ぐ。
+ *
+ * 組の一部だけを残す、といった救済はしない。同姓のカードが3枚あって
+ * どれとどれが同一人物か決められないとき、片方だけ寄せると別人を混ぜうる。
+ * 「あいまいなら寄せない」は buildIdentityAliases / collectCollidingKeys と
+ * 同じ判断で、割れたカードは利用者が選び直せる（統合を解除と同じ状態）。
+ *
+ * @param rosterKeys 試合ごとの、統合を適用する前の識別キー（buildPlayerKeys の結果）
+ */
+function collectConflictingMergeTargets(
+    rosterKeys: readonly string[][],
+    mergeMap: MergeMap,
+): Set<string> {
+    const conflicting = new Set<string>();
+    for (const keys of rosterKeys) {
+        const seen = new Set<string>();
+        for (const builtKey of keys) {
+            // 統合していないキーも数える。A を C へ寄せていて、同じ試合に
+            // 素の C も居る場合が抜けるため
+            const resolved = resolveMergedKey(mergeMap, builtKey);
+            if (seen.has(resolved)) conflicting.add(resolved);
+            seen.add(resolved);
+        }
+    }
+    return conflicting;
 }
 
 /**
@@ -475,6 +512,55 @@ export function getMyTeamGames(myTeam: SavedTeam): { record: GameRecord; isTeamA
     return result;
 }
 
+/**
+ * 試合ごとの識別キー（手動の統合を適用する前）を、全試合ぶん組む。
+ *
+ * 期間で絞る前に組むこと。絞り込みでキーが変わると、期間を変えただけで
+ * 別人扱いになり、playerKey で保存している非表示設定もずれる
+ * （collectCollidingKeys / collectConflictingMergeTargets）。
+ */
+function buildRosterKeys(
+    myTeam: SavedTeam,
+    games: readonly { record: GameRecord; isTeamA: boolean }[],
+): string[][] {
+    const recordedRosters = games.map(
+        ({ record, isTeamA }) => (isTeamA ? record.teamA : record.teamB).players,
+    );
+    // ライセンスNo.の入力・訂正・削除をまたいで同じ選手に寄せる（buildIdentityAliases）
+    const identityAliases = buildIdentityAliases(myTeam.players, recordedRosters);
+    const collidingKeys = collectCollidingKeys(recordedRosters, identityAliases);
+    // 同姓を分ける背番号は、ビブス／ユニフォームの違いを吸収してから使う
+    const numberAliases = buildNumberAliases(myTeam.players);
+    return recordedRosters.map(
+        players => buildPlayerKeys(players, collidingKeys, numberAliases, identityAliases),
+    );
+}
+
+/**
+ * 実際に適用されている統合の代表キー（カードの「統合済み」の印に使う）。
+ *
+ * 対応表をそのまま読んではいけない。同じ試合に一緒に出ている2枚をまとめて
+ * いる項目は集計側が適用しないため（collectConflictingMergeTargets）、
+ * 対応表だけを見ると「統合済み」と出ているのにカードは2枚のまま、という
+ * 食い違いになる。この修正より前に誤ってまとめた環境で実際に起きる。
+ *
+ * 項目そのものは消さない。利用者が詳細から「統合を解除」して片付けられる
+ * ようにしておきたいのと、記録でも設定でもない推論でユーザーの操作結果を
+ * 黙って捨てたくないため。
+ */
+export function effectiveMergedKeys(myTeam: SavedTeam): Set<string> {
+    const mergeMap = loadMergedPlayers(myTeam.id);
+    const canonicals = mergedCanonicalKeys(mergeMap);
+    if (canonicals.size === 0) return canonicals;
+
+    const conflicting = collectConflictingMergeTargets(
+        buildRosterKeys(myTeam, getMyTeamGames(myTeam)),
+        mergeMap,
+    );
+    for (const key of conflicting) canonicals.delete(key);
+    return canonicals;
+}
+
 // 選手別スタッツを集計
 export function aggregatePlayerStats(
     myTeam: SavedTeam,
@@ -494,19 +580,12 @@ export function aggregatePlayerStats(
     // 手動の統合。自動の名寄せの結果をさらに上書きする（詳細は mergedPlayers）
     const mergeMap = loadMergedPlayers(myTeam.id);
     const hiddenPlayers = options?.includeHidden ? [] : loadHiddenPlayers(myTeam.id);
-    // 名寄せも同姓の判定も、期間で絞る前の全試合を見る。
-    // 絞り込みでキーが変わると、期間を変えただけで別人扱いになり、
-    // playerKey で保存している非表示設定もずれる（collectCollidingKeys）
-    const recordedRosters = games.map(
-        ({ record, isTeamA }) => (isTeamA ? record.teamA : record.teamB).players,
-    );
-    // ライセンスNo.の入力・訂正・削除をまたいで同じ選手に寄せる（buildIdentityAliases）
-    const identityAliases = buildIdentityAliases(myTeam.players, recordedRosters);
-    const collidingKeys = collectCollidingKeys(recordedRosters, identityAliases);
-    // 同姓を分ける背番号は、ビブス／ユニフォームの違いを吸収してから使う
-    const numberAliases = buildNumberAliases(myTeam.players);
+    // 名寄せも同姓の判定も、期間で絞る前の全試合を見る（buildRosterKeys）
+    const rosterKeys = buildRosterKeys(myTeam, games);
+    // 同じ試合の名簿に並ぶ2枚をまとめている統合は適用しない
+    const conflictingMergeTargets = collectConflictingMergeTargets(rosterKeys, mergeMap);
 
-    for (const { record, isTeamA } of games) {
+    for (const [gameIndex, { record, isTeamA }] of games.entries()) {
         const gameDate = new Date(record.date);
         if (startDate && gameDate < startDate) continue;
         if (endDate && gameDate > endDate) continue;
@@ -521,14 +600,17 @@ export function aggregatePlayerStats(
                 myScore < opponentScore ? 'loss' : 'draw';
 
         // 氏名 + ライセンスNo. で識別。衝突したら背番号で分ける（buildPlayerKeys）
-        const playerKeys = buildPlayerKeys(myTeamData.players, collidingKeys, numberAliases, identityAliases);
+        const playerKeys = rosterKeys[gameIndex];
 
         for (const [playerIndex, player] of myTeamData.players.entries()) {
             // 利用者がカードで見たキー。手動の統合はこのキーに対して張られている
             const builtKey = playerKeys[playerIndex];
             // 手動が常に勝つ。自動判定は名簿からの推論にすぎず、人が「同じ人だ」と
-            // 言ったらそれが正しい
-            const key = resolveMergedKey(mergeMap, builtKey);
+            // 言ったらそれが正しい。
+            // ただし同じ試合に一緒に出ている2枚だけは別人だと確定できるので、
+            // その統合は適用しない（collectConflictingMergeTargets）
+            const mergedKey = resolveMergedKey(mergeMap, builtKey);
+            const key = conflictingMergeTargets.has(mergedKey) ? builtKey : mergedKey;
 
             // 非表示選手をスキップ
             if (hiddenPlayers.includes(key)) continue;

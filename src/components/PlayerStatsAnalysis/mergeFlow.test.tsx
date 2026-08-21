@@ -44,6 +44,28 @@ function seedSplitPlayer() {
     recordGame('佐藤 太郎', 4, 8, '2026-06-01');
 }
 
+/**
+ * 同姓の2人が一緒に出ている試合を1つ作る（名簿には1人しか残っていない想定）。
+ *
+ * 上級生が卒業して名簿から消えると、氏名だけでは2人を見分けられなくなる。
+ * 「同じ試合に一緒に出ているか」が、そこで唯一残る手掛かりになる。
+ */
+function recordSameGameTwins() {
+    const make = (id: string, number: number, points: number) => {
+        const p = createPlayer(id, number, '佐藤 太郎');
+        p.stats = { ...p.stats, points };
+        p.quartersPlayed = ['starter', false, false, false];
+        return p;
+    };
+    const mine = createTeam('teamA', 'チーム', 'C');
+    mine.isMyTeam = true;
+    mine.savedTeamId = TEAM_ID;
+    mine.players = [make('p4', 4, 8), make('p7', 7, 10)];
+    const other = createTeam('teamB', '相手', 'C');
+    other.players = [createPlayer('b', 9, '相手')];
+    saveGameResult('試合', mine, other, [], [], [], new Date('2026-06-01'));
+}
+
 const TEAM_A_ID = 'ta';
 const TEAM_B_ID = 'tb';
 
@@ -233,6 +255,29 @@ describe('統合の流れ', () => {
 
         expect(cards()).toHaveLength(1);
         expect((button('統合する') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    // 同じ試合に一緒に出ている2枚は別人だと確定できる（1人が1試合の名簿に
+    // 2回載ることはない）。まとめるとその試合が2回数えられ、通算・平均・
+    // 成長グラフがまとめてずれる。候補にも出さず、手で選んでも進ませない
+    it('同じ試合に一緒に出ている2枚は候補の案内に出ない', () => {
+        recordSameGameTwins();
+        render(<PlayerStatsAnalysis onBack={() => { }} />);
+
+        expect(cards()).toHaveLength(2);
+        expect(screen.queryByText(/同じ選手が分かれているかもしれません/)).toBeNull();
+    });
+
+    it('同じ試合に一緒に出ている2枚を選んでも統合へ進めない', () => {
+        recordSameGameTwins();
+        render(<PlayerStatsAnalysis onBack={() => { }} />);
+
+        fireEvent.click(button('選手を統合'));
+        cards().forEach(card => fireEvent.click(card));
+
+        expect((button('統合する') as HTMLButtonElement).disabled).toBe(true);
+        // 灰色のボタンだけでは枚数不足と区別が付かないので理由も出す
+        expect(screen.getByText(/同じ試合に一緒に出ているカード/)).toBeTruthy();
     });
 
     it('詳細から解除すると元の枚数に戻る', () => {
