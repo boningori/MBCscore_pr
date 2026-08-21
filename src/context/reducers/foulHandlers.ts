@@ -6,53 +6,44 @@ import type {
     FoulRecord,
     CoachFoulTarget,
     ScoreEntry,
+    StatEntry,
 } from '../../types/game';
 import { recalculateRunningScores, incrementTeamFoul, decrementTeamFoul, insertFoulInOrder } from './shared';
+
+/**
+ * コーチ・ベンチのファウルを ADD_FOUL で記録してはいけない。
+ *
+ * この経路は3つの行き先を持っていた: コーチ本人は coachFouls、A.コーチは
+ * assistantCoachFouls だけ（FT付きフローが対で入れるコーチ行のBが無い）、
+ * ベンチ関係者と種別なしは benchFouls。
+ *
+ * このうち benchFouls は公式様式のどこにも描かれない（RunningScoresheet の
+ * 名簿表はコーチ行とA.コーチ行しか持たない）。つまりここへ書いた記録は、
+ * 履歴には残るのに様式からは消える。A.コーチも、取り消し側が対で 'BT' を
+ * 引くため、コーチ行の別のマークを巻き込む。
+ *
+ * いまのUIはベンチテクニカルを必ずFT付きフロー（handleAddFoulWithFreeThrows）
+ * へ通す。そちらは3種とも様式が印字する場所へ書く。この分岐は到達しないまま
+ * 不整合だけを抱えていたので塞ぐ。
+ *
+ * 古いバージョンはUIからこの経路を使っていた（playerId: 'BENCH' / null）。
+ * そのころの記録は benchFouls に残っているため、読み出し側（handleRemoveFoul の
+ * 旧データ用フォールバック、RunningScoresheet の writesToCoachRow）は残す。
+ */
+function isCoachOrBenchId(playerId: string | null): boolean {
+    return playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
+}
 
 export function handleAddFoul(state: Game, payload: PayloadOf<'ADD_FOUL'>): Game {
     const { teamId, playerId, foulType } = payload;
 
-    const isCoachOrBench = playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
-    const coachFoulTarget: CoachFoulTarget = playerId === 'COACH' ? 'COACH'
-        : playerId === 'ACOACH' ? 'ACOACH'
-            : playerId === 'BENCH' ? 'BENCH'
-                : null;
+    // 様式に出ない場所へ記録を落とさない（詳細は isCoachOrBenchId のコメント）
+    if (isCoachOrBenchId(playerId)) return state;
+
     const player = [...state.teamA.players, ...state.teamB.players].find(p => p.id === playerId);
 
     const updateTeamFoul = (team: typeof state.teamA, isTarget: boolean) => {
         if (!isTarget) return team;
-
-        // コーチファウル
-        if (playerId === 'COACH') {
-            return {
-                ...team,
-                coachFouls: [...team.coachFouls, foulType],
-            };
-        }
-
-        // A.コーチファウル
-        if (playerId === 'ACOACH') {
-            return {
-                ...team,
-                assistantCoachFouls: [...team.assistantCoachFouls, foulType],
-            };
-        }
-
-        // ベンチファウル
-        if (playerId === 'BENCH') {
-            return {
-                ...team,
-                benchFouls: [...team.benchFouls, foulType],
-            };
-        }
-
-        // ベンチテクニカル等（playerId が null）もベンチファウルに
-        if (!playerId) {
-            return {
-                ...team,
-                benchFouls: [...team.benchFouls, foulType],
-            };
-        }
 
         // 通常のプレイヤーファウルのみチームファウルを加算
         return {
@@ -65,17 +56,17 @@ export function handleAddFoul(state: Game, payload: PayloadOf<'ADD_FOUL'>): Game
         };
     };
 
-    // ファウル履歴エントリを作成
+    // ファウル履歴エントリを作成（コーチ・ベンチは上で弾いてあるので必ず選手）
     const foulEntry: FoulEntry = {
         id: crypto.randomUUID(),
         teamId,
-        playerId: isCoachOrBench ? null : playerId,
-        playerNumber: isCoachOrBench ? -1 : (player?.number || 0),
+        playerId,
+        playerNumber: player?.number || 0,
         foulType,
         quarter: state.currentQuarter,
         timestamp: Date.now(),
-        isCoachOrBench,
-        coachFoulTarget,
+        isCoachOrBench: false,
+        coachFoulTarget: null,
     };
 
     return {
@@ -452,6 +443,152 @@ export function handleEditFoul(state: Game, payload: PayloadOf<'EDIT_FOUL'>): Ga
     };
 }
 
+/**
+ * FTの成否だけを訂正する。
+ *
+ * 外したFTは記録を1件も作らない —— 成功したFTは ScoreEntry になるが、外した
+ * ぶんはシューターの freeThrowAttempt に本数として乗るだけで、アクション履歴に
+ * 現れない。そのため「外した」を「入った」に直す導線がどこにも無く、ファウルごと
+ * 削除して入れ直す（選手選択・種別・シュート状況・シューター・本数を全部やり直す）
+ * しかなかった。試合中の誤タップとしてはいちばん起きやすいのに、いちばん高くつく。
+ *
+ * 動かすのは成否だけに絞る。本数と種別を変えられるようにすると、公式様式の表記と
+ * FTの本数が辻褄の合わない組み合わせを作れてしまう（handleEditFoul と同じ判断）。
+ *
+ * 紐付きが崩れている記録は受け付けない:
+ *   - 成功したFTを「やっぱりミス」と直した（sourceFoulId 付きの FTA がある）
+ *   - シューターを別の選手へ付け替えた
+ * どちらもこのファウルのFT本数と得点エントリが1対1で対応しなくなるため、ここで
+ * 差分を当てると帳尻が合わない。UI側もその場合は編集を出さない（canEditFreeThrows）。
+ */
+export function canEditFreeThrows(
+    entry: FoulEntry,
+    scoreHistory: ScoreEntry[],
+    statHistory: StatEntry[],
+): boolean {
+    const freeThrows = entry.freeThrows ?? 0;
+    if (freeThrows <= 0) return false;
+    if (!entry.shooterPlayerId || !entry.shooterTeamId) return false;
+
+    const oldMade = (entry.freeThrowResults ?? []).filter(r => r === 'made').length;
+    // ミスへ変換した記録があると、本数と得点エントリが1対1で対応しない
+    if (statHistory.some(s => s.sourceFoulId === entry.id && s.statType === 'FTA')) return false;
+
+    const linkedFt = scoreHistory.filter(s => s.sourceFoulId === entry.id && s.scoreType === 'FT');
+    // 旧データ（sourceFoulId を持たない）はここが 0 件になるので触らない
+    if (linkedFt.length !== oldMade) return false;
+    // OGにしたFTは、得点だけ残してシュート成績から外してある
+    // （handleToggleOwnGoal）。成功数と得点エントリの本数が一致していても
+    // シューターの freeThrowMade はそのぶん少ないので、差分を当てると
+    // points と個々のスタッツの導出が食い違う（フューズが検出）
+    if (linkedFt.some(s => s.isOwnGoal)) return false;
+    // シューターを付け替えた記録は、得点が別の選手に付いている
+    return !linkedFt.some(s => s.playerId !== entry.shooterPlayerId || s.teamId !== entry.shooterTeamId);
+}
+
+export function handleEditFoulFreeThrows(state: Game, payload: PayloadOf<'EDIT_FOUL_FREE_THROWS'>): Game {
+    const { entryId, freeThrowResults } = payload;
+    const entry = state.foulHistory.find(f => f.id === entryId);
+    if (!entry) return state;
+
+    const freeThrows = entry.freeThrows ?? 0;
+    // 本数は変えない。UIは new Array(freeThrows) を全部埋めてから渡す
+    if (freeThrowResults.length !== freeThrows) return state;
+    if (!canEditFreeThrows(entry, state.scoreHistory, state.statHistory)) return state;
+
+    const shooterTeamId = entry.shooterTeamId === 'teamA' ? 'teamA' : 'teamB';
+    const oldResults = entry.freeThrowResults ?? [];
+    const oldMade = oldResults.filter(r => r === 'made').length;
+    const newMade = freeThrowResults.filter(r => r === 'made').length;
+    const linkedFt = state.scoreHistory.filter(s => s.sourceFoulId === entry.id && s.scoreType === 'FT');
+
+    const delta = newMade - oldMade;
+    const sameOrder = oldResults.length === freeThrowResults.length
+        && oldResults.every((r, i) => r === freeThrowResults[i]);
+    if (sameOrder) return state;
+
+    // 履歴と選手のファウル欄、両方の結果を書き換える。
+    // 様式はFoulRecordのほうを読むので、片方だけ直すと画面とシートが食い違う
+    const nextFoulHistory = state.foulHistory.map(f =>
+        f.id === entryId ? { ...f, freeThrowResults: [...freeThrowResults] } : f);
+
+    const updateFoulRecord = (team: typeof state.teamA, isTarget: boolean) => {
+        if (!isTarget || !entry.playerId) return team;
+        return {
+            ...team,
+            players: team.players.map(p => {
+                if (p.id !== entry.playerId) return p;
+                const index = findFoulIndex(p.fouls, state.foulHistory, entry);
+                if (index === -1) return p;
+                const cell = p.fouls[index];
+                // 旧データはFoulType文字列で入っていてFTの情報を持たない。触らない
+                if (typeof cell === 'string') return p;
+                const fouls = [...p.fouls];
+                fouls[index] = { ...cell, freeThrowResults: [...freeThrowResults] };
+                return { ...p, fouls };
+            }),
+        };
+    };
+
+    // シューターの成功数と得点を差分で動かす（試投数は本数のままなので変わらない）
+    const updateShooter = (team: typeof state.teamA, isTarget: boolean) => {
+        if (!isTarget || delta === 0) return team;
+        return {
+            ...team,
+            players: team.players.map(p => p.id === entry.shooterPlayerId
+                ? {
+                    ...p,
+                    stats: {
+                        ...p.stats,
+                        freeThrowMade: p.stats.freeThrowMade + delta,
+                        points: p.stats.points + delta,
+                    },
+                }
+                : p),
+        };
+    };
+
+    let nextScoreHistory = state.scoreHistory;
+    if (delta < 0) {
+        // 成功が減った。紐づく得点エントリを後ろから外す
+        const removedIds = new Set(linkedFt.slice(delta).map(s => s.id));
+        nextScoreHistory = nextScoreHistory.filter(s => !removedIds.has(s.id));
+    } else if (delta > 0) {
+        // 成功が増えた。記録時と同じ形（ファウル直後の連番時刻）で足す
+        const shooterNumber = entry.shooterPlayerNumber
+            ?? state[shooterTeamId].players.find(p => p.id === entry.shooterPlayerId)?.number
+            ?? 0;
+        const added: ScoreEntry[] = Array.from({ length: delta }, (_, i) => ({
+            id: crypto.randomUUID(),
+            teamId: entry.shooterTeamId!,
+            playerId: entry.shooterPlayerId!,
+            playerNumber: shooterNumber,
+            scoreType: 'FT' as const,
+            points: 1,
+            quarter: entry.quarter,
+            timestamp: entry.timestamp + 1 + oldMade + i,
+            runningScoreA: 0,
+            runningScoreB: 0,
+            sourceFoulId: entry.id,
+        }));
+        nextScoreHistory = [...nextScoreHistory, ...added];
+    }
+
+    let teamA = updateFoulRecord(state.teamA, entry.teamId === 'teamA');
+    let teamB = updateFoulRecord(state.teamB, entry.teamId === 'teamB');
+    teamA = updateShooter(teamA, shooterTeamId === 'teamA');
+    teamB = updateShooter(teamB, shooterTeamId === 'teamB');
+
+    return {
+        ...state,
+        teamA,
+        teamB,
+        foulHistory: nextFoulHistory,
+        // 足し引きで後続の累計がずれるため再計算（公式スコアシートの整合性維持）
+        scoreHistory: recalculateRunningScores(nextScoreHistory),
+    };
+}
+
 export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>): Game {
     const { entryId } = payload;
     const entry = state.foulHistory.find(f => f.id === entryId);
@@ -481,15 +618,21 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
                 };
             }
             // BENCH、または coachFoulTarget を持たない古いデータ。
-            // ADD_FOUL 経由は benchFouls、FT付きフロー経由はコーチ行のB、と
-            // 記録先が分かれているため、実際に入っている方から消す
+            // ADD_FOUL 経由は benchFouls へ種別のまま、FT付きフロー経由は
+            // コーチ行へ必ず 'BT' として、と記録先が分かれているため、
+            // 実際に入っている方から消す。
+            //
+            // ここで「coachFouls から entry.foulType を消す」を挟んではいけない。
+            // コーチ行には監督本人のT（表示「C」）とベンチ系のB（'BT'）が混ざる。
+            // ベンチのファウルが種別 'T' で記録されていると、その一手が監督本人の
+            // C を先に食い、ベンチの B は残る。以後そのBは coachFoulTarget が
+            // 'BENCH' の履歴を消しても当たらず、様式に取り消せないマークが残る
+            // （実測: coachFouls ['T','BT'] → ベンチを取り消して ['BT']）。
+            // 記録側は最初の版から literal 'BT' しか書いていないので、この経路に
+            // 拾うべき対象は元から無い。
             const benchRemoved = removeOneFoul(team.benchFouls, entry.foulType);
             if (benchRemoved !== team.benchFouls) {
                 return { ...team, benchFouls: benchRemoved };
-            }
-            const coachRemoved = removeOneFoul(team.coachFouls, entry.foulType);
-            if (coachRemoved !== team.coachFouls) {
-                return { ...team, coachFouls: coachRemoved };
             }
             return { ...team, coachFouls: removeOneFoul(team.coachFouls, 'BT') };
         }

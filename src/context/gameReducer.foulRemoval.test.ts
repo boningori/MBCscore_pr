@@ -81,6 +81,106 @@ describe('gameReducer: A.コーチ テクニカルの取り消し', () => {
     });
 });
 
+describe('gameReducer: ベンチ関係者テクニカルの取り消し', () => {
+    /**
+     * ベンチ関係者のBは、記録側が必ず literal 'BT' でコーチ行へ積む
+     * （handleAddFoulWithFreeThrows）。取り消し側も 'BT' を狙う。
+     *
+     * 以前は「benchFouls に無ければ coachFouls から entry.foulType を消す」
+     * という中間のフォールバックがあり、コーチ本人のT（表示「C」）を先に
+     * 食っていた。ベンチのBは残るので、以後どの履歴を消しても当たらず、
+     * 公式様式に取り消せないマークが残る。
+     */
+    const benchTech = (foulType: 'BT' | 'T') => ({
+        type: 'ADD_FOUL_WITH_FREE_THROWS' as const,
+        payload: {
+            teamId: 'teamA', playerId: 'BENCH', foulType,
+            shotSituation: 'none' as const, freeThrows: 1, freeThrowResults: ['made' as const],
+            shooterTeamId: 'teamB', shooterPlayerId: 'b1', benchTechType: 'Bench' as const,
+        },
+    });
+
+    const coachTech = {
+        type: 'ADD_FOUL_WITH_FREE_THROWS' as const,
+        payload: {
+            teamId: 'teamA', playerId: 'COACH', foulType: 'T' as const,
+            shotSituation: 'none' as const, freeThrows: 1, freeThrowResults: ['made' as const],
+            shooterTeamId: 'teamB', shooterPlayerId: 'b1', benchTechType: 'HC' as const,
+        },
+    };
+
+    it('コーチ本人のTを巻き添えで消さない', () => {
+        let state = makeGame();
+        state = gameReducer(state, coachTech);
+        state = gameReducer(state, benchTech('BT'));
+        expect(state.teamA.coachFouls).toEqual(['T', 'BT']);
+
+        // ベンチ分だけ取り消す
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[1].id } });
+
+        expect(state.teamA.coachFouls).toEqual(['T']);
+    });
+
+    it('ベンチ分を消したあと、コーチ本人のTも消せる', () => {
+        let state = makeGame();
+        state = gameReducer(state, coachTech);
+        state = gameReducer(state, benchTech('BT'));
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[1].id } });
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        expect(state.teamA.coachFouls).toEqual([]);
+    });
+
+    // コーチ行へ何を積むかは記録側が決めており、entry.foulType の文字とは独立。
+    // 取り消しがその文字に依存していると、記録側の表記を変えた瞬間に
+    // 監督のCが消える。種別が 'T' で入っていても狙う先は変わらないことを固定する
+    it('種別がTで記録されていても、消すのはコーチ行のBのほう', () => {
+        let state = makeGame();
+        state = gameReducer(state, coachTech);
+        state = gameReducer(state, benchTech('T'));
+        expect(state.teamA.coachFouls).toEqual(['T', 'BT']);
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[1].id } });
+
+        expect(state.teamA.coachFouls).toEqual(['T']);
+    });
+
+    // 古いバージョンはUIから ADD_FOUL でベンチテクニカルを記録していて、
+    // その記録は benchFouls に残っている（いまの ADD_FOUL は受け付けない）。
+    // 取り消し側は旧データを従来どおり種別で消せること
+    it('benchFouls に入っている旧データは種別で消える', () => {
+        const base = makeGame();
+        const legacyEntry = {
+            id: 'legacy-bench', teamId: 'teamA', playerId: null, playerNumber: -1,
+            foulType: 'T' as const, quarter: 1, timestamp: Date.now(),
+            isCoachOrBench: true, coachFoulTarget: 'BENCH' as const,
+        };
+        let state: Game = {
+            ...base,
+            teamA: { ...base.teamA, benchFouls: ['T'] },
+            foulHistory: [legacyEntry],
+        };
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: 'legacy-bench' } });
+
+        expect(state.teamA.benchFouls).toEqual([]);
+        expect(state.teamA.coachFouls).toEqual([]);
+    });
+
+    // 様式に出ない場所へ新しい記録を落とさない（handleAddFoul の isCoachOrBenchId）
+    it.each(['COACH', 'ACOACH', 'BENCH', null])('ADD_FOUL は %s を受け付けない', playerId => {
+        const state = makeGame();
+
+        const next = gameReducer(state, {
+            type: 'ADD_FOUL',
+            payload: { teamId: 'teamA', playerId: playerId as string | null, foulType: 'T' },
+        });
+
+        expect(next).toBe(state);
+    });
+});
+
 describe('gameReducer: 交代要員テクニカルの取り消し', () => {
     it('加算していないチームファウルを減らさない', () => {
         let state = makeGame();

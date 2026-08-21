@@ -19,6 +19,7 @@ import {
     handleAddFoul,
     handleAddFoulWithFreeThrows,
     handleEditFoul,
+    handleEditFoulFreeThrows,
     handleRemoveFoul,
 } from './foulHandlers';
 import {
@@ -114,6 +115,9 @@ export function gameReducer(state: Game, action: GameAction): Game {
 
         case 'EDIT_FOUL':
             return handleEditFoul(state, action.payload);
+
+        case 'EDIT_FOUL_FREE_THROWS':
+            return handleEditFoulFreeThrows(state, action.payload);
 
         case 'REMOVE_FOUL':
             return handleRemoveFoul(state, action.payload);

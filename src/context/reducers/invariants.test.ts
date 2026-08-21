@@ -83,6 +83,26 @@ function findViolation(g: Game): string | null {
             if (stored !== counted) return `${t} 第${q}期: teamFouls=${stored} 履歴の通算=${counted}`;
         }
 
+        // 公式様式のコーチ行・A.コーチ行の枚数が履歴と一致する。
+        //
+        // コーチ行には監督本人のT（表示「C」）に加えて、A.コーチ・ベンチ関係者・
+        // 交代要員のテクニカルが「B」として二重計上される（foulHandlers）。
+        // 選手行とチームファウルしか見ていなかったため、取り消しがコーチ行の
+        // 別のマークを食う不具合を素通りしていた（実測: 監督のCとベンチのBが
+        // 並んだ状態でベンチを取り消すと、消えるのは監督のCのほうで、
+        // 残ったBはその後どの履歴を消しても当たらない）。
+        const coachOwn = g.foulHistory.filter(f => f.teamId === t && f.coachFoulTarget === 'COACH').length;
+        const acoach = g.foulHistory.filter(f => f.teamId === t && f.coachFoulTarget === 'ACOACH').length;
+        // ベンチ関係者と交代要員は、どちらも coachFoulTarget === 'BENCH' でコーチ行へB
+        const benchRow = g.foulHistory.filter(f => f.teamId === t && f.coachFoulTarget === 'BENCH').length;
+        const expectedCoachRow = coachOwn + acoach + benchRow;
+        if (g[t].coachFouls.length !== expectedCoachRow) {
+            return `${t}: coachFouls=${g[t].coachFouls.length} 期待=${expectedCoachRow}`;
+        }
+        if ((g[t].assistantCoachFouls?.length ?? 0) !== acoach) {
+            return `${t}: assistantCoachFouls=${g[t].assistantCoachFouls?.length} 期待=${acoach}`;
+        }
+
         for (const p of g[t].players) {
             // 出場欄はピリオド数ぶん用意されている（OT突入で両方が伸びる）
             if (p.quartersPlayed.length !== periodCount) {
@@ -149,6 +169,9 @@ function findViolation(g: Game): string | null {
     return null;
 }
 
+/** 1試合のあいだに足す「遅れて来た選手」の上限 */
+const MAX_LATE_ARRIVALS = 4;
+
 /** 1シードぶんの疑似試合。破れたらメッセージ、通れば null */
 function runGame(seed: number, steps: number): string | null {
     const rand = rng(seed);
@@ -160,6 +183,8 @@ function runGame(seed: number, steps: number): string | null {
     let clock = new Date('2026-08-18T10:00:00Z').getTime();
     vi.setSystemTime(clock);
     const trace: string[] = [];
+    // 試合中に足した選手の数（上限は ADD_PLAYER_TO_TEAM の分岐のコメント）
+    let lateArrivals = 0;
 
     for (let i = 0; i < steps; i++) {
         const teamId = pick(['teamA', 'teamB'] as const);
@@ -215,14 +240,23 @@ function runGame(seed: number, steps: number): string | null {
                 };
             }
         } else if (r < 0.42 && oppOnCourt.length > 0) {
-            // コーチ・ベンチのファウル
+            // コーチ・ベンチのファウル。組み合わせは App.tsx の
+            // handleCoachFoulTypeSelect と揃える —— playerId と foulType と
+            // benchTechType は独立に選べる値ではない（ベンチ関係者だけ 'BT'）。
+            // UIが作れない組み合わせを流すと、直すべきでない失敗を追うことになる。
+            // 記録側の表記に取り消しが依存していないことは
+            // gameReducer.foulRemoval.test.ts で別に固定している
+            const kind = pick(['HC', 'AC', 'Bench'] as const);
             action = {
                 type: 'ADD_FOUL_WITH_FREE_THROWS',
                 payload: {
-                    teamId, playerId: pick(['COACH', 'ACOACH', 'BENCH']), foulType: 'T',
+                    teamId,
+                    playerId: kind === 'HC' ? 'COACH' : kind === 'AC' ? 'ACOACH' : 'BENCH',
+                    foulType: kind === 'Bench' ? 'BT' : 'T',
                     shotSituation: 'none', shotMade: false, freeThrows: 1,
                     freeThrowResults: [rand() < 0.5 ? 'made' : 'missed'],
                     shooterTeamId: oppId, shooterPlayerId: pick(oppOnCourt).id,
+                    benchTechType: kind,
                 },
             };
         } else if (r < 0.50 && g.scoreHistory.length > 0) {
@@ -242,6 +276,23 @@ function runGame(seed: number, steps: number): string | null {
             if (movable.length > 0) {
                 const e = pick(movable);
                 action = { type: 'EDIT_FOUL', payload: { entryId: e.id, newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id } };
+            }
+        } else if (r < 0.715) {
+            // FTの成否の訂正。得点エントリを足し引きするので、累計と
+            // シューターの成績が崩れないかをここでも見る（handleEditFoulFreeThrows）
+            const withFt = g.foulHistory.filter(f => (f.freeThrows ?? 0) > 0);
+            if (withFt.length > 0) {
+                const e = pick(withFt);
+                action = {
+                    type: 'EDIT_FOUL_FREE_THROWS',
+                    payload: {
+                        entryId: e.id,
+                        freeThrowResults: Array.from(
+                            { length: e.freeThrows ?? 0 },
+                            () => (rand() < 0.5 ? 'made' : 'missed') as 'made' | 'missed',
+                        ),
+                    },
+                };
             }
         } else if (r < 0.73 && g.scoreHistory.length > 0) {
             action = { type: 'TOGGLE_OWN_GOAL', payload: { entryId: pick(g.scoreHistory).id } };
@@ -314,11 +365,29 @@ function runGame(seed: number, steps: number): string | null {
             } else {
                 action = { type: 'RESOLVE_PENDING_ACTION', payload: { pendingActionId: pa.id, playerId: who } };
             }
-        } else if (r < 0.93) {
+        } else if (r < 0.925) {
             const bench = team.players.filter(p => !p.isOnCourt);
             if (bench.length > 0) {
                 action = { type: 'SUBSTITUTE_PLAYER', payload: { teamId, playerInId: pick(bench).id, playerOutId: player.id } };
             }
+        } else if (r < 0.94 && lateArrivals < MAX_LATE_ARRIVALS) {
+            // 遅れて来た選手を試合中に足す（交代モーダルの「選手を追加」）。
+            //
+            // この経路だけが quartersPlayed の枠数を別の出どころから決めている
+            // —— Math.max(4, state.teamA.teamFouls.length) で、teamB へ足すときも
+            // teamA を読む（handleAddPlayerToTeam）。いまは END_QUARTER が両チームを
+            // 揃えて伸ばすので一致するが、その結合を保証しているものは無い。
+            // ここを踏ませておけば、チームごとの
+            // 「quartersPlayed.length === teamFouls.length」がその番人になる。
+            // 延長に入ってから足す場合も同じ経路で検査される。
+            //
+            // 追加は上限を設ける。1000手のあいだ足し続けると名簿が実際の試合から
+            // かけ離れ、公式様式の15人枠も超えてしまう（そこはこの検査の対象外）
+            lateArrivals++;
+            action = {
+                type: 'ADD_PLAYER_TO_TEAM',
+                payload: { teamId, number: 40 + lateArrivals, name: `遅刻${lateArrivals}` },
+            };
         } else if (r < 0.95) {
             action = { type: 'ADD_TIMEOUT', payload: { teamId, elapsedMinutes: Math.floor(rand() * 6) } };
         } else if (r < 0.965) {
