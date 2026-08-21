@@ -334,7 +334,11 @@ function ShootingBar({ label, made, attempt }: { label: string; made: number; at
                 />
             </div>
             <span className="shooting-percent">{percentStr}</span>
-            <span className="shooting-made">{made}/{attempt}</span>
+            {/* 試投が無ければ分母を出さない。「0/0」だと、打って全部外した記録
+                （0/8）と打っていない記録が同じ書き方に見える。率の欄が既に「-」で
+                値なしを示しているので、ここは空でよい。
+                チーム統計（StatsPanel の formatShot）・一覧のカードと同じ扱い */}
+            <span className="shooting-made">{attempt > 0 ? `${made}/${attempt}` : ''}</span>
         </div>
     );
 }
