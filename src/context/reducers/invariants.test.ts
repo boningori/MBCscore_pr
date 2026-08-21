@@ -15,7 +15,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { gameReducer } from './index';
 import { createInitialGame, createPlayer, createTeam } from '../../types/game';
-import type { Game, GameAction } from '../../types/game';
+import type { Game, GameAction, StatEntry } from '../../types/game';
 import { createPendingAction } from '../../types/pendingAction';
 
 function rng(seed: number) {
@@ -39,8 +39,33 @@ const teamPoints = (g: Game, t: 'teamA' | 'teamB') => g[t].players.reduce((s, p)
 const historyPoints = (g: Game, t: 'teamA' | 'teamB') =>
     g.scoreHistory.filter(s => s.teamId === t).reduce((s, e) => s + e.points, 0);
 
+/** 合計TOに乗る種別（内訳は turnovers と内訳欄の両方に入る） */
+const TURNOVER_TYPES: StatEntry['statType'][] = ['TO', 'TO:DD', 'TO:TR', 'TO:PM', 'TO:CM'];
+
+/**
+ * アクション履歴を選手ごと・種別ごとに1回だけ数える。
+ *
+ * 検査は1手ごとに走るので、選手ごとに履歴全体を filter すると手数の二乗に
+ * なり、1000手を過ぎたあたりでテストのタイムアウトに触れる。
+ */
+function tallyStats(statHistory: StatEntry[]): Map<string, Map<string, number>> {
+    const tally = new Map<string, Map<string, number>>();
+    for (const e of statHistory) {
+        const key = `${e.teamId}|${e.playerId}`;
+        let byType = tally.get(key);
+        if (!byType) {
+            byType = new Map();
+            tally.set(key, byType);
+        }
+        byType.set(e.statType, (byType.get(e.statType) ?? 0) + 1);
+    }
+    return tally;
+}
+
 /** 破れた不変条件を返す（すべて満たしていれば null） */
 function findViolation(g: Game): string | null {
+    const statTally = tallyStats(g.statHistory);
+
     for (const t of ['teamA', 'teamB'] as const) {
         // スコアボード（選手合計）とスコアシート（得点履歴）が一致する
         if (teamPoints(g, t) !== historyPoints(g, t)) {
@@ -117,6 +142,35 @@ function findViolation(g: Game): string | null {
             if (s.threePointMade > s.threePointAttempt) return `${p.id}: 3P成功>試投`;
             if (s.freeThrowMade > s.freeThrowAttempt) return `${p.id}: FT成功>試投`;
 
+            // シュート以外のスタッツは、アクション履歴の件数そのもの。
+            //
+            // 得点は導出を突き合わせていたが、リバウンド・アシスト・TO は
+            // 「負でないこと」しか見ていなかった。これらを増減させるのは
+            // statHandlers と pendingHandlers だけで、FT のような履歴に残らない
+            // 増え方をしないため、履歴の件数と一致していなければならない。
+            // 取り消し・付け替え・保留の解決が別の選手のスタッツを触っても、
+            // 合計が偶然合っていれば素通りしていた。
+            //
+            // ダブドリ等の内訳は合計TOにも乗る（TO:DD は turnovers と turnoverDD の両方）
+            const byType = statTally.get(`${t}|${p.id}`);
+            const statCount = (...types: StatEntry['statType'][]) =>
+                types.reduce((sum, type) => sum + (byType?.get(type) ?? 0), 0);
+            const expectedCounts: [keyof typeof s, number][] = [
+                ['offensiveRebounds', statCount('OREB')],
+                ['defensiveRebounds', statCount('DREB')],
+                ['assists', statCount('AST')],
+                ['steals', statCount('STL')],
+                ['blocks', statCount('BLK')],
+                ['turnovers', statCount(...TURNOVER_TYPES)],
+                ['turnoverDD', statCount('TO:DD')],
+                ['turnoverTR', statCount('TO:TR')],
+                ['turnoverPM', statCount('TO:PM')],
+                ['turnoverCM', statCount('TO:CM')],
+            ];
+            for (const [key, expected] of expectedCounts) {
+                if (s[key] !== expected) return `${p.id}: ${key}=${s[key]} 履歴=${expected}`;
+            }
+
             // 選手のファウル欄と履歴が、件数だけでなく並びまで一致する。
             //
             // 様式は fouls[i] の表記と、時刻順 i 番目の履歴のピリオド（記入色）を
@@ -166,6 +220,45 @@ function findViolation(g: Game): string | null {
     for (const f of g.foulHistory) {
         if (f.quarter < 1 || f.quarter > maxPeriod) return `ファウルのピリオド=${f.quarter} ピリオド数=${maxPeriod}`;
     }
+    for (const pa of g.pendingActions) {
+        if (pa.quarter < 1 || pa.quarter > maxPeriod) return `保留のピリオド=${pa.quarter} ピリオド数=${maxPeriod}`;
+    }
+
+    // 履歴のIDは重複しない。
+    //
+    // 取り消しも訂正もIDで対象を選ぶ（REMOVE_SCORE / EDIT_FOUL / …）。
+    // 重複すると「1件消したつもりが2件消える」「訂正が別の記録に当たる」が
+    // 起きるが、合計だけを見ていると重複した瞬間には気付けない。
+    const allIds = [
+        ...g.scoreHistory.map(e => e.id),
+        ...g.statHistory.map(e => e.id),
+        ...g.foulHistory.map(e => e.id),
+        ...g.pendingActions.map(e => e.id),
+    ];
+    const idSet = new Set(allIds);
+    if (idSet.size !== allIds.length) {
+        const dup = allIds.find((id, i) => allIds.indexOf(id) !== i);
+        return `記録のIDが重複=${dup}`;
+    }
+
+    // ファウル由来の記録は、元のファウルより長生きしない。
+    //
+    // FT・バスケットカウントの得点と、FTを「やっぱり外していた」に直した
+    // FTA は sourceFoulId で元のファウルに紐付く（型定義のコメント）。
+    // ファウルを取り消したのに紐付く記録が残ると、シューターに原因の無い
+    // 得点や試投が付いたままになる。過去に2度踏んでいる経路なので、
+    // 個別ケースだけでなく疑似試合でも見張る。
+    const foulIds = new Set(g.foulHistory.map(f => f.id));
+    for (const e of g.scoreHistory) {
+        if (e.sourceFoulId && !foulIds.has(e.sourceFoulId)) {
+            return `取り消し済みファウルに紐付く得点が残っている: ${e.id}(${e.scoreType}) -> ${e.sourceFoulId}`;
+        }
+    }
+    for (const e of g.statHistory) {
+        if (e.sourceFoulId && !foulIds.has(e.sourceFoulId)) {
+            return `取り消し済みファウルに紐付く試投が残っている: ${e.id}(${e.statType}) -> ${e.sourceFoulId}`;
+        }
+    }
     return null;
 }
 
@@ -200,7 +293,7 @@ function runGame(seed: number, steps: number): string | null {
         if (r < 0.14) {
             action = { type: 'ADD_SCORE', payload: { teamId, playerId: player.id, scoreType: pick(['2P', '3P', 'FT'] as const) } };
         } else if (r < 0.24) {
-            action = { type: 'ADD_STAT', payload: { teamId, playerId: player.id, statType: pick(['OREB', 'DREB', 'AST', 'STL', 'BLK', 'TO', 'TO:DD', '2PA', '3PA', 'FTA'] as const) } };
+            action = { type: 'ADD_STAT', payload: { teamId, playerId: player.id, statType: pick(['OREB', 'DREB', 'AST', 'STL', 'BLK', 'TO', 'TO:DD', 'TO:TR', 'TO:PM', 'TO:CM', '2PA', '3PA', 'FTA'] as const) } };
         } else if (r < 0.34 && oppOnCourt.length > 0) {
             action = {
                 type: 'ADD_FOUL_WITH_FREE_THROWS',
@@ -270,7 +363,7 @@ function runGame(seed: number, steps: number): string | null {
             action = { type: 'EDIT_SCORE', payload: { entryId: e.id, newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id, newScoreType: pick(['2P', '3P', 'FT'] as const) } };
         } else if (r < 0.67 && g.statHistory.length > 0) {
             const e = pick(g.statHistory);
-            action = { type: 'EDIT_STAT', payload: { entryId: e.id, newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id, newStatType: pick(['OREB', 'AST', 'TO', '2PA', 'FTA'] as const) } };
+            action = { type: 'EDIT_STAT', payload: { entryId: e.id, newPlayerId: pick(g[e.teamId as 'teamA' | 'teamB'].players).id, newStatType: pick(['OREB', 'AST', 'TO', 'TO:DD', 'TO:CM', '2PA', 'FTA'] as const) } };
         } else if (r < 0.70) {
             const movable = g.foulHistory.filter(f => !f.isCoachOrBench && f.playerId);
             if (movable.length > 0) {
@@ -436,5 +529,10 @@ describe('gameReducer: 疑似試合の不変条件', () => {
             console.log(failures.slice(0, 3).join('\n---\n'));
         }
         expect(failures).toEqual([]);
-    });
+        // このテストだけ既定（vitest.config.ts の 20 秒）では足りない。
+        // 40シード×1000手を1本の同期ループで回すので、実時間はシード数と手数に
+        // 比例して伸びる（単独実行で約7秒、200ファイルの並列実行下では数倍）。
+        // 既定を延ばすと他のテストの「本当に固まっている」判定が鈍るため、
+        // ここだけ余裕を持たせる
+    }, 120000);
 });
