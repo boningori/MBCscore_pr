@@ -45,3 +45,22 @@ export function clearGameSession(): void {
 export function hasGameSession(): boolean {
     return localStorage.getItem(GAME_SESSION_KEY) !== null;
 }
+
+/** 中断セッションの状態。ホームの導線の文言を決めるために使う */
+export type GameSessionState = 'none' | 'inProgress' | 'finished';
+
+/**
+ * 中断セッションが「まだ試合中」か「終わったのに未保存」かを返す。
+ *
+ * 試合終了の画面（保存して終了／保存せずにホームへ）は、端末の戻る操作では
+ * 素通りできる —— オーバーレイであってモーダルではないため。抜けても記録は
+ * セッションに残り、ホームの導線から同じ保存画面へ戻れるので失われはしないが、
+ * その導線が「試合を再開／中断した試合を続ける」としか名乗っていなかった。
+ * 保存し忘れている試合があることが、ホームからは読み取れない。
+ *
+ * 判定のためだけに毎回パースするのは無駄なので、鍵の有無で先に打ち切る。
+ */
+export function getGameSessionState(): GameSessionState {
+    if (!hasGameSession()) return 'none';
+    return loadGameSession()?.game?.phase === 'finished' ? 'finished' : 'inProgress';
+}

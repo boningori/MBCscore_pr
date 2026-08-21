@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import type { SavedTeam, NumberType } from '../../utils/teamStorage';
-import { loadMyTeams } from '../../utils/teamStorage';
+import { loadMyTeams, getPlayerNumber } from '../../utils/teamStorage';
 import { getGameNameSuggestions } from '../../utils/gameHistoryStorage';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { todayInputDate } from '../../utils/localDate';
@@ -445,6 +445,37 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                         <p className="player-confirm-desc">
                             {myTeam.name} — 欠席の選手はチェックを外してください
                         </p>
+                        {/* 番号タイプはここで選ぶ。
+                            以前は最後の確認ステップに置いていたが、この一覧は
+                            それより前に番号を出す。既定（ビブス）で描くしかないため、
+                            ユニフォーム番号で運用するチームは、選んだ覚えのない番号を
+                            先に見ることになっていた（実測: 名簿の #4〜 が #14〜 で並ぶ）。
+                            番号が最初に出る場所と、それを決める場所を同じステップに置く */}
+                        <div className="confirm-number-type">
+                            <span className="number-type-label" id="players-number-type-label">マイチームの使用番号</span>
+                            <div className="number-type-options" role="radiogroup" aria-labelledby="players-number-type-label">
+                                <label className={`number-type-option ${numberType === 'bib' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="numberType"
+                                        value="bib"
+                                        checked={numberType === 'bib'}
+                                        onChange={() => setNumberType('bib')}
+                                    />
+                                    <span>ビブス番号</span>
+                                </label>
+                                <label className={`number-type-option ${numberType === 'uniform' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="numberType"
+                                        value="uniform"
+                                        checked={numberType === 'uniform'}
+                                        onChange={() => setNumberType('uniform')}
+                                    />
+                                    <span>ユニフォーム番号</span>
+                                </label>
+                            </div>
+                        </div>
                         <div className="player-count">
                             出場: <strong>{activePlayerCount}</strong> / {myTeam.players.length}名
                             {activePlayerCount < 5 && (
@@ -464,7 +495,9 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                             checked={!excluded}
                                             onChange={() => togglePlayerExclusion(index)}
                                         />
-                                        <span className="player-number">#{formatPlayerNumber(player.bibNumber ?? player.uniformNumber ?? player.number)}</span>
+                                        {/* 選んだ番号タイプで出す。ここを固定にしていたため、
+                                            ユニフォーム番号を選んでも一覧はビブス番号のままだった */}
+                                        <span className="player-number">#{formatPlayerNumber(getPlayerNumber(player, numberType))}</span>
                                         <span className="player-name-text">{player.name}</span>
                                         {player.isCaptain && <span className="captain-badge">C</span>}
                                     </label>
@@ -503,33 +536,12 @@ export function GameSetup({ onComplete, onBack }: GameSetupProps) {
                                 <span>{date}</span>
                             </div>
 
-                            <div className="confirm-number-type">
-                                {/* 見出しがただのspanだと読み上げで「ビブス番号 ラジオボタン」としか
-                                    聞こえず、何を選ぶグループなのか分からない。
-                                    radiogroup にして見出しを名前として結び付ける */}
-                                <span className="number-type-label" id="number-type-label">マイチームの使用番号</span>
-                                <div className="number-type-options" role="radiogroup" aria-labelledby="number-type-label">
-                                    <label className={`number-type-option ${numberType === 'bib' ? 'selected' : ''}`}>
-                                        <input
-                                            type="radio"
-                                            name="numberType"
-                                            value="bib"
-                                            checked={numberType === 'bib'}
-                                            onChange={() => setNumberType('bib')}
-                                        />
-                                        <span>ビブス番号</span>
-                                    </label>
-                                    <label className={`number-type-option ${numberType === 'uniform' ? 'selected' : ''}`}>
-                                        <input
-                                            type="radio"
-                                            name="numberType"
-                                            value="uniform"
-                                            checked={numberType === 'uniform'}
-                                            onChange={() => setNumberType('uniform')}
-                                        />
-                                        <span>ユニフォーム番号</span>
-                                    </label>
-                                </div>
+                            {/* 番号タイプは出場選手ステップ（番号が最初に出る場所）で選ぶ。
+                                ここでは選んだ結果だけを見せる。同じ操作子を2つのステップに
+                                置くと、どちらが効いているのか分からなくなる */}
+                            <div className="confirm-row">
+                                <span className="confirm-row-label">マイチームの使用番号</span>
+                                <span>{numberType === 'uniform' ? 'ユニフォーム番号' : 'ビブス番号'}</span>
                             </div>
 
                             <div className="confirm-number-type">
