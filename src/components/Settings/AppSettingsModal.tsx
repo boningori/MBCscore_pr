@@ -660,16 +660,29 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
                     {/* ヘルプセクション */}
                     <SettingsSection id="help" title="ヘルプ" isOpen={openSection === 'help'} onToggle={() => toggleSection('help')}>
+                        {/* 同梱の説明書を先に出す。GitHubのREADMEは通信が要るので、
+                            電波の届かない体育館では開けない（このアプリの主な利用場所）。 */}
+                        <a
+                            href={`${import.meta.env.BASE_URL}manual.html`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="help-link help-link-large"
+                        >
+                            📖 使用説明書を開く
+                        </a>
+                        <p className="section-description">
+                            フリック入力や保留アクションなど、試合中の操作から出力までの説明です。アプリに同梱しているのでオフラインでも開けます。
+                        </p>
                         <a
                             href="https://github.com/boningori/MBCscore_pr#readme"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="help-link help-link-large"
                         >
-                            📖 使い方を見る (README)
+                            💻 機能一覧・開発情報 (GitHub README)
                         </a>
                         <p className="section-description">
-                            フリック入力や保留処理など、アプリの詳しい使い方を確認できます。
+                            機能の一覧や技術的な情報です。表示には通信が必要です。
                         </p>
                         <div className="contact-info">
                             <p className="contact-item">
