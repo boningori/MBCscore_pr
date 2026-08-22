@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { SubstitutionModal } from './SubstitutionModal';
@@ -175,5 +176,121 @@ describe('SubstitutionModal 失格の併記（5ファウル以外の理由）', 
         const card = screen.getByRole('button', { name: /通常/ }).textContent ?? '';
         expect(card).not.toContain('失格');
         expect(card).not.toContain('退場');
+    });
+});
+
+// バスケの交代はタイムアウト明けなどで複数人まとめて行うのが普通。
+// 1組ごとにモーダルが閉じると「交代ボタン→選択→実行」を人数分やり直すことになり、
+// 試合が止まっている短い時間に間に合わない。実行しても閉じずに続けて次の組を選べる。
+describe('SubstitutionModal 連続交代', () => {
+    // 親（App）は交代を state に反映するため、実行後は選手の列が入れ替わる。
+    // モーダルだけを固定の players で描画するとその再配置が起きず、
+    // 2件目の交代が本当にできるかを確かめられないので親の挙動ごと再現する
+    function renderWithParent(initial: Player[], onSubstitute = vi.fn(), onClose = vi.fn()) {
+        function Parent() {
+            const [list, setList] = useState(initial);
+            return (
+                <SubstitutionModal
+                    teamName="白チーム"
+                    teamId="teamA"
+                    players={list}
+                    onSubstitute={(playerInId, playerOutId) => {
+                        onSubstitute(playerInId, playerOutId);
+                        setList(prev =>
+                            prev.map(p =>
+                                p.id === playerInId
+                                    ? { ...p, isOnCourt: true }
+                                    : p.id === playerOutId
+                                        ? { ...p, isOnCourt: false }
+                                        : p,
+                            ),
+                        );
+                    }}
+                    onClose={onClose}
+                />
+            );
+        }
+        render(<Parent />);
+        return { onSubstitute, onClose };
+    }
+
+    function substitute(outName: string, inName: string) {
+        fireEvent.click(screen.getByRole('button', { name: new RegExp(outName) }));
+        fireEvent.click(screen.getByRole('button', { name: new RegExp(inName) }));
+        fireEvent.click(screen.getByRole('button', { name: '交代実行' }));
+    }
+
+    const roster = () => [
+        player('a', 4, 'コートA', true),
+        player('b', 5, 'コートB', true),
+        player('x', 10, 'ベンチX', false),
+        player('y', 11, 'ベンチY', false),
+    ];
+
+    it('交代実行してもモーダルは閉じない', () => {
+        const { onClose } = renderWithParent(roster());
+
+        substitute('コートA', 'ベンチX');
+
+        expect(onClose).not.toHaveBeenCalled();
+        expect(screen.getByRole('button', { name: '交代実行' })).toBeTruthy();
+    });
+
+    it('実行後は選択が解除され、次の組を選ぶまで実行できない', () => {
+        renderWithParent(roster());
+
+        substitute('コートA', 'ベンチX');
+
+        const confirm = screen.getByRole('button', { name: '交代実行' }) as HTMLButtonElement;
+        expect(confirm.disabled).toBe(true);
+        expect(
+            screen.queryAllByRole('button', { pressed: true }).length,
+        ).toBe(0);
+    });
+
+    it('続けて2組目の交代ができる', () => {
+        const { onSubstitute } = renderWithParent(roster());
+
+        substitute('コートA', 'ベンチX');
+        substitute('コートB', 'ベンチY');
+
+        expect(onSubstitute.mock.calls).toEqual([
+            ['x', 'a'],
+            ['y', 'b'],
+        ]);
+    });
+
+    // 実行前後で枠の高さを揃えるため、案内の枠は最初から置いてある。
+    // 実行済みの表示（status）だけが後から入る
+    it('実行前は連続交代できることを案内し、まだ status は出さない', () => {
+        renderWithParent(roster());
+
+        expect(screen.queryByRole('status')).toBeNull();
+        expect(document.querySelector('.substitution-note')?.textContent).toContain('続けて');
+    });
+
+    it('実行済みの交代を件数つきで知らせる', () => {
+        renderWithParent(roster());
+
+        substitute('コートA', 'ベンチX');
+        const status = screen.getByRole('status');
+        expect(status.textContent).toContain('#4');
+        expect(status.textContent).toContain('#10');
+
+        substitute('コートB', 'ベンチY');
+        expect(screen.getByRole('status').textContent).toContain('2件');
+    });
+
+    // 交代はその場で確定するため、実行後に「キャンセル」が残っていると
+    // 取り消せると誤解される
+    it('1件でも交代したら閉じるボタンの表示が「キャンセル」から「完了」に変わる', () => {
+        renderWithParent(roster());
+
+        expect(screen.getByRole('button', { name: 'キャンセル' })).toBeTruthy();
+
+        substitute('コートA', 'ベンチX');
+
+        expect(screen.queryByRole('button', { name: 'キャンセル' })).toBeNull();
+        expect(screen.getByRole('button', { name: '完了' })).toBeTruthy();
     });
 });
