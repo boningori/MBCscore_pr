@@ -639,8 +639,8 @@ afterEach(cleanup);
 const onCourt = (id: string, number: number, name: string): Player =>
     ({ ...createPlayer(id, number, name), isOnCourt: true });
 
-function renderFlow(opponentPlayers: Player[]) {
-    const { rerender } = render(
+function flow(opponentPlayers: Player[]) {
+    return (
         <FoulInputFlow
             hasSelectedPlayer
             playerName="佐藤 花子"
@@ -651,24 +651,14 @@ function renderFlow(opponentPlayers: Player[]) {
             opponentPlayers={opponentPlayers}
             onComplete={vi.fn()}
             onCancel={vi.fn()}
-        />,
+        />
     );
+}
+
+function renderFlow(opponentPlayers: Player[]) {
+    const { rerender } = render(flow(opponentPlayers));
     /** 交代が起きた後の再描画。App から新しい opponentPlayers が降ってくる想定 */
-    const substitute = (next: Player[]) => {
-        rerender(
-            <FoulInputFlow
-                hasSelectedPlayer
-                playerName="佐藤 花子"
-                playerNumber={5}
-                teamFouls={4}
-                opponentTeamId="teamB"
-                opponentTeamName="相手"
-                opponentPlayers={next}
-                onComplete={vi.fn()}
-                onCancel={vi.fn()}
-            />,
-        );
-    };
+    const substitute = (next: Player[]) => rerender(flow(next));
     return { substitute };
 }
 
