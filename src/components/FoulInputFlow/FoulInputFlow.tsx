@@ -113,6 +113,42 @@ export function FoulInputFlow({
     // 中断ブロックでどちらを押したか。null は初期状態（2つのボタンが出ている）
     const [interruptChoice, setInterruptChoice] = useState<'timeout' | 'substitution' | null>(null);
 
+    /**
+     * FTを1本でも入れた後にシューターを差し替えたときの、差し替える前のシューター。
+     *
+     * 規則では残りのFTは交代で入った選手が打つが、この記録が持てるシューターは
+     * 1人だけ（FoulRecord.shooterPlayerId）なので、そのままでは表せない。
+     * shooterLeftCourt に紐づけた告知だと、選び直した瞬間に画面が真っさらになり、
+     * 「全部このシューターが打った」と読める画面で記録を押させることになる。
+     * 記録するまで出し続けて、試合後に手で補記する判断ができるようにする。
+     */
+    const [priorShooterId, setPriorShooterId] = useState<string | null>(null);
+
+    /**
+     * 中断ブロックの行が入れ替わった直後にフォーカスを移すための予約。
+     *
+     * 押したボタンはその場でアンマウントされるため、フォーカスが body へ落ちる。
+     * Modal の Escape とフォーカストラップはオーバーレイの onKeyDown なので、
+     * モーダルの外へ落ちるとEscapeが効かず、Tabが暗幕の下の画面へ抜ける。
+     * 入れ替わった先の先頭ボタンへ移して、フォーカスをダイアログ内に保つ。
+     */
+    const pendingInterruptFocus = useRef(false);
+
+    // 行の先頭ボタンに付ける ref。予約されているときだけフォーカスを取る
+    // （初回表示でシューター選択からフォーカスを奪わないため）
+    const focusInterruptRow = useCallback((el: HTMLButtonElement | null) => {
+        if (el && pendingInterruptFocus.current) {
+            pendingInterruptFocus.current = false;
+            el.focus();
+        }
+    }, []);
+
+    // 中断の行を入れ替える。入れ替え後のフォーカス移動もここでまとめて予約する
+    const switchInterruptRow = useCallback((choice: 'timeout' | 'substitution' | null) => {
+        pendingInterruptFocus.current = true;
+        setInterruptChoice(choice);
+    }, []);
+
     // 6個目以降になる記録は、様式のファウル欄（5枠）に載らない。
     // 押し切れば記録できるが、黙って作らせない
     const [overflowIntent, setOverflowIntent] = useState<OverflowIntent | null>(null);
@@ -376,8 +412,25 @@ export function FoulInputFlow({
     // シューター選択完了 → FT結果入力へ
     const handleShooterComplete = useCallback(() => {
         if (!shooterPlayerId) return;
+        // 中断のチーム選択を開いたまま次のステップへ行くと、行き先の画面に
+        // 「タイムアウトを記録するチーム」だけが居座る
+        setInterruptChoice(null);
         setStep('ftResult');
     }, [shooterPlayerId]);
+
+    /**
+     * FT結果入力からシューターを選び直す。
+     *
+     * 1本でも入力済みなら、そのFTは差し替え前のシューターが打った分。
+     * 誰から替えたのかを覚えて、記録するまで画面に出し続ける。
+     */
+    const handleChangeShooter = useCallback(() => {
+        if (shooterPlayerId && freeThrowResults.some(r => r !== null)) {
+            setPriorShooterId(shooterPlayerId);
+        }
+        setInterruptChoice(null);
+        setStep('shooter');
+    }, [shooterPlayerId, freeThrowResults]);
 
     // 中断のチーム選択。App 側が上にモーダルを重ねる。
     // このコンポーネントはマウントされたままなので入力途中の状態は残る
@@ -387,8 +440,8 @@ export function FoulInputFlow({
         } else if (interruptChoice === 'substitution') {
             onRequestSubstitution?.(teamId);
         }
-        setInterruptChoice(null);
-    }, [interruptChoice, onRequestTimeout, onRequestSubstitution]);
+        switchInterruptRow(null);
+    }, [interruptChoice, onRequestTimeout, onRequestSubstitution, switchInterruptRow]);
 
     // 戻るボタン
     const handleBack = useCallback(() => {
@@ -396,7 +449,7 @@ export function FoulInputFlow({
         // Escape も端末の戻る操作も Modal 経由でここへ来るため、
         // 分岐を入れないとチーム選択を出したまま入力段階だけが巻き戻る
         if (interruptChoice !== null) {
-            setInterruptChoice(null);
+            switchInterruptRow(null);
             return;
         }
         switch (step) {
@@ -442,13 +495,17 @@ export function FoulInputFlow({
                     setFoulType(null);
                 }
                 setShooterPlayerId(null);
+                // シューターごと捨てるので、差し替えの食い違いも無くなる
+                setPriorShooterId(null);
                 break;
             case 'ftResult':
                 setStep('shooter');
                 setFreeThrowResults(new Array(freeThrows).fill(null));
+                // 入力済みのFTを捨てるので、差し替えの食い違いも無くなる
+                setPriorShooterId(null);
                 break;
         }
-    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel, showThreePoint, interruptChoice]);
+    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel, showThreePoint, interruptChoice, switchInterruptRow]);
 
     // FT成功数を計算
     const ftMadeCount = freeThrowResults.filter(r => r === 'made').length;
@@ -477,6 +534,15 @@ export function FoulInputFlow({
     // 負傷・失格で下がった場合、残りのFTは交代で入った選手が打つ
     const shooterLeftCourt = shooter !== null && !shooter.isOnCourt;
     const ftAnyEntered = freeThrowResults.some(r => r !== null);
+
+    // 途中でシューターを差し替えたときの告知。
+    // 同じ選手を選び直した場合は誰の分もずれていないので出さない
+    const priorShooter = priorShooterId !== null && priorShooterId !== shooterPlayerId
+        ? opponentPlayers.find(p => p.id === priorShooterId) ?? null
+        : null;
+    const priorShooterLabel = priorShooter
+        ? `#${formatPlayerNumber(priorShooter.number)} ${priorShooter.courtName || priorShooter.name}`
+        : '';
 
     return (
         // 共通のModalに載せる。ここは試合中いちばん深い階層のオーバーレイで、
@@ -723,10 +789,22 @@ export function FoulInputFlow({
                                 )}
                                 <button
                                     className="btn btn-secondary shooter-left-change"
-                                    onClick={() => setStep('shooter')}
+                                    onClick={handleChangeShooter}
                                 >
                                     {ftAnyEntered ? 'シューターを変更' : 'シューターを選び直す'}
                                 </button>
+                            </div>
+                        )}
+                        {/*
+                          差し替えた後も出し続ける告知。上の shooterLeftCourt の警告は
+                          交代選手を選んだ時点で消えるため、それだけだと「入力済みのFTは
+                          別の選手が打った」ことが画面のどこにも残らない。
+                          記録は止めない。画面で把握できていれば手で補記できる
+                        */}
+                        {priorShooter && (
+                            <div className="shooter-changed-warning">
+                                ⚠️ 途中でシューターを変更しました。入力済みのFTには {priorShooterLabel} が打った分が含まれます。
+                                この記録が持てるシューターは1人だけなので、個人の得点とFT%は手で補記してください。
                             </div>
                         )}
                         <div className="ft-result-list">
@@ -777,24 +855,33 @@ export function FoulInputFlow({
                             <div className="interrupt-buttons">
                                 {onRequestTimeout && (
                                     <button
+                                        ref={focusInterruptRow}
                                         className="btn btn-secondary interrupt-btn"
-                                        onClick={() => setInterruptChoice('timeout')}
+                                        onClick={() => switchInterruptRow('timeout')}
                                     >
-                                        ⏱ タイムアウト
+                                        <span aria-hidden="true">⏱</span> タイムアウト
                                     </button>
                                 )}
                                 {onRequestSubstitution && (
                                     <button
+                                        ref={focusInterruptRow}
                                         className="btn btn-secondary interrupt-btn"
-                                        onClick={() => setInterruptChoice('substitution')}
+                                        onClick={() => switchInterruptRow('substitution')}
                                     >
-                                        🔄 選手交代
+                                        <span aria-hidden="true">🔄</span> 選手交代
                                     </button>
                                 )}
                             </div>
                         ) : (
-                            <div className="interrupt-team-select">
-                                <div className="interrupt-prompt">
+                            // 読み上げでは「東京中」というボタン名だけが読まれ、押すと
+                            // タイムアウトなのか交代なのかが分からない。まとまりに
+                            // 見出しを付けたうえで、各ボタンにも動作を入れる
+                            <div
+                                className="interrupt-team-select"
+                                role="group"
+                                aria-labelledby="interrupt-team-prompt"
+                            >
+                                <div className="interrupt-prompt" id="interrupt-team-prompt">
                                     {interruptChoice === 'timeout'
                                         ? 'タイムアウトを記録するチーム'
                                         : '選手交代をするチーム'}
@@ -803,22 +890,38 @@ export function FoulInputFlow({
                                     {(interruptTeams ?? []).map(team => {
                                         // 1クォーター1回。取り消しは既存のチップに任せる
                                         const used = interruptChoice === 'timeout' && team.timeoutUsed;
+                                        const action = interruptChoice === 'timeout'
+                                            ? 'タイムアウトを記録'
+                                            : '選手交代';
                                         return (
                                             <button
                                                 key={team.id}
-                                                className="btn btn-secondary interrupt-btn"
-                                                onClick={() => handleInterruptTeamSelect(team.id)}
-                                                disabled={used}
+                                                ref={focusInterruptRow}
+                                                className={`btn btn-secondary interrupt-btn${used ? ' used' : ''}`}
+                                                // disabled にすると支援技術がこのボタンを飛ばすため、
+                                                // 「使用済みで押せない」ことを知る手段が無くなる。
+                                                // 辿れるまま、押しても何も起きない状態にする
+                                                aria-disabled={used || undefined}
+                                                aria-label={`${team.name}の${action}${used ? '（このクォーターは記録済み）' : ''}`}
+                                                onClick={() => {
+                                                    if (used) return;
+                                                    handleInterruptTeamSelect(team.id);
+                                                }}
                                             >
                                                 {team.name}{used ? '（済）' : ''}
                                             </button>
                                         );
                                     })}
+                                    {/*
+                                      「やめる」だけだと、すぐ下の「キャンセル」
+                                      （入力途中のファウルを丸ごと捨てる）と読み分けられない。
+                                      ここで取り消すのはチーム選択だけなのでそう名乗る
+                                    */}
                                     <button
                                         className="btn btn-secondary interrupt-btn interrupt-cancel"
-                                        onClick={() => setInterruptChoice(null)}
+                                        onClick={() => switchInterruptRow(null)}
                                     >
-                                        やめる
+                                        選択をやめる
                                     </button>
                                 </div>
                             </div>

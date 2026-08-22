@@ -447,6 +447,24 @@
     width: 100%;
 }
 
+/* 途中でシューターを差し替えたときの告知。
+   .shooter-left-warning と違い、選び直した後も記録するまで出し続ける。
+   選び直しを促す警告ではなく「手で補記してほしい」お知らせなので、
+   見出し色ではなく本文色で読ませる */
+.foul-input-flow .shooter-changed-warning {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    text-align: left;
+    /* チーム名・選手名を語中で折り返させない（v1.3.14 の方針） */
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
 /* 試合の中断（タイムアウト・選手交代）。
    FT入力ボタンとの誤タップを避けるため区切り線で独立させる */
 .foul-input-flow .interrupt-section {
@@ -486,8 +504,12 @@
     word-break: normal;
 }
 
+/* タイムアウト使用済み。disabled を使うと支援技術から辿れなくなるので、
+   見た目だけ押せないことを示す（クリックはハンドラ側で無視する） */
+.foul-input-flow .interrupt-btn.used,
 .foul-input-flow .interrupt-btn:disabled {
     opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* アクションボタン */
