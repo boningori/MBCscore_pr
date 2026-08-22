@@ -9,6 +9,14 @@ import './FoulInputFlow.css';
 
 type Step = 'foulType' | 'shotSituation' | 'shotResult' | 'ftCount' | 'shooter' | 'ftResult';
 
+/** 中断（タイムアウト・交代）で選ばせるチーム */
+export interface InterruptTeam {
+    id: 'teamA' | 'teamB';
+    name: string;
+    /** 現クォーターでタイムアウトを使用済みか */
+    timeoutUsed: boolean;
+}
+
 const LONG_PRESS_DURATION = 500; // 長押し判定時間（ミリ秒）
 
 /**
@@ -48,6 +56,18 @@ interface FoulInputFlowProps {
     benchFoulType?: FoulType;
     benchFoulLabel?: string;
     showThreePoint?: boolean;  // 3P入力を使う試合か（未指定時true＝後方互換）
+    /**
+     * 試合中断（タイムアウト・交代）で選ばせるチーム。省略時は中断ブロックを出さない。
+     *
+     * 保留アクションの解決は過去のクォーターを後から埋める場合があり、そこで
+     * タイムアウトを記録すると currentQuarter に付いて実際と食い違う。
+     * その経路では渡さないことで出さない。
+     */
+    interruptTeams?: InterruptTeam[];
+    /** タイムアウト記録の要求。省略時はタイムアウトのボタンを出さない */
+    onRequestTimeout?: (teamId: 'teamA' | 'teamB') => void;
+    /** 選手交代の要求。省略時は交代のボタンを出さない */
+    onRequestSubstitution?: (teamId: 'teamA' | 'teamB') => void;
 }
 
 const FOUL_TYPES: { type: FoulType; label: string; description: string; requiresPlayer: boolean }[] = [
@@ -77,6 +97,9 @@ export function FoulInputFlow({
     benchFoulType,
     benchFoulLabel,
     showThreePoint = true,
+    interruptTeams,
+    onRequestTimeout,
+    onRequestSubstitution,
 }: FoulInputFlowProps) {
     // ベンチファウルモードの場合は初期ステップをshooterに、FT本数を1本に設定
     const [step, setStep] = useState<Step>(benchFoulMode ? 'shooter' : 'foulType');
@@ -86,6 +109,9 @@ export function FoulInputFlow({
     const [freeThrowResults, setFreeThrowResults] = useState<FreeThrowResult[]>(benchFoulMode ? [null as unknown as FreeThrowResult] : []);
     const [shooterPlayerId, setShooterPlayerId] = useState<string | null>(null);
     const [shotMade, setShotMade] = useState<boolean>(false);
+
+    // 中断ブロックでどちらを押したか。null は初期状態（2つのボタンが出ている）
+    const [interruptChoice, setInterruptChoice] = useState<'timeout' | 'substitution' | null>(null);
 
     // 6個目以降になる記録は、様式のファウル欄（5枠）に載らない。
     // 押し切れば記録できるが、黙って作らせない
@@ -353,6 +379,17 @@ export function FoulInputFlow({
         setStep('ftResult');
     }, [shooterPlayerId]);
 
+    // 中断のチーム選択。App 側が上にモーダルを重ねる。
+    // このコンポーネントはマウントされたままなので入力途中の状態は残る
+    const handleInterruptTeamSelect = useCallback((teamId: 'teamA' | 'teamB') => {
+        if (interruptChoice === 'timeout') {
+            onRequestTimeout?.(teamId);
+        } else if (interruptChoice === 'substitution') {
+            onRequestSubstitution?.(teamId);
+        }
+        setInterruptChoice(null);
+    }, [interruptChoice, onRequestTimeout, onRequestSubstitution]);
+
     // 戻るボタン
     const handleBack = useCallback(() => {
         switch (step) {
@@ -409,6 +446,17 @@ export function FoulInputFlow({
     // FT成功数を計算
     const ftMadeCount = freeThrowResults.filter(r => r === 'made').length;
     const ftAllEntered = freeThrowResults.every(r => r !== null);
+
+    // 中断ブロックはシューターが確定して以降だけ出す。
+    // 確定前はシューターがアプリのどこにも入っておらず、中断から戻ると
+    // 記録者の記憶しか頼りが無い。さらに候補リストは今のコート状況から
+    // 毎回引き直すため、確定前に交代が入ると正しい選択肢が画面から消える。
+    const canInterrupt =
+        interruptTeams !== undefined &&
+        interruptTeams.length > 0 &&
+        (onRequestTimeout !== undefined || onRequestSubstitution !== undefined) &&
+        shooterPlayerId !== null &&
+        (step === 'shooter' || step === 'ftResult');
 
     // コート上の選手のみフィルタリング
     const availableShooters = opponentPlayers.filter(p => p.isOnCourt);
@@ -670,6 +718,69 @@ export function FoulInputFlow({
                         >
                             記録
                         </button>
+                    </div>
+                )}
+
+                {/*
+                  試合の中断（タイムアウト・選手交代）。
+                  FT結果の入力ボタンと隣り合わせにすると誤タップするので、
+                  区切り線で独立させてキャンセルの直上に置く。
+                  チーム選択は同じ行を置き換える。モーダルを増やさないためと、
+                  ただでさえ縦に長いこの画面の高さを増やさないため
+                */}
+                {canInterrupt && (
+                    <div className="interrupt-section">
+                        <div className="interrupt-title">試合の中断</div>
+                        {interruptChoice === null ? (
+                            <div className="interrupt-buttons">
+                                {onRequestTimeout && (
+                                    <button
+                                        className="btn btn-secondary interrupt-btn"
+                                        onClick={() => setInterruptChoice('timeout')}
+                                    >
+                                        ⏱ タイムアウト
+                                    </button>
+                                )}
+                                {onRequestSubstitution && (
+                                    <button
+                                        className="btn btn-secondary interrupt-btn"
+                                        onClick={() => setInterruptChoice('substitution')}
+                                    >
+                                        🔄 選手交代
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="interrupt-team-select">
+                                <div className="interrupt-prompt">
+                                    {interruptChoice === 'timeout'
+                                        ? 'タイムアウトを記録するチーム'
+                                        : '選手交代をするチーム'}
+                                </div>
+                                <div className="interrupt-buttons">
+                                    {(interruptTeams ?? []).map(team => {
+                                        // 1クォーター1回。取り消しは既存のチップに任せる
+                                        const used = interruptChoice === 'timeout' && team.timeoutUsed;
+                                        return (
+                                            <button
+                                                key={team.id}
+                                                className="btn btn-secondary interrupt-btn"
+                                                onClick={() => handleInterruptTeamSelect(team.id)}
+                                                disabled={used}
+                                            >
+                                                {team.name}{used ? '（済）' : ''}
+                                            </button>
+                                        );
+                                    })}
+                                    <button
+                                        className="btn btn-secondary interrupt-btn interrupt-cancel"
+                                        onClick={() => setInterruptChoice(null)}
+                                    >
+                                        やめる
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
