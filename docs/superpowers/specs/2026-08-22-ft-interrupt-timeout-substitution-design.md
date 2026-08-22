@@ -70,7 +70,8 @@
 
 確認済みの前提:
 
-- オーバーレイの `z-index` はいずれも 1000 で、重なり順は DOM 順で決まる。App 内で `SubstitutionModal` と `TimeoutInputModal` は `FoulInputFlow` より後に置かれているため、追加の `z-index` 調整は要らない
+- オーバーレイの `z-index` はいずれも 1000 で、重なり順は **DOM 順**で決まる（後の兄弟が上）
+- **App の JSX の並びを1箇所だけ直す必要がある。** 現在の並びは 通常の `FoulInputFlow` → `SubstitutionModal` → ベンチファウルの `FoulInputFlow` → `TimeoutInputModal` で、ベンチファウルのフローだけが `SubstitutionModal` より後ろにある。このままだと交代モーダルがベンチファウルのフローの**下**に潜って操作できない。`SubstitutionModal` のブロックをベンチファウルの `FoulInputFlow` より後ろへ移す。どちらも同じ階層の兄弟で `position: fixed` のオーバーレイなので、移動による副作用は無い。`z-index` は触らない
 - `Modal` のスタック登録（`modalStack`）は入れ子に対応しており、端末の戻る操作・Escape は LIFO で上のモーダルから閉じる。`FoulInputFlow` 自身が既に `ConfirmModal` を内側に重ねている
 - `ADD_TIMEOUT` も `SUBSTITUTE_PLAYER` も `selectedPlayerId` / `selectedTeamId` に触らない。中断して戻ってもファウルの帰属先は保たれる（`handleFoulWithFreeThrows` は `selectedPlayerId` を見る）
 - ファウルした選手自身が交代で下がっても、ファウル記録はその選手に正しく付く。ファウルの記録は `isOnCourt` を見ていない
@@ -98,7 +99,7 @@ shooterPlayerId !== null かつ step が 'shooter' または 'ftResult'
 かつ 中断ブロック用のプロパティが渡されている
 ```
 
-`shooter` ステップは、選手をタップして `shooterPlayerId` が入った後に「決定」で `ftResult` へ進む二段構えになっている。タップ済みなら `shooter` ステップでも出す。FT前にタイムアウトが入る場面と、1本目の後に入る場面はどちらも実際に起きるため。
+`shooter` ステップは、選手をタップして `shooterPlayerId` が入った後に「次へ」で `ftResult` へ進む二段構えになっている。タップ済みなら `shooter` ステップでも出す。FT前にタイムアウトが入る場面と、1本目の後に入る場面はどちらも実際に起きるため。
 
 ベンチファウル（`benchFoulMode`）は `shooter` ステップから始まるが、同じ条件がそのまま使える。
 
@@ -167,7 +168,7 @@ const shooterLeftCourt = shooter !== null && !shooter.isOnCourt;
 ⚠️ シューターが交代でコートを離れました。FTを打つ選手を選び直してください。
 ```
 
-- 「決定」は押せない状態にする（`shooterLeftCourt` の間は選択が未確定と同じ扱い）
+- 「次へ」は押せない状態にする（`shooterLeftCourt` の間は選択が未確定と同じ扱い）
 - 候補リストは `isOnCourt` から引き直されるので、交代で入った選手がそのまま並ぶ。規則どおりの選択ができる
 
 ### `ftResult` ステップ・FT結果が1つも入っていない場合
@@ -244,7 +245,7 @@ const shooterLeftCourt = shooter !== null && !shooter.isOnCourt;
 - `ftResult` で FT未入力のままシューターが `isOnCourt: false` になる → 警告と「シューターを選び直す」が出る
 - `ftResult` で FT入力済みのままシューターが `isOnCourt: false` になる → ずれる旨の警告が出て、「記録」は押せる
 - 「シューターを変更」で `shooter` ステップへ戻り、入力済みの結果が消えていない
-- `shooter` ステップでシューターが `isOnCourt: false` になる → 「決定」が押せない
+- `shooter` ステップでシューターが `isOnCourt: false` になる → 「次へ」が押せない
 - シューターが `isOnCourt: false` でも、`ftResult` のシューター表示に名前と背番号が出る（空欄にならない）
 
 ### App 側の結線
