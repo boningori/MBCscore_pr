@@ -468,6 +468,16 @@ export function FoulInputFlow({
     // コート上の選手のみフィルタリング
     const availableShooters = opponentPlayers.filter(p => p.isOnCourt);
 
+    // 選択済みのシューターは、交代で下がっても opponentPlayers 全体から引く。
+    // availableShooters（isOnCourt で絞った配列）から探すと、負傷交代の瞬間に
+    // 「シューター: #」だけが残って誰なのか読めなくなる
+    const shooter = shooterPlayerId
+        ? opponentPlayers.find(p => p.id === shooterPlayerId) ?? null
+        : null;
+    // 負傷・失格で下がった場合、残りのFTは交代で入った選手が打つ
+    const shooterLeftCourt = shooter !== null && !shooter.isOnCourt;
+    const ftAnyEntered = freeThrowResults.some(r => r !== null);
+
     return (
         // 共通のModalに載せる。ここは試合中いちばん深い階層のオーバーレイで、
         // 開いている間は背後のスコアボードや選手カードを触らせてはいけない。
@@ -649,6 +659,11 @@ export function FoulInputFlow({
                 {/* Step 4: シューター選択 */}
                 {step === 'shooter' && (
                     <div className="shooter-section">
+                        {shooterLeftCourt && (
+                            <div className="shooter-left-warning">
+                                ⚠️ シューターが交代でコートを離れました。FTを打つ選手を選び直してください。
+                            </div>
+                        )}
                         <div className="shooter-team-name">
                             {opponentTeamName}（コート上の選手）
                         </div>
@@ -667,7 +682,7 @@ export function FoulInputFlow({
                         <button
                             className="btn btn-primary shooter-complete"
                             onClick={handleShooterComplete}
-                            disabled={!shooterPlayerId}
+                            disabled={!shooterPlayerId || shooterLeftCourt}
                         >
                             次へ
                         </button>
@@ -686,14 +701,34 @@ export function FoulInputFlow({
                 {/* Step 5: FT結果入力 */}
                 {step === 'ftResult' && (
                     <div className="ft-result-section">
-                        {(() => {
-                            const shooter = availableShooters.find(p => p.id === shooterPlayerId);
-                            return (
-                                <div className="shooter-info">
-                                    シューター: #{shooter ? formatPlayerNumber(shooter.number) : ''} {shooter?.courtName || shooter?.name}
-                                </div>
-                            );
-                        })()}
+                        <div className="shooter-info">
+                            シューター: #{shooter ? formatPlayerNumber(shooter.number) : ''} {shooter?.courtName || shooter?.name}
+                        </div>
+                        {/*
+                          規則では、シューターが負傷・失格で下がったら残りのFTは
+                          交代で入った選手が打つ。ところがこの記録が持てるシューターは
+                          1人だけ（FoulRecord.shooterPlayerId）なので、1本でも打った後だと
+                          正確には表せない。どちらに寄せるかは記録者に委ねたうえで、
+                          ずれることを画面に出す
+                        */}
+                        {shooterLeftCourt && (
+                            <div className="shooter-left-warning">
+                                <div>⚠️ シューターが交代でコートを離れました。</div>
+                                {ftAnyEntered && (
+                                    <div className="shooter-left-detail">
+                                        すでに入力したFTがあります。この記録が持てるシューターは1人だけなので、
+                                        残りを交代選手が打った場合、個人の得点とFT%が実際とずれます。
+                                        チームの得点は正しく記録されます。
+                                    </div>
+                                )}
+                                <button
+                                    className="btn btn-secondary shooter-left-change"
+                                    onClick={() => setStep('shooter')}
+                                >
+                                    {ftAnyEntered ? 'シューターを変更' : 'シューターを選び直す'}
+                                </button>
+                            </div>
+                        )}
                         <div className="ft-result-list">
                             {Array.from({ length: freeThrows }).map((_, index) => (
                                 <div key={index} className="ft-result-row">

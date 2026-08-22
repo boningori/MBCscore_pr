@@ -418,6 +418,35 @@
     margin-top: var(--spacing-sm);
 }
 
+/* シューターが交代でコートを離れたときの注意。
+   ファウルアウト警告(.foul-warning)ほど強くしない。記録を止める話ではなく、
+   選び直しとずれの告知なので、点滅させず橙で出す */
+.foul-input-flow .shooter-left-warning {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+    color: var(--warning);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.foul-input-flow .shooter-left-detail {
+    margin-top: var(--spacing-sm);
+    color: var(--text-primary);
+    font-weight: 400;
+    text-align: left;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.foul-input-flow .shooter-left-change {
+    margin-top: var(--spacing-sm);
+    width: 100%;
+}
+
 /* 試合の中断（タイムアウト・選手交代）。
    FT入力ボタンとの誤タップを避けるため区切り線で独立させる */
 .foul-input-flow .interrupt-section {
