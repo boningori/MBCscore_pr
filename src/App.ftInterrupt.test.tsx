@@ -184,13 +184,22 @@ describe('FT入力中の中断（App 通し）', () => {
     });
 
     it('中断からタイムアウトを記録すると、そのチームの今のクォーターに入る', async () => {
+        // Q1のまま確かめると、currentQuarter を1に決め打ちしていても
+        // このテストは通ってしまう。「今のクォーターに入る」ことを実際に
+        // 確かめるため、後のクォーターから始める（ペナルティの前提を保つため
+        // teamFouls も同じ枠に4個入れておく）
+        const session = JSON.parse(localStorage.getItem('minibasket-game-session')!);
+        session.game.currentQuarter = 3;
+        session.game.teamA.teamFouls = [0, 0, 4, 0];
+        localStorage.setItem('minibasket-game-session', JSON.stringify(session));
+
         await goToFtResult();
         clickInterrupt('タイムアウト');
         clickInterruptTeam('テストチーム');
 
         // 残り時間は初期値（クォーター丸ごと）のまま確定＝経過0分
         expect(timeoutModal().getByText('テストチーム（白）')).toBeTruthy();
-        expect(timeoutModal().getByText('Q1')).toBeTruthy();
+        expect(timeoutModal().getByText('Q3')).toBeTruthy();
         fireEvent.click(timeoutModal().getByText('確定'));
 
         // チップが「済」に変わる。timeoutUsed は今のクォーターだけを見るので、

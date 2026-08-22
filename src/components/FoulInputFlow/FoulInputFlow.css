@@ -506,8 +506,7 @@
 
 /* タイムアウト使用済み。disabled を使うと支援技術から辿れなくなるので、
    見た目だけ押せないことを示す（クリックはハンドラ側で無視する） */
-.foul-input-flow .interrupt-btn.used,
-.foul-input-flow .interrupt-btn:disabled {
+.foul-input-flow .interrupt-btn.used {
     opacity: 0.5;
     cursor: not-allowed;
 }

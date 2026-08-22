@@ -241,6 +241,40 @@ describe('途中でシューターを変更したときの告知', () => {
         expect(screen.queryByText(/途中でシューターを変更しました/)).toBeNull();
     });
 
+    it('2回目の差し替えで元のシューターに戻っても、告知は最初のシューターを名指しし続ける', () => {
+        // A が FT1本目を打つ → A がコートを離れる → 「シューターを変更」(prior = A) → B を選ぶ
+        // → B がコートを離れる → 「シューターを変更」(prior が B に上書きされてはいけない)
+        // → 交代を訂正して B が戻る → B を選び直す → 告知は依然として A を名指しする
+        const a = onCourt('b1', 10, '相手1');
+        const b = onCourt('b2', 11, '相手2');
+        const { substitute } = renderFlow([a, b]);
+
+        tapPFoul();
+        fireEvent.click(screen.getByText('相手1').closest('button')!);
+        fireEvent.click(screen.getByText('次へ'));
+        fireEvent.click(screen.getAllByText('○ 成功')[0]);
+
+        // A が退き、B に交代
+        substitute([{ ...a, isOnCourt: false }, b]);
+        fireEvent.click(screen.getByText('シューターを変更'));
+        fireEvent.click(screen.getByText('相手2').closest('button')!);
+        fireEvent.click(screen.getByText('次へ'));
+        expect(screen.getByText(/途中でシューターを変更しました/).textContent).toContain('#10 相手1');
+
+        // B も退く
+        substitute([{ ...a, isOnCourt: false }, { ...b, isOnCourt: false }]);
+        fireEvent.click(screen.getByText('シューターを変更'));
+
+        // スコアラーが交代を訂正し、B がコートに戻る
+        substitute([{ ...a, isOnCourt: false }, b]);
+        fireEvent.click(screen.getByText('相手2').closest('button')!);
+        fireEvent.click(screen.getByText('次へ'));
+
+        // FT1本目は実際には A が打っている。告知が消えたり B を名指ししたりしてはいけない
+        const notice = screen.getByText(/途中でシューターを変更しました/);
+        expect(notice.textContent).toContain('#10 相手1');
+    });
+
     it('コートを離れてもシューター表示が空欄にならない', () => {
         const injured = onCourt('b1', 10, '相手1');
         const { substitute } = renderFlow([injured, onCourt('b2', 11, '相手2')]);

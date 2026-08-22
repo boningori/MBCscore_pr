@@ -422,15 +422,18 @@ export function FoulInputFlow({
      * FT結果入力からシューターを選び直す。
      *
      * 1本でも入力済みなら、そのFTは差し替え前のシューターが打った分。
-     * 誰から替えたのかを覚えて、記録するまで画面に出し続ける。
+     * 覚えるのは最初の差し替え前だけ（すでに priorShooterId があるなら上書きしない）。
+     * 2回目以降の差し替えで現在のシューターを上書きすると、2回差し替えて元の
+     * 選手に戻ったときに priorShooterId === shooterPlayerId になり、告知が
+     * 消えてしまう——入力済みのFTは最初のシューターが打った分のままなのに。
      */
     const handleChangeShooter = useCallback(() => {
-        if (shooterPlayerId && freeThrowResults.some(r => r !== null)) {
+        if (priorShooterId === null && shooterPlayerId && freeThrowResults.some(r => r !== null)) {
             setPriorShooterId(shooterPlayerId);
         }
         setInterruptChoice(null);
         setStep('shooter');
-    }, [shooterPlayerId, freeThrowResults]);
+    }, [priorShooterId, shooterPlayerId, freeThrowResults]);
 
     // 中断のチーム選択。App 側が上にモーダルを重ねる。
     // このコンポーネントはマウントされたままなので入力途中の状態は残る
@@ -537,12 +540,17 @@ export function FoulInputFlow({
 
     // 途中でシューターを差し替えたときの告知。
     // 同じ選手を選び直した場合は誰の分もずれていないので出さない
-    const priorShooter = priorShooterId !== null && priorShooterId !== shooterPlayerId
+    const priorShooterDiverged = priorShooterId !== null && priorShooterId !== shooterPlayerId;
+    const priorShooter = priorShooterDiverged
         ? opponentPlayers.find(p => p.id === priorShooterId) ?? null
         : null;
+    // 選手が見つからない場合でも告知そのものは出す（?? null で握りつぶすと
+    // 「差し替えなし」に見えてしまい、安全側に倒れない）。今日の交代は
+    // isOnCourt を切り替えるだけで配列から消さないため実際には起きないが、
+    // 万一に備えて中身の分からない告知を出す
     const priorShooterLabel = priorShooter
         ? `#${formatPlayerNumber(priorShooter.number)} ${priorShooter.courtName || priorShooter.name}`
-        : '';
+        : (priorShooterDiverged ? '（選手情報不明）' : '');
 
     return (
         // 共通のModalに載せる。ここは試合中いちばん深い階層のオーバーレイで、
@@ -801,7 +809,7 @@ export function FoulInputFlow({
                           別の選手が打った」ことが画面のどこにも残らない。
                           記録は止めない。画面で把握できていれば手で補記できる
                         */}
-                        {priorShooter && (
+                        {priorShooterDiverged && (
                             <div className="shooter-changed-warning">
                                 ⚠️ 途中でシューターを変更しました。入力済みのFTには {priorShooterLabel} が打った分が含まれます。
                                 この記録が持てるシューターは1人だけなので、個人の得点とFT%は手で補記してください。
