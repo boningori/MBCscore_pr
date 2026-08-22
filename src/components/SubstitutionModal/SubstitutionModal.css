@@ -241,3 +241,31 @@
         padding: var(--spacing-md);
     }
 }
+
+/* 連続交代の案内と実行結果。実行前後で枠の高さを揃え、
+   下のボタンが動かないようにする（指が「完了」を踏むのを防ぐ） */
+.substitution-modal .substitution-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs) var(--spacing-sm);
+    min-height: 3rem;
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.substitution-modal .substitution-note.done {
+    background: var(--bg-tertiary);
+}
+
+.substitution-modal .substitution-note-pair {
+    font-weight: 700;
+}
+
+.substitution-modal .substitution-note-sub {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}

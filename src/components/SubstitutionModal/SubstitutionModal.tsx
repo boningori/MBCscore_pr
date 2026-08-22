@@ -29,6 +29,9 @@ export function SubstitutionModal({
 }: SubstitutionModalProps) {
     const [playerOut, setPlayerOut] = useState<string | null>(null);
     const [playerIn, setPlayerIn] = useState<string | null>(null);
+    // この画面で実行済みの交代。連続交代の手応えを返すために保持する
+    const [doneCount, setDoneCount] = useState(0);
+    const [lastDone, setLastDone] = useState<string | null>(null);
 
     // 選手追加フォーム
     const [showAddForm, setShowAddForm] = useState(false);
@@ -43,11 +46,26 @@ export function SubstitutionModal({
     // 判断は記録者に任せ、カード上に「退場」と併記して見落としを防ぐ
     const benchPlayers = players.filter(p => !p.isOnCourt);
 
+    // 交代は1組ずつ確定するが、モーダルは閉じない。
+    // バスケではタイムアウト明けなどに複数人まとめて替えるのが普通で、
+    // 1組ごとに閉じると「交代ボタン→選択→実行」を人数分やり直すことになり、
+    // 試合が止まっている短い時間に間に合わない
     const handleConfirm = () => {
-        if (playerOut && playerIn) {
-            onSubstitute(playerIn, playerOut);
-            onClose();
+        if (!playerOut || !playerIn) return;
+
+        const out = players.find(p => p.id === playerOut);
+        const into = players.find(p => p.id === playerIn);
+
+        onSubstitute(playerIn, playerOut);
+
+        if (out && into) {
+            setLastDone(
+                `#${formatPlayerNumber(out.number)} ${out.name} → #${formatPlayerNumber(into.number)} ${into.name}`,
+            );
         }
+        setDoneCount(count => count + 1);
+        setPlayerOut(null);
+        setPlayerIn(null);
     };
 
     // 追加すると公式様式（15人分）から外れる選手。
@@ -248,9 +266,31 @@ export function SubstitutionModal({
                     </div>
                 </div>
 
+                {/*
+                  実行前の案内と実行後の結果を同じ高さの枠で入れ替える。
+                  結果を後から差し込むとボタンが下にずれ、直前に「交代実行」が
+                  あった位置に「完了」が来る。連続でタップした指がモーダルを
+                  閉じてしまうため、枠は最初から場所を取っておく
+                */}
+                {doneCount > 0 ? (
+                    <div className="substitution-note done" role="status">
+                        <span className="substitution-note-pair">{lastDone}</span>
+                        <span className="substitution-note-sub">
+                            交代しました{doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
+                        </span>
+                    </div>
+                ) : (
+                    <div className="substitution-note">
+                        <span className="substitution-note-sub">
+                            交代実行してもこの画面は閉じません。続けて何人でも交代できます
+                        </span>
+                    </div>
+                )}
+
                 <div className="substitution-actions">
+                    {/* 交代はその場で確定するため、実行後に「キャンセル」を残すと取り消せると誤解される */}
                     <button className="btn btn-secondary btn-large" onClick={onClose}>
-                        キャンセル
+                        {doneCount > 0 ? '完了' : 'キャンセル'}
                     </button>
                     <button
                         className="btn btn-success btn-large"
