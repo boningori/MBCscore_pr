@@ -675,6 +675,28 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     });
   };
 
+  // FoulInputFlow の中断ブロックから交代を要求されたとき。
+  // フローは開いたままにする（入力途中の状態はフロー内部に残る）
+  const handleRequestSubstitution = (teamId: 'teamA' | 'teamB') => {
+    setSubstitutionTeamId(teamId);
+    setShowSubstitutionModal(true);
+  };
+
+  // 中断（タイムアウト・交代）で選ばせるチーム。
+  // タイムアウトは1クォーター1回なので、使用済みかどうかも渡す
+  const interruptTeams = [
+    {
+      id: 'teamA' as const,
+      name: state.teamA.name,
+      timeoutUsed: state.teamA.timeouts.some(t => t.quarter === currentQuarter),
+    },
+    {
+      id: 'teamB' as const,
+      name: state.teamB.name,
+      timeoutUsed: state.teamB.timeouts.some(t => t.quarter === currentQuarter),
+    },
+  ];
+
   // 音声コマンド処理 (一時的に非表示)
   // const handleVoiceCommand = useCallback((command: VoiceCommand) => {
   //   ... 省略 ...
@@ -1292,26 +1314,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
             opponentPlayers={opponentTeam.players}
             opponentTeamName={opponentTeam.name}
             showThreePoint={state.showThreePoint}
+            interruptTeams={interruptTeams}
+            onRequestTimeout={phase === 'playing' ? setTimeoutModalTeam : undefined}
+            onRequestSubstitution={handleRequestSubstitution}
           />
         );
       })()}
-
-      {/* 交代モーダル */}
-      {showSubstitutionModal && (
-        <SubstitutionModal
-          teamName={substitutionTeamId === 'teamA' ? state.teamA.name : state.teamB.name}
-          teamId={substitutionTeamId}
-          players={substitutionTeamId === 'teamA' ? state.teamA.players : state.teamB.players}
-          onSubstitute={handleSubstitute}
-          onAddPlayer={(number, name) => {
-            dispatch({
-              type: 'ADD_PLAYER_TO_TEAM',
-              payload: { teamId: substitutionTeamId, number, name }
-            });
-          }}
-          onClose={() => setShowSubstitutionModal(false)}
-        />
-      )}
 
       {/* チーム選択モーダル（保留アクション作成用・「選手がわからない」から明示的に開く） */}
       {showTeamSelector && pendingAction && (
@@ -1652,9 +1660,32 @@ function AppContent({ screen, setScreen }: AppContentProps) {
             benchFoulType={coachFoulState.foulType}
             benchFoulLabel={coachFoulState.label}
             showThreePoint={state.showThreePoint}
+            interruptTeams={interruptTeams}
+            onRequestTimeout={phase === 'playing' ? setTimeoutModalTeam : undefined}
+            onRequestSubstitution={handleRequestSubstitution}
           />
         );
       })()}
+
+      {/* 交代モーダル。
+          オーバーレイの z-index は全て 1000 で、重なり順は DOM の並びで決まる。
+          ベンチファウルの FoulInputFlow より後ろに置かないと、そこから交代を
+          開いたときに暗幕の下へ潜る */}
+      {showSubstitutionModal && (
+        <SubstitutionModal
+          teamName={substitutionTeamId === 'teamA' ? state.teamA.name : state.teamB.name}
+          teamId={substitutionTeamId}
+          players={substitutionTeamId === 'teamA' ? state.teamA.players : state.teamB.players}
+          onSubstitute={handleSubstitute}
+          onAddPlayer={(number, name) => {
+            dispatch({
+              type: 'ADD_PLAYER_TO_TEAM',
+              payload: { teamId: substitutionTeamId, number, name }
+            });
+          }}
+          onClose={() => setShowSubstitutionModal(false)}
+        />
+      )}
 
       {/* 履歴ポップアップ（両モード共通） */}
       {showHistoryPopup && (
