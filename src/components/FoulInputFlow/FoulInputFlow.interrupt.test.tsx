@@ -168,3 +168,91 @@ describe('中断ブロック: チーム選択', () => {
         expect(screen.getByText('シューター: #10 相手1')).toBeTruthy();
     });
 });
+
+describe('中断ブロック: 安全弁', () => {
+    it('タイムアウト使用済みのチームは押せず「済」が出る', () => {
+        const { onRequestTimeout } = renderFlow({
+            interruptTeams: [
+                { id: 'teamA', name: '東京中', timeoutUsed: true },
+                { id: 'teamB', name: '大阪中', timeoutUsed: false },
+            ],
+        });
+        goToFtResult();
+        fireEvent.click(screen.getByText('⏱ タイムアウト'));
+
+        const used = screen.getByText('東京中（済）').closest('button')! as HTMLButtonElement;
+        expect(used.disabled).toBe(true);
+        fireEvent.click(used);
+        expect(onRequestTimeout).not.toHaveBeenCalled();
+    });
+
+    it('使用済みでも交代のチーム選択では押せる', () => {
+        const { onRequestSubstitution } = renderFlow({
+            interruptTeams: [
+                { id: 'teamA', name: '東京中', timeoutUsed: true },
+                { id: 'teamB', name: '大阪中', timeoutUsed: false },
+            ],
+        });
+        goToFtResult();
+        fireEvent.click(screen.getByText('🔄 選手交代'));
+
+        fireEvent.click(screen.getByText('東京中'));
+        expect(onRequestSubstitution).toHaveBeenCalledWith('teamA');
+    });
+
+    it('「やめる」で初期状態に戻る', () => {
+        const { onRequestTimeout } = renderFlow();
+        goToFtResult();
+        fireEvent.click(screen.getByText('⏱ タイムアウト'));
+        fireEvent.click(screen.getByText('やめる'));
+
+        expect(screen.getByText('⏱ タイムアウト')).toBeTruthy();
+        expect(screen.queryByText('タイムアウトを記録するチーム')).toBeNull();
+        expect(onRequestTimeout).not.toHaveBeenCalled();
+    });
+
+    it('チーム選択中のEscapeは、ステップを戻さずチーム選択だけを閉じる', () => {
+        renderFlow();
+        goToFtResult();
+        fireEvent.click(screen.getByText('⏱ タイムアウト'));
+
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+
+        // FT結果入力のまま。チーム選択だけが閉じる
+        expect(screen.getByText('フリースロー結果を入力')).toBeTruthy();
+        expect(screen.queryByText('タイムアウトを記録するチーム')).toBeNull();
+        expect(screen.getByText('⏱ タイムアウト')).toBeTruthy();
+    });
+
+    it('チーム選択を閉じた後のEscapeは従来どおりシューター選択へ戻る', () => {
+        renderFlow();
+        goToFtResult();
+        fireEvent.click(screen.getByText('⏱ タイムアウト'));
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+
+        expect(screen.getByText('シューターを選択')).toBeTruthy();
+    });
+
+    it('チーム選択を開いたまま戻っても、次に開いたときは選択肢から始まる', () => {
+        renderFlow();
+        tapPFoul();
+        selectShooter();
+        fireEvent.click(screen.getByText('⏱ タイムアウト'));
+
+        // チーム選択が開いている状態での「← 戻る」。以前はここで
+        // シューター選択ごと巻き戻り、interruptChoice だけが残っていた
+        fireEvent.click(screen.getByText('← 戻る'));
+        expect(screen.getByText('⏱ タイムアウト')).toBeTruthy();
+
+        // もう一度戻ってファウル種類選択まで抜け、入り直す
+        fireEvent.click(screen.getByText('← 戻る'));
+        expect(screen.getByText('ファウル種類を選択')).toBeTruthy();
+        tapPFoul();
+        selectShooter();
+
+        // 2周目もタイムアウト/交代の選択肢から始まる（チーム選択が居座らない）
+        expect(screen.getByText('⏱ タイムアウト')).toBeTruthy();
+        expect(screen.queryByText('タイムアウトを記録するチーム')).toBeNull();
+    });
+});

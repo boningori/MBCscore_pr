@@ -392,6 +392,13 @@ export function FoulInputFlow({
 
     // 戻るボタン
     const handleBack = useCallback(() => {
+        // 中断のチーム選択を開いている間は、ステップを戻すより先にそれを閉じる。
+        // Escape も端末の戻る操作も Modal 経由でここへ来るため、
+        // 分岐を入れないとチーム選択を出したまま入力段階だけが巻き戻る
+        if (interruptChoice !== null) {
+            setInterruptChoice(null);
+            return;
+        }
         switch (step) {
             case 'shotSituation':
                 setStep('foulType');
@@ -441,7 +448,7 @@ export function FoulInputFlow({
                 setFreeThrowResults(new Array(freeThrows).fill(null));
                 break;
         }
-    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel, showThreePoint]);
+    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel, showThreePoint, interruptChoice]);
 
     // FT成功数を計算
     const ftMadeCount = freeThrowResults.filter(r => r === 'made').length;
