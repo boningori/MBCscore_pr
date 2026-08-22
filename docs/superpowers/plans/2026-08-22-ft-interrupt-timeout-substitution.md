@@ -445,7 +445,7 @@ Run:
 ```bash
 npx vitest run src/components/FoulInputFlow/FoulInputFlow.interrupt.test.tsx
 ```
-Expected: PASS（12件）
+Expected: PASS（11件）
 
 - [ ] **Step 8: 既存テストの退行が無いことを確認**
 
@@ -583,7 +583,7 @@ Run:
 ```bash
 npx vitest run src/components/FoulInputFlow/FoulInputFlow.interrupt.test.tsx
 ```
-Expected: PASS（17件）
+Expected: PASS（16件）
 
 - [ ] **Step 5: 戻る操作の既存テストが通ることを確認**
 
