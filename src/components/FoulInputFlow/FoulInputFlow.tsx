@@ -19,6 +19,18 @@ export interface InterruptTeam {
 
 const LONG_PRESS_DURATION = 500; // 長押し判定時間（ミリ秒）
 
+// ステップ切り替え後にフォーカスを預ける先を探すセレクタ。
+// Modal のフォーカストラップが辿る対象と揃えておかないと、
+// トラップが数えない要素にフォーカスを置いてしまう
+const STEP_FOCUSABLE = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 /**
  * 6個目の確認で保留にした「本来やろうとしていたこと」。
  *
@@ -149,6 +161,39 @@ export function FoulInputFlow({
         setInterruptChoice(choice);
     }, []);
 
+    /**
+     * ステップが切り替わった直後にフォーカスを移すための予約。
+     *
+     * 中断ブロックの行入れ替えと同じ事情がステップの切り替えにもある。
+     * 段ごとにブロックを丸ごと差し替えるので、押したボタンはその場で
+     * アンマウントされ、フォーカスが body へ落ちる。落ちた先はモーダルの
+     * 外なので、オーバーレイの onKeyDown に載っている Escape と
+     * フォーカストラップがどちらも効かなくなる——「← 戻る」も
+     * 端末の戻る操作も Escape 経由なのに、切り替えた直後こそ
+     * 戻りたい場面で効かない。
+     */
+    const pendingStepFocus = useRef(false);
+
+    // 各ステップのブロックに付ける ref。予約されているときだけ、
+    // 新しく出たブロックの先頭のフォーカス可能要素へ移す。
+    // 初回表示では予約が無いので、Modal 自身のフォーカス（data-autofocus →
+    // 先頭）をそのまま活かす
+    const focusStepSection = useCallback((el: HTMLDivElement | null) => {
+        if (!el || !pendingStepFocus.current) return;
+        pendingStepFocus.current = false;
+        const first = el.querySelector<HTMLElement>(STEP_FOCUSABLE);
+        // ブロックの中身が全部押せない状態（コート上に候補が居ないシューター
+        // 選択など）でも body へ落とさない。ダイアログ本体は tabIndex={-1} を
+        // 持つので、そこへ預けておけば Escape もタブ順も内側に残る
+        (first ?? el.closest<HTMLElement>('[role="dialog"]'))?.focus();
+    }, []);
+
+    // ステップを進める／戻す。切り替え後のフォーカス移動もここでまとめて予約する
+    const goToStep = useCallback((next: Step) => {
+        pendingStepFocus.current = true;
+        setStep(next);
+    }, []);
+
     // 6個目以降になる記録は、様式のファウル欄（5枠）に載らない。
     // 押し切れば記録できるが、黙って作らせない
     const [overflowIntent, setOverflowIntent] = useState<OverflowIntent | null>(null);
@@ -203,7 +248,7 @@ export function FoulInputFlow({
             const suggested = 2; // ペナルティは2本
             setFreeThrows(suggested);
             setFreeThrowResults(new Array(suggested).fill(null));
-            setStep('shooter');
+            goToStep('shooter');
         } else {
             // ペナルティでなければ即記録完了
             onComplete({
@@ -215,19 +260,19 @@ export function FoulInputFlow({
                 shooterPlayerId: null,
             });
         }
-    }, [isPenalty, onComplete]);
+    }, [isPenalty, onComplete, goToStep]);
 
     // Pファウル長押し（シュートファウル）
     const runPFoulLongPress = useCallback(() => {
         setFoulType('P');
         if (showThreePoint) {
-            setStep('shotSituation');
+            goToStep('shotSituation');
         } else {
             // 3P非表示の試合ではシュートファウルは常に2P扱い（状況選択をスキップ）
             setShotSituation('2P');
-            setStep('shotResult');
+            goToStep('shotResult');
         }
-    }, [showThreePoint]);
+    }, [showThreePoint, goToStep]);
 
     // T/U/Dファウル選択
     const runSpecialFoulSelect = useCallback((type: FoulType) => {
@@ -237,8 +282,8 @@ export function FoulInputFlow({
         const suggested = suggestFreeThrowCount(type, teamFouls, 'none');
         setFreeThrows(suggested);
         setFreeThrowResults(new Array(suggested).fill(null));
-        setStep('ftCount');
-    }, [teamFouls]);
+        goToStep('ftCount');
+    }, [teamFouls, goToStep]);
 
     const runIntent = useCallback((intent: OverflowIntent) => {
         if (intent.kind === 'pNormal') runPFoulNormalTap();
@@ -325,8 +370,8 @@ export function FoulInputFlow({
     const handleShotSituationSelect = useCallback((situation: ShotSituation) => {
         setShotSituation(situation);
         // シュート中のファウル → シュート結果選択へ
-        setStep('shotResult');
-    }, []);
+        goToStep('shotResult');
+    }, [goToStep]);
 
     // シュート結果選択（成功=バスケットカウント / 失敗）
     const handleShotResultSelect = useCallback((made: boolean) => {
@@ -334,8 +379,8 @@ export function FoulInputFlow({
         const suggested = suggestFreeThrowCount('P', teamFouls, shotSituation, made);
         setFreeThrows(suggested);
         setFreeThrowResults(new Array(suggested).fill(null));
-        setStep('shooter');
-    }, [teamFouls, shotSituation]);
+        goToStep('shooter');
+    }, [teamFouls, shotSituation, goToStep]);
 
     // FT本数選択
     const handleFtCountSelect = useCallback((count: number) => {
@@ -352,9 +397,9 @@ export function FoulInputFlow({
             });
         } else {
             setFreeThrowResults(new Array(count).fill(null));
-            setStep('shooter');  // シューター選択へ
+            goToStep('shooter');  // シューター選択へ
         }
-    }, [foulType, shotSituation, shotMade, onComplete]);
+    }, [foulType, shotSituation, shotMade, onComplete, goToStep]);
 
     // FT結果入力
     const handleFtResult = useCallback((index: number, result: FreeThrowResult) => {
@@ -415,8 +460,8 @@ export function FoulInputFlow({
         // 中断のチーム選択を開いたまま次のステップへ行くと、行き先の画面に
         // 「タイムアウトを記録するチーム」だけが居座る
         setInterruptChoice(null);
-        setStep('ftResult');
-    }, [shooterPlayerId]);
+        goToStep('ftResult');
+    }, [shooterPlayerId, goToStep]);
 
     /**
      * FT結果入力からシューターを選び直す。
@@ -432,8 +477,8 @@ export function FoulInputFlow({
             setPriorShooterId(shooterPlayerId);
         }
         setInterruptChoice(null);
-        setStep('shooter');
-    }, [priorShooterId, shooterPlayerId, freeThrowResults]);
+        goToStep('shooter');
+    }, [priorShooterId, shooterPlayerId, freeThrowResults, goToStep]);
 
     // 中断のチーム選択。App 側が上にモーダルを重ねる。
     // このコンポーネントはマウントされたままなので入力途中の状態は残る
@@ -457,15 +502,15 @@ export function FoulInputFlow({
         }
         switch (step) {
             case 'shotSituation':
-                setStep('foulType');
+                goToStep('foulType');
                 setFoulType(null);
                 break;
             case 'shotResult':
                 if (showThreePoint) {
-                    setStep('shotSituation');
+                    goToStep('shotSituation');
                 } else {
                     // shotSituationステップをスキップしているためファウル種類選択まで戻る
-                    setStep('foulType');
+                    goToStep('foulType');
                     setFoulType(null);
                     setShotSituation('none');
                 }
@@ -473,11 +518,11 @@ export function FoulInputFlow({
                 break;
             case 'ftCount':
                 if (['T', 'U', 'D'].includes(foulType!)) {
-                    setStep('foulType');
+                    goToStep('foulType');
                     setFoulType(null);
                 } else {
                     // Pファウルのシュートファウル時
-                    setStep(showThreePoint ? 'shotSituation' : 'shotResult');
+                    goToStep(showThreePoint ? 'shotSituation' : 'shotResult');
                 }
                 break;
             case 'shooter':
@@ -490,11 +535,11 @@ export function FoulInputFlow({
                 // ペナルティからの場合はfoulTypeへ
                 // T/U/DからはftCountへ
                 if (['T', 'U', 'D'].includes(foulType!)) {
-                    setStep('ftCount');
+                    goToStep('ftCount');
                 } else if (shotSituation !== 'none') {
-                    setStep('shotResult');
+                    goToStep('shotResult');
                 } else {
-                    setStep('foulType');
+                    goToStep('foulType');
                     setFoulType(null);
                 }
                 setShooterPlayerId(null);
@@ -502,13 +547,13 @@ export function FoulInputFlow({
                 setPriorShooterId(null);
                 break;
             case 'ftResult':
-                setStep('shooter');
+                goToStep('shooter');
                 setFreeThrowResults(new Array(freeThrows).fill(null));
                 // 入力済みのFTを捨てるので、差し替えの食い違いも無くなる
                 setPriorShooterId(null);
                 break;
         }
-    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel, showThreePoint, interruptChoice, switchInterruptRow]);
+    }, [step, foulType, freeThrows, shotSituation, benchFoulMode, onCancel, showThreePoint, interruptChoice, switchInterruptRow, goToStep]);
 
     // FT成功数を計算
     const ftMadeCount = freeThrowResults.filter(r => r === 'made').length;
@@ -628,7 +673,7 @@ export function FoulInputFlow({
 
                 {/* Step 1: ファウルタイプ選択 */}
                 {step === 'foulType' && (
-                    <div className="foul-type-list">
+                    <div ref={focusStepSection} className="foul-type-list">
                         {/* Pファウル - タップ/長押しで分岐 */}
                         <button
                             className={`foul-type-btn ${!hasSelectedPlayer ? 'disabled' : ''} ${isFouledOut ? 'warning-context' : ''}`}
@@ -676,7 +721,7 @@ export function FoulInputFlow({
 
                 {/* Step 2: シュート状況選択 */}
                 {step === 'shotSituation' && (
-                    <div className="shot-situation-list">
+                    <div ref={focusStepSection} className="shot-situation-list">
                         {SHOT_SITUATIONS.map(situation => (
                             <button
                                 key={situation.value}
@@ -691,7 +736,7 @@ export function FoulInputFlow({
 
                 {/* Step 2.5: シュート結果選択（バスケットカウント判定） */}
                 {step === 'shotResult' && (
-                    <div className="shot-result-list">
+                    <div ref={focusStepSection} className="shot-result-list">
                         <button
                             className="shot-result-btn success"
                             onClick={() => handleShotResultSelect(true)}
@@ -709,7 +754,7 @@ export function FoulInputFlow({
 
                 {/* Step 3: FT本数選択 */}
                 {step === 'ftCount' && (
-                    <div className="ft-count-section">
+                    <div ref={focusStepSection} className="ft-count-section">
                         <div className="ft-suggested">
                             推奨: {suggestedFtCount}本
                         </div>
@@ -732,7 +777,7 @@ export function FoulInputFlow({
 
                 {/* Step 4: シューター選択 */}
                 {step === 'shooter' && (
-                    <div className="shooter-section">
+                    <div ref={focusStepSection} className="shooter-section">
                         {shooterLeftCourt && (
                             <div className="shooter-left-warning">
                                 ⚠️ シューターが交代でコートを離れました。FTを打つ選手を選び直してください。
@@ -774,7 +819,7 @@ export function FoulInputFlow({
 
                 {/* Step 5: FT結果入力 */}
                 {step === 'ftResult' && (
-                    <div className="ft-result-section">
+                    <div ref={focusStepSection} className="ft-result-section">
                         <div className="shooter-info">
                             シューター: #{shooter ? formatPlayerNumber(shooter.number) : ''} {shooter?.courtName || shooter?.name}
                         </div>
