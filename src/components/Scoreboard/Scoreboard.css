@@ -137,6 +137,14 @@
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-controls .btn {
     width: 100%;
     min-width: 0;
+    /* 幅が足りないときはアイコンとラベルの境目で改行する */
+    flex-wrap: wrap;
+}
+
+/* ラベルは語中で折り返さない。指定しないと中央列が狭い端末で
+   「Q2終」「了」のように熟語が割れて読めなくなる（実機iPad横で発生） */
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .quarter-controls .btn > span {
+    white-space: nowrap;
 }
 
 /* クォーター色はJBA様式に合わせ 1Q/3Q=赤・2Q/4Q=黒 に統一する
@@ -183,7 +191,8 @@
     background: rgba(245, 158, 11, 0.12);
     border: 2px solid var(--warning);
     color: var(--warning-light);
-    /* 中央列は幅上限があるため、1行(約150px)を要求せず折り返す */
+    /* 中央列は幅上限があるため、1行(約150px)を要求せず折り返す。
+       折り返し位置は上の flex-wrap / nowrap で旗アイコンとラベルの境目に固定する */
     white-space: normal;
     line-height: 1.2;
     /* .btn-small の固定44pxを上書きし、上のバッジと同じ基準に揃える。

@@ -26,6 +26,11 @@
     font-weight: 600;
     font-size: var(--font-size-sm);
     color: var(--text-primary);
+    /* 縮まず折り返さない。既定(min-width:auto)のままだとタブレット縦持ちで
+       「アクション」「履歴」と2行になり、height:28px のヘッダーから溢れて
+       下の案内文と重なる。狭いときに縮むのは .history-hint だけにする */
+    flex: none;
+    white-space: nowrap;
 }
 
 .action-history .history-header .item-count {
@@ -35,6 +40,9 @@
        隣の .team-name と同じ --text-primary を使い、
        主従はフォントサイズと太さ（team-nameのみ600）で付ける */
     color: var(--text-primary);
+    /* team-name と同じ理由。「24」「件」に割れるのを防ぐ */
+    flex: none;
+    white-space: nowrap;
 }
 
 /* 長押しの案内。名前と件数のあいだで、狭いときは真っ先に縮む */
