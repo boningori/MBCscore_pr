@@ -1,0 +1,86 @@
+/* チーム比較。バーは中央のラベルから左右へ伸びる。
+   B.LEAGUE の画面は両端にバーを置くが、スマホ幅では中央から外向きの方が
+   左右の対比を追いやすい */
+
+.comparison-table {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) 0;
+}
+
+.comparison-row {
+    display: grid;
+    /* 値 | バー | ラベル | バー | 値。ラベル幅は最長の FGM-FGA に合わせる */
+    grid-template-columns: 4.5em 1fr 5.5em 1fr 4.5em;
+    align-items: center;
+    gap: var(--spacing-xs);
+    min-height: 28px;
+}
+
+.comparison-value {
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.comparison-value.left { text-align: left; }
+.comparison-value.right { text-align: right; }
+
+.comparison-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.comparison-bar-area {
+    display: flex;
+    height: 12px;
+}
+
+.comparison-bar-area.left { justify-content: flex-end; }
+.comparison-bar-area.right { justify-content: flex-start; }
+
+.comparison-bar {
+    height: 100%;
+    border-radius: var(--radius-xs);
+}
+
+/* 伸長は transform で行う。width を 0 から動かすと、DOM上の幅が一時的に
+   実際の値と食い違い、テストと出力の両方が「伸びかけの値」を見ることになる。
+   width は常に最終値のまま、見た目だけを中央側から伸ばす */
+@keyframes comparison-bar-grow {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+.comparison-table.is-animating .comparison-bar {
+    animation: comparison-bar-grow 400ms ease-out;
+}
+
+/* 左のバーは中央（右端）から左へ、右のバーは中央（左端）から右へ伸びる */
+.comparison-bar.left { transform-origin: right center; }
+.comparison-bar.right { transform-origin: left center; }
+
+.comparison-row.is-unavailable .comparison-value {
+    color: var(--text-muted);
+}
+
+.comparison-note {
+    margin: var(--spacing-sm) 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* 出力時はアニメーションを止める。伸びかけの棒が画像に写るのを防ぐ */
+.exporting .comparison-bar {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .comparison-table.is-animating .comparison-bar {
+        animation: none;
+    }
+}
