@@ -84,3 +84,82 @@
         animation: none;
     }
 }
+
+.comparison-score-header {
+    padding: var(--spacing-sm) 0;
+}
+
+.comparison-caption {
+    margin: 0 0 var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.comparison-scoreline {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto 1fr;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.comparison-team {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.comparison-team.right { align-items: flex-end; }
+
+.comparison-team-name {
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+
+.comparison-team-bar {
+    display: block;
+    width: 100%;
+    max-width: 96px;
+    height: 5px;
+    border-radius: var(--radius-xs);
+}
+
+.comparison-score {
+    font-family: var(--font-score);
+    font-size: var(--font-size-2xl);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.comparison-score-dash {
+    color: var(--text-muted);
+    padding: 0 var(--spacing-xs);
+}
+
+.quarter-score-table {
+    margin: var(--spacing-sm) auto 0;
+    border-collapse: collapse;
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+}
+
+.quarter-score-table th,
+.quarter-score-table td {
+    padding: 2px var(--spacing-sm);
+    text-align: center;
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+.quarter-score-table tbody th {
+    text-align: right;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.quarter-score-total {
+    color: var(--text-primary);
+    border-left: 1px solid var(--border);
+}
