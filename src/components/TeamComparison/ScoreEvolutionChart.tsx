@@ -51,10 +51,9 @@ export function ScoreEvolutionChart({ data, leftColor, rightColor }: ScoreEvolut
                     </g>
                 ))}
 
-                {/* teamA を先に描く。querySelector で最初に拾われるのが teamA になる
-                    ことをテストが前提にしているため、DOM順もそれに合わせる */}
-                <polyline points={line(p => p.teamA)} fill="none" stroke={leftColor} strokeWidth="2" strokeLinejoin="round" />
+                {/* SVGは後に書いたものが上に重なる。重なったとき自チーム側が隠れないよう teamA を後に描く */}
                 <polyline points={line(p => p.teamB)} fill="none" stroke={rightColor} strokeWidth="2" strokeLinejoin="round" />
+                <polyline points={line(p => p.teamA)} fill="none" stroke={leftColor} strokeWidth="2" strokeLinejoin="round" />
             </svg>
 
             <p className="score-evolution-note">横軸は得点の順番（試合時計ではありません）</p>
