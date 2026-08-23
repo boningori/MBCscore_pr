@@ -20,7 +20,7 @@ import { ComparisonTable } from './ComparisonTable';
 import { ShootingDonuts } from './ShootingDonuts';
 import { ScoreEvolutionChart } from './ScoreEvolutionChart';
 import { useExportAction } from '../../hooks/useExportAction';
-import { exportElement } from '../../utils/pdfExport';
+import { exportElement, sanitizeFilename } from '../../utils/pdfExport';
 import './TeamComparison.css';
 
 export interface TeamComparisonProps {
@@ -50,7 +50,10 @@ export function TeamComparison({
     const handleExport = (format: 'jpeg' | 'pdf') => {
         const root = rootRef.current;
         if (!root) return;
-        const filename = exportName ? `${exportName}_チーム比較` : 'チーム比較';
+        // exportName には試合名（利用者が自由入力）が渡る想定。ファイル名に
+        // 使えない文字（/ \ : * ? " < > |）が入りうるのでスコアシート出力と
+        // 同じ規則で置き換えてから結合する（sanitizeFilename）
+        const filename = exportName ? `${sanitizeFilename(exportName)}_チーム比較` : 'チーム比較';
         void runExport(
             () => exportElement(root, { filename, format }),
             format === 'jpeg' ? 'JPEG' : 'PDF',

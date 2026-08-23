@@ -563,6 +563,16 @@ function downloadDataUrl(dataUrl: string, filename: string): void {
 }
 
 /**
+ * ファイル名に使えない文字（OS/ファイルシステム予約文字）を '_' に置き換える。
+ *
+ * 元は generateScoresheetFilename の中だけにあった処理。試合名を含む
+ * ファイル名を作る箇所が増えたため、そちらでも使えるよう独立させた。
+ */
+export function sanitizeFilename(s: string): string {
+    return s.replace(/[/\\:*?"<>|]/g, '_');
+}
+
+/**
  * スコアシートエクスポート用ファイル名を生成
  */
 export function generateScoresheetFilename(
@@ -571,6 +581,5 @@ export function generateScoresheetFilename(
     teamAName: string,
     teamBName: string
 ): string {
-    const sanitize = (s: string) => s.replace(/[/\\:*?"<>|]/g, '_');
-    return `${sanitize(gameName)}_${date}_${sanitize(teamAName)}_vs_${sanitize(teamBName)}`;
+    return `${sanitizeFilename(gameName)}_${date}_${sanitizeFilename(teamAName)}_vs_${sanitizeFilename(teamBName)}`;
 }

@@ -11,7 +11,7 @@ vi.mock('../../utils/pdfExport', async (importOriginal) => ({
 
 afterEach(() => { cleanup(); exportElement.mockClear(); });
 
-function renderExportable(exportable = true) {
+function renderExportable(exportable = true, exportName = '県大会') {
     const teamA = createTeam('teamA', '白チーム', '');
     teamA.players = [createPlayer('a1', 4, '一郎')];
     const teamB = createTeam('teamB', '青チーム', '');
@@ -25,7 +25,7 @@ function renderExportable(exportable = true) {
             showThreePoint
             caption=""
             exportable={exportable}
-            exportName="県大会"
+            exportName={exportName}
         />,
     );
 }
@@ -68,5 +68,20 @@ describe('比較画面の出力', () => {
         renderExportable();
 
         expect(document.querySelector('.comparison-export')?.classList.contains('no-export')).toBe(true);
+    });
+
+    it('exportName（試合名）にファイル名で使えない文字が入っていても除かれる', async () => {
+        // 次のタスクで exportName には試合名（利用者の自由入力）が渡る。
+        // '/' がそのまま結合されるとパス区切りとして壊れるため、
+        // sanitizeFilename を通ったファイル名になっていることを確認する
+        renderExportable(true, '6/5 練習試合');
+
+        fireEvent.click(screen.getByRole('button', { name: /JPEG/ }));
+
+        await waitFor(() => expect(exportElement).toHaveBeenCalled());
+        const filename = exportElement.mock.calls[0][1].filename as string;
+        expect(filename).not.toContain('/');
+        expect(filename).not.toContain('\\');
+        expect(filename).toBe('6_5 練習試合_チーム比較');
     });
 });
