@@ -36,7 +36,9 @@
 
 .comparison-bar-area {
     display: flex;
-    height: 12px;
+    /* 勝っている側の枠（2px）を上下に置いても、チーム色の面が細く見えない高さ。
+       12pxだと枠が全体の1/3を占め、色そのものが読み取りづらかった */
+    height: 16px;
 }
 
 .comparison-bar-area.left { justify-content: flex-end; }
@@ -45,7 +47,21 @@
 .comparison-bar {
     height: 100%;
     border-radius: var(--radius-xs);
+    /* 勝っている側だけ枠を出す。枠の有無で線がずれないよう、負けている側にも
+       同じ太さの透明な枠を置いて幅を揃える */
+    border: 2px solid transparent;
 }
+
+/* 勝っている側の目印。濃淡だけでは見分けづらいという指摘を受けて足した。
+   選手選択・アクション選択と同じピンクにして、「ここが効いている」の合図を
+   アプリ全体で揃える。
+   box-shadow や outline ではなく border を使うのは、html2canvas が前者2つを
+   描けず出力画像から枠が消えるため（SVGの線・conic-gradient と同じ罠）。
+   box-sizing: border-box が全体に効いているので、枠を足してもバーは太らない */
+.comparison-bar.is-leader {
+    border-color: var(--active-highlight);
+}
+
 
 /* 伸長は transform で行う。width を 0 から動かすと、DOM上の幅が一時的に
    実際の値と食い違い、テストと出力の両方が「伸びかけの値」を見ることになる。
@@ -249,6 +265,12 @@
     padding: var(--spacing-md);
     background: var(--bg-card);
     border-radius: var(--radius-md);
+    /* 幅を止めないと、行のグリッド（4.5em 1fr 5.5em 1fr 4.5em）の 1fr 2本が
+       余った幅を全部吸う。タブレットや横向きではバーだけが伸びて値とラベルが
+       両端に取り残され、対比が読み取りづらくなる */
+    max-width: 800px;
+    margin-inline: auto;
+    width: 100%;
 }
 
 .quarter-filter {

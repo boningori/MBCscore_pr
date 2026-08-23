@@ -25,6 +25,11 @@ function Bar({ side, ratio, color, isLeader }: {
     color: string;
     isLeader: boolean;
 }) {
+    // 長さ0のバーは描かない。枠を持つようになったため、幅0でも枠のぶん
+    // 4pxのピンクの点が残り、描画の壊れに見えてしまう（TO・ファウルは
+    // 少ない方が勝ちなので、0が勝っている側になることが実際にある）
+    if (ratio === 0) return null;
+
     return (
         <div
             className={`comparison-bar ${side} ${isLeader ? 'is-leader' : ''}`}

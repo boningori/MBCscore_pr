@@ -52,6 +52,33 @@ describe('ComparisonTable', () => {
         expect(row.querySelector('.comparison-bar.right')?.classList.contains('is-leader')).toBe(false);
     });
 
+    // 勝っている側にはピンクの枠が付く（濃淡だけでは見分けづらいため）。
+    // 枠を持つようになったので、長さ0のバーを残すと枠だけが4pxの点として
+    // 浮き、描画の壊れに見える
+    it('値が0の側はバーそのものを描かない', () => {
+        renderTable(totals({ steals: 6 }), totals({ steals: 0 }));
+
+        const row = rowEl('steals');
+        expect(row.querySelector('.comparison-bar.left')).toBeTruthy();
+        expect(row.querySelector('.comparison-bar.right')).toBeNull();
+    });
+
+    it('0が勝っている側でもバーを描かない（TOは少ない方が勝ち）', () => {
+        renderTable(totals({ turnovers: 0 }), totals({ turnovers: 5 }));
+
+        const row = rowEl('turnovers');
+        // 左が勝っているが長さは0なので、枠だけが残ってはいけない
+        expect(row.querySelector('.comparison-bar.left')).toBeNull();
+        expect(row.querySelector('.comparison-bar.right')).toBeTruthy();
+    });
+
+    it('左右とも0の行はどちらのバーも描かない', () => {
+        renderTable(totals(), totals());
+
+        const row = rowEl('points');
+        expect(row.querySelectorAll('.comparison-bar').length).toBe(0);
+    });
+
     it('TOは少ない側に is-leader が付く', () => {
         renderTable(totals({ turnovers: 9 }), totals({ turnovers: 20 }));
 
