@@ -19,6 +19,7 @@ import { filterAndSortRecords, type HistoryOrder } from './historyFilter';
 import { DeleteConfirmModal } from '../TeamShared';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { migrateTeam } from '../../utils/migrateTeam';
+import { TeamComparison } from '../TeamComparison';
 import './History.css';
 
 interface HistoryProps {
@@ -30,7 +31,7 @@ export function History({ onBack }: HistoryProps) {
     const [records, setRecords] = useState<GameRecord[]>(() => loadGameHistory());
     const [selectedRecord, setSelectedRecord] = useState<GameRecord | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'stats' | 'scoresheet'>('stats');
+    const [viewMode, setViewMode] = useState<'comparison' | 'stats' | 'scoresheet'>('comparison');
     const [query, setQuery] = useState('');
     const [order, setOrder] = useState<HistoryOrder>('newest');
 
@@ -47,7 +48,7 @@ export function History({ onBack }: HistoryProps) {
     // 同じ「戻る」で行き先が食い違っていた（App のスコアシート画面と同じ扱い）
     useBackHandler(selectedRecord !== null, () => {
         if (viewMode === 'scoresheet') {
-            setViewMode('stats');
+            setViewMode('comparison');
             return;
         }
         setSelectedRecord(null);
@@ -152,6 +153,12 @@ export function History({ onBack }: HistoryProps) {
 
                 <div className="history-tabs">
                     <button
+                        className={viewMode === 'comparison' ? 'active' : ''}
+                        onClick={() => setViewMode('comparison')}
+                    >
+                        チーム比較
+                    </button>
+                    <button
                         className={viewMode === 'stats' ? 'active' : ''}
                         onClick={() => setViewMode('stats')}
                     >
@@ -195,6 +202,26 @@ export function History({ onBack }: HistoryProps) {
                     </div>
                 )}
 
+                {viewMode === 'comparison' && (
+                    <div className="history-comparison-view">
+                        <TeamComparison
+                            teamA={migrateTeam(selectedRecord.teamA)}
+                            teamB={migrateTeam(selectedRecord.teamB)}
+                            scoreHistory={selectedRecord.scoreHistory}
+                            statHistory={selectedRecord.statHistory}
+                            foulHistory={selectedRecord.foulHistory}
+                            showThreePoint={selectedRecord.showThreePoint}
+                            caption={[
+                                formatRecordDate(selectedRecord.date),
+                                selectedRecord.gameName,
+                                selectedRecord.location,
+                            ].filter(Boolean).join('　')}
+                            exportable
+                            exportName={selectedRecord.gameName}
+                        />
+                    </div>
+                )}
+
                 {viewMode === 'stats' && (
                     <div className="history-stats-view">
                         <StatsPanel
@@ -226,7 +253,7 @@ export function History({ onBack }: HistoryProps) {
                         game={recordToGame(selectedRecord)}
                         gameName={selectedRecord.gameName}
                         date={recordInputDate(selectedRecord.date)}
-                        onClose={() => setViewMode('stats')}
+                        onClose={() => setViewMode('comparison')}
                         onUpdateGameInfo={(partialInfo) => {
                             const currentGameInfo = selectedRecord.gameInfo || createInitialGameInfo();
                             const updatedGameInfo = { ...currentGameInfo, ...partialInfo };
