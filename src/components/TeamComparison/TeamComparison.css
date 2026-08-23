@@ -163,3 +163,68 @@
     color: var(--text-primary);
     border-left: 1px solid var(--border);
 }
+
+.shooting-donuts {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+    padding: var(--spacing-md) 0;
+}
+
+.shooting-donut {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.donut-ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.donut-ring.outer { width: 108px; height: 108px; }
+.donut-ring.inner { width: 100%; height: 100%; }
+
+.donut-ring.is-empty { background: rgba(148, 163, 184, 0.2); }
+
+/* 外周と内周の間の隙間。背景色で抜いて2本のリングに見せる */
+.donut-gap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--bg-card);
+}
+
+.donut-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--bg-card);
+}
+
+.donut-percent {
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.donut-unavailable {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.donut-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
