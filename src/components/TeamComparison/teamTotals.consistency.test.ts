@@ -24,11 +24,36 @@ function playedGame(): Game {
         { type: 'ADD_STAT', payload: { teamId: 'teamA', playerId: 'a2', statType: 'DREB' } },
         { type: 'ADD_STAT', payload: { teamId: 'teamA', playerId: 'a2', statType: 'AST' } },
         { type: 'ADD_STAT', payload: { teamId: 'teamB', playerId: 'b1', statType: 'TO:PM' } },
+        // BLK の ADD_STAT が一度も流れていなかった穴を塞ぐ
+        { type: 'ADD_STAT', payload: { teamId: 'teamB', playerId: 'b1', statType: 'BLK' } },
+        // threeAttempt は3P成功の加算だけでは1になっていて、3PA（外した3P）の
+        // 分岐そのものが未検証だった。別に流して両方の経路を通す
+        { type: 'ADD_STAT', payload: { teamId: 'teamA', playerId: 'a2', statType: '3PA' } },
+        // 選手のファウル（Q1）。fouls は全体＝選手のfouls配列長の合計、
+        // クォーター別＝foulHistoryの再集計と、2経路の実装が本質的に違うので
+        // ここが未検証だとこのテストの主目的の一つが機能しない
+        { type: 'ADD_FOUL', payload: { teamId: 'teamA', playerId: 'a1', foulType: 'P' } },
         // 実際のディスパッチ表に NEXT_QUARTER は無く、クォーターを進めるのは END_QUARTER
         { type: 'END_QUARTER' },
         { type: 'ADD_SCORE', payload: { teamId: 'teamA', playerId: 'a1', scoreType: 'FT' } },
         { type: 'ADD_STAT', payload: { teamId: 'teamA', playerId: 'a1', statType: 'FTA' } },
         { type: 'ADD_STAT', payload: { teamId: 'teamB', playerId: 'b1', statType: 'STL' } },
+        // 選手のファウル（Q2、別クォーター・別選手）
+        { type: 'ADD_FOUL', payload: { teamId: 'teamA', playerId: 'a2', foulType: 'P' } },
+        // コーチ・ベンチのファウル。foulHistory には載るがどの選手の fouls 配列にも
+        // 載らない。両経路が一致することは、クォーター別集計が isCoachOrBench を
+        // 正しく除外している証明になる。ADD_FOUL はコーチ・ベンチの playerId を
+        // 弾いて何もしない（foulHandlers.ts の isCoachOrBenchId）ので、実際にUIが
+        // 使う ADD_FOUL_WITH_FREE_THROWS で記録する。freeThrows: 0 にして
+        // シューター側のスタッツ・得点履歴は動かさない
+        {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: null, foulType: 'T', shotSituation: 'none',
+                freeThrows: 0, freeThrowResults: [],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+            },
+        },
     ];
 
     // ディスパッチ表に無いアクション名で静かに素通りすると、比べる対象が
