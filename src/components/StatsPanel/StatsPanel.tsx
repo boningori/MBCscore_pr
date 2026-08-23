@@ -1,5 +1,4 @@
 import type { Player, PlayerStats, StatEntry } from '../../types/game';
-import { createInitialStats } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { isDisqualified } from '../../utils/disqualification';
 import { sumUnknownStats } from '../../utils/unknownStats';
