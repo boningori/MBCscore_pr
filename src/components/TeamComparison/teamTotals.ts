@@ -161,7 +161,9 @@ function totalsFromHistory(
     //   紐付きFTを2Pミスへ変換   → 全体=1 なのにクォーター別の和は2（過大）
     //
     // 代わりに FoulEntry.freeThrowResults をそのまま数える。この配列は
-    // ADD_FOUL_WITH_FREE_THROWS が本数ぶん一度に埋めて（'made'/'missed'）、
+    // ADD_FOUL_WITH_FREE_THROWS と RESOLVE_PENDING_ACTION_WITH_FREE_THROWS
+    // （保留アクションを解決してファウルにする経路。同じ形で FoulEntry を作る）
+    // が本数ぶん一度に埋めて（'made'/'missed'）、
     // 以後 REMOVE_SCORE・EDIT_SCORE・CONVERT_SCORE_TO_MISS のどれからも
     // 書き換わらない（sourceFoulId で紐付いた ScoreEntry/StatEntry 側だけが
     // 動く。freeThrowResults を書き換えるのは EDIT_FOUL_FREE_THROWS だけで、
