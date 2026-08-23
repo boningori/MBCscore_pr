@@ -130,6 +130,61 @@ export function repaintPieCharts(root: HTMLElement): void {
 }
 
 /**
+ * 複製DOMにページのCSSを埋め込み、外部参照の<link>を取り除く。
+ *
+ * html2canvas は複製DOMを iframe に document.write して作る。この iframe は
+ * Service Worker の制御下に入らない（実測: 複製側の
+ * navigator.serviceWorker.controller が null）。そのため複製に付いてくる
+ * <link rel="stylesheet"> はプリキャッシュを通らず必ずネットワークへ出る。
+ * 体育館＝オフラインでは取得に失敗し、スタイルの当たらない複製がそのまま
+ * 描かれていた。実測では A4レイアウト(794px幅)ではなく素のHTMLが
+ * ビューポート幅(1264px)で縦に伸び、PDFが崩れたまま5ページに分割されていた。
+ * しかもトーストは「出力しました」と成功を報告する（無言の失敗）。
+ *
+ * CSSは同一オリジンなので cssRules から読み出せる。複製に直接埋め込めば
+ * 出力が回線から切り離され、オンラインでも毎回CSSを取り直す無駄が消える。
+ *
+ * onclone は iframe の load 後に呼ばれるので、取得の試行そのものは止まらない
+ * （描画には影響しない。止めるには複製前に生きたDOMを触ることになり、
+ * 画面が一瞬素の状態になるため採らない）。
+ */
+export function inlinePageStyles(
+    target: Document,
+    sheets: Iterable<CSSStyleSheet> = document.styleSheets,
+): void {
+    const css = [...sheets]
+        .map(sheet => {
+            try {
+                return [...sheet.cssRules].map(rule => rule.cssText).join('\n');
+            } catch {
+                // 別オリジンのスタイルシートは読めない。同梱CSSは同一オリジンなので
+                // ここに落ちるのは出力に関係しないものだけ。残りを埋め込んで進む
+                return '';
+            }
+        })
+        .filter(Boolean)
+        .join('\n');
+
+    // modulepreload も外す。描画には要らないのに複製から取りにいく
+    target.querySelectorAll('link[rel="stylesheet"], link[rel="modulepreload"]')
+        .forEach(link => link.remove());
+
+    const style = target.createElement('style');
+    style.textContent = css;
+    target.head.appendChild(style);
+}
+
+/**
+ * html2canvas の onclone。複製DOMを出力できる状態に整える。
+ *
+ * 複製DOMなので、ここで何をしても画面の表示には影響しない。
+ */
+export function prepareExportClone(clonedDocument: Document, clonedElement: HTMLElement): void {
+    inlinePageStyles(clonedDocument);
+    repaintPieCharts(clonedElement);
+}
+
+/**
  * 横スクロール位置を控えて、あとで戻す関数を返す。
  *
  * 出力は生きたDOMに 'exporting' を付けて寸法を変える。成長グラフの軸は
@@ -213,8 +268,10 @@ export async function exportElement(
             backgroundColor: '#ffffff',
             windowWidth,
             ignoreElements: (el) => el.classList?.contains('rs-unused-slash'), // SVG斜線は除外
-            // 複製DOMなので、画面の表示には影響しない
-            onclone: (_doc, clonedElement) => repaintPieCharts(clonedElement),
+            // 複製DOMなので、画面の表示には影響しない。
+            // CSSの埋め込みもここで行う（複製のiframeはSWの制御外で、
+            // <link>のままだとオフラインでスタイルが落ちる。inlinePageStyles）
+            onclone: prepareExportClone,
         });
     } finally {
         element.classList.remove('exporting');
