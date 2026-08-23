@@ -29,10 +29,20 @@ describe('ScoreHeader', () => {
     it('チーム名と合計スコアを出す', () => {
         renderHeader([score('teamA', 1, 2), score('teamB', 1, 3)]);
 
-        // チーム名はスコアライン（凡例）とクォーター表の行見出しの2箇所に
-        // 意図的に重複して出るため、getByText ではなく getAllByText で数える
-        expect(screen.getAllByText('福岡第一').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('中部大第一').length).toBeGreaterThan(0);
+        // スコアラインと表の行見出しの両方にチーム名が出ていることを個別に検証。
+        // within を使うことで、表の行見出しが誤って消えても検出できる。
+        const scoreline = document.querySelector('.comparison-scoreline') as HTMLElement;
+        const table = document.querySelector('.quarter-score-table') as HTMLElement;
+
+        // 左チーム名がスコアラインと表の両方に
+        expect(within(scoreline).getByText('福岡第一')).toBeTruthy();
+        expect(within(table).getByText('福岡第一')).toBeTruthy();
+
+        // 右チーム名もスコアラインと表の両方に
+        expect(within(scoreline).getByText('中部大第一')).toBeTruthy();
+        expect(within(table).getByText('中部大第一')).toBeTruthy();
+
+        // 合計スコアの検証（そのまま残す）
         const header = document.querySelector('.comparison-score-header') as HTMLElement;
         expect(header.textContent).toContain('2');
         expect(header.textContent).toContain('3');
