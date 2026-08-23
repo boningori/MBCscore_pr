@@ -26,16 +26,9 @@ export interface EvolutionData {
 export function buildEvolutionData(scoreHistory: ScoreEntry[], filter: QuarterFilter): EvolutionData {
     const inRange = filter === 'all' ? scoreHistory : scoreHistory.filter(s => s.quarter === filter);
 
-    // 区間の起点。絞り込み時は、その区間の1つ前のエントリの累計から始める
-    const startIndex = filter === 'all' ? -1 : scoreHistory.indexOf(inRange[0]) - 1;
-    const before = startIndex >= 0 ? scoreHistory[startIndex] : undefined;
-    const origin: EvolutionPoint = {
-        index: 0,
-        teamA: before?.runningScoreA ?? 0,
-        teamB: before?.runningScoreB ?? 0,
-    };
-
-    // 絞ったクォーターに記録が無いとき、起点はその時点までの最後の累計になる
+    // 絞ったクォーターに記録が無いとき、起点はその時点までの最後の累計になる。
+    // 空チェックを先に出す（このあとの inRange[0] は空だと undefined になり、
+    // indexOf(undefined) が -1 を返すだけの空振りになるため）
     if (inRange.length === 0 && filter !== 'all') {
         const last = scoreHistory.filter(s => s.quarter < filter).at(-1);
         return {
@@ -44,6 +37,15 @@ export function buildEvolutionData(scoreHistory: ScoreEntry[], filter: QuarterFi
             maxScore: Math.max(1, last?.runningScoreA ?? 0, last?.runningScoreB ?? 0),
         };
     }
+
+    // 区間の起点。絞り込み時は、その区間の1つ前のエントリの累計から始める
+    const startIndex = filter === 'all' ? -1 : scoreHistory.indexOf(inRange[0]) - 1;
+    const before = startIndex >= 0 ? scoreHistory[startIndex] : undefined;
+    const origin: EvolutionPoint = {
+        index: 0,
+        teamA: before?.runningScoreA ?? 0,
+        teamB: before?.runningScoreB ?? 0,
+    };
 
     const points: EvolutionPoint[] = [origin];
     const boundaries: { index: number; quarter: number }[] = [];
