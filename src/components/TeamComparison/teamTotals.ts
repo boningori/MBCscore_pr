@@ -145,54 +145,48 @@ function totalsFromHistory(
     //
     // 外したFTは StatEntry を1件も作らない。成功分だけが ScoreEntry になり、
     // 外した本数はシューターの freeThrowAttempt に本数として乗るだけで履歴に
-    // 現れない（foulHandlers.ts の canEditFreeThrows のdocコメント）。上の2つの
-    // ループだけでは、このクォーターの試投数が本数に届かない
-    // （実測: freeThrows:2 で1本外すと、全体=2 なのにクォーター別の和は1）。
+    // 現れない（foulHandlers.ts の updateShooterTeam / canEditFreeThrows の
+    // docコメント）。上の2つのループだけでは、このクォーターの試投数が本数に
+    // 届かない（実測: freeThrows:2 で1本外すと、全体=2 なのにクォーター別の
+    // 和は1）。
+    //
+    // 「本数 − 紐付いた成功／変換件数」で割り出す方式（sourceFoulId で数える）は
+    // 誤り。REMOVE_SCORE・EDIT_SCORE・CONVERT_SCORE_TO_MISS はどれも紐付いた
+    // ScoreEntry/StatEntry そのものを消したり別種別へ変えたりするだけで、
+    // 選手の freeThrowAttempt は1減らす（handleRemoveScore 等）。つまり
+    // 「本数」と「紐付いた件数」は独立に動く。実測（実際の gameReducer で
+    // REMOVE_SCORE/EDIT_SCORE/CONVERT_SCORE_TO_MISS を1件流した場合）:
+    //   紐付きFTを削除          → 全体=1 なのにクォーター別の和は2（過大）
+    //   紐付きFTを2Pへ編集       → 全体=1 なのにクォーター別の和は2（過大）
+    //   紐付きFTを2Pミスへ変換   → 全体=1 なのにクォーター別の和は2（過大）
+    //
+    // 代わりに FoulEntry.freeThrowResults をそのまま数える。この配列は
+    // ADD_FOUL_WITH_FREE_THROWS が本数ぶん一度に埋めて（'made'/'missed'）、
+    // 以後 REMOVE_SCORE・EDIT_SCORE・CONVERT_SCORE_TO_MISS のどれからも
+    // 書き換わらない（sourceFoulId で紐付いた ScoreEntry/StatEntry 側だけが
+    // 動く。freeThrowResults を書き換えるのは EDIT_FOUL_FREE_THROWS だけで、
+    // それはファウル自体の成否を直す別経路）。つまりここが常に「シューターの
+    // freeThrowAttempt に実際に乗っている本数の内訳」の正。
+    //
+    // 二重計上にならない理由: 上のFTAループが拾うのは「成功 → ミスへ変換」で
+    // 生まれた FTA の StatEntry（CONVERT_SCORE_TO_MISS）だけで、これは
+    // freeThrowResults の 'missed' とは別物（変換後も freeThrowResults は
+    // 元のまま書き換わらない）。実例: freeThrows:2, results ['made','made'] で
+    // 1本を変換 → ftMade 1（残った成功のScoreEntry）＋ FTAループ 1（変換で
+    // 生まれたStatEntry）＋ ここの missed 0（freeThrowResults は ['made','made']
+    // のまま）＝ 2 で本数と一致する。
     //
     // FTを打ったのはシューター側のチームなので shooterTeamId で絞る。
     // teamId（ファウルした側）は下の fouls 集計にしか使えない。
     //
-    // freeThrowResults の 'missed' はここでは見ない。CONVERT_SCORE_TO_MISS で
-    // 成功FTを「やっぱり外し」に直しても freeThrowResults は書き換わらず
-    // （'made' のまま）、ScoreEntry が1件減って代わりに FTA の StatEntry が
-    // 増えるだけなので、'missed' の数を足すと二重に減算してしまう。
-    // 代わりに「本数 − このファウルに紐付いた件数（成功のScoreEntry＋
-    // ミスへ変換されたFTAのStatEntry。どちらも sourceFoulId で結ばれる）」で
-    // 外した分を割り出す。バスケットカウントの本数（basketEntry）は
-    // scoreType '2P'/'3P' で sourceFoulId を持つが、ここでは scoreType 'FT' /
-    // statType 'FTA' だけを数えるので混ざらない。
-    //
-    // sourceFoulId は旧データに無い（ScoreEntry/StatEntry のdocコメント）。
-    // このファウルへの紐付きが1件も無いとき、それが「新データだが全部外した」
-    // のか「旧データで紐付け自体が無い」のか、この1件だけでは区別できない。
-    // その試合のどこかに sourceFoulId 付きの記録が1件でもあれば新データと
-    // 判断して本数どおり外れたとみなし、1件も無ければ旧データとみなして
-    // 補正しない（過大計上より過少計上のほうが実害が小さいため、あえて足さない）
-    const hasFoulLinkedEntries =
-        scoreHistory.some(s => s.sourceFoulId !== undefined) ||
-        statHistory.some(s => s.sourceFoulId !== undefined);
+    // shooterPlayerId が無い記録（本数だけ乗ってシューターに紐付かない）は
+    // reducer 側も選手スタッツを動かさない（updateShooterTeam の
+    // `if (!isTarget || !shooterPlayerId) return team;`）ので、ここでも数えない。
     for (const entry of foulHistory) {
         if (entry.shooterTeamId !== teamId || entry.quarter !== quarter) continue;
-        const freeThrows = entry.freeThrows ?? 0;
-        if (freeThrows <= 0) continue;
-
-        const linkedMade = scoreHistory.filter(
-            s => s.sourceFoulId === entry.id && s.scoreType === 'FT'
-        ).length;
-        const linkedMissConverted = statHistory.filter(
-            s => s.sourceFoulId === entry.id && s.statType === 'FTA'
-        ).length;
-        const accounted = linkedMade + linkedMissConverted;
-
-        let missed: number;
-        if (accounted > 0) {
-            missed = freeThrows - accounted;
-        } else if (hasFoulLinkedEntries) {
-            missed = freeThrows;
-        } else {
-            missed = 0;
-        }
-        totals.ftAttempt += Math.max(0, missed);
+        if (!entry.shooterPlayerId) continue;
+        const missed = (entry.freeThrowResults ?? []).filter(r => r === 'missed').length;
+        totals.ftAttempt += missed;
     }
 
     for (const entry of foulHistory) {

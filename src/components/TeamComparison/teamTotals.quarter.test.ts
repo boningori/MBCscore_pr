@@ -118,24 +118,29 @@ describe('computeTeamTotals（ファウルで与えたFTのクォーター別集
         expect(totals.ftAttempt).toBe(2);
     });
 
-    it('2本とも失敗のFTは、試合の他所に紐付き証拠があれば試投数へ計上する（症状の再現ケース）', () => {
-        // 別のファウル(other-foul)が生んだ成功FT。同じ試合に sourceFoulId 付きの
-        // 記録があることを示すためだけの存在で、Q2に置いて集計対象から外す
-        const otherMade = score('FT', 2, { sourceFoulId: 'other-foul' });
+    it('2本とも失敗のFTは、紐付くScoreEntryが1件も無くても試投数へ計上する（症状の再現ケース）', () => {
         const f = foulWithFT({ id: 'f2', freeThrows: 2, freeThrowResults: ['missed', 'missed'] }, 1);
-        const totals = computeTeamTotals(input({ scoreHistory: [otherMade], foulHistory: [f] }), 1);
+        const totals = computeTeamTotals(input({ foulHistory: [f] }), 1);
         expect(totals.ftMade).toBe(0);
         expect(totals.ftAttempt).toBe(2);
     });
 
-    it('紐付き証拠が試合のどこにも無い（旧データ）ときは補正しない', () => {
+    it('sourceFoulId付きの記録が試合のどこにも無くても、freeThrowResultsだけで試投数を数える（旧データ判定は廃止）', () => {
+        // freeThrows・freeThrowResults は sourceFoulId より前から存在する
+        // フィールドなので「新旧データの見分け」自体が不要（型定義のコメント）。
+        // sourceFoulId 付きの成功ScoreEntryを1件も作らず（このシューターがまだ
+        // 一度も打っていない想定）に freeThrowResults だけで判定できることを見る
         const f = foulWithFT({ id: 'f3', freeThrows: 2, freeThrowResults: ['missed', 'missed'] });
         const totals = computeTeamTotals(input({ foulHistory: [f] }), 1);
-        expect(totals.ftAttempt).toBe(0);
+        expect(totals.ftAttempt).toBe(2);
     });
 
-    it('freeThrowResultsのmissedは見ない。CONVERT_SCORE_TO_MISSで外しへ直した分はFTAのStatEntryで拾う', () => {
-        // freeThrowResults は変換後も ['made','made'] のまま（handleConvertScoreToMiss は書き換えない）
+    it('CONVERT_SCORE_TO_MISSで外しへ直しても、freeThrowResultsは書き換わらないので二重計上しない', () => {
+        // freeThrowResults は変換後も ['made','made'] のまま
+        // （handleConvertScoreToMiss はFoulEntryへ触らない。sourceFoulIdで紐付いた
+        // ScoreEntry/StatEntry側だけが動く）。ここの missed カウントは0のまま、
+        // 変換で生まれた FTA の StatEntry は下のFTAループが別枠で拾うので、
+        // 二重には数えない
         const f = foulWithFT({ id: 'f4', freeThrows: 2, freeThrowResults: ['made', 'made'] });
         const made = score('FT', 1, { sourceFoulId: 'f4' });
         const convertedMiss: StatEntry = {
@@ -163,6 +168,15 @@ describe('computeTeamTotals（ファウルで与えたFTのクォーター別集
         const f = foulWithFT({ id: 'f6', freeThrows: 2, freeThrowResults: ['missed', 'missed'], shooterTeamId: 'teamB' });
         const otherMade = score('FT', 1, { sourceFoulId: 'other-foul', teamId: 'teamB' });
         const totals = computeTeamTotals(input({ scoreHistory: [otherMade], foulHistory: [f] }), 1);
+        expect(totals.ftAttempt).toBe(0);
+    });
+
+    it('shooterPlayerIdが無い記録（本数だけ乗って選手に紐付かない）は数えない', () => {
+        // reducer 側も選手スタッツを動かさない（foulHandlers.ts の updateShooterTeam の
+        // `if (!isTarget || !shooterPlayerId) return team;`）ので、ここで足すと
+        // 全体（選手スタッツ合計）と食い違う
+        const f = foulWithFT({ id: 'f7', freeThrows: 2, freeThrowResults: ['made', 'missed'], shooterPlayerId: '' });
+        const totals = computeTeamTotals(input({ foulHistory: [f] }), 1);
         expect(totals.ftAttempt).toBe(0);
     });
 });

@@ -137,13 +137,52 @@ function sumOfQuarters(input: TeamTotalsInput): TeamTotals {
     return acc;
 }
 
+/** 両チームぶん、クォーター別の和と全体が一致することを確かめる */
+function expectConsistent(game: Game): void {
+    for (const teamId of ['teamA', 'teamB'] as const) {
+        const input = inputFor(game, teamId);
+        expect(sumOfQuarters(input)).toEqual(computeTeamTotals(input, 'all'));
+    }
+}
+
 describe('集計2経路の整合性', () => {
     it('履歴から計算したクォーターの和が、選手スタッツの合計と一致する', () => {
-        const game = playedGame();
+        expectConsistent(playedGame());
+    });
 
-        for (const teamId of ['teamA', 'teamB'] as const) {
-            const input = inputFor(game, teamId);
-            expect(sumOfQuarters(input)).toEqual(computeTeamTotals(input, 'all'));
-        }
+    // ファウルで与えたFTの「外した分」の補正は、紐付いたScoreEntry/StatEntryの
+    // 件数から本数を逆算する実装だと、そのScoreEntry自体を後から削除・編集・
+    // 変換したときに崩れる（本数はシューターの freeThrowAttempt にそのまま残る一方、
+    // 紐付いた件数だけが減るため）。playedGame() の「1本成功・1本失敗」のファウル
+    // （freeThrows:2, ['made','missed']、shooterはteamAのa1）が生んだ成功FTの
+    // ScoreEntryを対象に、履歴編集の3経路それぞれで崩れないことを固定する
+    it('紐付いた成功FTをREMOVE_SCOREで削除しても、クォーター別の和と全体は一致する', () => {
+        let game = playedGame();
+        const linkedFt = game.scoreHistory.find(s => s.scoreType === 'FT' && s.sourceFoulId !== undefined && s.teamId === 'teamA');
+        expect(linkedFt).toBeDefined();
+        game = gameReducer(game, { type: 'REMOVE_SCORE', payload: { entryId: linkedFt!.id } });
+        expectConsistent(game);
+    });
+
+    it('紐付いた成功FTをEDIT_SCOREで2Pに変更しても、クォーター別の和と全体は一致する', () => {
+        let game = playedGame();
+        const linkedFt = game.scoreHistory.find(s => s.scoreType === 'FT' && s.sourceFoulId !== undefined && s.teamId === 'teamA');
+        expect(linkedFt).toBeDefined();
+        game = gameReducer(game, {
+            type: 'EDIT_SCORE',
+            payload: { entryId: linkedFt!.id, newPlayerId: linkedFt!.playerId, newScoreType: '2P' },
+        });
+        expectConsistent(game);
+    });
+
+    it('紐付いた成功FTをCONVERT_SCORE_TO_MISSで2Pミスに変換しても、クォーター別の和と全体は一致する', () => {
+        let game = playedGame();
+        const linkedFt = game.scoreHistory.find(s => s.scoreType === 'FT' && s.sourceFoulId !== undefined && s.teamId === 'teamA');
+        expect(linkedFt).toBeDefined();
+        game = gameReducer(game, {
+            type: 'CONVERT_SCORE_TO_MISS',
+            payload: { entryId: linkedFt!.id, newMissType: '2PA' },
+        });
+        expectConsistent(game);
     });
 });
