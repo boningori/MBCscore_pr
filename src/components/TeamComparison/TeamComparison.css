@@ -275,3 +275,15 @@
     border-color: var(--primary-light);
     color: var(--text-primary);
 }
+
+.comparison-export {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-md);
+}
+
+/* 出力ボタン自体は画像に写さない */
+.exporting .no-export {
+    display: none !important;
+}

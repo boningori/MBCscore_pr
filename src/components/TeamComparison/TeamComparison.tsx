@@ -19,6 +19,8 @@ import { ScoreHeader } from './ScoreHeader';
 import { ComparisonTable } from './ComparisonTable';
 import { ShootingDonuts } from './ShootingDonuts';
 import { ScoreEvolutionChart } from './ScoreEvolutionChart';
+import { useExportAction } from '../../hooks/useExportAction';
+import { exportElement } from '../../utils/pdfExport';
 import './TeamComparison.css';
 
 export interface TeamComparisonProps {
@@ -36,11 +38,24 @@ export interface TeamComparisonProps {
 
 export function TeamComparison({
     teamA, teamB, scoreHistory, statHistory, foulHistory,
-    showThreePoint, caption = '',
+    showThreePoint, caption = '', exportable = false, exportName = '',
 }: TeamComparisonProps) {
     const [filter, setFilter] = useState<QuarterFilter>('all');
     const [animate, setAnimate] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
+    const { isExporting, runExport } = useExportAction();
+
+    // 拡張子は exportElement 側が format に応じて付ける（他の出力箇所と同じ作法）。
+    // ここで付けると二重拡張子になる
+    const handleExport = (format: 'jpeg' | 'pdf') => {
+        const root = rootRef.current;
+        if (!root) return;
+        const filename = exportName ? `${exportName}_チーム比較` : 'チーム比較';
+        void runExport(
+            () => exportElement(root, { filename, format }),
+            format === 'jpeg' ? 'JPEG' : 'PDF',
+        );
+    };
 
     // 画面に入ったら伸ばす。IntersectionObserver が無い環境（jsdom）では
     // すぐ最終幅にする。動かないだけで、数字は同じものが出る
@@ -122,6 +137,17 @@ export function TeamComparison({
             />
 
             <ScoreEvolutionChart data={evolution} leftColor={leftColor} rightColor={rightColor} />
+
+            {exportable && (
+                <div className="comparison-export no-export">
+                    <button type="button" className="btn btn-secondary btn-small" disabled={isExporting} onClick={() => handleExport('jpeg')}>
+                        🖼 JPEG
+                    </button>
+                    <button type="button" className="btn btn-secondary btn-small" disabled={isExporting} onClick={() => handleExport('pdf')}>
+                        📄 PDF
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
