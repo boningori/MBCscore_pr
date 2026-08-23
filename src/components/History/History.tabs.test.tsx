@@ -95,8 +95,27 @@ describe('履歴詳細のタブ', () => {
         openDetail();
 
         const caption = document.querySelector('.comparison-caption') as HTMLElement;
+        expect(caption.textContent).toContain('2026/06/05');
         expect(caption.textContent).toContain('第1節');
         expect(caption.textContent).toContain('市民体育館');
+        // 日付は1回だけ（自動生成の「日付 vs 対戦相手」ではない試合名なので二重化しない）
+        expect(caption.textContent).toBe('2026/06/05　第1節　市民体育館');
+    });
+
+    it('自動生成された試合名（日付 vs 対戦相手）では見出しの日付が重ならない', () => {
+        const autoNamedRecord: GameRecord = {
+            ...gameRecord,
+            id: 'g2',
+            gameName: '2026-06-05 vs ブルーミニバス',
+        };
+        localStorage.clear();
+        localStorage.setItem('minibasket-game-history', JSON.stringify([autoNamedRecord]));
+
+        render(<History onBack={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: /2026-06-05 vs ブルーミニバス/ }));
+
+        const caption = document.querySelector('.comparison-caption') as HTMLElement;
+        expect(caption.textContent).toBe('2026-06-05 vs ブルーミニバス　市民体育館');
     });
 
     it('3P設定OFFの記録では未使用と示す', () => {

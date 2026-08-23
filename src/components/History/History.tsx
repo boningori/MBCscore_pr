@@ -20,6 +20,7 @@ import { DeleteConfirmModal } from '../TeamShared';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { migrateTeam } from '../../utils/migrateTeam';
 import { TeamComparison } from '../TeamComparison';
+import { buildComparisonCaption } from '../TeamComparison/comparisonCaption';
 import './History.css';
 
 interface HistoryProps {
@@ -212,11 +213,13 @@ export function History({ onBack }: HistoryProps) {
                             statHistory={selectedRecord.statHistory || []}
                             foulHistory={selectedRecord.foulHistory || []}
                             showThreePoint={selectedRecord.showThreePoint}
-                            caption={[
-                                formatRecordDate(selectedRecord.date),
-                                selectedRecord.gameName,
-                                selectedRecord.location,
-                            ].filter(Boolean).join('　')}
+                            // 試合名が「日付 vs 対戦相手」の自動生成（GameSetup参照）で
+                            // 記録日と同じ日付から始まる場合は、日付を重ねて出さない
+                            caption={buildComparisonCaption({
+                                date: selectedRecord.date,
+                                gameName: selectedRecord.gameName,
+                                location: selectedRecord.location,
+                            })}
                             exportable
                             exportName={selectedRecord.gameName}
                         />
