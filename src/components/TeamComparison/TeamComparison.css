@@ -187,7 +187,7 @@
 }
 
 .donut-ring.outer { width: 108px; height: 108px; }
-.donut-ring.inner { width: 100%; height: 100%; }
+.donut-ring.inner { width: 76px; height: 76px; }
 
 .donut-ring.is-empty { background: rgba(148, 163, 184, 0.2); }
 
