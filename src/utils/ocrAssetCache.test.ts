@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OCR_ASSET_URLS, warmOcrAssetCache, startOcrAssetWarmup } from './ocrAssetCache';
+import { TESSERACT_PATHS } from './tesseractAssets';
 
 // fetch は SW（CacheFirst）に拾われて 'mbc-ocr-assets' に入る前提。
 // ここでは「どの条件のときに何本取りにいくか」だけを検証する。
@@ -56,9 +57,9 @@ describe('OCRアセットのURL', () => {
         // tesseract.js は `${langPath}/${lang}.traineddata${gzip ? '.gz' : ''}` を引く
         // （node_modules/tesseract.js/src/worker-script/index.js）。
         // ここがずれると事前取得しても本番のOCRは別URLを叩いてキャッシュを外す
-        expect(
-            OCR_ASSET_URLS.some(url => /\/tesseract\/tessdata\/jpn\.traineddata\.gz$/.test(url)),
-        ).toBe(true);
+        // 置き場所には版が入る（tesseractAssets.ts）ので、langPath から組み立てて比べる
+        expect(OCR_ASSET_URLS).toContain(`${TESSERACT_PATHS.langPath}/jpn.traineddata.gz`);
+        expect(TESSERACT_PATHS.langPath).toMatch(/\/tesseract\/[^/]+\/tessdata$/);
     });
 
     it('すべて tesseract/ 配下（SWのruntimeCachingの対象）に載る', () => {

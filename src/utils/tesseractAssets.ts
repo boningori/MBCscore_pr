@@ -16,8 +16,25 @@
 // 参照先と実体のずれは tesseractAssets.test.ts が検知する。
 export const TESSERACT_CORE_FILE = 'tesseract-core-simd-lstm.wasm.js';
 
+/**
+ * 同梱アセットの世代。置き場所（＝URL）に含める。
+ *
+ * これらはSWのランタイムキャッシュに CacheFirst で入る（vite.config.ts の
+ * mbc-ocr-assets）。CacheFirstは持っていればネットワークに触らないので、
+ * URLが変わらないかぎり一度掴んだ端末は永久に同じファイルを使い続ける。
+ * worker.min.js のような固定名のままだと、tesseract.js を上げても
+ * アプリのJSだけが新しくなり、古いworkerと組み合わさってOCRが静かに壊れる。
+ * URLに版を入れておけば新しいアセットとして取り直され、古い世代は
+ * maxEntries のLRUで落ちる。
+ *
+ * 値は package.json の tesseract.js の版と揃える。ここを上げたら
+ * public/tesseract/<版>/ に node_modules から写し直すこと
+ * （写し忘れは tesseractAssets.test.ts が落とす）。
+ */
+export const TESSERACT_ASSET_VERSION = '7.0.0';
+
 /** Tesseractアセットのベースパス（ViteのbaseすなわちGitHub Pagesのサブパスに追従） */
-export const TESSERACT_BASE = `${import.meta.env.BASE_URL}tesseract`;
+export const TESSERACT_BASE = `${import.meta.env.BASE_URL}tesseract/${TESSERACT_ASSET_VERSION}`;
 
 export const TESSERACT_PATHS = {
     workerPath: `${TESSERACT_BASE}/worker.min.js`,

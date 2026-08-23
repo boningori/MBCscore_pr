@@ -174,13 +174,19 @@ export default defineConfig({
             // 一度取れば以後はキャッシュから返るのでオフラインでもOCRが動く。
             // CacheFirstなので、すでに持っていればネットワークに触らない＝
             // ocrAssetCache.ts の事前取得を何度呼んでも無駄打ちにならない。
+            //
+            // その裏返しで、URLが変わらないと更新が永久に届かない。worker.min.js の
+            // ように固定名のままだと、tesseract.js を上げてもアプリのJSだけ新しくなり、
+            // 古いworkerと組み合わさってOCRが静かに壊れる。そのため置き場所に版を
+            // 入れてある（public/tesseract/<版>/ … src/utils/tesseractAssets.ts）。
             urlPattern: /\/tesseract\//,
             handler: 'CacheFirst',
             options: {
               cacheName: 'mbc-ocr-assets',
               expiration: {
-                // 現行3ファイル。tesseract.jsの更新でファイル名が変わっても
-                // 旧世代がひとつ残る余地だけ持たせ、際限なく積まないようにする
+                // 1世代3ファイル。版を上げた直後は新旧が並ぶので、旧世代が
+                // ひとつ残る余地だけ持たせ、際限なく積まないようにする
+                // （古い方はLRUで落ちる）
                 maxEntries: 6
               },
               cacheableResponse: {
