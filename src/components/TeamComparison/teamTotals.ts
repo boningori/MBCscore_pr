@@ -55,7 +55,7 @@ function emptyTotals(): TeamTotals {
 }
 
 export function computeTeamTotals(input: TeamTotalsInput, filter: QuarterFilter): TeamTotals {
-    return filter === 'all' ? totalsFromPlayers(input) : emptyTotals();
+    return filter === 'all' ? totalsFromPlayers(input) : totalsFromHistory(input, filter);
 }
 
 function totalsFromPlayers({ team, teamId, statHistory }: TeamTotalsInput): TeamTotals {
@@ -95,6 +95,56 @@ function totalsFromPlayers({ team, teamId, statHistory }: TeamTotalsInput): Team
         totals.blocks += unknown.blocks;
         totals.turnovers += unknown.turnovers;
         // 不明では記録できないので、ファウルは足すものが無い
+    }
+
+    return totals;
+}
+
+function totalsFromHistory(
+    { teamId, scoreHistory, statHistory, foulHistory }: TeamTotalsInput,
+    quarter: number,
+): TeamTotals {
+    const totals = emptyTotals();
+
+    for (const entry of scoreHistory) {
+        if (entry.teamId !== teamId || entry.quarter !== quarter) continue;
+        totals.points += entry.points;
+        // OGは得点だけ。シュートを打った選手の成績にはしない（選手スタッツ側と同じ）
+        if (entry.isOwnGoal) continue;
+        if (entry.scoreType === '2P') totals.twoMade++;
+        else if (entry.scoreType === '3P') totals.threeMade++;
+        else totals.ftMade++;
+    }
+
+    for (const entry of statHistory) {
+        if (entry.teamId !== teamId || entry.quarter !== quarter) continue;
+        switch (entry.statType) {
+            case 'OREB': totals.offensiveRebounds++; break;
+            case 'DREB': totals.defensiveRebounds++; break;
+            case 'AST': totals.assists++; break;
+            case 'STL': totals.steals++; break;
+            case 'BLK': totals.blocks++; break;
+            case 'TO':
+            case 'TO:DD':
+            case 'TO:TR':
+            case 'TO:PM':
+            case 'TO:CM': totals.turnovers++; break;
+            // 外したシュート。成功分は ScoreEntry 側で数えているので、
+            // ここに足すと試投数になる
+            case '2PA': totals.twoAttempt++; break;
+            case '3PA': totals.threeAttempt++; break;
+            case 'FTA': totals.ftAttempt++; break;
+        }
+    }
+
+    totals.twoAttempt += totals.twoMade;
+    totals.threeAttempt += totals.threeMade;
+    totals.ftAttempt += totals.ftMade;
+
+    for (const entry of foulHistory) {
+        if (entry.teamId !== teamId || entry.quarter !== quarter) continue;
+        if (entry.isCoachOrBench) continue;
+        totals.fouls++;
     }
 
     return totals;
