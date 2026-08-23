@@ -230,9 +230,22 @@
 }
 
 .donut-percent {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     font-size: var(--font-size-xs);
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+}
+
+/* リングと数字の対応を示す点。色は実値をインラインで受け取る（出力時に
+   CSS変数が解決できないのは teamColors.ts のコメントのとおり）。
+   選手詳細の凡例（legend-dot）と同じ形に揃えている */
+.donut-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
 }
 
 .donut-unavailable {

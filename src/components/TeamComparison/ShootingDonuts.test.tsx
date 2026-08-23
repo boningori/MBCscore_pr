@@ -53,6 +53,37 @@ describe('ShootingDonuts', () => {
         expect(within(el).getByText('71.4%')).toBeTruthy();
     });
 
+    // 数字を2段に並べるだけでは、どちらのチームのものか分からない。
+    // リングと同じ色の点を添えて対応を示している
+    it('中央の数字にリングと同じ色の点を添える', () => {
+        render(
+            <ShootingDonuts
+                left={totals({ ftMade: 11, ftAttempt: 13 })}
+                right={totals({ ftMade: 5, ftAttempt: 7 })}
+                leftColor="#3b82f6" rightColor="#e2e8f0" threePointUnused={false}
+            />,
+        );
+
+        const el = donut('FT');
+        const leftDot = el.querySelector('.donut-percent.left .donut-dot') as HTMLElement;
+        const rightDot = el.querySelector('.donut-percent.right .donut-dot') as HTMLElement;
+
+        // 外周リング（左チーム）と内周リング（右チーム）の色にそれぞれ揃う
+        expect(leftDot.style.backgroundColor).toBe('rgb(59, 130, 246)');
+        expect(rightDot.style.backgroundColor).toBe('rgb(226, 232, 240)');
+    });
+
+    it('3P未使用の円には点を出さない', () => {
+        render(
+            <ShootingDonuts
+                left={totals()} right={totals()}
+                leftColor="#3b82f6" rightColor="#e2e8f0" threePointUnused
+            />,
+        );
+
+        expect(donut('3P').querySelector('.donut-dot')).toBeNull();
+    });
+
     it('試投0なら「-」を出して比率0にする', () => {
         render(<ShootingDonuts left={totals()} right={totals()} leftColor="#3b82f6" rightColor="#e2e8f0" threePointUnused={false} />);
 

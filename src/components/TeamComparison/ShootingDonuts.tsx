@@ -82,8 +82,18 @@ export function ShootingDonuts({ left, right, leftColor, rightColor, threePointU
                                 <div className="donut-gap">
                                     <Ring position="inner" percent={Math.round(percentOf(right, shot))} color={rightColor}>
                                         <div className="donut-center">
-                                            <span className="donut-percent left">{percentText(left, shot)}</span>
-                                            <span className="donut-percent right">{percentText(right, shot)}</span>
+                                            {/* 数字だけを2段に並べると、どちらのチームのものか分からない
+                                                （外周＝左・内周＝右という位置の対応は読み取れない）。
+                                                リングと同じ色の点を添えて対応を示す。選手詳細の
+                                                リバウンド円グラフの凡例（legend-dot）と同じ作り */}
+                                            <span className="donut-percent left">
+                                                <span className="donut-dot" style={{ backgroundColor: leftColor }} />
+                                                {percentText(left, shot)}
+                                            </span>
+                                            <span className="donut-percent right">
+                                                <span className="donut-dot" style={{ backgroundColor: rightColor }} />
+                                                {percentText(right, shot)}
+                                            </span>
                                         </div>
                                     </Ring>
                                 </div>
