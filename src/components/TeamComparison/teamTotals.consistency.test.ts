@@ -54,6 +54,39 @@ function playedGame(): Game {
                 shooterTeamId: 'teamB', shooterPlayerId: 'b1',
             },
         },
+        // FT本数付きのファウル（1本成功・1本失敗）。外した分は StatEntry を
+        // 1件も作らない（canEditFreeThrows のdocコメント）ため、ここを流さないと
+        // 「外したFTがクォーター別集計から落ちる」バグをテストが検知できない
+        {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamB', playerId: 'b1', foulType: 'P', shotSituation: 'none',
+                freeThrows: 2, freeThrowResults: ['made', 'missed'],
+                shooterTeamId: 'teamA', shooterPlayerId: 'a1',
+            },
+        },
+        // 同じく、2本とも失敗のケース。全体では2試投なのにクォーター別では
+        // 0試投になっていたもう一つの症状を固定する
+        {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamB', playerId: 'b1', foulType: 'P', shotSituation: 'none',
+                freeThrows: 2, freeThrowResults: ['missed', 'missed'],
+                shooterTeamId: 'teamA', shooterPlayerId: 'a2',
+            },
+        },
+        // バスケットカウント（and-1）。シュート成功＋FT1本成功を同時に発生させる経路
+        {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamB', playerId: 'b1', foulType: 'P', shotSituation: '2P',
+                shotMade: true, freeThrows: 1, freeThrowResults: ['made'],
+                shooterTeamId: 'teamA', shooterPlayerId: 'a1',
+            },
+        },
+        // 「選手不明」のADD_STAT。構造上は選手スタッツに乗らないぶん全体・
+        // クォーター別とも一致するはずだが、固定しておく価値がある
+        { type: 'ADD_STAT', payload: { teamId: 'teamB', playerId: 'unknown', statType: 'AST' } },
     ];
 
     // ディスパッチ表に無いアクション名で静かに素通りすると、比べる対象が
@@ -63,6 +96,16 @@ function playedGame(): Game {
         expect(next).not.toBe(game);
         game = next;
     }
+
+    // オウンゴール。対象は既存の得点エントリのIDが要るため、静的な配列には
+    // 入れられない（IDは reducer が crypto.randomUUID() で実行時に振る）。
+    // 一番最初の ADD_SCORE（teamA a1 の2P）を対象にする
+    const targetScore = game.scoreHistory.find(s => s.teamId === 'teamA' && s.scoreType === '2P');
+    expect(targetScore).toBeDefined();
+    const withOwnGoal = gameReducer(game, { type: 'TOGGLE_OWN_GOAL', payload: { entryId: targetScore!.id } });
+    expect(withOwnGoal).not.toBe(game);
+    game = withOwnGoal;
+
     return game;
 }
 
