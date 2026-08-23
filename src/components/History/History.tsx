@@ -207,9 +207,10 @@ export function History({ onBack }: HistoryProps) {
                         <TeamComparison
                             teamA={migrateTeam(selectedRecord.teamA)}
                             teamB={migrateTeam(selectedRecord.teamB)}
-                            scoreHistory={selectedRecord.scoreHistory}
-                            statHistory={selectedRecord.statHistory}
-                            foulHistory={selectedRecord.foulHistory}
+                            // 手で編集したバックアップや古い記録は配列を持たないことがある（recordToGame参照）
+                            scoreHistory={selectedRecord.scoreHistory || []}
+                            statHistory={selectedRecord.statHistory || []}
+                            foulHistory={selectedRecord.foulHistory || []}
                             showThreePoint={selectedRecord.showThreePoint}
                             caption={[
                                 formatRecordDate(selectedRecord.date),

@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { History } from './History';
+import type { GameRecord } from '../../utils/gameHistoryStorage';
 
 vi.mock('../Toast/toastApi', () => ({ showToast: vi.fn() }));
 
@@ -102,5 +103,25 @@ describe('履歴詳細のタブ', () => {
         openDetail();
 
         expect(screen.getByText('この試合は3Pを使用していません')).toBeTruthy();
+    });
+
+    it('履歴配列を持たない古い記録を開いても落ちず、チーム比較を描画する', () => {
+        // 手で編集したバックアップなど、配列フィールドを持たない古い記録をシミュレート
+        const recordWithoutArrays = {
+            ...gameRecord,
+            scoreHistory: undefined,
+            statHistory: undefined,
+            foulHistory: undefined,
+        } as unknown as GameRecord;
+
+        localStorage.clear();
+        localStorage.setItem('minibasket-game-history', JSON.stringify([recordWithoutArrays]));
+
+        render(<History onBack={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: /第1節/ }));
+
+        // チーム比較が描画されていることを確認（落ちていない）
+        expect(document.querySelector('.team-comparison')).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'チーム比較' }).classList.contains('active')).toBe(true);
     });
 });
