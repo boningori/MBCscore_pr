@@ -276,7 +276,7 @@ src/components/TeamComparison/
 | ファイル | 変更内容 |
 |---|---|
 | `src/App.tsx` | 統計画面（`showStats`）の先頭に `TeamComparison` を差し込む。既存の `StatsPanel` 2枚はその下にそのまま残す |
-| `src/components/History/History.tsx` | `viewMode` を `'comparison' \| 'stats' \| 'scoresheet'` の3値にする。既定は `'comparison'`。端末の戻る操作（`useBackHandler`）の戻り先も `'comparison'` に合わせる |
+| `src/components/History/History.tsx` | `viewMode` を `'comparison' \| 'stats' \| 'scoresheet'` の3値にする。既定は `'comparison'`。端末の戻る操作（`useBackHandler`）とスコアシートの「閉じる」の戻り先も `'comparison'` に合わせる。既存のタブのラベル（「スタッツ（画面表示）」「スコアシート（保存/PDF）」）は変えず、「チーム比較」を先頭に足すだけにする |
 | `src/utils/pdfExport.ts` | 7.1 の色の一般化と 7.2 の SVG 差し替えを足す |
 
 ## 9. テスト計画
@@ -291,7 +291,9 @@ src/components/TeamComparison/
 - **ScoreEvolutionChart.test.tsx** — クォーター区切りの位置、得点が無い試合
 - **TeamComparison.export.test.tsx** — `exporting` クラスで transition が消えること、
   SVG が画像に差し替わること
-- **History.tabs.test.tsx** — 3タブの切替と、端末の戻る操作の戻り先
+- **History.tabs.test.tsx** — 3タブの切替、既定タブ、見出しの日付・大会名・会場。
+  端末の戻る操作は `useBackHandler` が `modalStack` 経由で登録される仕組みのため
+  単体では組みにくい。戻り先の確認は実ブラウザでの確認に回す
 
 ## 10. 段取りとリスク
 
