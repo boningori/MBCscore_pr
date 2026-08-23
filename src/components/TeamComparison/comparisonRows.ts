@@ -39,7 +39,10 @@ function percentRatio(made: number, attempt: number): number {
     return attempt === 0 ? 0 : made / attempt;
 }
 
+// 試投0のときは「0/0」ではなく「-」にする。隣に並ぶ StatsPanel の
+// formatShot と表記を揃える（割合の行はpercentTextで既に揃っている）
 function shotText(made: number, attempt: number): string {
+    if (attempt === 0) return '-';
     return `${made}/${attempt}`;
 }
 
@@ -93,7 +96,7 @@ function percentRow(key: string, label: string, left: [number, number], right: [
     };
 }
 
-/** 3Pを使わない試合の行。行そのものは残し、値の代わりに長音記号を出す */
+/** 3Pを使わない試合の行。行そのものは残し、値の代わりにEMダッシュ（—）を出す */
 function unavailableRow(key: string, label: string): ComparisonRow {
     return { key, label, leftText: '—', rightText: '—', leftRatio: 0, rightRatio: 0, leader: 'none', unavailable: true };
 }

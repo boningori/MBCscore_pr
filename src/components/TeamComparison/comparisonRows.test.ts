@@ -101,4 +101,13 @@ describe('buildComparisonRows', () => {
         const rows = buildComparisonRows(totals({ twoMade: 3, twoAttempt: 6 }), totals(), { threePointUnused: true });
         expect(rowOf(rows, 'fieldGoal').leftText).toBe('3/6');
     });
+
+    it('試投0の実数行は「0/0」ではなく「-」にする（StatsPanelのformatShotと同じ表記）', () => {
+        const rows = buildComparisonRows(totals(), totals(), opts);
+        for (const key of ['fieldGoal', 'twoPoint', 'threePoint', 'freeThrow']) {
+            const row = rowOf(rows, key);
+            expect(row.leftText).toBe('-');
+            expect(row.rightText).toBe('-');
+        }
+    });
 });
