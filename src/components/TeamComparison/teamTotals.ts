@@ -141,6 +141,60 @@ function totalsFromHistory(
     totals.threeAttempt += totals.threeMade;
     totals.ftAttempt += totals.ftMade;
 
+    // ファウルで与えたFTのうち「外した分」を補う。
+    //
+    // 外したFTは StatEntry を1件も作らない。成功分だけが ScoreEntry になり、
+    // 外した本数はシューターの freeThrowAttempt に本数として乗るだけで履歴に
+    // 現れない（foulHandlers.ts の canEditFreeThrows のdocコメント）。上の2つの
+    // ループだけでは、このクォーターの試投数が本数に届かない
+    // （実測: freeThrows:2 で1本外すと、全体=2 なのにクォーター別の和は1）。
+    //
+    // FTを打ったのはシューター側のチームなので shooterTeamId で絞る。
+    // teamId（ファウルした側）は下の fouls 集計にしか使えない。
+    //
+    // freeThrowResults の 'missed' はここでは見ない。CONVERT_SCORE_TO_MISS で
+    // 成功FTを「やっぱり外し」に直しても freeThrowResults は書き換わらず
+    // （'made' のまま）、ScoreEntry が1件減って代わりに FTA の StatEntry が
+    // 増えるだけなので、'missed' の数を足すと二重に減算してしまう。
+    // 代わりに「本数 − このファウルに紐付いた件数（成功のScoreEntry＋
+    // ミスへ変換されたFTAのStatEntry。どちらも sourceFoulId で結ばれる）」で
+    // 外した分を割り出す。バスケットカウントの本数（basketEntry）は
+    // scoreType '2P'/'3P' で sourceFoulId を持つが、ここでは scoreType 'FT' /
+    // statType 'FTA' だけを数えるので混ざらない。
+    //
+    // sourceFoulId は旧データに無い（ScoreEntry/StatEntry のdocコメント）。
+    // このファウルへの紐付きが1件も無いとき、それが「新データだが全部外した」
+    // のか「旧データで紐付け自体が無い」のか、この1件だけでは区別できない。
+    // その試合のどこかに sourceFoulId 付きの記録が1件でもあれば新データと
+    // 判断して本数どおり外れたとみなし、1件も無ければ旧データとみなして
+    // 補正しない（過大計上より過少計上のほうが実害が小さいため、あえて足さない）
+    const hasFoulLinkedEntries =
+        scoreHistory.some(s => s.sourceFoulId !== undefined) ||
+        statHistory.some(s => s.sourceFoulId !== undefined);
+    for (const entry of foulHistory) {
+        if (entry.shooterTeamId !== teamId || entry.quarter !== quarter) continue;
+        const freeThrows = entry.freeThrows ?? 0;
+        if (freeThrows <= 0) continue;
+
+        const linkedMade = scoreHistory.filter(
+            s => s.sourceFoulId === entry.id && s.scoreType === 'FT'
+        ).length;
+        const linkedMissConverted = statHistory.filter(
+            s => s.sourceFoulId === entry.id && s.statType === 'FTA'
+        ).length;
+        const accounted = linkedMade + linkedMissConverted;
+
+        let missed: number;
+        if (accounted > 0) {
+            missed = freeThrows - accounted;
+        } else if (hasFoulLinkedEntries) {
+            missed = freeThrows;
+        } else {
+            missed = 0;
+        }
+        totals.ftAttempt += Math.max(0, missed);
+    }
+
     for (const entry of foulHistory) {
         if (entry.teamId !== teamId || entry.quarter !== quarter) continue;
         if (entry.isCoachOrBench) continue;
