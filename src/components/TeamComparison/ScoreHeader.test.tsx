@@ -42,10 +42,14 @@ describe('ScoreHeader', () => {
         expect(within(scoreline).getByText('中部大第一')).toBeTruthy();
         expect(within(table).getByText('中部大第一')).toBeTruthy();
 
-        // 合計スコアの検証（そのまま残す）
-        const header = document.querySelector('.comparison-score-header') as HTMLElement;
-        expect(header.textContent).toContain('2');
-        expect(header.textContent).toContain('3');
+        // 合計スコアの検証。
+        // header.textContent には Q1〜Q4 の見出しも含まれるため、'2' は
+        // 常に "Q2" に、'3' は常に "Q3" にも一致してしまい、0-0でも通っていた。
+        // スコア自体を描く要素だけを見る
+        const leftScore = document.querySelector('.comparison-score.left') as HTMLElement;
+        const rightScore = document.querySelector('.comparison-score.right') as HTMLElement;
+        expect(leftScore.textContent).toBe('2');
+        expect(rightScore.textContent).toBe('3');
     });
 
     it('見出しの説明文を出す', () => {
