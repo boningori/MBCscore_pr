@@ -228,3 +228,19 @@
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
 }
+
+.score-evolution {
+    padding: var(--spacing-md) 0;
+}
+
+.score-evolution svg {
+    display: block;
+    width: 100%;
+}
+
+.score-evolution-note {
+    margin: var(--spacing-xs) 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
