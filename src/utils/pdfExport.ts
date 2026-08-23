@@ -148,9 +148,15 @@ export function readPieSegments(pie: HTMLElement): PieSegments | null {
     if (!Number.isFinite(percent)) return null;
 
     // 色はテーマで変わるため、複製DOM上で解決済みの値を読む（凡例ドットと必ず揃う）
+    //
+    // チーム比較のドーナツはチーム色で塗るので、要素が --pie-main / --pie-rest を
+    // 持っていればそちらを先に見る。持っていない既存の円グラフ（選手詳細の
+    // リバウンド内訳）は従来どおり --stats-success 系に落ちる。
     const style = pie.ownerDocument.defaultView?.getComputedStyle(pie);
-    const mainColor = style?.getPropertyValue('--stats-success').trim();
-    const restColor = style?.getPropertyValue('--stats-success-pale').trim();
+    const read = (name: string) => style?.getPropertyValue(name).trim() ?? '';
+
+    const mainColor = read('--pie-main') || read('--stats-success');
+    const restColor = read('--pie-rest') || read('--stats-success-pale');
     if (!mainColor || !restColor) return null;
 
     return { percent: Math.min(100, Math.max(0, percent)), mainColor, restColor };
