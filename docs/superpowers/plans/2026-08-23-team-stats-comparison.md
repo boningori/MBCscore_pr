@@ -122,7 +122,17 @@ git add docs/superpowers/plans/2026-08-23-team-stats-comparison.md
 git commit -m "docs(plan): 出力スパイクの結論を記録"
 ```
 
-**結論（Step 5 でここに記入する）:** _未実施_
+**結論（Step 5 でここに記入する）:** 実測は `cssClass: 748, attribute: 748`（しきい値100を大きく超え、両方とも同数）で、
+「CSSクラスは効かず属性なら効く」という仮説は**再現しなかった**——html2canvas 1.4.1 は単純な `<svg><line></line></svg>`
+なら CSS クラス経由の `stroke` も属性の `stroke` も同様にラスタライズできた。一方 `pdfExport.ts` のコメントは
+「html2canvasがSVGを正しくレンダリングしないため」座標を測って手描きし直すと述べており、根本原因は
+CSS-vs-属性ではなく、印刷用レイアウト（`position:absolute`・テーブルセル内・`windowWidth`/`scale`指定・
+document.write複製iframe）など本番のキャプチャ条件に依存する別要因の可能性が高い。Task 12 への指針:
+**属性で色を書く方式を既定にする**（CSSクラスに依存しない分リスクは低い。ただし今回の実測はCSSクラスも
+成功したため「属性でないと描けない」わけではなく、単に安全側の選択）。ただしこの孤立スパイクは本番の
+エクスポート経路（`captureElementAsCanvas`/`onclone`/A4レイアウト適用後）を通していないため保証にはならない
+——Task 12 実装時に実際のエクスポートフロー上で `ScoreEvolutionChart` のPNG/PDF出力を目視確認し、線が消える
+場合は `pdfExport.ts` に既にある「座標を測って手描き」パターンか `<canvas>` 直接描画に切り替えること。
 
 ---
 
