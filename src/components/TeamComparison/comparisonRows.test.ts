@@ -97,9 +97,27 @@ describe('buildComparisonRows', () => {
         expect(rows.map(r => r.key)).toContain('threePoint');
     });
 
-    it('3P未使用のときFGは2Pだけで出す', () => {
+    // 3Pを使わない試合では FG は 2FG と同じ数字にしかならない。
+    // 同じ値の行を2組並べると別の指標に見えて誤読を招く
+    it('3P未使用のときFGの行は出さない', () => {
         const rows = buildComparisonRows(totals({ twoMade: 3, twoAttempt: 6 }), totals(), { threePointUnused: true });
-        expect(rowOf(rows, 'fieldGoal').leftText).toBe('3/6');
+        const keys = rows.map(r => r.key);
+        expect(keys).not.toContain('fieldGoal');
+        expect(keys).not.toContain('fieldGoalPercent');
+    });
+
+    it('3P未使用でも2FGの行は残す（実際に打ったのは2点シュートなので）', () => {
+        const rows = buildComparisonRows(totals({ twoMade: 3, twoAttempt: 6 }), totals(), { threePointUnused: true });
+        expect(rowOf(rows, 'twoPoint').leftText).toBe('3/6');
+    });
+
+    it('3Pを使う試合ではFGの行を出す（2P+3Pの合計）', () => {
+        const rows = buildComparisonRows(
+            totals({ twoMade: 3, twoAttempt: 6, threeMade: 1, threeAttempt: 4 }),
+            totals(),
+            opts,
+        );
+        expect(rowOf(rows, 'fieldGoal').leftText).toBe('4/10');
     });
 
     it('試投0の実数行は「0/0」ではなく「-」にする（StatsPanelのformatShotと同じ表記）', () => {

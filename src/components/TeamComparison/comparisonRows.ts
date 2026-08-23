@@ -102,16 +102,20 @@ function unavailableRow(key: string, label: string): ComparisonRow {
 }
 
 export function buildComparisonRows(left: TeamTotals, right: TeamTotals, options: BuildOptions): ComparisonRow[] {
-    // 3Pを使わない試合では、FGは2Pだけで出す。0本の3Pを分母に混ぜても
-    // 値は変わらないが、「3Pを含む指標」に見えるのを避ける
-    const fg = (t: TeamTotals): [number, number] => options.threePointUnused
-        ? [t.twoMade, t.twoAttempt]
-        : [t.twoMade + t.threeMade, t.twoAttempt + t.threeAttempt];
+    const fg = (t: TeamTotals): [number, number] =>
+        [t.twoMade + t.threeMade, t.twoAttempt + t.threeAttempt];
 
     return [
         countRow('points', 'PTS', left.points, right.points),
-        shotRow('fieldGoal', 'FGM-FGA', fg(left), fg(right)),
-        percentRow('fieldGoalPercent', 'FG%', fg(left), fg(right)),
+        // 3Pを使わない試合では、すべてのシュートが2点なので FG は 2FG と
+        // 同じ数字になる。同じ値の行を2組並べても情報は増えず、別々の指標に
+        // 見えて誤読を招くだけなので出さない。
+        // 3Pの行のほうは「—」で残す。あちらは「0本だった」のか「使っていない」
+        // のかを区別するために要る（threePointUsage.ts 参照）
+        ...(options.threePointUnused ? [] : [
+            shotRow('fieldGoal', 'FGM-FGA', fg(left), fg(right)),
+            percentRow('fieldGoalPercent', 'FG%', fg(left), fg(right)),
+        ]),
         shotRow('twoPoint', '2FG', [left.twoMade, left.twoAttempt], [right.twoMade, right.twoAttempt]),
         percentRow('twoPercent', '2FG%', [left.twoMade, left.twoAttempt], [right.twoMade, right.twoAttempt]),
         options.threePointUnused
