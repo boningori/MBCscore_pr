@@ -30,7 +30,7 @@
 設計書 7.2 の懸念は「html2canvas がインライン SVG を描けない」だが、既存の
 スコアシートの斜線は `<line>` の `stroke` を CSS クラスで当てている。html2canvas は
 SVG を単体に切り出してから画像化するのでページの CSS が効かず、線が消えたと考えられる。
-**属性に直接色を書けば描ける**、という仮説をここで検証する。結果次第で Task 12 の
+**属性に直接色を書けば描ける**、という仮説をここで検証する。結果次第で Task 13 の
 `ScoreEvolutionChart` の書き方が決まる。
 
 **Files:**
@@ -38,7 +38,7 @@ SVG を単体に切り出してから画像化するのでページの CSS が�
 
 **Interfaces:**
 - Consumes: なし
-- Produces: なし（結論を Task 12 の実装方針として使う）
+- Produces: なし（結論を Task 13 の実装方針として使う）
 
 - [ ] **Step 1: `.claude/launch.json` を用意する**
 
@@ -107,8 +107,8 @@ javascript_tool で次を実行する。CSS クラスで色を当てた SVG と�
 
 期待: `attribute` が 100 以上（線が描かれている）。`cssClass` は 0 に近いはず。
 
-- `attribute > 100` → 仮説どおり。Task 12 は属性に色を書く方式で進める
-- `attribute` も 0 に近い → html2canvas が SVG 自体を描けない。**Task 12 を
+- `attribute > 100` → 仮説どおり。Task 13 は属性に色を書く方式で進める
+- `attribute` も 0 に近い → html2canvas が SVG 自体を描けない。**Task 13 を
   `<canvas>` 描画に切り替える**。この場合、計画のこの箇所に「canvas方式へ変更」と
   追記してから先へ進むこと（html2canvas は canvas 要素の中身をそのままコピーできる）
 
@@ -127,11 +127,11 @@ git commit -m "docs(plan): 出力スパイクの結論を記録"
 なら CSS クラス経由の `stroke` も属性の `stroke` も同様にラスタライズできた。一方 `pdfExport.ts` のコメントは
 「html2canvasがSVGを正しくレンダリングしないため」座標を測って手描きし直すと述べており、根本原因は
 CSS-vs-属性ではなく、印刷用レイアウト（`position:absolute`・テーブルセル内・`windowWidth`/`scale`指定・
-document.write複製iframe）など本番のキャプチャ条件に依存する別要因の可能性が高い。Task 12 への指針:
+document.write複製iframe）など本番のキャプチャ条件に依存する別要因の可能性が高い。Task 13 への指針:
 **属性で色を書く方式を既定にする**（CSSクラスに依存しない分リスクは低い。ただし今回の実測はCSSクラスも
 成功したため「属性でないと描けない」わけではなく、単に安全側の選択）。ただしこの孤立スパイクは本番の
 エクスポート経路（`captureElementAsCanvas`/`onclone`/A4レイアウト適用後）を通していないため保証にはならない
-——Task 12 実装時に実際のエクスポートフロー上で `ScoreEvolutionChart` のPNG/PDF出力を目視確認し、線が消える
+——Task 13 実装時に実際のエクスポートフロー上で `ScoreEvolutionChart` のPNG/PDF出力を目視確認し、線が消える
 場合は `pdfExport.ts` に既にある「座標を測って手描き」パターンか `<canvas>` 直接描画に切り替えること。
 
 ---
