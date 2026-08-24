@@ -1881,12 +1881,7 @@ export function VoiceMemoButton({ isRecording, isOffline, onStart, onStop }: Voi
 
 - [ ] **Step 5: index.ts を作る**
 
-```ts
-export { VoiceMemoButton } from './VoiceMemoButton';
-export { VoiceMemoPanel } from './VoiceMemoPanel';
-```
-
-`VoiceMemoPanel` は次のタスクで作るため、この時点では型エラーになる。Step 5 は Task 8 の完了まで保留し、**この段階では `index.ts` に `VoiceMemoButton` の行だけ書く**:
+`VoiceMemoPanel` は Task 8 で作るので、この時点では1行だけ書く（先に書くと解決できない import で型エラーになる）:
 
 ```ts
 export { VoiceMemoButton } from './VoiceMemoButton';
@@ -2375,58 +2370,18 @@ git commit -m "feat(voicememo): 設定UIと初回同意ダイアログ"
 
 **Files:**
 - Modify: `src/App.tsx`
-- Create: `src/components/VoiceMemo/voiceMemoIntegration.test.tsx`
 
 **Interfaces:**
 - Consumes: Task 6 の `useVoiceMemo`、Task 7-8 のコンポーネント
 - Produces: なし
 
-- [ ] **Step 1: 失敗するテストを書く**
+> **テストについて:** このタスクは App.tsx への配線であり、新しいロジックを足さない。
+> 表示条件（設定OFF・キー無し・オフライン・シンプルモード）の検証は Task 6 の
+> `isAvailable` テスト5件が既に担っている。ここで `{cond && <Button/>}` を確かめる
+> テストを足してもReact自身の挙動を測るだけなので書かない。App.tsx 側は Step 3 の
+> 手動検証で確認する。
 
-`src/components/VoiceMemo/voiceMemoIntegration.test.tsx`:
-
-```tsx
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { VoiceMemoButton } from './VoiceMemoButton';
-
-afterEach(cleanup);
-
-// App.tsx への配線そのものは、モードとフラグの組み合わせで
-// 「出る/出ない」だけを固定する。描画の詳細は各コンポーネントのテストが見る
-const renderIfAvailable = (isAvailable: boolean) =>
-    render(
-        <>
-            {isAvailable && (
-                <VoiceMemoButton isRecording={false} isOffline={false} onStart={vi.fn()} onStop={vi.fn()} />
-            )}
-        </>,
-    );
-
-describe('音声メモの表示条件', () => {
-    it('利用可能なら記録画面にボタンが出る', () => {
-        renderIfAvailable(true);
-        expect(screen.queryByRole('button', { name: /音声メモ/ })).toBeTruthy();
-    });
-
-    it('利用不可ならボタンは描画されない', () => {
-        renderIfAvailable(false);
-        expect(screen.queryByRole('button', { name: /音声メモ/ })).toBeNull();
-    });
-});
-```
-
-> このテストは配線の仕様を文書として固定するもので、App.tsx 自体は描画しない（App は GameProvider や多数のストレージに依存しており、単体描画のコストが実益に見合わない）。App.tsx 側の確認は Step 5 の手動検証で行う。
-
-- [ ] **Step 2: テストが通ることを確認（コンポーネントは既にある）**
-
-```bash
-npx vitest run src/components/VoiceMemo/voiceMemoIntegration.test.tsx
-```
-
-Expected: PASS（2件）
-
-- [ ] **Step 3: App.tsx にフックと表示を配線**
+- [ ] **Step 1: App.tsx にフックと表示を配線**
 
 import に追加:
 
@@ -2489,7 +2444,7 @@ const voiceMemo = useVoiceMemo({ quarter: currentQuarter, enabled: gameMode === 
 )}
 ```
 
-- [ ] **Step 4: 試合終了・破棄で音声メモを捨てる**
+- [ ] **Step 2: 試合終了・破棄で音声メモを捨てる**
 
 `clearGameSession()` を呼んでいる2箇所（`handleGameFinished` 内と `handleDiscardGame` 内）の直後に1行ずつ追加:
 
@@ -2501,13 +2456,13 @@ voiceMemo.clearAll();
 
 `handleGameFinished` は `saved` が false のときに早期 return しているので、**保存に成功した経路でだけ捨てられる**。順序を入れ替えないこと。
 
-- [ ] **Step 5: 実機で動作を確認**
+- [ ] **Step 3: 実機で動作を確認**
 
 ```bash
 npm run dev
 ```
 
-ブラウザで以下を目視確認する:
+ブラウザで以下を目視確認する（この8項目がこのタスクの検証そのもの）:
 
 1. 設定 → 音声メモ を ON（初回は同意ダイアログが出る）
 2. 設定 → AI機能 に Gemini APIキーを入れる
@@ -2520,7 +2475,7 @@ npm run dev
 
 **握ってみてヘッダー中央が窮屈な場合**は、設計書「配置」節の代替案（`ActionButtons.tsx` のファウル群の下に `action-group` を追加）へ移す。その場合は `ActionButtons` に props を足すのではなく、`App.tsx` から `ActionButtons` の下に並べる形にする（ActionButtons を音声メモの都合で汚さないため）。
 
-- [ ] **Step 6: 全体テスト・lint・型を通す**
+- [ ] **Step 4: 全体テスト・lint・型を通す**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -2528,10 +2483,10 @@ npm test && npm run lint && npm run build
 
 Expected: 全PASS、エラーなし
 
-- [ ] **Step 7: コミット**
+- [ ] **Step 5: コミット**
 
 ```bash
-git add src/App.tsx src/components/VoiceMemo/voiceMemoIntegration.test.tsx
+git add src/App.tsx
 git commit -m "feat(voicememo): 記録画面へ統合し、試合終了で破棄する"
 ```
 
