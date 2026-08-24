@@ -1,0 +1,1 @@
+export { VoiceMemoButton } from './VoiceMemoButton';
