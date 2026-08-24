@@ -50,7 +50,11 @@ describe('試合中の統計画面', () => {
         fireEvent.click(await screen.findByLabelText('チーム統計'));
     }
 
-    it('比較を上、選手別スタッツを下に出す', async () => {
+    // 試合中にこの画面を開く目的はほぼ「誰が何ファウル目か」の確認で、
+    // 時間に追われている場面。チーム比較を上に置くと、その高さ（実測1227px）を
+    // スクロールし切らないと選手別に届かず、スマホでは画面外だった。
+    // 履歴の詳細は逆にチーム比較が先（History.tabs.test.tsx）
+    it('試合中は選手別スタッツを上、チーム比較を下に出す', async () => {
         await openStats();
 
         const view = document.querySelector('.stats-view') as HTMLElement;
@@ -59,8 +63,19 @@ describe('試合中の統計画面', () => {
 
         expect(comparison).toBeTruthy();
         expect(panel).toBeTruthy();
-        // 比較のほうが先に来る（DOCUMENT_POSITION_FOLLOWING = panel が後ろにある）
-        expect(comparison.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        // 選手別のほうが先に来る（DOCUMENT_POSITION_FOLLOWING = comparison が後ろにある）
+        expect(panel.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('選手別スタッツ2枚のあとにチーム比較が来る（両チーム分を挟まない）', async () => {
+        await openStats();
+
+        const view = document.querySelector('.stats-view') as HTMLElement;
+        const order = [...view.children].map(el =>
+            el.classList.contains('team-comparison') ? '比較' : el.classList.contains('stats-panel') ? '選手別' : '他',
+        );
+
+        expect(order).toEqual(['選手別', '選手別', '比較']);
     });
 
     it('両チームの選手別スタッツは残したまま', async () => {

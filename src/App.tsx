@@ -1159,7 +1159,20 @@ function AppContent({ screen, setScreen }: AppContentProps) {
       <main className="app-main">
         {showStats ? (
           <div className="stats-view">
-            {/* チーム同士の対比。選手別の内訳はこの下の StatsPanel で見る */}
+            {/*
+              試合中は選手別を先に出す。この画面を試合中に開く目的はほぼ
+              「誰が何ファウル目か」の確認で、時間に追われている場面になる。
+              チーム比較を上に置いていたときは、その高さ（実測1227px）を
+              スクロールし切らないと選手別に届かず、スマホでは画面外だった。
+
+              履歴の詳細は逆にチーム比較が先。あちらは振り返るための画面で、
+              先に要る情報が違う（History.tsx）。
+
+              statHistory は「不明で記録」した分を合計に含めるために渡す
+            */}
+            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} teamId="teamA" statHistory={state.statHistory} />
+            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} teamId="teamB" statHistory={state.statHistory} />
+
             <TeamComparison
               teamA={state.teamA}
               teamB={state.teamB}
@@ -1168,10 +1181,6 @@ function AppContent({ screen, setScreen }: AppContentProps) {
               foulHistory={state.foulHistory}
               showThreePoint={state.showThreePoint}
             />
-
-            {/* statHistory は「不明で記録」した分を合計に含めるために渡す */}
-            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} teamId="teamA" statHistory={state.statHistory} />
-            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} teamId="teamB" statHistory={state.statHistory} />
           </div>
         ) : (
           <>
