@@ -69,4 +69,31 @@ describe('VoiceMemoButton: 状態表示', () => {
         fireEvent.pointerDown(screen.getByRole('button'));
         expect(onStart).not.toHaveBeenCalled();
     });
+
+    it('録音中にオフラインへ転じても、ボタンはdisabledにならない（離すイベントを受け取り続けるため）', () => {
+        // disabled属性が付くとブラウザはpointerup/pointerleave/pointerCancelを
+        // そのボタンへ配送しなくなり、指を離しても録音が止められなくなる
+        // （MAX_DURATION_MSの60秒まで居座り続けてしまう）
+        setup({ isRecording: true, isOffline: true });
+        const button = screen.getByRole('button') as HTMLButtonElement;
+        expect(button.disabled).toBe(false);
+    });
+
+    it('録音中にオフラインへ転じても、離せば録音を止められる', () => {
+        const { onStop } = setup({ isRecording: true, isOffline: true });
+        fireEvent.pointerUp(screen.getByRole('button'));
+        expect(onStop).toHaveBeenCalledTimes(1);
+    });
+
+    it('録音中にオフラインへ転じても、ラベルは「録音中」を伝える（オフライン文言に差し替わらない）', () => {
+        setup({ isRecording: true, isOffline: true });
+        const button = screen.getByRole('button') as HTMLButtonElement;
+        expect(button.getAttribute('aria-label')).toContain('録音中');
+    });
+
+    it('待機中でオフラインなら引き続きdisabledで、支援技術には利用不可と伝わる', () => {
+        setup({ isRecording: false, isOffline: true });
+        const button = screen.getByRole('button') as HTMLButtonElement;
+        expect(button.disabled).toBe(true);
+    });
 });

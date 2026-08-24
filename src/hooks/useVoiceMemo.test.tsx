@@ -3,7 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useVoiceMemo } from './useVoiceMemo';
 import { saveApiKey } from '../utils/geminiClient';
 import { setVoiceMemoEnabled } from '../utils/appSettings';
-import { clearVoiceMemos, loadVoiceMemos } from '../utils/voiceMemoStorage';
+import { clearVoiceMemos, loadVoiceMemos, saveVoiceMemos } from '../utils/voiceMemoStorage';
 
 vi.mock('../utils/audioTranscribe', () => ({
     transcribeAudio: vi.fn(),
@@ -288,6 +288,108 @@ describe('useVoiceMemo: マイク解放のライフサイクル', () => {
         // アンマウント後に stop イベントが発火しても、離脱済みの画面のために
         // 文字起こしAPIを叩き始めてはならない
         expect(vi.mocked(transcribeAudio)).not.toHaveBeenCalled();
+    });
+});
+
+describe('useVoiceMemo: 同時押しでのマイク多重取得（オーファン防止）', () => {
+    it('同じtickで2回startRecordingが呼ばれても、最終的に使われているストリームのトラックは必ず止まる', async () => {
+        // 体育館のタブレットは複数指のタッチを同時に拾いうる。2本指が
+        // ほぼ同時にボタンへ触れると、pointerdown が同じtickで2回発火し、
+        // isRecording がまだ false のうちに両方が startRecording を通過しうる。
+        // その場合でも、マイクの取得は1回だけに絞られ、確保したストリームは
+        // 必ず解放されなければならない（さもないとOSのマイクインジケータが
+        // 点きっぱなしになる）
+        const stopSpy1 = vi.fn();
+        const stopSpy2 = vi.fn();
+        let resolveFirst!: (v: unknown) => void;
+        let resolveSecond!: (v: unknown) => void;
+        const firstGum = new Promise(resolve => { resolveFirst = resolve; });
+        const secondGum = new Promise(resolve => { resolveSecond = resolve; });
+        vi.mocked(navigator.mediaDevices.getUserMedia)
+            .mockImplementationOnce(() => firstGum as never)
+            .mockImplementationOnce(() => secondGum as never);
+
+        const { result } = render();
+
+        // 2本指同時タップ: どちらの getUserMedia もまだ pending のうちに
+        // 両方の startRecording が同じtickで呼ばれる
+        let call1!: Promise<void>;
+        let call2!: Promise<void>;
+        act(() => {
+            call1 = result.current.startRecording();
+            call2 = result.current.startRecording();
+        });
+
+        // 1本目の許可が先に下りる
+        await act(async () => {
+            resolveFirst({ getTracks: () => [{ stop: stopSpy1 }] });
+            await call1;
+        });
+        // 2本目の許可はその後で下りる（現実のブラウザでも許可ダイアログの
+        // タイミングはズレうる）
+        await act(async () => {
+            resolveSecond({ getTracks: () => [{ stop: stopSpy2 }] });
+            await call2;
+        });
+
+        await act(async () => {
+            result.current.stopRecording();
+        });
+        await new Promise(r => setTimeout(r, 10));
+
+        // 1本目に許可されたストリームのトラックが、最後まで放置されず止まっている
+        expect(stopSpy1).toHaveBeenCalled();
+    });
+
+    it('エラー（マイク拒否以外）が起きても、ガードが立ちっぱなしにならず次の押下を受け付ける', async () => {
+        const busy = Object.assign(new Error('device busy'), { name: 'NotReadableError' });
+        vi.mocked(navigator.mediaDevices.getUserMedia)
+            .mockRejectedValueOnce(busy as never)
+            .mockResolvedValueOnce({ getTracks: () => [{ stop: vi.fn() }] } as never);
+
+        const { result } = render();
+        await act(async () => {
+            await result.current.startRecording();
+        });
+        expect(result.current.isRecording).toBe(false);
+        // マイク拒否（NotAllowedError/SecurityError）ではないので機能は下りない
+        expect(result.current.isFeatureEnabled).toBe(true);
+
+        await act(async () => {
+            await result.current.startRecording();
+        });
+        expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(2);
+        expect(result.current.isRecording).toBe(true);
+    });
+});
+
+describe('useVoiceMemo: リロード復元', () => {
+    it('sending状態のまま保存されたメモは、復元時にfailedへ降格する（音声はメモリ上にしか無く再送できないため）', () => {
+        saveVoiceMemos([{ id: 'stuck', quarter: 1, createdAt: 1000, status: 'sending' }]);
+        const { result } = render();
+        expect(result.current.memos).toHaveLength(1);
+        expect(result.current.memos[0].status).toBe('failed');
+    });
+
+    it('sending状態から降格したメモは、音声が無いので再送できないと分かる', () => {
+        saveVoiceMemos([{ id: 'stuck', quarter: 1, createdAt: 1000, status: 'sending' }]);
+        const { result } = render();
+        expect(result.current.canRetry('stuck')).toBe(false);
+    });
+
+    it('もともとfailedで保存されていたメモも、音声が無いので再送できないと分かる', () => {
+        saveVoiceMemos([{ id: 'old-fail', quarter: 1, createdAt: 1000, status: 'failed', error: '通信エラー' }]);
+        const { result } = render();
+        expect(result.current.canRetry('old-fail')).toBe(false);
+    });
+
+    it('retryMemoは音声が無ければ何もしない（sendingへ戻さない）', () => {
+        saveVoiceMemos([{ id: 'old-fail', quarter: 1, createdAt: 1000, status: 'failed', error: '通信エラー' }]);
+        const { result } = render();
+        act(() => {
+            result.current.retryMemo('old-fail');
+        });
+        expect(result.current.memos[0].status).toBe('failed');
     });
 });
 

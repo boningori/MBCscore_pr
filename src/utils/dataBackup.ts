@@ -1142,9 +1142,21 @@ function importFullBackup(data: BackupData): ImportResult {
         }
 
         // アプリ設定のインポート（既存設定とマージ）
+        //
+        // 音声メモのON/OFFと同意は端末単位。バックアップは別端末（別の同意状態）
+        // から来ることがあるため、data.data.settings に何が入っていても
+        // 常にこの端末の現在値で上書きし、持ち込ませない。
+        // data.data.settings は型上 AppSettings だが実体はJSONパース結果で
+        // 保証がないため、スプレッド後に明示的に上書きすることで
+        // 想定外の形のバックアップファイルでも迂回されないようにする
         if (data.data.settings) {
             const existingSettings = loadAppSettings();
-            const mergedSettings = { ...existingSettings, ...data.data.settings };
+            const mergedSettings: AppSettings = {
+                ...existingSettings,
+                ...data.data.settings,
+                voiceMemoEnabled: existingSettings.voiceMemoEnabled,
+                voiceMemoConsented: existingSettings.voiceMemoConsented,
+            };
             writes.push(['minibasket-app-settings', JSON.stringify(mergedSettings)]);
         }
 

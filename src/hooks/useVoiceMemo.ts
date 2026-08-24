@@ -13,7 +13,7 @@ import { isVoiceMemoEnabled } from '../utils/appSettings';
 import { blobToWav } from '../utils/audioWav';
 import { transcribeAudio } from '../utils/audioTranscribe';
 import type { VoiceMemo } from '../utils/voiceMemo';
-import { appendMemo, applyTranscription, markSending, removeMemo } from '../utils/voiceMemo';
+import { appendMemo, applyTranscription, downgradeStaleSending, markSending, removeMemo } from '../utils/voiceMemo';
 import { clearVoiceMemos, loadVoiceMemos, saveVoiceMemos } from '../utils/voiceMemoStorage';
 
 /** これより短い押下は誤タップとみなして捨てる */
@@ -41,12 +41,18 @@ export interface UseVoiceMemoResult {
     startRecording: () => Promise<void>;
     stopRecording: () => void;
     retryMemo: (id: string) => void;
+    /** そのメモを再送できるか（音声をまだメモリ上に持っているか）。
+     *  再読み込みで復元されたメモは音声を持たないため常にfalse */
+    canRetry: (id: string) => boolean;
     removeMemoById: (id: string) => void;
     clearAll: () => void;
 }
 
 export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoiceMemoResult {
-    const [memos, setMemos] = useState<VoiceMemo[]>(() => loadVoiceMemos());
+    // 「文字起こし中」のままsessionStorageへ保存されたメモは、リロードを跨ぐと
+    // 誰も応答を返してくれない。音声はメモリ上（pendingAudioRef）にしか無く
+    // 再送もできないので、復元時点でfailedへ落として「もう待っても来ない」と分かるようにする
+    const [memos, setMemos] = useState<VoiceMemo[]>(() => downgradeStaleSending(loadVoiceMemos()));
     const [isRecording, setIsRecording] = useState(false);
     const [isOnline, setIsOnline] = useState(() => navigator.onLine);
     // マイクを拒否されたら以後は機能ごと下ろす。押すたびに拒否ダイアログが
@@ -60,6 +66,11 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
     const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 再送のために、まだ成功していないメモの音声だけメモリ上に持つ
     const pendingAudioRef = useRef<Map<string, Blob>>(new Map());
+    // startRecording の多重起動防止。isRecording はステートなので
+    // getUserMedia の await 中は更新されず、同じtickで2回押されると
+    // どちらも isRecording による早期returnをすり抜けてしまう。
+    // ref は同期的に効くので、await の前に立てて finally で必ず下ろす
+    const startingRef = useRef(false);
 
     // 一覧が変わるたび sessionStorage に写す
     useEffect(() => {
@@ -125,7 +136,10 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
     }, []);
 
     const startRecording = useCallback(async () => {
-        if (!isAvailable || isRecording) return;
+        if (!isAvailable || isRecording || startingRef.current) return;
+        // await の前、まだ同期区間のうちに立てる。ここから finally までの間に
+        // 同じtickで再度呼ばれても、上のガードで確実に弾かれる
+        startingRef.current = true;
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -179,6 +193,8 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
                 setMicDenied(true);
                 showToast('🎤 マイクが使えないため音声メモを無効にしました', 'error');
             }
+        } finally {
+            startingRef.current = false;
         }
     }, [isAvailable, isRecording, quarter, releaseStream, send]);
 
@@ -194,6 +210,8 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
         setMemos(prev => markSending(prev, id));
         void send(id, audio);
     }, [send]);
+
+    const canRetry = useCallback((id: string) => pendingAudioRef.current.has(id), []);
 
     const removeMemoById = useCallback((id: string) => {
         pendingAudioRef.current.delete(id);
@@ -218,6 +236,7 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
         startRecording,
         stopRecording,
         retryMemo,
+        canRetry,
         removeMemoById,
         clearAll,
     };

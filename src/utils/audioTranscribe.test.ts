@@ -86,4 +86,17 @@ describe('audioTranscribe: 失敗時', () => {
         const result = await transcribeAudio(wav(), 'key');
         expect(result.success).toBe(false);
     });
+
+    it('エラー応答本文がJSONでなくても（プロキシの502等）、即座に失敗を返し全モデルを回らない', async () => {
+        vi.mocked(fetch).mockResolvedValue({
+            ok: false,
+            status: 502,
+            statusText: 'Bad Gateway',
+            json: async () => { throw new SyntaxError('Unexpected token < in JSON at position 0'); },
+        } as never);
+        const result = await transcribeAudio(wav(), 'key');
+        expect(result.success).toBe(false);
+        // 1回叩いた時点でインフラ障害と分かるはずで、5モデル分待たせてはいけない
+        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    });
 });

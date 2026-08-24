@@ -14,11 +14,19 @@ const memo = (over: Partial<VoiceMemo> = {}): VoiceMemo => ({
     ...over,
 });
 
-const setup = (memos: VoiceMemo[]) => {
+const setup = (memos: VoiceMemo[], canRetry: (id: string) => boolean = () => true) => {
     const onClose = vi.fn();
     const onRetry = vi.fn();
     const onRemove = vi.fn();
-    render(<VoiceMemoPanel memos={memos} onClose={onClose} onRetry={onRetry} onRemove={onRemove} />);
+    render(
+        <VoiceMemoPanel
+            memos={memos}
+            onClose={onClose}
+            onRetry={onRetry}
+            onRemove={onRemove}
+            canRetry={canRetry}
+        />,
+    );
     return { onClose, onRetry, onRemove };
 };
 
@@ -62,6 +70,11 @@ describe('VoiceMemoPanel: 操作', () => {
 
     it('成功したメモには再送ボタンを出さない', () => {
         setup([memo()]);
+        expect(screen.queryByRole('button', { name: /再送/ })).toBeNull();
+    });
+
+    it('失敗していても、再送できる音声が無ければ再送ボタンを出さない（押しても何も起きない無効な操作を見せない）', () => {
+        setup([memo({ status: 'failed', text: undefined, error: '通信エラー' })], () => false);
         expect(screen.queryByRole('button', { name: /再送/ })).toBeNull();
     });
 

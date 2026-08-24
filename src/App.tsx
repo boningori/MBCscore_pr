@@ -1472,6 +1472,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           memos={voiceMemo.memos}
           onClose={() => setShowVoiceMemos(false)}
           onRetry={voiceMemo.retryMemo}
+          canRetry={voiceMemo.canRetry}
           onRemove={voiceMemo.removeMemoById}
         />
       )}

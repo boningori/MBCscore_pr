@@ -14,11 +14,18 @@ export interface VoiceMemoButtonProps {
 }
 
 export function VoiceMemoButton({ isRecording, isOffline, onStart, onStop }: VoiceMemoButtonProps) {
-    const label = isOffline
-        ? '音声メモ（オンラインのときに使えます）'
-        : isRecording
-            ? '音声メモを録音中。指を離すと文字起こしされます'
+    // 録音中は「録音中」を最優先で伝える。オフライン文言に差し替わると、
+    // 実際にはまだ録音中なのに「使えません」と読み上げてしまう
+    const label = isRecording
+        ? '音声メモを録音中。指を離すと文字起こしされます'
+        : isOffline
+            ? '音声メモ（オンラインのときに使えます）'
             : '音声メモ。押している間だけ録音します';
+
+    // 待機中でオフラインのときだけ「使えない」。録音中はネットワーク状態に
+    // 関わらず操作可能にしておく（disabledにすると指を離すイベントごと
+    // ブラウザに配送されなくなり、マイクを止められなくなるため）
+    const idleOffline = isOffline && !isRecording;
 
     const handleDown = () => {
         if (isOffline) return;
@@ -36,7 +43,7 @@ export function VoiceMemoButton({ isRecording, isOffline, onStart, onStop }: Voi
             className={`voice-memo-btn ${isRecording ? 'is-recording' : ''}`}
             aria-label={label}
             aria-pressed={isRecording}
-            disabled={isOffline}
+            disabled={idleOffline}
             onPointerDown={handleDown}
             onPointerUp={handleUp}
             onPointerLeave={handleUp}

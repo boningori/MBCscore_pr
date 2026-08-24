@@ -56,10 +56,18 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData.error?.message || response.statusText;
+                // エラー本文がJSONとは限らない（プロキシの502等はHTMLを返すことがある）。
+                // ここで投げると外側のcatchに落ちて「通信そのものが失敗した」ときと
+                // 区別が付かず、全モデルを律儀に試して記録者を待たせてしまう
+                let errorMessage = response.statusText || `HTTPエラー ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData?.error?.message || errorMessage;
+                } catch {
+                    // 本文がJSONでない＝インフラ層の障害と見なし、後続のモデルへは進まない
+                }
 
-                // 404なら次のモデルへ。それ以外（キー不正・権限・課金）は
+                // 404なら次のモデルへ。それ以外（キー不正・権限・課金・本文パース不能）は
                 // 全モデルで同じ結果になるので即座に返す
                 if (response.status === 404 || errorMessage.includes('not found')) {
                     console.warn(`Model ${model} not found (transcribe), trying next...`);

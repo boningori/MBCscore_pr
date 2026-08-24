@@ -11,6 +11,9 @@ export interface VoiceMemoPanelProps {
     memos: VoiceMemo[];
     onClose: () => void;
     onRetry: (id: string) => void;
+    /** そのメモに再送できる音声が残っているか。falseなら再送ボタン自体を出さない
+     *  （押しても何も起きないボタンを見せない） */
+    canRetry: (id: string) => boolean;
     onRemove: (id: string) => void;
 }
 
@@ -38,7 +41,7 @@ const describeMemoForA11y = (m: VoiceMemo, position: number): string => {
     return `${ordinal}、${snippet}`;
 };
 
-export function VoiceMemoPanel({ memos, onClose, onRetry, onRemove }: VoiceMemoPanelProps) {
+export function VoiceMemoPanel({ memos, onClose, onRetry, canRetry, onRemove }: VoiceMemoPanelProps) {
     // Sort memos by createdAt in ascending order
     const sortedMemos = [...memos].sort((a, b) => a.createdAt - b.createdAt);
 
@@ -61,7 +64,7 @@ export function VoiceMemoPanel({ memos, onClose, onRetry, onRemove }: VoiceMemoP
                             <div className="voice-memo-item-head">
                                 <span>Q{m.quarter} / {formatTime(m.createdAt)}</span>
                                 <span>
-                                    {m.status === 'failed' && (
+                                    {m.status === 'failed' && canRetry(m.id) && (
                                         <button
                                             type="button"
                                             className="btn btn-secondary btn-small"

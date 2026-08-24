@@ -50,6 +50,27 @@ export function markSending(memos: VoiceMemo[], id: string): VoiceMemo[] {
     return memos.map(m => (m.id === id ? { ...m, status: 'sending' as const, error: undefined } : m));
 }
 
+/** リロードを跨いで「文字起こし中」のまま残ったメモに付ける説明。
+ *  音声はメモリ上にしか無いため、再送はできない旨を分かりやすく伝える */
+export const STALE_SENDING_MESSAGE =
+    '読み込み直したため、この文字起こしの結果は確認できませんでした（音声は保存していないため再送できません）。記録したスタッツをご確認ください';
+
+/**
+ * sending のまま保存されたメモを failed へ落とす。
+ *
+ * sessionStorage は「文字起こし中」の状態ごと保存するが、応答を待っている
+ * 送信処理そのもの（Promiseや音声Blob）はメモリ上にしかなく、リロードすると
+ * 消える。何もしないと該当行は永久に「文字起こし中…」のまま応答が来ず、
+ * 記録者が待ち続けてしまうため、復元した時点で「もう来ない」と分かる状態にする
+ */
+export function downgradeStaleSending(memos: VoiceMemo[]): VoiceMemo[] {
+    return memos.map(m =>
+        m.status === 'sending'
+            ? { ...m, status: 'failed' as const, error: STALE_SENDING_MESSAGE }
+            : m,
+    );
+}
+
 export function removeMemo(memos: VoiceMemo[], id: string): VoiceMemo[] {
     return memos.filter(m => m.id !== id);
 }
