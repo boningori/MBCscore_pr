@@ -1,7 +1,7 @@
 import type { Player, PlayerStats, StatEntry } from '../../types/game';
-import { createInitialStats } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { isDisqualified } from '../../utils/disqualification';
+import { sumUnknownStats } from '../../utils/unknownStats';
 import './StatsPanel.css';
 
 interface StatsPanelProps {
@@ -19,32 +19,6 @@ interface StatsPanelProps {
      * 言うのに記録先が無い、という状態だった）。
      */
     statHistory?: StatEntry[];
-}
-
-/** 'unknown' に割り当てられた記録をチーム分だけ集計する（無ければ null） */
-function sumUnknownStats(statHistory: StatEntry[], teamId: string): PlayerStats | null {
-    const entries = statHistory.filter(s => s.playerId === 'unknown' && s.teamId === teamId);
-    if (entries.length === 0) return null;
-
-    const stats = createInitialStats();
-    for (const { statType } of entries) {
-        switch (statType) {
-            case 'OREB': stats.offensiveRebounds++; break;
-            case 'DREB': stats.defensiveRebounds++; break;
-            case 'AST': stats.assists++; break;
-            case 'STL': stats.steals++; break;
-            case 'BLK': stats.blocks++; break;
-            case 'TO': stats.turnovers++; break;
-            case 'TO:DD': stats.turnovers++; stats.turnoverDD++; break;
-            case 'TO:TR': stats.turnovers++; stats.turnoverTR++; break;
-            case 'TO:PM': stats.turnovers++; stats.turnoverPM++; break;
-            case 'TO:CM': stats.turnovers++; stats.turnoverCM++; break;
-            case '2PA': stats.twoPointAttempt++; break;
-            case '3PA': stats.threePointAttempt++; break;
-            case 'FTA': stats.freeThrowAttempt++; break;
-        }
-    }
-    return stats;
 }
 
 export function StatsPanel({

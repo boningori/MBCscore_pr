@@ -31,6 +31,9 @@ function seed(pendingActions?: PendingAction[]) {
 function openDetail() {
     render(<History onBack={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /第1節/ }));
+    // 未割り当てセクションは「スタッツ（画面表示）」タブの中身。既定タブが
+    // 「チーム比較」に変わったため、切り替えないと本題のアサーションに届かない
+    fireEvent.click(screen.getByRole('button', { name: 'スタッツ（画面表示）' }));
 }
 
 beforeEach(() => localStorage.clear());

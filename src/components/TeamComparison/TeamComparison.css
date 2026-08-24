@@ -1,0 +1,354 @@
+/* チーム比較。バーは中央のラベルから左右へ伸びる。
+   B.LEAGUE の画面は両端にバーを置くが、スマホ幅では中央から外向きの方が
+   左右の対比を追いやすい */
+
+.comparison-table {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) 0;
+}
+
+.comparison-row {
+    display: grid;
+    /* 値 | バー | ラベル | バー | 値。ラベルはアプリ既存の呼び方（BLK・STL・
+       2P・3P…）に揃えてあり、最長でも4文字＋↓なので広く取らなくてよい */
+    grid-template-columns: 4.5em 1fr 4em 1fr 4.5em;
+    align-items: center;
+    gap: var(--spacing-xs);
+    min-height: 28px;
+}
+
+.comparison-value {
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.comparison-value.left { text-align: left; }
+.comparison-value.right { text-align: right; }
+
+.comparison-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 少ない方が良い行の印。ラベルより控えめにして、ラベル自体の読みを妨げない */
+.lower-is-better {
+    margin-left: 2px;
+    color: var(--text-muted);
+}
+
+.comparison-bar-area {
+    display: flex;
+    /* 勝っている側の枠（2px）を上下に置いても、チーム色の面が細く見えない高さ。
+       12pxだと枠が全体の1/3を占め、色そのものが読み取りづらかった */
+    height: 16px;
+}
+
+.comparison-bar-area.left { justify-content: flex-end; }
+.comparison-bar-area.right { justify-content: flex-start; }
+
+.comparison-bar {
+    position: relative;
+    height: 100%;
+    border-radius: var(--radius-xs);
+    /* 勝っている側だけ枠を出す。枠の有無で線がずれないよう、負けている側にも
+       同じ太さの透明な枠を置いて幅を揃える */
+    border: 2px solid transparent;
+}
+
+/* シュートの実数行は、バー全体が試投数・濃い面が成功数を表す。
+   薄い面（track）を敷いて、その上に成功分（made）を重ねる。
+   実数以外の行は made が全幅なので、見た目は1枚の面と変わらない */
+.comparison-bar-track {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0.28;
+}
+
+.comparison-bar-made {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: inherit;
+}
+
+/* 成功分は中央（ラベル側）に寄せる。左右のバーの濃い面がラベルを挟んで
+   隣り合うので、成功数そのものを見比べられる */
+.comparison-bar.left .comparison-bar-made { right: 0; }
+.comparison-bar.right .comparison-bar-made { left: 0; }
+
+/* 勝っている側の目印。濃淡だけでは見分けづらいという指摘を受けて足した。
+   選手選択・アクション選択と同じピンクにして、「ここが効いている」の合図を
+   アプリ全体で揃える。
+   box-shadow や outline ではなく border を使うのは、html2canvas が前者2つを
+   描けず出力画像から枠が消えるため（SVGの線・conic-gradient と同じ罠）。
+   box-sizing: border-box が全体に効いているので、枠を足してもバーは太らない */
+.comparison-bar.is-leader {
+    border-color: var(--active-highlight);
+}
+
+
+/* 伸長は transform で行う。width を 0 から動かすと、DOM上の幅が一時的に
+   実際の値と食い違い、テストと出力の両方が「伸びかけの値」を見ることになる。
+   width は常に最終値のまま、見た目だけを中央側から伸ばす */
+@keyframes comparison-bar-grow {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+.comparison-table.is-animating .comparison-bar {
+    animation: comparison-bar-grow 400ms ease-out;
+}
+
+/* 左のバーは中央（右端）から左へ、右のバーは中央（左端）から右へ伸びる */
+.comparison-bar.left { transform-origin: right center; }
+.comparison-bar.right { transform-origin: left center; }
+
+.comparison-row.is-unavailable .comparison-value {
+    color: var(--text-muted);
+}
+
+.comparison-note {
+    margin: var(--spacing-sm) 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* 出力時はアニメーションを止める。伸びかけの棒が画像に写るのを防ぐ */
+.exporting .comparison-bar {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .comparison-table.is-animating .comparison-bar {
+        animation: none;
+    }
+}
+
+.comparison-score-header {
+    padding: var(--spacing-sm) 0;
+}
+
+.comparison-caption {
+    margin: 0 0 var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.comparison-scoreline {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto 1fr;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.comparison-team {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.comparison-team.right { align-items: flex-end; }
+
+.comparison-team-name {
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+
+.comparison-team-bar {
+    display: block;
+    width: 100%;
+    max-width: 96px;
+    height: 5px;
+    border-radius: var(--radius-xs);
+}
+
+.comparison-score {
+    font-family: var(--font-score);
+    font-size: var(--font-size-2xl);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.comparison-score-dash {
+    color: var(--text-muted);
+    padding: 0 var(--spacing-xs);
+}
+
+.quarter-score-table {
+    margin: var(--spacing-sm) auto 0;
+    border-collapse: collapse;
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+}
+
+.quarter-score-table th,
+.quarter-score-table td {
+    padding: 2px var(--spacing-sm);
+    text-align: center;
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+.quarter-score-table tbody th {
+    text-align: right;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.quarter-score-total {
+    color: var(--text-primary);
+    border-left: 1px solid var(--border);
+}
+
+.shooting-donuts {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+    padding: var(--spacing-md) 0;
+}
+
+.shooting-donut {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.donut-ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.donut-ring.outer { width: 108px; height: 108px; }
+.donut-ring.inner { width: 76px; height: 76px; }
+
+.donut-ring.is-empty { background: rgba(148, 163, 184, 0.2); }
+
+/* 外周と内周の間の隙間。背景色で抜いて2本のリングに見せる */
+.donut-gap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--bg-card);
+}
+
+.donut-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--bg-card);
+}
+
+.donut-percent {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+/* リングと数字の対応を示す点。色は実値をインラインで受け取る（出力時に
+   CSS変数が解決できないのは teamColors.ts のコメントのとおり）。
+   選手詳細の凡例（legend-dot）と同じ形に揃えている */
+.donut-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+.donut-unavailable {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.donut-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.score-evolution {
+    padding: var(--spacing-md) 0;
+}
+
+.score-evolution svg {
+    display: block;
+    width: 100%;
+}
+
+.score-evolution-note {
+    margin: var(--spacing-xs) 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.team-comparison {
+    padding: var(--spacing-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    /* 幅を止めないと、行のグリッド（4.5em 1fr 5.5em 1fr 4.5em）の 1fr 2本が
+       余った幅を全部吸う。タブレットや横向きではバーだけが伸びて値とラベルが
+       両端に取り残され、対比が読み取りづらくなる */
+    max-width: 800px;
+    margin-inline: auto;
+    width: 100%;
+}
+
+.quarter-filter {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) 0;
+}
+
+.quarter-filter button {
+    min-height: var(--touch-target);
+    min-width: 56px;
+    padding: 0 var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.quarter-filter button.active {
+    background: var(--primary);
+    border-color: var(--primary-light);
+    color: var(--text-primary);
+}
+
+.comparison-export {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-md);
+}
+
+/* 出力ボタン自体は画像に写さない */
+.exporting .no-export {
+    display: none !important;
+}

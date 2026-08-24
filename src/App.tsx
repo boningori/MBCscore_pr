@@ -28,6 +28,7 @@ import { TeamPanel } from './components/TeamPanel';
 import { SubstitutionModal } from './components/SubstitutionModal';
 import { TimeoutInputModal } from './components/TimeoutInputModal/TimeoutInputModal';
 import { StatsPanel } from './components/StatsPanel';
+import { TeamComparison } from './components/TeamComparison';
 import { QuarterLineup } from './components/QuarterLineup';
 import { PendingActionPanel } from './components/PendingActionPanel';
 
@@ -1158,6 +1159,15 @@ function AppContent({ screen, setScreen }: AppContentProps) {
       <main className="app-main">
         {showStats ? (
           <div className="stats-view">
+            {/* チーム同士の対比。選手別の内訳はこの下の StatsPanel で見る */}
+            <TeamComparison
+              teamA={state.teamA}
+              teamB={state.teamB}
+              scoreHistory={state.scoreHistory}
+              statHistory={state.statHistory}
+              foulHistory={state.foulHistory}
+              showThreePoint={state.showThreePoint}
+            />
 
             {/* statHistory は「不明で記録」した分を合計に含めるために渡す */}
             <StatsPanel players={state.teamA.players} teamName={state.teamA.name} teamId="teamA" statHistory={state.statHistory} />
