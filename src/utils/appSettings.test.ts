@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getDefaultGameMode, hasStoredGameMode, saveDefaultGameMode } from './appSettings';
+import {
+    getDefaultGameMode,
+    grantVoiceMemoConsent,
+    hasStoredGameMode,
+    hasVoiceMemoConsent,
+    isVoiceMemoEnabled,
+    saveDefaultGameMode,
+    setVoiceMemoEnabled,
+} from './appSettings';
 
 beforeEach(() => {
     localStorage.clear();
@@ -116,5 +124,44 @@ describe('hasStoredGameMode', () => {
     it('保存済みならtrue', () => {
         saveDefaultGameMode('simple');
         expect(hasStoredGameMode()).toBe(true);
+    });
+});
+
+describe('appSettings: 音声メモ', () => {
+    it('既定はOFF（音声の外部送信は明示的な選択の上でのみ行う）', () => {
+        expect(isVoiceMemoEnabled()).toBe(false);
+    });
+
+    it('既定では同意していない', () => {
+        expect(hasVoiceMemoConsent()).toBe(false);
+    });
+
+    it('ONにすると有効になる', () => {
+        setVoiceMemoEnabled(true);
+        expect(isVoiceMemoEnabled()).toBe(true);
+    });
+
+    it('OFFに戻せる', () => {
+        setVoiceMemoEnabled(true);
+        setVoiceMemoEnabled(false);
+        expect(isVoiceMemoEnabled()).toBe(false);
+    });
+
+    it('同意は一度与えると残る', () => {
+        grantVoiceMemoConsent();
+        expect(hasVoiceMemoConsent()).toBe(true);
+    });
+
+    it('OFFに戻しても同意は取り消されない（再度ONで確認をやり直さない）', () => {
+        grantVoiceMemoConsent();
+        setVoiceMemoEnabled(true);
+        setVoiceMemoEnabled(false);
+        expect(hasVoiceMemoConsent()).toBe(true);
+    });
+
+    it('既定モードの設定を壊さない', () => {
+        saveDefaultGameMode('simple');
+        setVoiceMemoEnabled(true);
+        expect(getDefaultGameMode()).toBe('simple');
     });
 });
