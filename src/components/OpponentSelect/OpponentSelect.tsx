@@ -9,7 +9,8 @@ import {
     clearRecentOpponents,
     loadOpponents
 } from '../../utils/teamStorage';
-import { recognizePlayerList, isOCRAvailable, getStoredApiKey } from '../../utils/imageOCR';
+import { recognizePlayerList, isOCRAvailable } from '../../utils/imageOCR';
+import { getStoredApiKey } from '../../utils/geminiClient';
 import { showToast } from '../Toast/toastApi';
 import { DeleteConfirmModal } from '../TeamShared/DeleteConfirmModal';
 import { isPlayerLimitReached, playerLimitMessage } from '../TeamShared/playerLimit';

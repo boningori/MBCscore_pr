@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { showToast } from '../Toast/toastApi';
-import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/imageOCR';
+import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/geminiClient';
 import { getDefaultGameMode, saveDefaultGameMode, type GameMode } from '../../utils/appSettings';
 import {
     exportAllData,

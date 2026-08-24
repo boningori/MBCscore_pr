@@ -7,7 +7,8 @@ import {
     deleteOpponent,
     createEmptySavedTeam,
 } from '../../utils/teamStorage';
-import { recognizePlayerList, getStoredApiKey } from '../../utils/imageOCR';
+import { recognizePlayerList } from '../../utils/imageOCR';
+import { getStoredApiKey } from '../../utils/geminiClient';
 import {
     DOUBLE_ZERO_INTERNAL,
     formatPlayerNumber,
