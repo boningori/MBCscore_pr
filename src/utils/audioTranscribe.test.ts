@@ -99,4 +99,18 @@ describe('audioTranscribe: 失敗時', () => {
         // 1回叩いた時点でインフラ障害と分かるはずで、5モデル分待たせてはいけない
         expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
     });
+
+    // 会場のキャプティブポータル等は200 OKでHTMLのログインページを返すことがある。
+    // response.okがtrueでも本文がJSONとは限らない。ここが無防備だと外側のcatchに
+    // 落ちて「通信そのものが失敗した」ときと区別が付かず、base64化した音声を
+    // 残りの全モデル分再送信してしまう
+    it('200でも本文がJSONでない場合（キャプティブポータル等）、即座に失敗を返し全モデルを回らない', async () => {
+        vi.mocked(fetch).mockResolvedValue({
+            ok: true,
+            json: async () => { throw new SyntaxError('Unexpected token < in JSON at position 0'); },
+        } as never);
+        const result = await transcribeAudio(wav(), 'key');
+        expect(result.success).toBe(false);
+        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    });
 });

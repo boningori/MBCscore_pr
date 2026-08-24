@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useVoiceMemo } from './useVoiceMemo';
 import { saveApiKey } from '../utils/geminiClient';
-import { setVoiceMemoEnabled } from '../utils/appSettings';
+import { notifyAppSettingsChanged, setVoiceMemoEnabled } from '../utils/appSettings';
 import { clearVoiceMemos, loadVoiceMemos, saveVoiceMemos } from '../utils/voiceMemoStorage';
 
 vi.mock('../utils/audioTranscribe', () => ({
@@ -145,6 +145,68 @@ describe('useVoiceMemo: 機能そのもののON/OFF（ネットワーク状態�
         });
 
         await waitFor(() => expect(result.current.isFeatureEnabled).toBe(false));
+    });
+});
+
+// AppContentは得点・スタッツ・ファウルの記録のたびに再描画される。
+// isFeatureEnabledの計算でisVoiceMemoEnabled()・getStoredApiKey()を毎回呼ぶと、
+// 記録操作のたびにlocalStorageの読み込み・JSON.parseが走ってしまう。
+// 値を状態として持ち、設定変更時にだけ購読経由で読み直す形にする
+describe('useVoiceMemo: 設定は毎レンダーで読み直さない（ホットパス対策）', () => {
+    it('設定と無関係な再レンダーでは、音声メモの設定キーをlocalStorageから読み直さない', () => {
+        const { rerender } = renderHook(
+            ({ quarter }: { quarter: number }) => useVoiceMemo({ quarter, enabled: true }),
+            { initialProps: { quarter: 1 } },
+        );
+        const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
+        getItemSpy.mockClear();
+
+        // quarterの変化は得点記録などに伴う、設定とは無関係な再レンダーを模す
+        for (let q = 2; q <= 20; q++) {
+            rerender({ quarter: q });
+        }
+
+        const settingsReads = getItemSpy.mock.calls.filter(([key]) => key === 'minibasket-app-settings');
+        expect(settingsReads).toHaveLength(0);
+    });
+
+    it('マウント後に設定画面でONにすると、リロードなしでisFeatureEnabledへ反映される', async () => {
+        setVoiceMemoEnabled(false);
+        const { result } = render();
+        expect(result.current.isFeatureEnabled).toBe(false);
+
+        act(() => {
+            setVoiceMemoEnabled(true);
+        });
+
+        await waitFor(() => expect(result.current.isFeatureEnabled).toBe(true));
+    });
+
+    it('バックアップ復元のようにlocalStorageへ直接書き込む変更も、notifyAppSettingsChanged経由で反映される', async () => {
+        // バックアップ復元（dataBackup.ts）はsaveAppSettingsを経由せずlocalStorageへ
+        // 直接書く。状態を一度読み込んだ後でも、その変更が届くことを確認する
+        setVoiceMemoEnabled(false);
+        const { result } = render();
+        expect(result.current.isFeatureEnabled).toBe(false);
+
+        localStorage.setItem('minibasket-app-settings', JSON.stringify({ voiceMemoEnabled: true }));
+        act(() => {
+            notifyAppSettingsChanged();
+        });
+
+        await waitFor(() => expect(result.current.isFeatureEnabled).toBe(true));
+    });
+
+    it('APIキーを設定画面で変更すると、リロードなしでisFeatureEnabledへ反映される', async () => {
+        saveApiKey('');
+        const { result } = render();
+        expect(result.current.isFeatureEnabled).toBe(false);
+
+        act(() => {
+            saveApiKey('new-key');
+        });
+
+        await waitFor(() => expect(result.current.isFeatureEnabled).toBe(true));
     });
 });
 
@@ -359,6 +421,69 @@ describe('useVoiceMemo: 同時押しでのマイク多重取得（オーファ�
             await result.current.startRecording();
         });
         expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(2);
+        expect(result.current.isRecording).toBe(true);
+    });
+});
+
+describe('useVoiceMemo: マイク許可待ち中に離した場合（オーファン録音防止）', () => {
+    // ボタン側の修正により、getUserMediaがまだ解決していない（isRecordingがまだ
+    // falseの）うちに stopRecording が呼ばれることがある。録音を一切始めず、
+    // 確保したストリームだけ解放しないと、許可が下りた瞬間に誰も止めない
+    // 録音が始まり、MAX_DURATION_MSの60秒まで周囲の音を録り続けてしまう
+    it('getUserMedia解決前にstopRecordingが呼ばれたら、録音を開始せずストリームだけ解放する', async () => {
+        const stopSpy = vi.fn();
+        let resolveGum!: (v: unknown) => void;
+        const gum = new Promise(resolve => { resolveGum = resolve; });
+        vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gum as never);
+
+        const { result } = render();
+
+        let startPromise!: Promise<void>;
+        act(() => {
+            startPromise = result.current.startRecording();
+        });
+        // マイク許可ダイアログが出ている間に指を離す
+        act(() => {
+            result.current.stopRecording();
+        });
+
+        await act(async () => {
+            resolveGum({ getTracks: () => [{ stop: stopSpy }] });
+            await startPromise;
+        });
+
+        // マイクの使用許可は取れているので、そのストリームのトラックは必ず止める
+        expect(stopSpy).toHaveBeenCalled();
+        // 録音は一切始まっていない
+        expect(result.current.isRecording).toBe(false);
+        expect(result.current.memos).toHaveLength(0);
+        expect(vi.mocked(transcribeAudio)).not.toHaveBeenCalled();
+    });
+
+    it('取り消した後の押下は普通に録音できる（フラグが次の押下へ持ち越されない）', async () => {
+        let resolveGum!: (v: unknown) => void;
+        const gum = new Promise(resolve => { resolveGum = resolve; });
+        vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gum as never);
+
+        const { result } = render();
+
+        let startPromise!: Promise<void>;
+        act(() => {
+            startPromise = result.current.startRecording();
+        });
+        act(() => {
+            result.current.stopRecording();
+        });
+        await act(async () => {
+            resolveGum({ getTracks: () => [{ stop: vi.fn() }] });
+            await startPromise;
+        });
+        expect(result.current.isRecording).toBe(false);
+
+        // 次の押下は通常どおり録音を開始できる
+        await act(async () => {
+            await result.current.startRecording();
+        });
         expect(result.current.isRecording).toBe(true);
     });
 });

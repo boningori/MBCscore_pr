@@ -43,6 +43,22 @@ describe('VoiceMemoButton: 押している間だけ録音', () => {
         fireEvent.pointerCancel(screen.getByRole('button'));
         expect(onStop).toHaveBeenCalledTimes(1);
     });
+
+    // マイク許可ダイアログの表示中（getUserMediaが未解決）は isRecording がまだ
+    // false のまま。押した指を離したのに isRecording だけを見ていると release が
+    // すり抜け、許可が下りた後に誰も止めない録音が始まってしまう
+    it('押した直後（isRecordingがまだfalseの間）に離しても、録音を止める指示を出す', () => {
+        const { onStop } = setup({ isRecording: false });
+        fireEvent.pointerDown(screen.getByRole('button'));
+        fireEvent.pointerUp(screen.getByRole('button'));
+        expect(onStop).toHaveBeenCalledTimes(1);
+    });
+
+    it('押していないのにポインタが外れても（通常のマウスアウト）、何もしない', () => {
+        const { onStop } = setup({ isRecording: false });
+        fireEvent.pointerLeave(screen.getByRole('button'));
+        expect(onStop).not.toHaveBeenCalled();
+    });
 });
 
 // jest-dom は導入していないため、属性・disabled は素のプロパティで確かめる

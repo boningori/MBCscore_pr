@@ -7,7 +7,7 @@ import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
 import { loadMyTeams, loadOpponents, loadRecentOpponents, saveMyTeams, saveOpponents } from './teamStorage';
 import type { AppSettings } from './appSettings';
-import { loadAppSettings } from './appSettings';
+import { loadAppSettings, notifyAppSettingsChanged } from './appSettings';
 import type { GameSession } from './gameSessionStorage';
 import { loadGameSession, hasGameSession } from './gameSessionStorage';
 import { recordBackup } from './lastBackupStorage';
@@ -1149,6 +1149,7 @@ function importFullBackup(data: BackupData): ImportResult {
         // data.data.settings は型上 AppSettings だが実体はJSONパース結果で
         // 保証がないため、スプレッド後に明示的に上書きすることで
         // 想定外の形のバックアップファイルでも迂回されないようにする
+        let settingsImported = false;
         if (data.data.settings) {
             const existingSettings = loadAppSettings();
             const mergedSettings: AppSettings = {
@@ -1158,6 +1159,7 @@ function importFullBackup(data: BackupData): ImportResult {
                 voiceMemoConsented: existingSettings.voiceMemoConsented,
             };
             writes.push(['minibasket-app-settings', JSON.stringify(mergedSettings)]);
+            settingsImported = true;
         }
 
         // 非表示選手情報のインポート（既存データとマージ）
@@ -1189,6 +1191,13 @@ function importFullBackup(data: BackupData): ImportResult {
                 message: '復元に失敗しました（端末の空き容量が足りない可能性があります）。データは元のままです',
                 errors: ['localStorageへの書き込みに失敗しました'],
             };
+        }
+
+        // 設定はlocalStorageへ直接書き込んでおり（上のwrites経由）saveAppSettingsを
+        // 通らないため、この経路でも購読者（useVoiceMemo等）へ明示的に知らせる。
+        // 知らせないと、リロードしない限りアプリが古い設定値を握ったままになる
+        if (settingsImported) {
+            notifyAppSettingsChanged();
         }
 
         // 詳細メッセージ生成

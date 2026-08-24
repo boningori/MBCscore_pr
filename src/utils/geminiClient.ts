@@ -22,12 +22,24 @@ export function getStoredApiKey(): string {
     return localStorage.getItem(STORAGE_KEY_GEMINI_API) || import.meta.env.VITE_GEMINI_API_KEY || '';
 }
 
+// APIキー変更の購読。useVoiceMemoはisFeatureEnabledの計算にgetStoredApiKey()を
+// 使うが、AppContentは得点等の記録のたびに再描画されるため、レンダーのたびに
+// 呼ぶとホットパスでlocalStorageを読んでしまう。設定画面での保存時だけ
+// 購読者へ知らせ、hooks側はそのときだけ読み直す
+const apiKeyListeners = new Set<() => void>();
+
+export function subscribeApiKeyChanged(listener: () => void): () => void {
+    apiKeyListeners.add(listener);
+    return () => apiKeyListeners.delete(listener);
+}
+
 export function saveApiKey(key: string): void {
     if (key) {
         localStorage.setItem(STORAGE_KEY_GEMINI_API, key);
     } else {
         localStorage.removeItem(STORAGE_KEY_GEMINI_API);
     }
+    apiKeyListeners.forEach(listener => listener());
 }
 
 /**

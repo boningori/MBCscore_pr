@@ -22,6 +22,31 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 const settingsStorage = createJsonStorage<Partial<AppSettings>>(APP_SETTINGS_KEY, {}, 'app settings');
 
+// 設定変更の購読。
+//
+// AppContentは得点・スタッツ・ファウルの記録のたびに再描画されるため、
+// isVoiceMemoEnabled()を毎レンダー呼ぶと、その都度localStorageの読み込みと
+// JSON.parseが走ってしまう（記録操作のたびに、である）。読み込み値自体を
+// モジュールにキャッシュする案もあったが、バックアップ復元
+// （dataBackup.ts）がsaveAppSettingsを経由せずlocalStorageへ直接書くため、
+// キャッシュだけでは復元直後に古い値を返しかねない。
+// 代わりに「値」ではなく「変わったことそのもの」を通知する側に倒す。
+// 呼び出し側（useVoiceMemo）は変更があったときだけ読み直せばよく、
+// 通知漏れがあっても古い値を握り続けるだけで、キャッシュのように
+// 間違った値を他のロジック（バックアップのマージ処理等）へ渡す事故が起きない。
+const settingsListeners = new Set<() => void>();
+
+export function subscribeAppSettingsChanged(listener: () => void): () => void {
+    settingsListeners.add(listener);
+    return () => settingsListeners.delete(listener);
+}
+
+// saveAppSettingsを経由しない変更（バックアップ復元でのlocalStorage直接書き込み等）
+// のために公開する
+export function notifyAppSettingsChanged(): void {
+    settingsListeners.forEach(listener => listener());
+}
+
 // アプリ設定を保存
 // loadAppSettings()（既定値で埋めた値）ではなく生のストレージ値にマージする。
 // そうしないと一部の設定を保存しただけで未選択の項目まで既定値として
@@ -29,6 +54,7 @@ const settingsStorage = createJsonStorage<Partial<AppSettings>>(APP_SETTINGS_KEY
 // 見分ける処理が壊れる
 export function saveAppSettings(settings: Partial<AppSettings>): void {
     settingsStorage.save({ ...settingsStorage.load(), ...settings });
+    notifyAppSettingsChanged();
 }
 
 // アプリ設定を読み込み

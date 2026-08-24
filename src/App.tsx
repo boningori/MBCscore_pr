@@ -267,6 +267,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     // 新しいゲームを開始するため状態をリセット
     dispatch({ type: 'RESET_GAME' });
 
+    // 音声メモは手入力のための下書きであり、寿命は試合単位。ここは前の試合の
+    // セッションを実際に置き換える地点なので、ここで消す（ウィザードへの
+    // 入口では消さない。入口で消すと、設定を諦めて中断中の試合を再開したときに
+    // 巻き添えで消えてしまう）
+    voiceMemo.clearAll();
+
     setGameName(setupData.gameName);
     setDate(setupData.date);
 

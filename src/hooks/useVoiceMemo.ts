@@ -8,8 +8,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '../components/Toast/toastApi';
-import { getStoredApiKey } from '../utils/geminiClient';
-import { isVoiceMemoEnabled } from '../utils/appSettings';
+import { getStoredApiKey, subscribeApiKeyChanged } from '../utils/geminiClient';
+import { isVoiceMemoEnabled, subscribeAppSettingsChanged } from '../utils/appSettings';
 import { blobToWav } from '../utils/audioWav';
 import { transcribeAudio } from '../utils/audioTranscribe';
 import type { VoiceMemo } from '../utils/voiceMemo';
@@ -59,6 +59,15 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
     // 出るのは記録中に邪魔なので、案内は一度だけにする
     const [micDenied, setMicDenied] = useState(false);
 
+    // 音声メモON/OFFとAPIキーは状態として持つ（毎レンダー読み直さない）。
+    // AppContentは得点・スタッツ・ファウルの記録のたびに再描画されるため、
+    // isFeatureEnabledの計算でisVoiceMemoEnabled()・getStoredApiKey()を
+    // 呼ぶ実装のままだと、記録操作のたびにlocalStorageを読んでしまう。
+    // 変更は設定画面またはバックアップ復元でしか起きないので、そのときだけ
+    // 購読経由で読み直す（下のuseEffect参照）
+    const [voiceMemoEnabled, setVoiceMemoEnabledState] = useState(isVoiceMemoEnabled);
+    const [apiKey, setApiKeyState] = useState(getStoredApiKey);
+
     const recorderRef = useRef<MediaRecorder | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const chunksRef = useRef<Blob[]>([]);
@@ -71,6 +80,10 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
     // どちらも isRecording による早期returnをすり抜けてしまう。
     // ref は同期的に効くので、await の前に立てて finally で必ず下ろす
     const startingRef = useRef(false);
+    // startingRef が立っている間（＝getUserMedia の許可待ち）に stopRecording が
+    // 呼ばれたことを覚えておくフラグ。まだ MediaRecorder が無いので直接止める
+    // ものが無く、許可が下りた時点で releaseStream するだけにして録音を始めない
+    const stopRequestedRef = useRef(false);
 
     // 一覧が変わるたび sessionStorage に写す
     useEffect(() => {
@@ -87,8 +100,19 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
         };
     }, []);
 
+    // 設定画面での変更やバックアップ復元（localStorageへの直接書き込み。
+    // saveAppSettingsを経由しないため通知だけ別に呼ばれる）を、リロードなしで拾う
+    useEffect(() => {
+        const unsubscribeSettings = subscribeAppSettingsChanged(() => setVoiceMemoEnabledState(isVoiceMemoEnabled()));
+        const unsubscribeApiKey = subscribeApiKeyChanged(() => setApiKeyState(getStoredApiKey()));
+        return () => {
+            unsubscribeSettings();
+            unsubscribeApiKey();
+        };
+    }, []);
+
     const isOffline = !isOnline;
-    const isFeatureEnabled = enabled && isVoiceMemoEnabled() && !!getStoredApiKey() && !micDenied;
+    const isFeatureEnabled = enabled && voiceMemoEnabled && !!apiKey && !micDenied;
     const isAvailable = isFeatureEnabled && isOnline;
 
     const send = useCallback(async (id: string, audio: Blob) => {
@@ -147,6 +171,15 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
             // （MediaRecorder のコンストラクタが投げても）releaseStream() が
             // このストリームを見つけて必ず止められるよう、真っ先に控えておく
             streamRef.current = stream;
+
+            if (stopRequestedRef.current) {
+                // 許可ダイアログが出ている間に指が離れていた。ここで録音を
+                // 始めると誰も止めない録音になる（MAX_DURATION_MSまで居座る）ので、
+                // 何も録らず・何も送らずに確保したストリームだけ解放する
+                releaseStream();
+                return;
+            }
+
             const recorder = new MediaRecorder(stream);
             chunksRef.current = [];
             startedAtRef.current = Date.now();
@@ -195,12 +228,19 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
             }
         } finally {
             startingRef.current = false;
+            // 次の押下へ持ち越さない（消費済みでも未消費でも、ここで必ずリセットする）
+            stopRequestedRef.current = false;
         }
     }, [isAvailable, isRecording, quarter, releaseStream, send]);
 
     const stopRecording = useCallback(() => {
         const recorder = recorderRef.current;
-        if (!recorder) return;
+        if (!recorder) {
+            // まだ MediaRecorder が無い＝getUserMedia の許可待ちの可能性がある。
+            // 許可待ち中でなければ（押下自体が無かった等）何もしない
+            if (startingRef.current) stopRequestedRef.current = true;
+            return;
+        }
         if (recorder.state === 'recording') recorder.stop();
     }, []);
 

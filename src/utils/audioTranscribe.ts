@@ -78,7 +78,16 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
                 return { success: false, error: errorMessage };
             }
 
-            const data = await response.json();
+            let data: { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+            try {
+                data = await response.json();
+            } catch {
+                // 200 OKでも本文がJSONとは限らない（会場のキャプティブポータルが
+                // HTMLのログインページを返す等）。ここで投げると外側のcatchに落ちて
+                // 「通信そのものが失敗した」ときと区別が付かず、base64化した音声を
+                // 残りの全モデルへ律儀に再送信して記録者を待たせてしまう
+                return { success: false, error: '応答の解析に失敗しました（ネットワーク環境をご確認ください）' };
+            }
             const text: string | undefined = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (text) {
                 return { success: true, text: text.trim() };

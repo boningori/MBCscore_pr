@@ -1,12 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
     getDefaultGameMode,
     grantVoiceMemoConsent,
     hasStoredGameMode,
     hasVoiceMemoConsent,
     isVoiceMemoEnabled,
+    notifyAppSettingsChanged,
     saveDefaultGameMode,
     setVoiceMemoEnabled,
+    subscribeAppSettingsChanged,
 } from './appSettings';
 
 beforeEach(() => {
@@ -185,5 +187,36 @@ describe('appSettings: 音声メモ', () => {
     it('明示的に既定モードを保存した場合はhasStoredGameModeがtrueのまま', () => {
         saveDefaultGameMode('full');
         expect(hasStoredGameMode()).toBe(true);
+    });
+});
+
+// AppContentは得点・スタッツ・ファウルのたびに再描画されるため、useVoiceMemoが
+// isVoiceMemoEnabled()を毎回呼ぶとその都度localStorageを読んでしまう。
+// 変更があったときだけ購読者へ知らせることで、hooks側は変更時にだけ読み直せばよくなる
+describe('appSettings: 変更通知（毎レンダーでlocalStorageを読まずに済ませるため）', () => {
+    it('saveAppSettings経由の変更（setVoiceMemoEnabled等）で購読者に通知する', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+        setVoiceMemoEnabled(true);
+        expect(listener).toHaveBeenCalledTimes(1);
+        unsubscribe();
+    });
+
+    it('unsubscribe後は通知されない', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+        unsubscribe();
+        setVoiceMemoEnabled(true);
+        expect(listener).not.toHaveBeenCalled();
+    });
+
+    // バックアップ復元はlocalStorageへ直接書き込み、saveAppSettingsを経由しない。
+    // その経路のためにnotifyAppSettingsChangedを公開で呼べるようにする
+    it('notifyAppSettingsChangedを直接呼んでも購読者に通知される（saveAppSettings非経由の変更向け）', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+        notifyAppSettingsChanged();
+        expect(listener).toHaveBeenCalledTimes(1);
+        unsubscribe();
     });
 });

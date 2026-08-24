@@ -8,7 +8,7 @@ import { saveRecentOpponent, loadRecentOpponents } from './teamStorage';
 import { saveGameSession, loadGameSession, hasGameSession } from './gameSessionStorage';
 import { createInitialGame } from '../types/game';
 import { loadLastBackup } from './lastBackupStorage';
-import { isVoiceMemoEnabled, hasVoiceMemoConsent, loadAppSettings } from './appSettings';
+import { isVoiceMemoEnabled, hasVoiceMemoConsent, loadAppSettings, subscribeAppSettingsChanged } from './appSettings';
 
 function makeSavedTeam(id: string, name: string): SavedTeam {
     return {
@@ -137,6 +137,29 @@ describe('バックアップ復元は音声メモの同意を持ち込まない�
         expect(hasVoiceMemoConsent()).toBe(true);
         // 他の設定（defaultGameMode）は除外対象ではなく、バックアップ通りに反映される
         expect(loadAppSettings().defaultGameMode).toBe('simple');
+    });
+
+    // 設定はlocalStorageへ直接書き込まれ、saveAppSettingsを経由しない。
+    // useVoiceMemoはisVoiceMemoEnabled()の呼び出し結果を状態として持っているため
+    // （毎レンダー読み直さないための対策）、この経路でも購読者に通知しないと
+    // バックアップ復元後もアプリが古い設定値を握ったままになる
+    it('設定を含むバックアップを復元すると、購読者へ変更を通知する（saveAppSettingsを経由しない書き込みのため）', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-08-24T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: { defaultGameMode: 'simple', voiceMemoEnabled: false, voiceMemoConsented: false },
+            },
+        };
+        const result = executeImport(parseImportJSON(JSON.stringify(backup)));
+
+        expect(result.success).toBe(true);
+        expect(listener).toHaveBeenCalledTimes(1);
+        unsubscribe();
     });
 });
 
