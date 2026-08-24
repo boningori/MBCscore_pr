@@ -1,5 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { getDefaultGameMode, hasStoredGameMode, saveDefaultGameMode } from './appSettings';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+    getDefaultGameMode,
+    grantVoiceMemoConsent,
+    hasStoredGameMode,
+    hasVoiceMemoConsent,
+    isVoiceMemoEnabled,
+    notifyAppSettingsChanged,
+    saveDefaultGameMode,
+    setVoiceMemoEnabled,
+    subscribeAppSettingsChanged,
+} from './appSettings';
 
 beforeEach(() => {
     localStorage.clear();
@@ -116,5 +126,97 @@ describe('hasStoredGameMode', () => {
     it('保存済みならtrue', () => {
         saveDefaultGameMode('simple');
         expect(hasStoredGameMode()).toBe(true);
+    });
+});
+
+describe('appSettings: 音声メモ', () => {
+    it('既定はOFF（音声の外部送信は明示的な選択の上でのみ行う）', () => {
+        expect(isVoiceMemoEnabled()).toBe(false);
+    });
+
+    it('既定では同意していない', () => {
+        expect(hasVoiceMemoConsent()).toBe(false);
+    });
+
+    it('ONにすると有効になる', () => {
+        setVoiceMemoEnabled(true);
+        expect(isVoiceMemoEnabled()).toBe(true);
+    });
+
+    it('OFFに戻せる', () => {
+        setVoiceMemoEnabled(true);
+        setVoiceMemoEnabled(false);
+        expect(isVoiceMemoEnabled()).toBe(false);
+    });
+
+    it('同意は一度与えると残る', () => {
+        grantVoiceMemoConsent();
+        expect(hasVoiceMemoConsent()).toBe(true);
+    });
+
+    it('OFFに戻しても同意は取り消されない（再度ONで確認をやり直さない）', () => {
+        grantVoiceMemoConsent();
+        setVoiceMemoEnabled(true);
+        setVoiceMemoEnabled(false);
+        expect(hasVoiceMemoConsent()).toBe(true);
+    });
+
+    it('既定モードの設定を壊さない', () => {
+        saveDefaultGameMode('simple');
+        setVoiceMemoEnabled(true);
+        expect(getDefaultGameMode()).toBe('simple');
+    });
+
+    // saveAppSettingsはloadAppSettings()（既定値で埋めた値）ではなく
+    // 生のストレージ値に対してマージしなければならない。
+    // そうしないと音声メモの設定を保存しただけでdefaultGameMode: 'full'が
+    // 生ストレージに書き込まれ、hasStoredGameMode()がtrueを返してしまい、
+    // useGameModeの画面幅追従（iPadの回転対応）が永久に止まる
+    it('音声メモをONにしても既定モードは「未保存」のままか', () => {
+        expect(hasStoredGameMode()).toBe(false);
+        setVoiceMemoEnabled(true);
+        expect(hasStoredGameMode()).toBe(false);
+    });
+
+    it('同意しても既定モードは「未保存」のままか', () => {
+        expect(hasStoredGameMode()).toBe(false);
+        grantVoiceMemoConsent();
+        expect(hasStoredGameMode()).toBe(false);
+    });
+
+    it('明示的に既定モードを保存した場合はhasStoredGameModeがtrueのまま', () => {
+        saveDefaultGameMode('full');
+        expect(hasStoredGameMode()).toBe(true);
+    });
+});
+
+// AppContentは得点・スタッツ・ファウルのたびに再描画されるため、useVoiceMemoが
+// isVoiceMemoEnabled()を毎回呼ぶとその都度localStorageを読んでしまう。
+// 変更があったときだけ購読者へ知らせることで、hooks側は変更時にだけ読み直せばよくなる
+describe('appSettings: 変更通知（毎レンダーでlocalStorageを読まずに済ませるため）', () => {
+    it('saveAppSettings経由の変更（setVoiceMemoEnabled等）で購読者に通知する', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+        setVoiceMemoEnabled(true);
+        expect(listener).toHaveBeenCalledTimes(1);
+        unsubscribe();
+    });
+
+    it('unsubscribe後は通知されない', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+        unsubscribe();
+        setVoiceMemoEnabled(true);
+        expect(listener).not.toHaveBeenCalled();
+    });
+
+    // バックアップ復元はlocalStorageへ直接書き込み、saveAppSettingsを経由しない。
+    // その経路のためにnotifyAppSettingsChangedを公開で呼べるようにする
+    it('notifyAppSettingsChangedを直接呼んでも購読者に通知される（saveAppSettings非経由の変更向け）', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+        notifyAppSettingsChanged();
+        expect(listener).toHaveBeenCalledTimes(1);
+        unsubscribe();
     });
 });

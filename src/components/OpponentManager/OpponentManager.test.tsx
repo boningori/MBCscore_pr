@@ -11,6 +11,11 @@ vi.mock('../Toast/toastApi', () => ({ showToast }));
 // OCRはネットワーク/ワーカーを触るので、この画面のCRUD検証では読み込ませない
 vi.mock('../../utils/imageOCR', () => ({
     recognizePlayerList: vi.fn(),
+}));
+
+// getStoredApiKey は geminiClient に移動済み。実装のままだと localStorage / env
+// を読みに行ってしまうため、決定的な空文字を返すスタブに固定する。
+vi.mock('../../utils/geminiClient', () => ({
     getStoredApiKey: () => '',
 }));
 

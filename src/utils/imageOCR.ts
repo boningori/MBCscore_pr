@@ -10,34 +10,7 @@ import { parsePlayerNumber, isValidPlayerNumber } from './playerNumber';
 // 型は import type で取る（ビルド後に消えるためバンドルに影響しない）。
 import type { createWorker } from 'tesseract.js';
 import { TESSERACT_PATHS } from './tesseractAssets';
-
-// API設定
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
-const STORAGE_KEY_GEMINI_API = 'mbc_gemini_api_key';
-
-const FALLBACK_MODELS = [
-    // --- 現行主力モデル (安定版) ---
-    'gemini-2.5-flash-lite',    // 最速・最軽量モデル
-    'gemini-2.5-flash',         // 高速・低コスト・多機能
-    'gemini-2.5-pro',           // 高度な思考・論理推論 (Adaptive Thinking)
-    // --- 次世代モデル (最新プレビュー) ---
-    'gemini-3-flash-preview',   // 最もバランスの取れた次世代モデル    
-    'gemini-3-pro-preview'     // 最強のエージェント型・推論モデル
-];
-
-
-// APIキーの管理関数
-export function getStoredApiKey(): string {
-    return localStorage.getItem(STORAGE_KEY_GEMINI_API) || import.meta.env.VITE_GEMINI_API_KEY || '';
-}
-
-export function saveApiKey(key: string): void {
-    if (key) {
-        localStorage.setItem(STORAGE_KEY_GEMINI_API, key);
-    } else {
-        localStorage.removeItem(STORAGE_KEY_GEMINI_API);
-    }
-}
+import { GEMINI_API_BASE, FALLBACK_MODELS, getStoredApiKey } from './geminiClient';
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -47,68 +20,6 @@ export interface ImageOCRResult {
     error?: string;
     usedEngine?: 'Gemini' | 'Tesseract'; // どちらを使ったか返す
     fallbackReason?: string; // GeminiからTesseractへのフォールバック理由
-}
-
-/**
- * Gemini APIの接続テスト
- */
-export async function testGeminiConnection(apiKey: string): Promise<{ success: boolean; message: string }> {
-    let lastError = '';
-
-    for (const model of FALLBACK_MODELS) {
-        try {
-            const url = `${GEMINI_API_BASE}${model}:generateContent`;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': apiKey,
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                { text: "Hello" },
-                            ],
-                        },
-                    ],
-                    generationConfig: {
-                        maxOutputTokens: 10,
-                    },
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData.error?.message || response.statusText;
-
-                // 404なら次のモデルへ
-                if (response.status === 404 || errorMessage.includes('not found')) {
-                    console.warn(`Model ${model} not found, trying next...`);
-                    lastError = errorMessage;
-                    continue;
-                }
-
-                // その他のエラーは即座に返す
-                return {
-                    success: false,
-                    message: errorMessage,
-                };
-            }
-
-            const data = await response.json();
-            if (data.candidates && data.candidates.length > 0) {
-                return { success: true, message: `接続成功 (${model})` };
-            }
-        } catch (error) {
-            lastError = error instanceof Error ? error.message : 'Unknown error';
-        }
-    }
-
-    return {
-        success: false,
-        message: `接続失敗: 全てのモデルでエラーが発生しました (${lastError})`,
-    };
 }
 
 // 画像をBase64に変換

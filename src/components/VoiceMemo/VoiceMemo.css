@@ -1,0 +1,91 @@
+/* 音声メモ。休眠中の VoiceInput 用スタイル（index.css の .voice-indicator 等）
+   とは別系統として定義する。あちらは触らない */
+
+.voice-memo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    /* 押しっぱなしにするので、指で確実に掴める大きさを確保する */
+    min-height: 44px;
+    padding: 6px 14px;
+    border: 2px solid var(--color-border, #ccc);
+    border-radius: 22px;
+    background: var(--color-surface, #fff);
+    color: var(--color-text, #222);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    /* 長押し中に選択・スクロール・拡大が起きないようにする */
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.voice-memo-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.voice-memo-btn.is-recording {
+    border-color: var(--color-danger, #d32f2f);
+    background: var(--color-danger, #d32f2f);
+    color: #fff;
+    animation: voice-memo-pulse 1s ease-in-out infinite;
+}
+
+@keyframes voice-memo-pulse {
+    50% { opacity: 0.65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .voice-memo-btn.is-recording {
+        animation: none;
+    }
+}
+
+.voice-memo-btn-icon {
+    font-size: 1.1rem;
+}
+
+/* 一覧パネル */
+.voice-memo-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.voice-memo-item {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border, #ccc);
+    border-radius: 8px;
+    background: var(--color-surface, #fff);
+}
+
+.voice-memo-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #666);
+}
+
+.voice-memo-item-text {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.voice-memo-item.is-failed {
+    border-color: var(--color-danger, #d32f2f);
+}
+
+.voice-memo-empty {
+    padding: 24px 12px;
+    text-align: center;
+    color: var(--color-text-muted, #666);
+}

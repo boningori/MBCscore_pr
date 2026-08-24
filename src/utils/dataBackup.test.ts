@@ -8,6 +8,7 @@ import { saveRecentOpponent, loadRecentOpponents } from './teamStorage';
 import { saveGameSession, loadGameSession, hasGameSession } from './gameSessionStorage';
 import { createInitialGame } from '../types/game';
 import { loadLastBackup } from './lastBackupStorage';
+import { isVoiceMemoEnabled, hasVoiceMemoConsent, loadAppSettings, subscribeAppSettingsChanged } from './appSettings';
 
 function makeSavedTeam(id: string, name: string): SavedTeam {
     return {
@@ -65,6 +66,100 @@ describe('dataBackup 往復整合性', () => {
     it('unknownデータのインポートは失敗を返す', () => {
         const result = executeImport(parseImportJSON('{"foo": 1}'));
         expect(result.success).toBe(false);
+    });
+});
+
+describe('バックアップ復元は音声メモの同意を持ち込まない（同意は端末単位）', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('バックアップ側がON・同意済みでも、真っさらな端末はOFF・未同意のまま復元される', () => {
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-08-24T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: {
+                    defaultGameMode: 'full',
+                    voiceMemoEnabled: true,
+                    voiceMemoConsented: true,
+                },
+            },
+        };
+        const parsed = parseImportJSON(JSON.stringify(backup));
+        expect(parsed.type).toBe('backup');
+        const result = executeImport(parsed);
+        expect(result.success).toBe(true);
+
+        // 同意ダイアログを見ていない端末が、他端末のバックアップ復元だけで
+        // 音声を外部送信できる状態になってはならない
+        expect(isVoiceMemoEnabled()).toBe(false);
+        expect(hasVoiceMemoConsent()).toBe(false);
+    });
+
+    it('設定の形が想定と違っても（型崩れ・余計なキー）、音声メモのフラグは持ち込まれない', () => {
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-08-24T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: {
+                    voiceMemoEnabled: 'true',
+                    voiceMemoConsented: 1,
+                    unknownField: 'x',
+                },
+            },
+        };
+        const parsed = parseImportJSON(JSON.stringify(backup));
+        const result = executeImport(parsed);
+        expect(result.success).toBe(true);
+
+        expect(isVoiceMemoEnabled()).toBe(false);
+        expect(hasVoiceMemoConsent()).toBe(false);
+    });
+
+    it('既にONで同意済みの端末では、その状態を維持する（バックアップに引きずられて消えない）', () => {
+        localStorage.setItem('minibasket-app-settings', JSON.stringify({ voiceMemoEnabled: true, voiceMemoConsented: true }));
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-08-24T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: { defaultGameMode: 'simple', voiceMemoEnabled: false, voiceMemoConsented: false },
+            },
+        };
+        const parsed = parseImportJSON(JSON.stringify(backup));
+        const result = executeImport(parsed);
+        expect(result.success).toBe(true);
+
+        expect(isVoiceMemoEnabled()).toBe(true);
+        expect(hasVoiceMemoConsent()).toBe(true);
+        // 他の設定（defaultGameMode）は除外対象ではなく、バックアップ通りに反映される
+        expect(loadAppSettings().defaultGameMode).toBe('simple');
+    });
+
+    // 設定はlocalStorageへ直接書き込まれ、saveAppSettingsを経由しない。
+    // useVoiceMemoはisVoiceMemoEnabled()の呼び出し結果を状態として持っているため
+    // （毎レンダー読み直さないための対策）、この経路でも購読者に通知しないと
+    // バックアップ復元後もアプリが古い設定値を握ったままになる
+    it('設定を含むバックアップを復元すると、購読者へ変更を通知する（saveAppSettingsを経由しない書き込みのため）', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAppSettingsChanged(listener);
+
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-08-24T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: { defaultGameMode: 'simple', voiceMemoEnabled: false, voiceMemoConsented: false },
+            },
+        };
+        const result = executeImport(parseImportJSON(JSON.stringify(backup)));
+
+        expect(result.success).toBe(true);
+        expect(listener).toHaveBeenCalledTimes(1);
+        unsubscribe();
     });
 });
 

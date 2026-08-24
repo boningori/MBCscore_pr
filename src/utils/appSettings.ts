@@ -8,17 +8,53 @@ export type GameMode = 'full' | 'simple';
 
 export interface AppSettings {
     defaultGameMode: GameMode;
+    /** 音声メモ機能のON/OFF。音声を端末外へ送るため既定はOFF */
+    voiceMemoEnabled: boolean;
+    /** 音声の外部送信について一度でも同意したか。OFFに戻しても取り消さない */
+    voiceMemoConsented: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
     defaultGameMode: 'full',
+    voiceMemoEnabled: false,
+    voiceMemoConsented: false,
 };
 
 const settingsStorage = createJsonStorage<Partial<AppSettings>>(APP_SETTINGS_KEY, {}, 'app settings');
 
+// 設定変更の購読。
+//
+// AppContentは得点・スタッツ・ファウルの記録のたびに再描画されるため、
+// isVoiceMemoEnabled()を毎レンダー呼ぶと、その都度localStorageの読み込みと
+// JSON.parseが走ってしまう（記録操作のたびに、である）。読み込み値自体を
+// モジュールにキャッシュする案もあったが、バックアップ復元
+// （dataBackup.ts）がsaveAppSettingsを経由せずlocalStorageへ直接書くため、
+// キャッシュだけでは復元直後に古い値を返しかねない。
+// 代わりに「値」ではなく「変わったことそのもの」を通知する側に倒す。
+// 呼び出し側（useVoiceMemo）は変更があったときだけ読み直せばよく、
+// 通知漏れがあっても古い値を握り続けるだけで、キャッシュのように
+// 間違った値を他のロジック（バックアップのマージ処理等）へ渡す事故が起きない。
+const settingsListeners = new Set<() => void>();
+
+export function subscribeAppSettingsChanged(listener: () => void): () => void {
+    settingsListeners.add(listener);
+    return () => settingsListeners.delete(listener);
+}
+
+// saveAppSettingsを経由しない変更（バックアップ復元でのlocalStorage直接書き込み等）
+// のために公開する
+export function notifyAppSettingsChanged(): void {
+    settingsListeners.forEach(listener => listener());
+}
+
 // アプリ設定を保存
+// loadAppSettings()（既定値で埋めた値）ではなく生のストレージ値にマージする。
+// そうしないと一部の設定を保存しただけで未選択の項目まで既定値として
+// ストレージに書き込まれ、hasStoredGameMode()のような「明示的に保存したか」を
+// 見分ける処理が壊れる
 export function saveAppSettings(settings: Partial<AppSettings>): void {
-    settingsStorage.save({ ...loadAppSettings(), ...settings });
+    settingsStorage.save({ ...settingsStorage.load(), ...settings });
+    notifyAppSettingsChanged();
 }
 
 // アプリ設定を読み込み
@@ -63,4 +99,25 @@ export function getDefaultGameMode(): GameMode {
 // デフォルトゲームモードを保存
 export function saveDefaultGameMode(mode: GameMode): void {
     saveAppSettings({ defaultGameMode: mode });
+}
+
+// 音声メモ機能のON/OFF。
+// 既定OFFなのは、この機能だけが「記録者の声」を端末外（Googleのサーバー）へ
+// 送るため。知らないうちに送られている状態を作らない。
+export function isVoiceMemoEnabled(): boolean {
+    return loadAppSettings().voiceMemoEnabled;
+}
+
+export function setVoiceMemoEnabled(enabled: boolean): void {
+    saveAppSettings({ voiceMemoEnabled: enabled });
+}
+
+// 外部送信への同意。初回ONのときだけ確認を出すための記録で、
+// OFFに戻しても取り消さない（同じ説明を何度も読ませない）
+export function hasVoiceMemoConsent(): boolean {
+    return loadAppSettings().voiceMemoConsented;
+}
+
+export function grantVoiceMemoConsent(): void {
+    saveAppSettings({ voiceMemoConsented: true });
 }

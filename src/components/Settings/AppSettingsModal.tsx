@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { showToast } from '../Toast/toastApi';
-import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/imageOCR';
-import { getDefaultGameMode, saveDefaultGameMode, type GameMode } from '../../utils/appSettings';
+import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/geminiClient';
+import {
+    getDefaultGameMode,
+    saveDefaultGameMode,
+    grantVoiceMemoConsent,
+    hasVoiceMemoConsent,
+    isVoiceMemoEnabled,
+    setVoiceMemoEnabled,
+    type GameMode,
+} from '../../utils/appSettings';
 import {
     exportAllData,
     exportGameHistoryCSV,
@@ -26,7 +34,7 @@ import { MirrorBackupList } from './MirrorBackupList';
 import { estimateStorageUsage, formatBytes } from '../../utils/storageUsage';
 import './AppSettingsModal.css';
 
-type SectionId = 'mode' | 'ai' | 'data' | 'help' | 'errors' | 'about';
+type SectionId = 'mode' | 'ai' | 'voicememo' | 'data' | 'help' | 'errors' | 'about';
 
 interface AppSettingsModalProps {
     isOpen: boolean;
@@ -38,6 +46,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [showKey, setShowKey] = useState(false);
     const [testStatus, setTestStatus] = useState<{ loading: boolean; message: string; success?: boolean } | null>(null);
     const [defaultMode, setDefaultMode] = useState<GameMode>('full');
+    const [voiceMemoOn, setVoiceMemoOn] = useState(false);
+    const [showVoiceMemoConsent, setShowVoiceMemoConsent] = useState(false);
 
     const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
     const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -79,6 +89,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setApiKey(getStoredApiKey());
             setTestStatus(null);
             setDefaultMode(getDefaultGameMode());
+            setVoiceMemoOn(isVoiceMemoEnabled());
             setPendingImport(null);
             setImportTarget('myTeam');
             setShowTextImport(false);
@@ -196,6 +207,29 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             message: result.message,
             success: result.success
         });
+    };
+
+    // 初回ONのときだけ外部送信の確認を出す。
+    // 同意はOFFに戻しても取り消さない（同じ説明を何度も読ませない）
+    const handleVoiceMemoToggle = () => {
+        if (voiceMemoOn) {
+            setVoiceMemoEnabled(false);
+            setVoiceMemoOn(false);
+            return;
+        }
+        if (!hasVoiceMemoConsent()) {
+            setShowVoiceMemoConsent(true);
+            return;
+        }
+        setVoiceMemoEnabled(true);
+        setVoiceMemoOn(true);
+    };
+
+    const handleVoiceMemoConsent = () => {
+        grantVoiceMemoConsent();
+        setVoiceMemoEnabled(true);
+        setVoiceMemoOn(true);
+        setShowVoiceMemoConsent(false);
     };
 
     // データ管理ハンドラー
@@ -418,6 +452,41 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 APIキーを削除
                             </button>
                         )}
+                    </SettingsSection>
+
+                    {/* 音声メモ設定セクション */}
+                    <SettingsSection
+                        id="voicememo"
+                        title="🎤 音声メモ"
+                        hint={voiceMemoOn ? '有効' : 'OFF'}
+                        isOpen={openSection === 'voicememo'}
+                        onToggle={() => toggleSection('voicememo')}
+                    >
+                        <p className="section-description">
+                            ボタンを押している間だけ録音し、文字起こしして一覧に残します。
+                            連続したプレーを覚えきれないときの下書きです。
+                            <strong>スタッツには反映されません。</strong>
+                        </p>
+
+                        <label className="settings-toggle">
+                            <input
+                                type="checkbox"
+                                checked={voiceMemoOn}
+                                onChange={handleVoiceMemoToggle}
+                            />
+                            <span>音声メモを使う</span>
+                        </label>
+
+                        {!hasApiKey && (
+                            <p className="section-description">
+                                ⚠️ この機能にはGemini APIキーの設定が必要です（上の「AI機能」から設定できます）。
+                            </p>
+                        )}
+
+                        <p className="section-description">
+                            記録画面のフルモードでのみ使えます。オフラインのときは使えません。
+                            メモは試合が終わると破棄され、バックアップにも保存されません。
+                        </p>
                     </SettingsSection>
 
                     {/* 将来の拡張用セクション */}
@@ -773,6 +842,22 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         cancelLabel="編集に戻る"
                         onConfirm={() => { setShowDiscardConfirm(false); onClose(); }}
                         onCancel={() => setShowDiscardConfirm(false)}
+                    />
+                )}
+
+                {showVoiceMemoConsent && (
+                    <ConfirmModal
+                        title="音声メモを有効にしますか？"
+                        message={
+                            '吹き込んだ音声は文字起こしのため、Googleのサーバーに送信されます。\n' +
+                            '無料枠のAPIキーでは、送信したデータがモデルの改善に利用される可能性があるため、' +
+                            '有料プランのキーを推奨します。\n\n' +
+                            '録音は押している間だけで、音声そのものは端末にも保存されません。'
+                        }
+                        confirmLabel="同意して有効にする"
+                        cancelLabel="有効にしない"
+                        onConfirm={handleVoiceMemoConsent}
+                        onCancel={() => setShowVoiceMemoConsent(false)}
                     />
                 )}
         </Modal>

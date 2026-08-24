@@ -25,6 +25,7 @@ import { ActionButtons } from './components/ActionButtons';
 import { ActionHistory } from './components/ActionHistory';
 import { TeamPanel } from './components/TeamPanel';
 // import { VoiceInput } from './components/VoiceInput'; // 一時的に非表示
+import { VoiceMemoButton, VoiceMemoPanel } from './components/VoiceMemo';
 import { SubstitutionModal } from './components/SubstitutionModal';
 import { TimeoutInputModal } from './components/TimeoutInputModal/TimeoutInputModal';
 import { StatsPanel } from './components/StatsPanel';
@@ -57,6 +58,7 @@ import { wouldOverflowFoulColumns } from './utils/foulColumns';
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameMode } from './hooks/useGameMode';
 import { useGameAutoSave } from './hooks/useGameAutoSave';
+import { useVoiceMemo } from './hooks/useVoiceMemo';
 import { GAME_SCREENS, type AppScreen } from './types/screens';
 import { useWakeLock } from './hooks/useWakeLock';
 
@@ -264,6 +266,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   }) => {
     // 新しいゲームを開始するため状態をリセット
     dispatch({ type: 'RESET_GAME' });
+
+    // 音声メモは手入力のための下書きであり、寿命は試合単位。ここは前の試合の
+    // セッションを実際に置き換える地点なので、ここで消す（ウィザードへの
+    // 入口では消さない。入口で消すと、設定を諦めて中断中の試合を再開したときに
+    // 巻き添えで消えてしまう）
+    voiceMemo.clearAll();
 
     setGameName(setupData.gameName);
     setDate(setupData.date);
@@ -810,6 +818,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     }
 
     clearGameSession();
+    // 音声メモは手入力のための下書きなので、試合が終われば役目は終わり
+    voiceMemo.clearAll();
     setScreen('home');
 
     // 前回バックアップ後に試合が増えていれば督促
@@ -834,6 +844,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
    */
   const handleDiscardGame = () => {
     clearGameSession();
+    // 音声メモは手入力のための下書きなので、試合が終われば役目は終わり
+    voiceMemo.clearAll();
     setScreen('home');
   };
 
@@ -929,6 +941,10 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
   // 履歴ポップアップ（シンプルモード用）
   const [showHistoryPopup, setShowHistoryPopup] = useState(false);
+
+  // 音声メモ。フルモードのみ。シンプルモードは入力項目が少なく、記録に迷う場面が少ない
+  const voiceMemo = useVoiceMemo({ quarter: currentQuarter, enabled: gameMode === 'full' });
+  const [showVoiceMemos, setShowVoiceMemos] = useState(false);
 
   // 復元・バックアップ督促は画面を占有する確認なので、設定より前に単独で出す
   if (restoreCandidate) {
@@ -1113,6 +1129,25 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         <div className="header-center">
           {/* 音声入力機能は一時的に非表示 */}
           {/* {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />} */}
+          {voiceMemo.isFeatureEnabled && (
+            <>
+              <VoiceMemoButton
+                isRecording={voiceMemo.isRecording}
+                isOffline={voiceMemo.isOffline}
+                onStart={voiceMemo.startRecording}
+                onStop={voiceMemo.stopRecording}
+              />
+              <button
+                className="btn btn-secondary btn-small"
+                onClick={() => setShowVoiceMemos(true)}
+                style={{ marginLeft: '8px' }}
+                aria-label={`音声メモを見る（${voiceMemo.memos.length}件）`}
+              >
+                📝<span className="btn-label"> 一覧</span>
+                {voiceMemo.memos.length > 0 && ` ${voiceMemo.memos.length}`}
+              </button>
+            </>
+          )}
         </div>
         <div className="header-right">
           {/* 履歴ボタン（シンプルモード、またはタブレット以上で表示） */}
@@ -1436,6 +1471,16 @@ function AppContent({ screen, setScreen }: AppContentProps) {
             </button>
           </div>
         </Modal>
+      )}
+
+      {showVoiceMemos && (
+        <VoiceMemoPanel
+          memos={voiceMemo.memos}
+          onClose={() => setShowVoiceMemos(false)}
+          onRetry={voiceMemo.retryMemo}
+          canRetry={voiceMemo.canRetry}
+          onRemove={voiceMemo.removeMemoById}
+        />
       )}
 
       {/* 試合終了表示 */}
