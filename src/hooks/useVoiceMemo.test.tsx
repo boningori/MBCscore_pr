@@ -15,19 +15,29 @@ vi.mock('../utils/audioWav', () => ({
 import { transcribeAudio } from '../utils/audioTranscribe';
 
 // MediaRecorder と getUserMedia の最小スタブ。
-// stop() を呼ぶと ondataavailable → onstop の順に発火する実物の挙動を再現する
+// stop() を呼ぶと ondataavailable → onstop の順に発火する実物の挙動を再現する。
+// state が 'inactive' のときの stop() は実ブラウザ同様 InvalidStateError を投げる
 class FakeMediaRecorder {
     static lastInstance: FakeMediaRecorder | null = null;
+    // 1回だけコンストラクタを失敗させたいテスト用のフラグ（mimeType未対応などを再現）
+    static shouldThrowOnConstruct = false;
     ondataavailable: ((e: { data: Blob }) => void) | null = null;
     onstop: (() => void) | null = null;
     state = 'inactive';
     constructor() {
+        if (FakeMediaRecorder.shouldThrowOnConstruct) {
+            FakeMediaRecorder.shouldThrowOnConstruct = false;
+            throw new DOMException('mimeType not supported', 'NotSupportedError');
+        }
         FakeMediaRecorder.lastInstance = this;
     }
     start() {
         this.state = 'recording';
     }
     stop() {
+        if (this.state === 'inactive') {
+            throw new DOMException('The MediaRecorder is inactive', 'InvalidStateError');
+        }
         this.state = 'inactive';
         this.ondataavailable?.({ data: new Blob(['audio'], { type: 'audio/webm' }) });
         this.onstop?.();
@@ -60,6 +70,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    FakeMediaRecorder.shouldThrowOnConstruct = false;
     vi.unstubAllGlobals();
     vi.clearAllMocks();
 });
@@ -176,6 +187,68 @@ describe('useVoiceMemo: マイク権限', () => {
 
         expect(result.current.isRecording).toBe(false);
         await waitFor(() => expect(result.current.isAvailable).toBe(false));
+
+        // 案内は一度きりのはず。無効化された後に再度押してもダイアログを
+        // 出し直す（＝ getUserMedia を再度呼ぶ）ことがあってはならない
+        await act(async () => {
+            await result.current.startRecording();
+        });
+        expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('useVoiceMemo: マイク解放のライフサイクル', () => {
+    it('MediaRecorderのコンストラクタが例外を投げても、許可済みストリームは解放される', async () => {
+        const stopSpy = vi.fn();
+        vi.mocked(navigator.mediaDevices.getUserMedia).mockResolvedValueOnce({
+            getTracks: () => [{ stop: stopSpy }],
+        } as never);
+        FakeMediaRecorder.shouldThrowOnConstruct = true;
+
+        const { result } = render();
+        await act(async () => {
+            await result.current.startRecording();
+        });
+
+        // マイクの使用許可自体は取れているので、そのストリームのトラックは
+        // 必ず止められていなければならない（止め忘れるとインジケータが点きっぱなしになる）
+        expect(stopSpy).toHaveBeenCalled();
+        expect(result.current.isRecording).toBe(false);
+    });
+
+    it('録音中にアンマウントすると、トラックは止まり、文字起こしは呼ばれない', async () => {
+        // ブラウザによっては「トラックを止めると MediaRecorder も自動で停止し、
+        // onstop が発火する」という挙動を取ることがある（仕様上は実装依存）。
+        // ここではその最悪ケースを模してテストする：トラックの stop() をきっかけに
+        // recorder.stop() が呼ばれたとき、古い onstop クロージャが生き残っていれば
+        // 送信処理が走ってしまう
+        let onTrackStop: (() => void) | null = null;
+        const stopSpy = vi.fn(() => onTrackStop?.());
+        vi.mocked(navigator.mediaDevices.getUserMedia).mockResolvedValueOnce({
+            getTracks: () => [{ stop: stopSpy }],
+        } as never);
+
+        const { result, unmount } = render();
+        await act(async () => {
+            await result.current.startRecording();
+        });
+        expect(result.current.isRecording).toBe(true);
+
+        const recorder = FakeMediaRecorder.lastInstance;
+        onTrackStop = () => {
+            if (recorder && recorder.state === 'recording') recorder.stop();
+        };
+
+        // 誤タップ判定（500ms未満は破棄）に引っかからないよう、十分な時間録音させておく
+        holdFor(2000);
+        unmount();
+
+        // トラックは確実に止められている
+        expect(stopSpy).toHaveBeenCalled();
+        await new Promise(r => setTimeout(r, 10));
+        // アンマウント後に stop イベントが発火しても、離脱済みの画面のために
+        // 文字起こしAPIを叩き始めてはならない
+        expect(vi.mocked(transcribeAudio)).not.toHaveBeenCalled();
     });
 });
 

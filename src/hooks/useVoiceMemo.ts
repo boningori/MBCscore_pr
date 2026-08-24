@@ -87,7 +87,29 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
         }
     }, []);
 
+    // マイク解放の後始末をここに一本化する。onstop からも（正常終了時）、
+    // アンマウント時のクリーンアップからも呼ばれる。
+    //
+    // ハンドラを外してから stop() するのがポイント：
+    // - onstop 中にここへ来た場合、その時点で recorder.state は既に 'inactive'
+    //   なので stop() は呼ばれず、再帰しない
+    // - アンマウント時に呼ばれた場合、まだ 'recording' なら stop() で確実に
+    //   打ち切る。ondataavailable/onstop は先に外してあるので、ブラウザが
+    //   後から非同期にイベントを発火しても離脱済み画面の古いクロージャは動かない
     const releaseStream = useCallback(() => {
+        const recorder = recorderRef.current;
+        if (recorder) {
+            recorder.ondataavailable = null;
+            recorder.onstop = null;
+            if (recorder.state === 'recording') {
+                try {
+                    recorder.stop();
+                } catch {
+                    // ブラウザ実装によっては既に停止処理中で InvalidStateError に
+                    // なることがあるが、目的（録音を止める）は達成されているので無視する
+                }
+            }
+        }
         streamRef.current?.getTracks().forEach(track => track.stop());
         streamRef.current = null;
         recorderRef.current = null;
@@ -102,6 +124,10 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // マイクの使用許可はここで確定する。以降で何が起きても
+            // （MediaRecorder のコンストラクタが投げても）releaseStream() が
+            // このストリームを見つけて必ず止められるよう、真っ先に控えておく
+            streamRef.current = stream;
             const recorder = new MediaRecorder(stream);
             chunksRef.current = [];
             startedAtRef.current = Date.now();
@@ -130,7 +156,6 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
                 void send(id, audio);
             };
 
-            streamRef.current = stream;
             recorderRef.current = recorder;
             recorder.start();
             setIsRecording(true);
