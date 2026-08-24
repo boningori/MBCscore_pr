@@ -79,6 +79,52 @@ describe('ComparisonTable', () => {
         expect(row.querySelectorAll('.comparison-bar').length).toBe(0);
     });
 
+    it('少ない方が良い行のラベルに↓を出す', () => {
+        renderTable(totals({ turnovers: 9 }), totals({ turnovers: 20 }));
+
+        const arrow = rowEl('turnovers').querySelector('.lower-is-better') as HTMLElement;
+        expect(arrow).toBeTruthy();
+        expect(arrow.textContent).toBe('↓');
+        // 矢印だけでは伝わらないので読み上げ用の名前を持たせる
+        expect(arrow.getAttribute('aria-label')).toBe('少ない方が良い');
+    });
+
+    it('多い方が良い行には↓を出さない', () => {
+        renderTable(totals({ points: 50 }), totals({ points: 25 }));
+
+        expect(rowEl('points').querySelector('.lower-is-better')).toBeNull();
+    });
+
+    it('シュートの実数行は成功分だけを濃く塗る', () => {
+        renderTable(totals({ twoMade: 3, twoAttempt: 20 }), totals({ twoMade: 2, twoAttempt: 4 }));
+
+        const bar = rowEl('twoPoint').querySelector('.comparison-bar.left') as HTMLElement;
+        const made = bar.querySelector('.comparison-bar-made') as HTMLElement;
+        // バー全体が試投数、その15%が成功分
+        expect(bar.style.width).toBe('100%');
+        expect(made.style.width).toBe('15%');
+    });
+
+    it('勝敗を出さない行は、どちらのバーも淡くしない', () => {
+        // 勝敗が付かないのは「引き分け」ではなく「判定していない」ため、
+        // 負けたように見せてはいけない
+        renderTable(totals({ twoMade: 3, twoAttempt: 20 }), totals({ twoMade: 2, twoAttempt: 4 }));
+
+        const row = rowEl('twoPoint');
+        for (const side of ['left', 'right']) {
+            const bar = row.querySelector(`.comparison-bar.${side}`) as HTMLElement;
+            expect(bar.style.opacity).toBe('1');
+        }
+    });
+
+    it('勝敗が付く行では負けた側だけ淡くする', () => {
+        renderTable(totals({ points: 50 }), totals({ points: 25 }));
+
+        const row = rowEl('points');
+        expect((row.querySelector('.comparison-bar.left') as HTMLElement).style.opacity).toBe('1');
+        expect(Number((row.querySelector('.comparison-bar.right') as HTMLElement).style.opacity)).toBeLessThan(1);
+    });
+
     it('TOは少ない側に is-leader が付く', () => {
         renderTable(totals({ turnovers: 9 }), totals({ turnovers: 20 }));
 

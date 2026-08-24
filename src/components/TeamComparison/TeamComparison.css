@@ -34,6 +34,12 @@
     white-space: nowrap;
 }
 
+/* 少ない方が良い行の印。ラベルより控えめにして、ラベル自体の読みを妨げない */
+.lower-is-better {
+    margin-left: 2px;
+    color: var(--text-muted);
+}
+
 .comparison-bar-area {
     display: flex;
     /* 勝っている側の枠（2px）を上下に置いても、チーム色の面が細く見えない高さ。
@@ -45,12 +51,35 @@
 .comparison-bar-area.right { justify-content: flex-start; }
 
 .comparison-bar {
+    position: relative;
     height: 100%;
     border-radius: var(--radius-xs);
     /* 勝っている側だけ枠を出す。枠の有無で線がずれないよう、負けている側にも
        同じ太さの透明な枠を置いて幅を揃える */
     border: 2px solid transparent;
 }
+
+/* シュートの実数行は、バー全体が試投数・濃い面が成功数を表す。
+   薄い面（track）を敷いて、その上に成功分（made）を重ねる。
+   実数以外の行は made が全幅なので、見た目は1枚の面と変わらない */
+.comparison-bar-track {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0.28;
+}
+
+.comparison-bar-made {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: inherit;
+}
+
+/* 成功分は中央（ラベル側）に寄せる。左右のバーの濃い面がラベルを挟んで
+   隣り合うので、成功数そのものを見比べられる */
+.comparison-bar.left .comparison-bar-made { right: 0; }
+.comparison-bar.right .comparison-bar-made { left: 0; }
 
 /* 勝っている側の目印。濃淡だけでは見分けづらいという指摘を受けて足した。
    選手選択・アクション選択と同じピンクにして、「ここが効いている」の合図を

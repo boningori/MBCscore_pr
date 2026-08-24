@@ -53,6 +53,76 @@ describe('buildComparisonRows', () => {
         expect(pct.leftRatio).toBe(0);
     });
 
+    // 成功数だけでバーを引いていたときは、3/20 のバーが 2/4 より長くなり、
+    // すぐ下の 15.0% vs 50.0% の行と勝敗が食い違っていた
+    it('シュートの実数行は、長さが試投数・塗りが成功の割合になる', () => {
+        const rows = buildComparisonRows(
+            totals({ twoMade: 3, twoAttempt: 20 }),
+            totals({ twoMade: 2, twoAttempt: 4 }),
+            opts,
+        );
+
+        const r = rowOf(rows, 'twoPoint');
+        // 長さは試投数（20 と 4）で決まる
+        expect(r.leftRatio).toBe(1);
+        expect(r.rightRatio).toBeCloseTo(4 / 20);
+        // 塗りは成功率
+        expect(r.leftFill).toBeCloseTo(3 / 20);
+        expect(r.rightFill).toBeCloseTo(2 / 4);
+    });
+
+    it('シュートの実数行では勝敗を出さない（良し悪しは割合の行が示す）', () => {
+        // 左右とも試投は足りているので、割合の行のほうには勝敗が付く
+        const rows = buildComparisonRows(
+            totals({ twoMade: 3, twoAttempt: 20 }),
+            totals({ twoMade: 5, twoAttempt: 10 }),
+            opts,
+        );
+
+        expect(rowOf(rows, 'twoPoint').leader).toBe('none');
+        expect(rowOf(rows, 'twoPercent').leader).toBe('right');
+    });
+
+    it('試投が少ないと割合の行でも勝敗を出さない（1/1が9/10に勝たない）', () => {
+        const rows = buildComparisonRows(
+            totals({ ftMade: 1, ftAttempt: 1 }),
+            totals({ ftMade: 9, ftAttempt: 10 }),
+            opts,
+        );
+
+        const p = rowOf(rows, 'freeThrowPercent');
+        // 数字そのものは出す
+        expect(p.leftText).toBe('100.0%');
+        expect(p.rightText).toBe('90.0%');
+        // が、1本しか打っていない側を勝ちにはしない
+        expect(p.leader).toBe('none');
+    });
+
+    it('左右とも試投が足りていれば割合の行に勝敗が付く', () => {
+        const rows = buildComparisonRows(
+            totals({ ftMade: 3, ftAttempt: 5 }),
+            totals({ ftMade: 4, ftAttempt: 10 }),
+            opts,
+        );
+
+        expect(rowOf(rows, 'freeThrowPercent').leader).toBe('left');
+    });
+
+    it('実数の行は塗りが全体（塗り分けるものが無い）', () => {
+        const rows = buildComparisonRows(totals({ points: 50 }), totals({ points: 25 }), opts);
+
+        const pts = rowOf(rows, 'points');
+        expect(pts.leftFill).toBe(1);
+        expect(pts.rightFill).toBe(1);
+    });
+
+    it('TOとファウルだけ lowerIsBetter が立つ', () => {
+        const rows = buildComparisonRows(totals(), totals(), opts);
+
+        const marked = rows.filter(r => r.lowerIsBetter).map(r => r.key);
+        expect(marked).toEqual(['turnovers', 'fouls']);
+    });
+
     it('FGは2Pと3Pの合計で出す', () => {
         const rows = buildComparisonRows(
             totals({ twoMade: 3, twoAttempt: 6, threeMade: 1, threeAttempt: 4 }),
