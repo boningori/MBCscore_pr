@@ -1123,7 +1123,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         <div className="header-center">
           {/* 音声入力機能は一時的に非表示 */}
           {/* {gameMode === 'full' && <VoiceInput onCommand={handleVoiceCommand} />} */}
-          {voiceMemo.isAvailable && (
+          {voiceMemo.isFeatureEnabled && (
             <>
               <VoiceMemoButton
                 isRecording={voiceMemo.isRecording}
@@ -1137,7 +1137,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 style={{ marginLeft: '8px' }}
                 aria-label={`音声メモを見る（${voiceMemo.memos.length}件）`}
               >
-                📝<span className="btn-label"> メモ</span>
+                📝<span className="btn-label"> 一覧</span>
                 {voiceMemo.memos.length > 0 && ` ${voiceMemo.memos.length}`}
               </button>
             </>

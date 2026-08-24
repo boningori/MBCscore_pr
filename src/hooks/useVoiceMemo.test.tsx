@@ -109,6 +109,45 @@ describe('useVoiceMemo: 利用可否', () => {
     });
 });
 
+describe('useVoiceMemo: 機能そのもののON/OFF（ネットワーク状態に関わらない）', () => {
+    it('オフラインでも、設定ON・キーあり・enabledなら機能自体はONのまま', () => {
+        setOnline(false);
+        const { result } = render();
+        expect(result.current.isFeatureEnabled).toBe(true);
+        // 録音の可否（isAvailable）はオフラインでは依然falseのまま
+        expect(result.current.isAvailable).toBe(false);
+    });
+
+    it('シンプルモード（enabled=false）なら機能自体もOFF', () => {
+        const { result } = render(1, false);
+        expect(result.current.isFeatureEnabled).toBe(false);
+    });
+
+    it('設定OFFなら機能自体もOFF', () => {
+        setVoiceMemoEnabled(false);
+        const { result } = render();
+        expect(result.current.isFeatureEnabled).toBe(false);
+    });
+
+    it('APIキーが無ければ機能自体もOFF', () => {
+        saveApiKey('');
+        const { result } = render();
+        expect(result.current.isFeatureEnabled).toBe(false);
+    });
+
+    it('マイクを拒否された後は機能自体もOFF', async () => {
+        const denied = Object.assign(new Error('denied'), { name: 'NotAllowedError' });
+        vi.mocked(navigator.mediaDevices.getUserMedia).mockRejectedValueOnce(denied as never);
+
+        const { result } = render();
+        await act(async () => {
+            await result.current.startRecording();
+        });
+
+        await waitFor(() => expect(result.current.isFeatureEnabled).toBe(false));
+    });
+});
+
 describe('useVoiceMemo: 録音から文字起こしまで', () => {
     it('録音して離すとメモが1件増え、文字起こし結果が入る', async () => {
         const { result } = render(2);

@@ -45,7 +45,7 @@ export function VoiceMemoButton({ isRecording, isOffline, onStart, onStop }: Voi
             onContextMenu={e => e.preventDefault()}
         >
             <span className="voice-memo-btn-icon" aria-hidden="true">{isRecording ? '⏺' : '🎤'}</span>
-            <span className="voice-memo-btn-label">{isRecording ? '録音中' : 'メモ'}</span>
+            <span className="voice-memo-btn-label">{isRecording ? '録音中' : '録音'}</span>
         </button>
     );
 }

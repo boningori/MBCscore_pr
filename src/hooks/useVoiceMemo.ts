@@ -32,6 +32,10 @@ export interface UseVoiceMemoResult {
     isRecording: boolean;
     /** 設定ON・APIキーあり・オンライン・enabled のすべてを満たすか */
     isAvailable: boolean;
+    /** 設定ON・APIキーあり・enabled・マイク拒否なし（オンライン状態は問わない）。
+     *  録音ボタン／一覧ボタンの表示可否はこちらを使う。オンラインかどうかは
+     *  isOffline で別に見て、録音ボタン側で無効化表示に反映する */
+    isFeatureEnabled: boolean;
     /** オフラインが理由で使えない状態か（案内の出し分けに使う） */
     isOffline: boolean;
     startRecording: () => Promise<void>;
@@ -73,7 +77,8 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
     }, []);
 
     const isOffline = !isOnline;
-    const isAvailable = enabled && isVoiceMemoEnabled() && !!getStoredApiKey() && isOnline && !micDenied;
+    const isFeatureEnabled = enabled && isVoiceMemoEnabled() && !!getStoredApiKey() && !micDenied;
+    const isAvailable = isFeatureEnabled && isOnline;
 
     const send = useCallback(async (id: string, audio: Blob) => {
         try {
@@ -208,6 +213,7 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
         memos,
         isRecording,
         isAvailable,
+        isFeatureEnabled,
         isOffline,
         startRecording,
         stopRecording,
