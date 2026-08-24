@@ -157,23 +157,23 @@ export function buildComparisonRows(left: TeamTotals, right: TeamTotals, options
 
     return [
         countRow('points', 'PTS', left.points, right.points),
-        // 3Pを使わない試合では、すべてのシュートが2点なので FG は 2FG と
+        // 3Pを使わない試合では、すべてのシュートが2点なので FG は 2P と
         // 同じ数字になる。同じ値の行を2組並べても情報は増えず、別々の指標に
         // 見えて誤読を招くだけなので出さない。
         // 3Pの行のほうは「—」で残す。あちらは「0本だった」のか「使っていない」
         // のかを区別するために要る（threePointUsage.ts 参照）
         ...(options.threePointUnused ? [] : [
-            shotRow('fieldGoal', 'FGM-FGA', fg(left), fg(right)),
+            shotRow('fieldGoal', 'FG', fg(left), fg(right)),
             percentRow('fieldGoalPercent', 'FG%', fg(left), fg(right)),
         ]),
-        shotRow('twoPoint', '2FG', [left.twoMade, left.twoAttempt], [right.twoMade, right.twoAttempt]),
-        percentRow('twoPercent', '2FG%', [left.twoMade, left.twoAttempt], [right.twoMade, right.twoAttempt]),
+        shotRow('twoPoint', '2P', [left.twoMade, left.twoAttempt], [right.twoMade, right.twoAttempt]),
+        percentRow('twoPercent', '2P%', [left.twoMade, left.twoAttempt], [right.twoMade, right.twoAttempt]),
         options.threePointUnused
-            ? unavailableRow('threePoint', '3FG')
-            : shotRow('threePoint', '3FG', [left.threeMade, left.threeAttempt], [right.threeMade, right.threeAttempt]),
+            ? unavailableRow('threePoint', '3P')
+            : shotRow('threePoint', '3P', [left.threeMade, left.threeAttempt], [right.threeMade, right.threeAttempt]),
         options.threePointUnused
-            ? unavailableRow('threePercent', '3FG%')
-            : percentRow('threePercent', '3FG%', [left.threeMade, left.threeAttempt], [right.threeMade, right.threeAttempt]),
+            ? unavailableRow('threePercent', '3P%')
+            : percentRow('threePercent', '3P%', [left.threeMade, left.threeAttempt], [right.threeMade, right.threeAttempt]),
         shotRow('freeThrow', 'FT', [left.ftMade, left.ftAttempt], [right.ftMade, right.ftAttempt]),
         percentRow('freeThrowPercent', 'FT%', [left.ftMade, left.ftAttempt], [right.ftMade, right.ftAttempt]),
         countRow('rebounds', 'REB', left.offensiveRebounds + left.defensiveRebounds, right.offensiveRebounds + right.defensiveRebounds),
@@ -181,8 +181,8 @@ export function buildComparisonRows(left: TeamTotals, right: TeamTotals, options
         countRow('defensiveRebounds', 'DR', left.defensiveRebounds, right.defensiveRebounds),
         countRow('assists', 'AST', left.assists, right.assists),
         countRow('turnovers', 'TO', left.turnovers, right.turnovers, 'lower'),
-        countRow('steals', 'ST', left.steals, right.steals),
-        countRow('blocks', 'BS', left.blocks, right.blocks),
+        countRow('steals', 'STL', left.steals, right.steals),
+        countRow('blocks', 'BLK', left.blocks, right.blocks),
         countRow('fouls', 'F', left.fouls, right.fouls, 'lower'),
     ];
 }

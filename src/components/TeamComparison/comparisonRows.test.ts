@@ -116,6 +116,24 @@ describe('buildComparisonRows', () => {
         expect(pts.rightFill).toBe(1);
     });
 
+    // ラベルはアプリ既存の呼び方に揃える。試合中の統計画面では、この表の
+    // すぐ下に StatsPanel（2P / 3P / STL / BLK）が並ぶので、同じ統計が
+    // 2つの名前を持つと「BSって何？」になる。参照にしたB.LEAGUEの画面は
+    // BS・ST・2FG・3FG だが、そちらには寄せない
+    it('ラベルはアプリ既存の呼び方（2P / 3P / STL / BLK）に揃える', () => {
+        const rows = buildComparisonRows(totals(), totals(), opts);
+
+        expect(rows.map(r => r.label)).toEqual([
+            'PTS',
+            'FG', 'FG%',
+            '2P', '2P%',
+            '3P', '3P%',
+            'FT', 'FT%',
+            'REB', 'OR', 'DR',
+            'AST', 'TO', 'STL', 'BLK', 'F',
+        ]);
+    });
+
     it('TOとファウルだけ lowerIsBetter が立つ', () => {
         const rows = buildComparisonRows(totals(), totals(), opts);
 
