@@ -23,8 +23,12 @@ const DEFAULT_SETTINGS: AppSettings = {
 const settingsStorage = createJsonStorage<Partial<AppSettings>>(APP_SETTINGS_KEY, {}, 'app settings');
 
 // アプリ設定を保存
+// loadAppSettings()（既定値で埋めた値）ではなく生のストレージ値にマージする。
+// そうしないと一部の設定を保存しただけで未選択の項目まで既定値として
+// ストレージに書き込まれ、hasStoredGameMode()のような「明示的に保存したか」を
+// 見分ける処理が壊れる
 export function saveAppSettings(settings: Partial<AppSettings>): void {
-    settingsStorage.save({ ...loadAppSettings(), ...settings });
+    settingsStorage.save({ ...settingsStorage.load(), ...settings });
 }
 
 // アプリ設定を読み込み

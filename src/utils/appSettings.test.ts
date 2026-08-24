@@ -164,4 +164,26 @@ describe('appSettings: 音声メモ', () => {
         setVoiceMemoEnabled(true);
         expect(getDefaultGameMode()).toBe('simple');
     });
+
+    // saveAppSettingsはloadAppSettings()（既定値で埋めた値）ではなく
+    // 生のストレージ値に対してマージしなければならない。
+    // そうしないと音声メモの設定を保存しただけでdefaultGameMode: 'full'が
+    // 生ストレージに書き込まれ、hasStoredGameMode()がtrueを返してしまい、
+    // useGameModeの画面幅追従（iPadの回転対応）が永久に止まる
+    it('音声メモをONにしても既定モードは「未保存」のままか', () => {
+        expect(hasStoredGameMode()).toBe(false);
+        setVoiceMemoEnabled(true);
+        expect(hasStoredGameMode()).toBe(false);
+    });
+
+    it('同意しても既定モードは「未保存」のままか', () => {
+        expect(hasStoredGameMode()).toBe(false);
+        grantVoiceMemoConsent();
+        expect(hasStoredGameMode()).toBe(false);
+    });
+
+    it('明示的に既定モードを保存した場合はhasStoredGameModeがtrueのまま', () => {
+        saveDefaultGameMode('full');
+        expect(hasStoredGameMode()).toBe(true);
+    });
 });
