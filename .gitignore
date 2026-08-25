@@ -45,3 +45,6 @@ CODE_REVIEW_REPORT.md
 
 # AI アシスタント設定
 .agent/
+
+# ブレインストーミング／実装進行の作業ファイル
+.superpowers/

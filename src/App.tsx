@@ -25,7 +25,8 @@ import { ActionButtons } from './components/ActionButtons';
 import { ActionHistory } from './components/ActionHistory';
 import { TeamPanel } from './components/TeamPanel';
 // import { VoiceInput } from './components/VoiceInput'; // 一時的に非表示
-import { VoiceMemoButton, VoiceMemoPanel } from './components/VoiceMemo';
+import { VoiceMemoButton, VoiceMemoPanel, VoiceMemoStrip } from './components/VoiceMemo';
+import type { VoiceMemo } from './utils/voiceMemo';
 import { SubstitutionModal } from './components/SubstitutionModal';
 import { TimeoutInputModal } from './components/TimeoutInputModal/TimeoutInputModal';
 import { StatsPanel } from './components/StatsPanel';
@@ -945,6 +946,29 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   // 音声メモ。フルモードのみ。シンプルモードは入力項目が少なく、記録に迷う場面が少ない
   const voiceMemo = useVoiceMemo({ quarter: currentQuarter, enabled: gameMode === 'full' });
   const [showVoiceMemos, setShowVoiceMemos] = useState(false);
+  const [showVoiceMemoStrip, setShowVoiceMemoStrip] = useState(false);
+  // 「済にする」の取り消し猶予。得点・スタッツ用の undoInfo とは別枠にする。
+  // 共用すると、メモを済にした瞬間に得点の取り消しが消えてしまう
+  const [voiceMemoUndo, setVoiceMemoUndo] = useState<VoiceMemo | null>(null);
+
+  /** 済にする＝一覧から消す。数秒だけ戻せるように、消したメモを控えておく */
+  const handleVoiceMemoDone = (id: string) => {
+    const target = voiceMemo.memos.find(m => m.id === id);
+    voiceMemo.removeMemoById(id);
+    setVoiceMemoUndo(target ?? null);
+  };
+
+  const handleVoiceMemoUndo = () => {
+    if (voiceMemoUndo) voiceMemo.restoreMemo(voiceMemoUndo);
+    setVoiceMemoUndo(null);
+  };
+
+  // 猶予切れ。UndoSnackbar の既定値に合わせて5秒
+  useEffect(() => {
+    if (!voiceMemoUndo) return;
+    const timer = setTimeout(() => setVoiceMemoUndo(null), 5000);
+    return () => clearTimeout(timer);
+  }, [voiceMemoUndo]);
 
   // 復元・バックアップ督促は画面を占有する確認なので、設定より前に単独で出す
   if (restoreCandidate) {
@@ -1139,11 +1163,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
               />
               <button
                 className="btn btn-secondary btn-small"
-                onClick={() => setShowVoiceMemos(true)}
+                onClick={() => setShowVoiceMemoStrip(v => !v)}
                 style={{ marginLeft: '8px' }}
-                aria-label={`音声メモを見る（${voiceMemo.memos.length}件）`}
+                aria-label={`音声メモを開く（${voiceMemo.memos.length}件）`}
+                aria-pressed={showVoiceMemoStrip}
               >
-                📝<span className="btn-label"> 一覧</span>
+                📝<span className="btn-label"> メモ</span>
                 {voiceMemo.memos.length > 0 && ` ${voiceMemo.memos.length}`}
               </button>
             </>
@@ -1248,6 +1273,29 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
               {/* Center: Scoreboard + Action Buttons */}
               <div className="center-column">
+                {/* 音声メモの帯。position: absolute でスコアボードに重なるので、
+                    入力ボタンの位置は動かない。描画条件に猶予中を含めているのは、
+                    最後の1件を済にした瞬間に帯ごと消えて「元に戻す」が出せなくなるため */}
+                {voiceMemo.isFeatureEnabled && showVoiceMemoStrip &&
+                  (voiceMemo.memos.length > 0 || voiceMemoUndo) && (
+                  <VoiceMemoStrip
+                    memo={voiceMemo.memos[0] ?? voiceMemoUndo!}
+                    total={voiceMemo.memos.length}
+                    position={1}
+                    canRetry={voiceMemo.memos[0] ? voiceMemo.canRetry(voiceMemo.memos[0].id) : false}
+                    onRetry={voiceMemo.retryMemo}
+                    onDone={handleVoiceMemoDone}
+                    undoMemo={voiceMemoUndo}
+                    onUndo={handleVoiceMemoUndo}
+                    onCollapse={() => {
+                      // たたむと猶予は破棄する（戻せなくなる）
+                      setVoiceMemoUndo(null);
+                      setShowVoiceMemoStrip(false);
+                    }}
+                    onOpenList={() => setShowVoiceMemos(true)}
+                  />
+                )}
+
                 {/* スコアボード */}
                 <div className="scoreboard-section">
                   <Scoreboard
