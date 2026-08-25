@@ -279,6 +279,9 @@
   flex-direction: column;
   gap: var(--spacing-md);
   height: 100%;
+  /* 音声メモの帯（.voice-memo-strip）をスコアボードの上に重ねるための基準。
+     帯は position: absolute で乗せるので、入力ボタンの位置は動かない */
+  position: relative;
 }
 
 /* 中央列内のスコアボードセクション */
