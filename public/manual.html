@@ -403,7 +403,7 @@
   <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">v1.5 対応</div>
+  <div class="cover-version">v1.6 対応</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -1100,10 +1100,23 @@
 </p>
 
 <ol class="steps">
-  <li>ヘッダー中央の <span class="btn-sample btn-gray">🎤</span> ボタンを<strong>押しながら</strong>話す</li>
+  <li>ヘッダー中央の <span class="btn-sample btn-gray">🎤 録音</span> ボタンを<strong>押しながら</strong>話す</li>
   <li>指を離すと録音が止まり、内容が自動的に文字起こしされる</li>
-  <li>「メモ」ボタンを開くと文字起こし結果の一覧が読める</li>
+  <li><span class="btn-sample btn-gray">📝 メモ</span> ボタンを押すと、スコアボードの上にメモが開く</li>
+  <li>メモを見ながらスタッツを入力する。<strong>入力ボタンの位置は変わりません</strong></li>
+  <li>入力し終えたら「済にする」。次のメモに進む</li>
 </ol>
+
+<div class="tip-box">
+  <div class="box-title">「済にする」と「たたむ」の違い</div>
+  <ul>
+    <li><strong>済にする</strong> … 入力し終えたメモを消して次へ進みます。数秒のあいだ「元に戻す」が出るので、
+      間違えて押しても取り消せます。入力済みのメモが残っていると「これはもう入れたか」が分からなくなり、
+      同じプレーを二重に記録してしまうため、片付けながら進む形にしています</li>
+    <li><strong>✕ たたむ</strong> … メモを残したまま引っ込めます。メモはスコアボードに重なるので、
+      「Q1終了」などのボタンを押したいときはこちらでどかしてください</li>
+  </ul>
+</div>
 
 <div class="warn-box">
   <div class="box-title">スタッツには反映されません</div>
@@ -1116,7 +1129,8 @@
   <ul>
     <li>設定画面で「音声メモを使う」をONにし、確認ダイアログに同意する必要があります（既定はOFF）</li>
     <li>ご自身のGemini APIキー（「AI機能」で設定するものと共通）の設定が必要です</li>
-    <li>録音には<strong>インターネット接続</strong>が必要です。オフラインのときは🎤ボタンがその旨を示して無効になります（メモ一覧はオフラインでも読めます）</li>
+    <li>録音には<strong>インターネット接続</strong>が必要です。オフラインのときは🎤ボタンがその旨を示して無効になります（メモはオフラインでも読めます）</li>
+    <li>全部のメモをまとめて読み返したいときは、メモの中の「一覧」から開けます</li>
   </ul>
 </div>
 
@@ -1534,7 +1548,7 @@
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
   <!-- アプリ本体のマイナーバージョンと揃える（ずれたら manualVersion.test.ts が落ちる） -->
-  <p>使用説明書 v1.5 対応</p>
+  <p>使用説明書 v1.6 対応</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
