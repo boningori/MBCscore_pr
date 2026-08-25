@@ -8,10 +8,10 @@
     /* 押しっぱなしにするので、指で確実に掴める大きさを確保する */
     min-height: 44px;
     padding: 6px 14px;
-    border: 2px solid var(--color-border, #ccc);
+    border: 2px solid var(--border, #334155);
     border-radius: 22px;
-    background: var(--color-surface, #fff);
-    color: var(--color-text, #222);
+    background: var(--bg-card, #1e293b);
+    color: var(--text-primary, #f8fafc);
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
@@ -27,8 +27,8 @@
 }
 
 .voice-memo-btn.is-recording {
-    border-color: var(--color-danger, #d32f2f);
-    background: var(--color-danger, #d32f2f);
+    border-color: var(--danger, #dc2626);
+    background: var(--danger, #dc2626);
     color: #fff;
     animation: voice-memo-pulse 1s ease-in-out infinite;
 }
@@ -58,9 +58,9 @@
 
 .voice-memo-item {
     padding: 10px 12px;
-    border: 1px solid var(--color-border, #ccc);
+    border: 1px solid var(--border, #334155);
     border-radius: 8px;
-    background: var(--color-surface, #fff);
+    background: var(--bg-card, #1e293b);
 }
 
 .voice-memo-item-head {
@@ -70,7 +70,7 @@
     gap: 8px;
     margin-bottom: 4px;
     font-size: 0.8rem;
-    color: var(--color-text-muted, #666);
+    color: var(--text-muted, #8695ad);
 }
 
 .voice-memo-item-text {
@@ -78,14 +78,17 @@
     font-size: 1rem;
     line-height: 1.5;
     white-space: pre-wrap;
+    /* 色を指定しないとアプリのほぼ白い文字色を継承する。
+       一度これが抜けていて、白いカードの上に白文字になっていた */
+    color: var(--text-primary, #f8fafc);
 }
 
 .voice-memo-item.is-failed {
-    border-color: var(--color-danger, #d32f2f);
+    border-color: var(--danger, #dc2626);
 }
 
 .voice-memo-empty {
     padding: 24px 12px;
     text-align: center;
-    color: var(--color-text-muted, #666);
+    color: var(--text-muted, #8695ad);
 }
