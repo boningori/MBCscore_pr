@@ -92,3 +92,40 @@
     text-align: center;
     color: var(--text-muted, #8695ad);
 }
+
+/* スコアボードの上に重ねる帯。中央列（.center-column）が position: relative */
+.voice-memo-strip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    padding: 10px 12px;
+    border: 2px solid var(--warning-light, #fbbf24);
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-card, #1e293b);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+.voice-memo-strip-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted, #8695ad);
+}
+
+.voice-memo-strip-body {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--text-primary, #f8fafc);
+}
+
+.voice-memo-strip-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
