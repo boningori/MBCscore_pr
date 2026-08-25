@@ -45,6 +45,9 @@ export interface UseVoiceMemoResult {
      *  再読み込みで復元されたメモは音声を持たないため常にfalse */
     canRetry: (id: string) => boolean;
     removeMemoById: (id: string) => void;
+    /** 済にしたメモを一覧へ戻す（Undo用）。createdAt を保つので元の並び位置に復帰する。
+     *  音声Blobは removeMemoById の時点で捨てているため、戻しても再送はできない */
+    restoreMemo: (memo: VoiceMemo) => void;
     clearAll: () => void;
 }
 
@@ -258,6 +261,10 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
         setMemos(prev => removeMemo(prev, id));
     }, []);
 
+    const restoreMemo = useCallback((memo: VoiceMemo) => {
+        setMemos(prev => appendMemo(prev, memo));
+    }, []);
+
     const clearAll = useCallback(() => {
         pendingAudioRef.current.clear();
         setMemos([]);
@@ -278,6 +285,7 @@ export function useVoiceMemo({ quarter, enabled }: UseVoiceMemoOptions): UseVoic
         retryMemo,
         canRetry,
         removeMemoById,
+        restoreMemo,
         clearAll,
     };
 }

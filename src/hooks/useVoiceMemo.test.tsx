@@ -555,3 +555,62 @@ describe('useVoiceMemo: 一覧の操作', () => {
         expect(loadVoiceMemos()).toEqual([]);
     });
 });
+
+describe('useVoiceMemo: 済にしたメモを戻す', () => {
+    it('戻したメモが一覧に現れる', () => {
+        const { result } = render();
+        const memo = { id: 'vm-x', quarter: 2, createdAt: 5000, status: 'done' as const, text: '青5シュートミス' };
+
+        act(() => {
+            result.current.restoreMemo(memo);
+        });
+
+        expect(result.current.memos).toHaveLength(1);
+        expect(result.current.memos[0].text).toBe('青5シュートミス');
+    });
+
+    it('createdAt の順で元の位置に戻る', () => {
+        const { result } = render();
+        const first = { id: 'a', quarter: 1, createdAt: 1000, status: 'done' as const, text: '先' };
+        const third = { id: 'c', quarter: 1, createdAt: 3000, status: 'done' as const, text: '後' };
+        const second = { id: 'b', quarter: 1, createdAt: 2000, status: 'done' as const, text: '間' };
+
+        act(() => {
+            result.current.restoreMemo(first);
+        });
+        act(() => {
+            result.current.restoreMemo(third);
+        });
+        act(() => {
+            // 後から戻しても、発話順で間に入る
+            result.current.restoreMemo(second);
+        });
+
+        expect(result.current.memos.map(m => m.id)).toEqual(['a', 'b', 'c']);
+    });
+
+    it('失敗したメモを消してから戻すと、再送はできなくなる', () => {
+        // removeMemoById は再送用の音声Blobも一緒に捨てる。音声を保持しない設計の帰結で、
+        // 戻せるのは「読むための文字」だけという割り切り
+        const { result } = render();
+        const failed = { id: 'f1', quarter: 1, createdAt: 1000, status: 'failed' as const, error: '通信エラー' };
+
+        act(() => {
+            result.current.restoreMemo(failed);
+        });
+
+        expect(result.current.memos).toHaveLength(1);
+        expect(result.current.canRetry('f1')).toBe(false);
+    });
+
+    it('sessionStorage にも反映される', async () => {
+        const { result } = render();
+        const memo = { id: 'vm-y', quarter: 3, createdAt: 7000, status: 'done' as const, text: '青4シュート成功' };
+
+        act(() => {
+            result.current.restoreMemo(memo);
+        });
+
+        await waitFor(() => expect(loadVoiceMemos()).toHaveLength(1));
+    });
+});
