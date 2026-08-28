@@ -127,12 +127,22 @@
     color: var(--warning);
 }
 
+/* カード左端の青いバーを廃止したので、前Qの5人を伝えるのはこの行だけになった。
+   一段大きくして、見出しの色も上げる —— ラベルの .text-muted は
+   この行の地(--bg-tertiary)の上で 3.41:1 しか出ない（index.contrast.test.ts が
+   保証の対象から外している組み合わせ）。背番号のほうは --text-primary で 10:1 */
 .quarter-lineup .previous-quarter-info {
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-md);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+}
+
+.quarter-lineup .previous-quarter-info .text-muted {
+    color: var(--text-secondary);
+    font-weight: 400;
 }
 
 .quarter-lineup .player-selection-grid {
@@ -157,9 +167,11 @@
     min-height: 120px;
 }
 
-/* タッチ端末ではタップ後もホバー状態が残り、未選択のカードが選択済みに見えるため隔離する */
+/* タッチ端末ではタップ後もホバー状態が残り、未選択のカードが選択済みに見えるため隔離する。
+   選択済みは対象外にする —— ホバーで枠だけ青に化け、外側の緑のリングと食い違う
+   （前Q出場の印を border-left で描いていたときと同じ壊れ方） */
 @media (hover: hover) and (pointer: fine) {
-    .quarter-lineup .lineup-player-card:hover {
+    .quarter-lineup .lineup-player-card:not(.selected):hover {
         border-color: var(--primary-light);
     }
 }
@@ -168,14 +180,23 @@
     transform: scale(0.98);
 }
 
+/* 選択済みは「枠の色」だけに頼らない。
+   2pxの枠（--secondary は暗めの緑）と15%の塗りでは、体育館の照明下や
+   斜めから見るタブレットで選択済みが未選択に埋もれていた。塗りを上げ、
+   枠は明るい緑（--secondary-light）にして、さらに外側へリングを重ねる。
+   box-shadow を使うのはカードの大きさを変えないため（枠を太くすると
+   内側が狭まり、長い氏名の折り返しが選択のたびに動く） */
 .quarter-lineup .lineup-player-card.selected {
-    border-color: var(--secondary);
-    background: rgba(5, 150, 105, 0.15);
+    border-color: var(--secondary-light);
+    background: rgba(16, 185, 129, 0.22);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.55);
 }
 
-.quarter-lineup .lineup-player-card.was-on-court {
-    border-left: 4px solid var(--primary-light);
-}
+/* 前Qにコートに居た印（カード左端の青いバー）は廃止した。
+   凡例がどこにも無く色だけで語っていたうえ、同じ青（--primary-light）を
+   キーボードフォーカスのリングとホバーの枠にも使っているため、
+   3つの意味が1色に重なっていた。内容はすぐ上の
+   「前Q出場: #4, #5…」がそのまま持っているので、情報は失われない */
 
 .quarter-lineup .lineup-player-number {
     font-size: var(--font-size-xl);
@@ -210,8 +231,11 @@
     font-weight: 600;
 }
 
+/* ファウル数は退場に直結する情報。--text-muted だと選択済みカードの地
+   （緑を混ぜた面）の上で 4.1:1 と AA を割る。素の地でも保証されるのは
+   --bg-secondary までなので、一段明るいトークンに上げる */
 .quarter-lineup .lineup-player-stats .stat-fouls {
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .quarter-lineup .lineup-player-stats .stat-fouls.warning {
@@ -234,21 +258,29 @@
     gap: 4px;
 }
 
+/* 出場Qの丸。
+   --text-muted は --bg-tertiary の上で 3.41:1 しか出ない（この組み合わせは
+   index.contrast.test.ts が「使わない運用」として保証の対象外にしている面）。
+   10px の数字でそれをやっていたため、未出場のQが読み取れなかった */
 .quarter-lineup .quarter-dot {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
+/* 緑地に白は 3.40:1（--secondary は枠線・背景用の明度で、白文字には明るすぎる）。
+   地を暗くすると「出場済み」の緑が沈むので、文字のほうを濃くして 5.25:1 にする */
 .quarter-lineup .quarter-dot.played {
     background: var(--secondary);
-    color: white;
+    color: var(--bg-primary);
+    font-weight: 700;
 }
 
 .quarter-lineup .quarter-dot.current {
@@ -261,8 +293,10 @@
     right: 8px;
     width: 24px;
     height: 24px;
-    background: var(--secondary);
-    color: white;
+    /* 選択済みの枠と同じ明るい緑にそろえる。白い✓は --secondary の上で
+       3.40:1 しか出ないので、地を明るくして文字を濃くする（7.05:1） */
+    background: var(--secondary-light);
+    color: var(--bg-primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
