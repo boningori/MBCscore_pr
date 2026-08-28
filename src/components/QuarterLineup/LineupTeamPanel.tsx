@@ -53,7 +53,6 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
             <div className="player-selection-grid">
                 {players.map(player => {
                     const isSelected = selectedIds.includes(player.id);
-                    const wasOnCourt = player.isOnCourt;
                     // 5ファウルだけでなく D / U・T 2回の失格も見る（詳細は disqualification.ts）
                     const disqualification = getDisqualification(player.fouls);
                     const fouledOut = disqualification !== null;
@@ -71,7 +70,7 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                         <button
                             type="button"
                             key={player.id}
-                            className={`lineup-player-card ${isSelected ? 'selected' : ''} ${wasOnCourt ? 'was-on-court' : ''} ${overMax ? 'rule-over-max' : ''} ${fouledOut ? 'fouled-out' : ''}`}
+                            className={`lineup-player-card ${isSelected ? 'selected' : ''} ${overMax ? 'rule-over-max' : ''} ${fouledOut ? 'fouled-out' : ''}`}
                             onClick={() => onToggle(player.id)}
                             aria-pressed={isSelected}
                         >

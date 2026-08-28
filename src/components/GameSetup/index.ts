@@ -1,1 +1,1 @@
-export { GameSetup } from './GameSetup';
+export { GameSetup, type GameSetupDraft } from './GameSetup';

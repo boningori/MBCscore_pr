@@ -16,7 +16,7 @@ import { saveGameResult } from './utils/gameHistoryStorage';
 import { loadGameSession, clearGameSession, hasGameSession } from './utils/gameSessionStorage';
 import { Home } from './components/Home';
 import { MyTeamManager } from './components/MyTeamManager';
-import { GameSetup } from './components/GameSetup';
+import { GameSetup, type GameSetupDraft } from './components/GameSetup';
 import { History } from './components/History';
 import { OpponentManager } from './components/OpponentManager';
 import { PlayerStatsAnalysis } from './components/PlayerStatsAnalysis';
@@ -135,6 +135,24 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     () => resolveShortcut(LAUNCH_TARGET).warnNewGame,
   );
 
+  // 試合設定ウィザードの入力途中の状態。
+  //
+  // 設定は AppScreen なので、スタメン選択へ進むとアンマウントされて中身が消える。
+  // 1段戻ったときに1/5からやり直しにならないよう控えを持つ（GameSetupDraft）。
+  // 読むのは GameSetup がマウントされる瞬間の1回だけだが、レンダー中に ref を
+  // 読むのは禁じ手なので素直に state で持つ（設定画面が出ている間だけの再描画）。
+  const [setupDraft, setSetupDraft] = useState<GameSetupDraft | null>(null);
+
+  /**
+   * 下書きを捨てる。
+   *
+   * 残してよいのは「設定 ⇄ スタメン選択」の往復だけ。ホームへ抜けたあとも
+   * 残すと、次に「新規試合開始」を押したときに前回諦めた設定が出てくる。
+   */
+  const clearSetupDraft = useCallback(() => {
+    setSetupDraft(null);
+  }, []);
+
   // アプリが起動している状態でアイコン長押しショートカットを押したときの遷移。
   //
   // manifest の launch_handler は 'focus-existing'（vite.config.ts）で、これは
@@ -148,12 +166,14 @@ function AppContent({ screen, setScreen }: AppContentProps) {
       const target = parseLaunchShortcut(targetURL);
       if (target === null) return;
       const { screen: next, warnNewGame } = resolveShortcut(target);
+      // ショートカットからの新規開始も「最初から」。前に諦めた設定は引き継がない
+      if (next === 'gameSetup') clearSetupDraft();
       setScreen(next);
       // 別のショートカットで移動したときに、前回の警告が残らないようにする
       setShowNewGameWarning(warnNewGame);
     });
     // マウント時のみ。setScreen は AppShell の useState のセッターで参照は変わらない
-  }, [setScreen]);
+  }, [setScreen, clearSetupDraft]);
   // 記録直後のワンタップUndo（得点/スタッツのみ。ファウルは専用フローがあるため対象外）
   const [undoInfo, setUndoInfo] = useState<{ message: string; kind: 'score' | 'stat'; entryId: string } | null>(null);
 
@@ -833,6 +853,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   // 試合中のホームボタンからも呼ばれる「中断」の導線なので、
   // ここでセッションを消してはいけない（破棄は handleDiscardGame）
   const handleBackToHome = () => {
+    // 設定を諦めてホームへ抜けた。次の「新規試合開始」は最初から
+    clearSetupDraft();
     setScreen('home');
   };
 
@@ -863,6 +885,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
   // 新規試合開始（進行中セッションがあれば上書き警告を挟む）
   const handleStartNewGame = () => {
+    // 新規はいつでも最初から。前の試合の設定の残りを引きずらせない
+    clearSetupDraft();
     if (hasGameSession()) {
       setShowNewGameWarning(true);
     } else {
@@ -1041,7 +1065,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
               </button>
               <button
                 className="btn btn-danger btn-large"
-                onClick={() => { setShowNewGameWarning(false); setScreen('gameSetup'); }}
+                onClick={() => { setShowNewGameWarning(false); clearSetupDraft(); setScreen('gameSetup'); }}
               >
                 新規試合を開始
               </button>
@@ -1075,6 +1099,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
       <GameSetup
         onComplete={handleGameSetupComplete}
         onBack={handleBackToHome}
+        initialDraft={setupDraft}
+        onDraftChange={setSetupDraft}
       />
     );
   }
@@ -1261,6 +1287,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 scoreHistory={state.scoreHistory}
                 statHistory={state.statHistory}
                 foulHistory={state.foulHistory}
+                showThreePoint={state.showThreePoint}
                 onPlayerSelect={handlePlayerSelect}
                 onSubstitute={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamA')}
@@ -1342,6 +1369,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 scoreHistory={state.scoreHistory}
                 statHistory={state.statHistory}
                 foulHistory={state.foulHistory}
+                showThreePoint={state.showThreePoint}
                 onPlayerSelect={handlePlayerSelect}
                 onSubstitute={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamB')}
@@ -1826,6 +1854,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                     statHistory={state.statHistory}
                     foulHistory={state.foulHistory}
                     players={team.players}
+                    showThreePoint={state.showThreePoint}
                     {...actionHistoryHandlers}
                   />
                 </div>

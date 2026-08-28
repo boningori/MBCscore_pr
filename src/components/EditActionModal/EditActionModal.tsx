@@ -23,6 +23,12 @@ interface EditActionModalProps {
         canEditFreeThrows?: boolean;
     };
     players: Player[];
+    /**
+     * この試合が3Pを使うか（GameSetup／試合オプションの設定）。
+     * false のときは 3P/3PA を選択肢から外す（記録画面と揃える）。
+     * 未指定は従来どおり全部出す。
+     */
+    showThreePoint?: boolean;
     onSave: (itemId: string, newPlayerId: string, newType: string) => void;
     /** FTの成否だけを直す（本数と種別は変えない） */
     onEditFreeThrows?: (entryId: string, freeThrowResults: FreeThrowResult[]) => void;
@@ -77,6 +83,7 @@ const isScoreType = (type: string): boolean => {
 export function EditActionModal({
     item,
     players,
+    showThreePoint,
     onSave,
     onEditFreeThrows,
     onConvertScoreToMiss,
@@ -133,10 +140,20 @@ export function EditActionModal({
 
     // シュート関連の場合は統合リスト、それ以外は非シュート系のみ。
     // OG中はミスを出さない —— 「入らなかったオウンゴール」は存在せず、
-    // reducerも変換を受け付けない（scoreHandlers）。残すと選んでも何も起きない
+    // reducerも変換を受け付けない（scoreHandlers）。残すと選んでも何も起きない。
+    //
+    // 3Pを使わない試合では 3P/3PA も出さない。記録画面には3Pボタンが無いのに
+    // （ActionButtons が showThreePoint を見ている）、履歴の編集からだけは
+    // 選べる状態だったため、誤タップで規則にない記録が入りうる。
+    // ただし既に3Pで入っている記録は別で、隠すとプルダウンが実体と違う値を
+    // 選んでいるように見える（'unknown' の選手で起きていたのと同じ形）。
+    // 試合の途中で3PをONからOFFへ変えた場合に実際に起きる
+    const showThreePointOptions = showThreePoint !== false
+        || item.entryType === '3P' || item.entryType === '3PA';
     const types = isOriginalShotRelated
         ? SHOT_TYPES
             .filter(t => !isOwnGoal || t.category === 'score')
+            .filter(t => showThreePointOptions || (t.value !== '3P' && t.value !== '3PA'))
             .map(t => ({ value: t.value, label: t.label }))
         : OTHER_STAT_TYPES;
 
