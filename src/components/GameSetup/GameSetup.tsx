@@ -38,34 +38,85 @@ interface GameSetupProps {
         quarterMinutes: 5 | 6;    // クォーター時間（分）
     }) => void;
     onBack: () => void;
+    /** 前回この画面を離れたときの入力途中の状態（無ければ最初から） */
+    initialDraft?: GameSetupDraft | null;
+    /** 入力途中の状態を呼び出し側へ預ける（スタメン選択から戻ったときの復元用） */
+    onDraftChange?: (draft: GameSetupDraft) => void;
 }
 
 type SetupStep = 'basic' | 'myTeam' | 'players' | 'opponent' | 'confirm';
 
-export function GameSetup({ onComplete, onBack }: GameSetupProps) {
-    const [step, setStep] = useState<SetupStep>('basic');
+/**
+ * ウィザードの入力途中の状態。
+ *
+ * この画面は AppScreen なので、スタメン選択へ進んだ時点でアンマウントされる。
+ * ステップも選んだチームもローカルstateなので、スタメン選択から1段戻ると
+ * 全部消えて1/5の「基本情報」からやり直しになっていた（画面上の「← 戻る」でも
+ * Androidのエッジスワイプでも起きる）。対戦相手や出場選手を選び間違えたと
+ * 気づいて1段戻すのはいちばん自然な使い方なので、呼び出し側に控えを預けて
+ * 戻ってきたときに復元する。
+ *
+ * myTeam は id ではなく実体を持つ。excludedPlayerIndices が名簿の並び順への
+ * 添字なので、控えたときの名簿と対にしておかないと別人を指す
+ * （closeMyTeamManager が名簿の変化で選び直させているのと同じ理由）。
+ */
+export interface GameSetupDraft {
+    step: SetupStep;
+    gameName: string;
+    date: string;
+    myTeam: SavedTeam | null;
+    opponentTeam: SavedTeam | null;
+    myTeamColor: 'white' | 'blue';
+    opponentTeamColor: 'white' | 'blue';
+    numberType: NumberType;
+    showThreePoint: boolean;
+    quarterMinutes: 5 | 6;
+    excludedPlayerIndices: number[];
+}
+
+export function GameSetup({ onComplete, onBack, initialDraft, onDraftChange }: GameSetupProps) {
+    const [step, setStep] = useState<SetupStep>(() => initialDraft?.step ?? 'basic');
 
     // Setup Data
-    const [gameName, setGameName] = useState('');
-    const [date, setDate] = useState(todayInputDate); // YYYY-MM-DD（現地日付。理由は localDate.ts）
-    const [myTeam, setMyTeam] = useState<SavedTeam | null>(null);
-    const [opponentTeam, setOpponentTeam] = useState<SavedTeam | null>(null);
+    const [gameName, setGameName] = useState(() => initialDraft?.gameName ?? '');
+    // YYYY-MM-DD（現地日付。理由は localDate.ts）
+    const [date, setDate] = useState(() => initialDraft?.date ?? todayInputDate());
+    const [myTeam, setMyTeam] = useState<SavedTeam | null>(() => initialDraft?.myTeam ?? null);
+    const [opponentTeam, setOpponentTeam] = useState<SavedTeam | null>(() => initialDraft?.opponentTeam ?? null);
 
     // Team Colors
-    const [myTeamColor, setMyTeamColor] = useState<'white' | 'blue'>('white');
-    const [opponentTeamColor, setOpponentTeamColor] = useState<'white' | 'blue'>('blue');
+    const [myTeamColor, setMyTeamColor] = useState<'white' | 'blue'>(() => initialDraft?.myTeamColor ?? 'white');
+    const [opponentTeamColor, setOpponentTeamColor] = useState<'white' | 'blue'>(() => initialDraft?.opponentTeamColor ?? 'blue');
 
     // マイチームの使用番号タイプ
-    const [numberType, setNumberType] = useState<NumberType>('bib');
+    const [numberType, setNumberType] = useState<NumberType>(() => initialDraft?.numberType ?? 'bib');
 
     // 3P入力ボタンを表示するか（ミニバスは通常OFF）
-    const [showThreePoint, setShowThreePoint] = useState(false);
+    const [showThreePoint, setShowThreePoint] = useState(() => initialDraft?.showThreePoint ?? false);
 
     // クォーター時間（分）。JBA公式は6分、地方大会などで5分運用あり
-    const [quarterMinutes, setQuarterMinutes] = useState<5 | 6>(6);
+    const [quarterMinutes, setQuarterMinutes] = useState<5 | 6>(() => initialDraft?.quarterMinutes ?? 6);
 
     // 出場選手確認用（除外する選手のインデックス）
-    const [excludedPlayerIndices, setExcludedPlayerIndices] = useState<Set<number>>(new Set());
+    const [excludedPlayerIndices, setExcludedPlayerIndices] = useState<Set<number>>(
+        () => new Set(initialDraft?.excludedPlayerIndices ?? []),
+    );
+
+    // 入力途中の状態を呼び出し側へ預ける。
+    // コールバックは毎レンダー作り直されるのが普通なので、依存には入れず ref で読む
+    // （入れると値が変わっていなくても毎回書き戻すことになる）
+    const onDraftChangeRef = useRef(onDraftChange);
+    useEffect(() => {
+        onDraftChangeRef.current = onDraftChange;
+    });
+    useEffect(() => {
+        onDraftChangeRef.current?.({
+            step, gameName, date, myTeam, opponentTeam,
+            myTeamColor, opponentTeamColor, numberType, showThreePoint, quarterMinutes,
+            excludedPlayerIndices: [...excludedPlayerIndices],
+        });
+    }, [step, gameName, date, myTeam, opponentTeam, myTeamColor, opponentTeamColor,
+        numberType, showThreePoint, quarterMinutes, excludedPlayerIndices]);
 
     // マイチーム簡易選択用
     const [myTeams, setMyTeams] = useState<SavedTeam[]>(loadMyTeams);

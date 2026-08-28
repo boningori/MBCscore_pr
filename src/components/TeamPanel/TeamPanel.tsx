@@ -31,6 +31,8 @@ interface TeamPanelProps {
   scoreHistory: ScoreEntry[];
   statHistory: StatEntry[];
   foulHistory: FoulEntry[];
+  /** この試合が3Pを使うか（アクション履歴の編集ダイアログへ渡す） */
+  showThreePoint?: boolean;
   onPlayerSelect: (playerId: string, teamId: string) => void;
   onSubstitute: () => void;
   onCoachFoul: () => void;
@@ -72,6 +74,7 @@ export function TeamPanel({
   scoreHistory,
   statHistory,
   foulHistory,
+  showThreePoint,
   onPlayerSelect,
   onSubstitute,
   onCoachFoul,
@@ -176,6 +179,7 @@ export function TeamPanel({
           statHistory={statHistory}
           foulHistory={foulHistory}
           players={players}
+          showThreePoint={showThreePoint}
           {...actionHistoryHandlers}
         />
       )}

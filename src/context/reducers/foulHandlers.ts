@@ -486,6 +486,42 @@ export function canEditFreeThrows(
     return !linkedFt.some(s => s.playerId !== entry.shooterPlayerId || s.teamId !== entry.shooterTeamId);
 }
 
+/**
+ * このファウルで実際に決まったFTの本数を、いま残っている記録から数える。
+ *
+ * FoulEntry.freeThrowResults をそのまま数えてはいけない。この配列を書き換えるのは
+ * EDIT_FOUL_FREE_THROWS だけで、成功したFTを「やっぱり外していた」と直す
+ * （CONVERT_SCORE_TO_MISS）と、得点エントリだけが FTA の StatEntry へ化けて
+ * 配列は 'made' のまま残る。そのため履歴のファウル行だけが「(FT: 1/2)」と
+ * 言い続け、すぐ隣の行の「FTミス」やスコアボードと食い違っていた。しかもこの
+ * 状態は canEditFreeThrows が false になる＝画面から直せないので、記録者には
+ * 直しようのない矛盾表示だけが残る。
+ *
+ * 書き換わらないこと自体は他の集計が前提にしているので変えない
+ * （TeamComparison の teamTotals が「外した本数」の正としてこの配列を読む）。
+ * 表示のほうを、紐付いた記録から数え直す。
+ *
+ * 数え方:
+ *   - sourceFoulId で紐付く記録が1件でもあれば、新しい形式のデータ。
+ *     そのうち scoreType が 'FT' のものが「決まったFT」。
+ *     ミスへ変換された分（FTA の StatEntry）も、2Pへ付け替えられた分も、
+ *     'FT' の得点エントリではなくなるので自然に外れる。
+ *   - 1件も無ければ、全部外した（記録を1件も作らない）か、sourceFoulId を
+ *     持たない旧データ。どちらも freeThrowResults を信じるほかない。
+ */
+export function countMadeFreeThrows(
+    entry: FoulEntry,
+    scoreHistory: ScoreEntry[],
+    statHistory: StatEntry[],
+): number {
+    const linked = scoreHistory.filter(s => s.sourceFoulId === entry.id);
+    const converted = statHistory.filter(s => s.sourceFoulId === entry.id);
+    if (linked.length === 0 && converted.length === 0) {
+        return (entry.freeThrowResults ?? []).filter(r => r === 'made').length;
+    }
+    return linked.filter(s => s.scoreType === 'FT').length;
+}
+
 export function handleEditFoulFreeThrows(state: Game, payload: PayloadOf<'EDIT_FOUL_FREE_THROWS'>): Game {
     const { entryId, freeThrowResults } = payload;
     const entry = state.foulHistory.find(f => f.id === entryId);

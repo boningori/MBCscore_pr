@@ -1,15 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ScoreEntry, StatEntry, FoulEntry, Player, ScoreType, StatType, FreeThrowResult } from '../../types/game';
-import { canEditFreeThrows } from '../../context/reducers/foulHandlers';
+import { canEditFreeThrows, countMadeFreeThrows } from '../../context/reducers/foulHandlers';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { EditActionModal } from '../EditActionModal';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import './ActionHistory.css';
 
-// FT結果をフォーマット（例: "(FT: 1/2)"）
-const formatFtResult = (freeThrows?: number, freeThrowResults?: ('made' | 'missed')[]): string => {
+// FT結果をフォーマット（例: "(FT: 1/2)"）。
+// 成功本数は FoulEntry.freeThrowResults ではなく、いま残っている記録から数える
+// （理由は countMadeFreeThrows のコメント）
+const formatFtResult = (freeThrows: number | undefined, made: number): string => {
     if (!freeThrows || freeThrows === 0) return '';
-    const made = freeThrowResults?.filter(r => r === 'made').length ?? 0;
     return ` (FT: ${made}/${freeThrows})`;
 };
 
@@ -20,6 +21,11 @@ interface ActionHistoryProps {
     statHistory: StatEntry[];
     foulHistory: FoulEntry[];
     players: Player[];
+    /**
+     * この試合が3Pを使うか。編集ダイアログの選択肢を記録画面と揃えるために渡す
+     * （3P OFF の試合で 3P/3PA を出さない。詳細は EditActionModal）
+     */
+    showThreePoint?: boolean;
     onRemoveScore: (entryId: string) => void;
     onRemoveStat: (entryId: string) => void;
     onRemoveFoul: (entryId: string) => void;
@@ -77,6 +83,7 @@ export function ActionHistory({
     statHistory,
     foulHistory,
     players,
+    showThreePoint,
     onRemoveScore,
     onRemoveStat,
     onRemoveFoul,
@@ -202,7 +209,8 @@ export function ActionHistory({
                 playerId: f.playerId || 'bench',
                 playerNumber: f.playerNumber,
                 playerName: f.isCoachOrBench ? 'ベンチ' : getPlayerName(f.playerId || ''),
-                description: getFoulLabel(f.foulType, f.isCoachOrBench, f.freeThrows) + formatFtResult(f.freeThrows, f.freeThrowResults),
+                description: getFoulLabel(f.foulType, f.isCoachOrBench, f.freeThrows)
+                    + formatFtResult(f.freeThrows, countMadeFreeThrows(f, scoreHistory, statHistory)),
                 entryType: f.foulType,
                 // コーチ・ベンチのファウルは選手行に無いので付け替えられない
                 canEdit: !!onEditFoul && !f.isCoachOrBench && !!f.playerId,
@@ -492,6 +500,7 @@ export function ActionHistory({
                 <EditActionModal
                     item={{ ...editingItem, typeLabel: editingItem.description }}
                     players={players}
+                    showThreePoint={showThreePoint}
                     onSave={handleEditSave}
                     onEditFreeThrows={handleEditFreeThrows}
                     onConvertScoreToMiss={handleConvertScoreToMiss}
