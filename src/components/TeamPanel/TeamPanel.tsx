@@ -56,8 +56,11 @@ interface TeamPanelProps {
    *
    * アクションボタンは phase === 'finished' で押せなくなるのに、選手カードだけは
    * 押せて選択マークが付いていた。記録は入らないので空振りの操作が残るうえ、
-   * 「終了するとデータの編集ができません」と確認した直後の画面で選手を選べると、
+   * 「新しい記録の追加はできません」と確認した直後の画面で選手を選べると、
    * まだ記録できるように読める。
+   *
+   * 止めるのは記録を増やす操作だけ。アクション履歴からの訂正・削除は
+   * 終了後も残す（確認モーダルもそう案内している。App.tsx）。
    */
   disabled?: boolean;
 }
@@ -155,18 +158,52 @@ export function TeamPanel({
             </button>
           );
         })}
+        {/*
+          シンプルモードは .team-bench を隠すので（App.css）、そこにある
+          交代とベンチファウルの導線をここへ持ってくる。以前は交代だけを
+          出していたため、コーチ・A.コーチ・ベンチ関係者・交代要員の
+          テクニカルを記録する手段がシンプルモードから消えていた。
+          800px以下は自動でシンプルモードになる（useGameMode）ので、
+          iPad縦持ちとスマホでは既定でその状態だった。
+
+          2つで選手カード1枚分の枠を分け合う。別々の枠にすると、
+          コート上の5人＋ボタンで1行増え、いちばん狭い画面で
+          得点ボタンが押し出される
+        */}
         {gameMode === 'simple' && (
-          <button className="simple-sub-btn" onClick={onSubstitute}>
-            🔄 交代
-          </button>
+          <div className="simple-bench-actions">
+            <button
+              className="simple-sub-btn"
+              onClick={onSubstitute}
+              disabled={disabled}
+              aria-label="選手交代"
+            >
+              <span aria-hidden="true">🔄</span>
+              <span className="simple-btn-label">交代</span>
+            </button>
+            <button
+              className="simple-bench-foul-btn"
+              onClick={onCoachFoul}
+              disabled={disabled}
+              aria-label="ベンチファウル"
+            >
+              <span aria-hidden="true">⚠️</span>
+              <span className="simple-btn-label">ベンチ</span>
+            </button>
+          </div>
         )}
       </div>
       <div className="team-bench">
         <div className="bench-actions">
-          <button className="btn btn-small btn-secondary" onClick={onSubstitute}>
+          {/* 記録を増やす操作なので、アクションボタン・選手カードと同じ条件で止める。
+              交代は quartersPlayed に出場記録を書き、ベンチファウルは
+              ファウル・FT試投・得点をまとめて足す（foulHandlers）。
+              disabled が抜けていたため、「新しい記録の追加はできません」と
+              確認した後の画面から最終スコアを動かせていた */}
+          <button className="btn btn-small btn-secondary" onClick={onSubstitute} disabled={disabled}>
             交代
           </button>
-          <button className="btn btn-small btn-danger" onClick={onCoachFoul}>
+          <button className="btn btn-small btn-danger" onClick={onCoachFoul} disabled={disabled}>
             ベンチ<br />ファウル
           </button>
         </div>
