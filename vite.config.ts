@@ -9,7 +9,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // 2を忘れると、SWを入れた端末では NavigationRoute が index.html を返してしまい、
 // チラシのURLを開いてもアプリ本体が表示される（実際にそうなっていた）。
 // 片方だけ直す事故を防ぐため、両方をこの1つの配列から導出する。
-const STANDALONE_PAGES = ['FLYER.html', 'SNS_CARDS.html']
+const STANDALONE_PAGES = ['FLYER.html', 'SNS_CARDS.html', 'SNS_CARDS_DETAIL.html']
 
 // https://vite.dev/config/
 export default defineConfig({
