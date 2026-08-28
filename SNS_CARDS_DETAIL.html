@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBCscore SNS投稿カード（詳細解説シリーズ）</title>
+    <style>
+        :root {
+            --primary-bg: #0a1628;
+            --secondary-bg: #111d35;
+            --accent-blue: #3b82f6;
+            --accent-blue-dark: #2563eb;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --text-white: #f1f5f9;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-white);
+            padding: 40px 20px 80px;
+        }
+
+        .page-header {
+            max-width: 1080px;
+            margin: 0 auto 32px;
+            text-align: center;
+        }
+        .page-header h1 { font-size: 24px; margin-bottom: 8px; }
+        .page-header p { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+
+        .part-title {
+            max-width: 1080px;
+            margin: 48px auto 24px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--accent-orange);
+        }
+
+        /* ====== カードフレーム（画面上は50%縮小、トグルで実寸） ====== */
+        .card-frame {
+            width: 540px;
+            height: 540px;
+            margin: 0 auto 48px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+        .card {
+            width: 1080px;
+            height: 1080px;
+            transform: scale(0.5);
+            transform-origin: top left;
+            background: var(--primary-bg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        body.fullsize .card-frame { width: 1080px; height: 1080px; }
+        body.fullsize .card { transform: none; }
+
+        /* ====== 背景装飾 ====== */
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
+        .orb { position: absolute; border-radius: 50%; pointer-events: none; }
+        .orb--blue {
+            width: 700px; height: 700px; top: -280px; right: -240px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.28) 0%, transparent 70%);
+        }
+        .orb--green {
+            width: 560px; height: 560px; bottom: -240px; left: -200px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.20) 0%, transparent 70%);
+        }
+
+        /* ====== カード共通レイアウト ====== */
+        .dhead {
+            position: relative;
+            z-index: 1;
+            padding: 64px 72px 0;
+        }
+        .dkick {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--accent-orange);
+            margin-bottom: 16px;
+        }
+        .dtitle {
+            font-size: 62px;
+            font-weight: 900;
+            line-height: 1.24;
+        }
+        .dtitle .accent { color: var(--accent-blue); }
+        .dtitle .warn { color: var(--accent-orange); }
+        .dvis {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 26px;
+            padding: 28px 72px;
+        }
+        .dvis.row { flex-direction: row; align-items: center; }
+        .dnote {
+            position: relative;
+            z-index: 1;
+            padding: 0 72px 28px;
+            font-size: 32px;
+            line-height: 1.55;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        .dfoot {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 72px 48px;
+        }
+        .fbrand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 32px;
+            font-weight: 900;
+        }
+        .fbrand img { width: 52px; height: 52px; border-radius: 12px; }
+        .furl { font-size: 28px; color: var(--accent-blue); font-weight: 700; }
+
+        /* ====== 部品: パネル ====== */
+        .panel {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 26px;
+            padding: 30px 34px;
+        }
+        .panel.green { border-color: rgba(16, 185, 129, 0.42); }
+        .panel.red { border-color: rgba(239, 68, 68, 0.42); }
+        .panel.blue { border-color: rgba(59, 130, 246, 0.42); }
+        .panel.amber { border-color: rgba(245, 158, 11, 0.42); }
+        .panel.center { text-align: center; }
+        .ptitle { font-size: 34px; font-weight: 900; margin-bottom: 10px; }
+        .ptext { font-size: 30px; line-height: 1.5; color: var(--text-muted); }
+        .pbig { font-size: 62px; line-height: 1; }
+
+        /* ====== 部品: アプリ風ボタン ====== */
+        .ui-btn {
+            background: linear-gradient(180deg, #1e3a5f 0%, #16294a 100%);
+            border: 3px solid rgba(59, 130, 246, 0.55);
+            border-radius: 22px;
+            padding: 22px 30px;
+            text-align: center;
+            min-width: 200px;
+        }
+        .ui-btn.stat { background: linear-gradient(180deg, #1c3b34 0%, #142b28 100%); border-color: rgba(16, 185, 129, 0.5); }
+        .ui-btn.foul { background: linear-gradient(180deg, #4a2f14 0%, #33210e 100%); border-color: rgba(245, 158, 11, 0.5); }
+        .ui-btn .bicon { font-size: 42px; display: block; }
+        .ui-btn .blabel { font-size: 46px; font-weight: 900; display: block; line-height: 1.1; }
+        .ui-btn .bsub { font-size: 28px; color: var(--text-muted); display: block; margin-top: 4px; }
+        .ui-btn .bhint { font-size: 28px; color: var(--accent-orange); display: block; margin-top: 6px; }
+
+        /* ====== 部品: 行・チップ・矢印 ====== */
+        .row-list { display: flex; flex-direction: column; gap: 18px; width: 100%; }
+        .lrow {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 22px 30px;
+        }
+        .lrow .lkey {
+            font-size: 34px;
+            font-weight: 900;
+            color: var(--accent-blue);
+            min-width: 132px;
+        }
+        .lrow .lval { font-size: 31px; line-height: 1.45; }
+        .lrow .lval b { color: var(--text-white); }
+        /* 行数が多いカード用。行の高さを詰めて1080pxに収める */
+        .row-list.compact { gap: 12px; }
+        .row-list.compact .lrow { padding: 16px 26px; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 999px;
+            padding: 14px 30px;
+            font-size: 30px;
+            font-weight: 700;
+        }
+        .chips { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+        .arrow { font-size: 44px; color: var(--text-muted); }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; }
+        .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; }
+
+        /* ====== 部品: 紙のスコアシート風 ====== */
+        .sheet {
+            background: #f8fafc;
+            color: #0a1628;
+            border-radius: 14px;
+            padding: 28px 32px;
+            width: 100%;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+        }
+        .sheet .sh-title {
+            font-size: 30px;
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: 0.06em;
+            border-bottom: 3px solid #0a1628;
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+        .sheet table { width: 100%; border-collapse: collapse; }
+        .sheet th, .sheet td {
+            border: 2px solid #94a3b8;
+            padding: 10px 8px;
+            font-size: 28px;
+            text-align: center;
+        }
+        .sheet th { background: #e2e8f0; font-weight: 900; }
+        .sheet .sh-note { font-size: 28px; color: #475569; text-align: center; margin-top: 14px; }
+
+        /* ====== 部品: 比較バー ====== */
+        .barrow { width: 100%; }
+        .barlabel { font-size: 30px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .bartrack { height: 40px; background: rgba(255, 255, 255, 0.06); border-radius: 8px; overflow: hidden; }
+        .barfill { height: 100%; background: var(--accent-blue); border-radius: 8px; }
+        .barfill.dim { background: rgba(59, 130, 246, 0.32); }
+        .barfill.green { background: var(--accent-green); }
+        .barfill.split { background: rgba(59, 130, 246, 0.28); position: relative; }
+        .barfill.split i { position: absolute; inset: 0 auto 0 0; background: var(--accent-blue); display: block; }
+
+        /* ====== 表示切替ボタン ====== */
+        #sizeToggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 10;
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <button id="sizeToggle" onclick="document.body.classList.toggle('fullsize'); this.textContent = document.body.classList.contains('fullsize') ? '縮小表示に戻す' : '実寸表示 (1080px)';">実寸表示 (1080px)</button>
+
+    <div class="page-header">
+        <h1>🏀 MBCscore SNS投稿カード（詳細解説シリーズ 全30枚）</h1>
+        <p>各カードは実寸1080×1080pxです。「実寸表示」に切り替えてカード単位でスクリーンショットを撮り、<br>X / Instagram の投稿画像として使用してください。文面は docs/marketing/sns-posts-detail.md 参照。</p>
+    </div>
+
+    <div class="part-title">Part A ｜ ボタン仕様編（A1〜A15）</div>
+
+    <!-- A1: 2Pボタンの3つの入力 -->
+    <div class="card-frame">
+        <div class="card" id="card-a1">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #1</p>
+                <h2 class="dtitle">1つのボタンに<br><span class="accent">3つの入力</span></h2>
+            </div>
+            <div class="dvis row">
+                <div class="ui-btn">
+                    <span class="bicon">🏀</span>
+                    <span class="blabel">2P</span>
+                    <span class="bhint">↑成功 ↓ミス</span>
+                </div>
+                <div class="row-list" style="flex: 1;">
+                    <div class="lrow"><span class="lkey">⬆️ 上</span><span class="lval"><b>2P成功</b>（+2点）</span></div>
+                    <div class="lrow"><span class="lkey">⬇️ 下</span><span class="lval"><b>2Pミス</b>（2PA）</span></div>
+                    <div class="lrow"><span class="lkey">👆 タップ</span><span class="lval">成功／ミスの<b>選択メニュー</b></span></div>
+                </div>
+            </div>
+            <p class="dnote">指を離すまで確定しない。戻せば取り消せます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A2: フリック判定30px -->
+    <div class="card-frame">
+        <div class="card" id="card-a2">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #2</p>
+                <h2 class="dtitle">「うっかり記録」を<br>防ぐ<span class="accent">2段構え</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="grid2">
+                    <div class="panel center blue">
+                        <div class="ptitle">① 判定距離</div>
+                        <div class="pbig" style="color: var(--accent-blue); margin: 12px 0;">30px</div>
+                        <div class="ptext">未満の動きは無反応。<br>揺れても誤記録しない</div>
+                    </div>
+                    <div class="panel center green">
+                        <div class="ptitle">② 離して確定</div>
+                        <div class="pbig" style="margin: 12px 0;">☝️</div>
+                        <div class="ptext">指を離すまで未記録。<br>戻せばキャンセル</div>
+                    </div>
+                </div>
+            </div>
+            <p class="dnote">試合中に「今の消したい」と焦らなくて済む設計。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A3: 3Pボタンの表示切替 -->
+    <div class="card-frame">
+        <div class="card" id="card-a3">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #3</p>
+                <h2 class="dtitle">使わないボタンは<br><span class="accent">最初から出さない</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="panel" style="width: 100%;">
+                    <div class="ptitle" style="color: var(--accent-green);">既定（ミニバス）</div>
+                    <div style="display: flex; gap: 18px; margin-top: 16px;">
+                        <div class="ui-btn" style="flex: 1; min-width: 0; padding: 16px;"><span class="blabel">2P</span></div>
+                        <div class="ui-btn" style="flex: 1; min-width: 0; padding: 16px;"><span class="blabel">FT</span></div>
+                    </div>
+                </div>
+                <div class="panel amber" style="width: 100%;">
+                    <div class="ptitle" style="color: var(--accent-orange);">「3Pを使う（U15/一般）」ON</div>
+                    <div style="display: flex; gap: 18px; margin-top: 16px;">
+                        <div class="ui-btn" style="flex: 1; min-width: 0; padding: 16px;"><span class="blabel">2P</span></div>
+                        <div class="ui-btn" style="flex: 1; min-width: 0; padding: 16px;"><span class="blabel">3P</span></div>
+                        <div class="ui-btn" style="flex: 1; min-width: 0; padding: 16px;"><span class="blabel">FT</span></div>
+                    </div>
+                </div>
+            </div>
+            <p class="dnote">ミニバスに3Pはない。押し間違いの元を置かない。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A4: FTボタン -->
+    <div class="card-frame">
+        <div class="card" id="card-a4">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #4</p>
+                <h2 class="dtitle">フリースローは<br><span class="accent">2つの入り口</span>から</h2>
+            </div>
+            <div class="dvis row">
+                <div class="panel center blue" style="flex: 1;">
+                    <div class="pbig">🆓</div>
+                    <div class="ptitle" style="margin-top: 12px;">FTボタン</div>
+                    <div class="ptext">↑成功（+1点）<br>↓FTA（試投のみ）</div>
+                </div>
+                <div class="panel center amber" style="flex: 1;">
+                    <div class="pbig">⚠️</div>
+                    <div class="ptitle" style="margin-top: 12px;">ファウルから</div>
+                    <div class="ptext">本数を自動提案<br>1本ずつ結果を記録</div>
+                </div>
+            </div>
+            <p class="dnote">どちらから入れても、シートの同じ欄に反映されます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A5: TO 4方向スワイプ -->
+    <div class="card-frame">
+        <div class="card" id="card-a5">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #5</p>
+                <h2 class="dtitle">1つのボタンで<br><span class="accent">4種類</span>のTO</h2>
+            </div>
+            <div class="dvis">
+                <div class="chip" style="border-color: rgba(16,185,129,0.5);">⬆️ ダブドリ</div>
+                <div style="display: flex; align-items: center; gap: 24px;">
+                    <div class="chip" style="border-color: rgba(16,185,129,0.5);">⬅️ パスミス</div>
+                    <div class="ui-btn stat" style="min-width: 300px;">
+                        <span class="blabel" style="font-size: 38px;">ターンオーバー</span>
+                        <span class="bsub">4方向スワイプ</span>
+                    </div>
+                    <div class="chip" style="border-color: rgba(16,185,129,0.5);">キャッチミス ➡️</div>
+                </div>
+                <div class="chip" style="border-color: rgba(16,185,129,0.5);">⬇️ トラベリング</div>
+            </div>
+            <p class="dnote">四辺にヒントが常時表示。判定は40px。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A6: TOタップの5択 -->
+    <div class="card-frame">
+        <div class="card" id="card-a6">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #6</p>
+                <h2 class="dtitle">急ぐときはスワイプ<br><span class="accent">迷ったらタップ</span></h2>
+            </div>
+            <div class="dvis" style="padding-top: 12px; padding-bottom: 12px;">
+                <div class="panel" style="width: 100%; padding: 24px 30px;">
+                    <div class="ptitle" style="text-align: center; margin-bottom: 14px;">TO種類を選択</div>
+                    <div class="row-list compact">
+                        <div class="lrow"><span class="lkey">TO</span><span class="lval">ターンオーバー（その他）</span></div>
+                        <div class="lrow"><span class="lkey">DD</span><span class="lval">ダブドリ</span></div>
+                        <div class="lrow"><span class="lkey">TR</span><span class="lval">トラベリング</span></div>
+                        <div class="lrow"><span class="lkey">PM</span><span class="lval">パスミス</span></div>
+                        <div class="lrow"><span class="lkey">CM</span><span class="lval">キャッチミス</span></div>
+                    </div>
+                </div>
+            </div>
+            <p class="dnote">「その他」があるから、分類できなくても記録は残せる。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A7: OR/DR分割 -->
+    <div class="card-frame">
+        <div class="card" id="card-a7">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #7</p>
+                <h2 class="dtitle">リバウンドは<br>最初から<span class="accent">2つのボタン</span></h2>
+            </div>
+            <div class="dvis row">
+                <div class="ui-btn stat" style="flex: 1;">
+                    <span class="blabel">OR</span>
+                    <span class="bsub">オフェンス<br>リバウンド</span>
+                </div>
+                <div class="ui-btn stat" style="flex: 1;">
+                    <span class="blabel">DR</span>
+                    <span class="bsub">ディフェンス<br>リバウンド</span>
+                </div>
+            </div>
+            <div class="dvis" style="padding-top: 0; flex: 0;">
+                <div class="chips">
+                    <span class="chip">📊 比率グラフに反映</span>
+                    <span class="chip">📄 CSVに別列で出力</span>
+                </div>
+            </div>
+            <p class="dnote">あとで分ける作業が要らない。その場の1タップで完結。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A8: AST/STL/BLK -->
+    <div class="card-frame">
+        <div class="card" id="card-a8">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #8</p>
+                <h2 class="dtitle">記録したい深さは<br><span class="accent">人それぞれ</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="grid3">
+                    <div class="ui-btn stat"><span class="bicon">🤝</span><span class="blabel">AST</span></div>
+                    <div class="ui-btn stat"><span class="bicon">🔥</span><span class="blabel">STL</span></div>
+                    <div class="ui-btn stat"><span class="bicon">🛡️</span><span class="blabel">BLK</span></div>
+                </div>
+                <div class="panel" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">フルモードでのみ表示。<br>シンプルモードでは<b style="color: var(--text-white);">得点とファウルだけ</b>に絞られます</div>
+                </div>
+            </div>
+            <p class="dnote">「今日は得点だけ」も選べる。シートはどちらでも出せます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A9: ファウル4種 -->
+    <div class="card-frame">
+        <div class="card" id="card-a9">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #9</p>
+                <h2 class="dtitle">ファウルは<br>「1個」で<span class="warn">終わらせない</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="row-list">
+                    <div class="lrow"><span class="lkey" style="color: var(--accent-orange);">P</span><span class="lval">パーソナルファウル</span></div>
+                    <div class="lrow"><span class="lkey" style="color: var(--accent-orange);">T</span><span class="lval">テクニカルファウル</span></div>
+                    <div class="lrow"><span class="lkey" style="color: var(--accent-orange);">U</span><span class="lval">アンスポーツマンライク</span></div>
+                    <div class="lrow"><span class="lkey" style="color: var(--accent-orange);">D</span><span class="lval">ディスクォリファイイング</span></div>
+                </div>
+            </div>
+            <p class="dnote">種類によって退場の判定が変わるから、種類まで記録する。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A10: Pファウル長押し -->
+    <div class="card-frame">
+        <div class="card" id="card-a10">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #10</p>
+                <h2 class="dtitle">同じボタン、<br>押す長さで<span class="warn">分かれる道</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="ui-btn foul" style="min-width: 280px;">
+                    <span class="blabel">P</span>
+                    <span class="bsub">パーソナルファウル</span>
+                </div>
+                <div class="grid2">
+                    <div class="panel center">
+                        <div class="ptitle">👆 タップ</div>
+                        <div class="ptext" style="margin-top: 8px;">通常のパーソナル<br>ファウルとして記録</div>
+                    </div>
+                    <div class="panel center amber">
+                        <div class="ptitle">👇 長押し 0.5秒</div>
+                        <div class="ptext" style="margin-top: 8px;">シュートファウルへ<br>2P/3P → FT本数を提案</div>
+                    </div>
+                </div>
+            </div>
+            <p class="dnote">キーボードなら Shift+Enter で同じ分岐に入れます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A11: ファウル数の警告 -->
+    <div class="card-frame">
+        <div class="card" id="card-a11">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #11</p>
+                <h2 class="dtitle">記録する<span class="warn">「前」</span>に<br>気づける</h2>
+            </div>
+            <div class="dvis">
+                <div class="row-list">
+                    <div class="lrow"><span class="lkey">1〜3個</span><span class="lval">現在◯個のファウル</span></div>
+                    <div class="lrow" style="border-color: rgba(245,158,11,0.5);"><span class="lkey" style="color: var(--accent-orange);">4個</span><span class="lval"><b>ファウルトラブル</b></span></div>
+                    <div class="lrow" style="border-color: rgba(239,68,68,0.5);"><span class="lkey" style="color: var(--accent-red);">5個</span><span class="lval">⚠️ <b>ファウルアウト済み</b></span></div>
+                </div>
+            </div>
+            <p class="dnote">選手名と背番号も一緒に表示。同姓でも取り違えません。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A12: 失格の3条件 -->
+    <div class="card-frame">
+        <div class="card" id="card-a12">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #12</p>
+                <h2 class="dtitle">退場はファウル<br>5個<span class="warn">だけじゃない</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="row-list">
+                    <div class="lrow" style="border-color: rgba(239,68,68,0.5);"><span class="lkey" style="color: var(--accent-red);">❶</span><span class="lval"><b>D</b>（ディスクォリファイイング）1つ</span></div>
+                    <div class="lrow" style="border-color: rgba(239,68,68,0.5);"><span class="lkey" style="color: var(--accent-red);">❷</span><span class="lval"><b>U・T</b> が合わせて2つ</span></div>
+                    <div class="lrow"><span class="lkey">❸</span><span class="lval">パーソナル含めて<b>5つ</b></span></div>
+                </div>
+                <div class="panel amber" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">❶❷は<b style="color: var(--text-white);">5個より先に来る</b>。数だけ数えていると見落とします</div>
+                </div>
+            </div>
+            <p class="dnote">3条件すべてを判定して、スタメン選択に表示します。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A13: 記録待ちステータスバー -->
+    <div class="card-frame">
+        <div class="card" id="card-a13">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #13</p>
+                <h2 class="dtitle">今なにを記録<br>しようとしている？</h2>
+            </div>
+            <div class="dvis">
+                <div class="panel" style="width: 100%;">
+                    <div class="ptext" style="margin-bottom: 12px;">待機中</div>
+                    <div style="background: rgba(255,255,255,0.06); border-radius: 14px; padding: 20px 26px; font-size: 30px;">選手とアクションをタップして記録</div>
+                </div>
+                <div class="panel amber" style="width: 100%;">
+                    <div class="ptext" style="margin-bottom: 12px; color: var(--accent-orange);">アクション選択中</div>
+                    <div style="display: flex; align-items: center; gap: 16px; background: rgba(245,158,11,0.12); border-radius: 14px; padding: 20px 26px;">
+                        <span class="chip" style="background: var(--accent-orange); color: #0a1628; border: none; padding: 8px 22px; font-size: 28px;">記録待ち</span>
+                        <span style="font-size: 30px;">2P成功 → 選手をタップ</span>
+                    </div>
+                </div>
+            </div>
+            <p class="dnote">高さは固定。表示が変わってもボタンの位置はずれません。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A14: 選手がわからない -->
+    <div class="card-frame">
+        <div class="card" id="card-a14">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #14</p>
+                <h2 class="dtitle">「分からない」を<br>記録の<span class="accent">終わりにしない</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="grid2">
+                    <div class="panel red center">
+                        <div class="ptext">❌ 適当な選手にする<br>→ 記録が間違う</div>
+                    </div>
+                    <div class="panel red center">
+                        <div class="ptext">❌ 諦める<br>→ 記録が消える</div>
+                    </div>
+                </div>
+                <div class="arrow">⬇️</div>
+                <div class="panel green" style="width: 100%;">
+                    <div class="ptitle" style="color: var(--accent-green); text-align: center;">✅【選手がわからない】を押す</div>
+                    <div class="ptext" style="text-align: center; margin-top: 10px;">アクションだけ保留リストへ → 試合はそのまま進行<br>分かった時点でタップして紐付け</div>
+                </div>
+            </div>
+            <p class="dnote">最後まで不明なら「不明」で確定。チーム合計には加算されます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A15: フル/シンプルのボタン構成 -->
+    <div class="card-frame">
+        <div class="card" id="card-a15">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">ボタン仕様 #15</p>
+                <h2 class="dtitle">同じ試合を<br><span class="accent">2つの画面</span>で</h2>
+            </div>
+            <div class="dvis row">
+                <div class="panel blue" style="flex: 1;">
+                    <div class="ptitle" style="color: var(--accent-blue);">フルモード</div>
+                    <div class="ptext" style="margin: 10px 0 14px;">タブレット向け・3カラム</div>
+                    <div class="ptext" style="color: var(--text-white); line-height: 1.7;">2P / 3P / FT<br>OR / DR<br>AST / STL / BLK<br>TO（4方向）<br>ファウル</div>
+                </div>
+                <div class="panel green" style="flex: 1;">
+                    <div class="ptitle" style="color: var(--accent-green);">シンプルモード</div>
+                    <div class="ptext" style="margin: 10px 0 14px;">スマホ向け・縦型</div>
+                    <div class="ptext" style="color: var(--text-white); line-height: 1.7;">得点<br>ファウル<br><br>ボタンを大きく<br>片手で押せる</div>
+                </div>
+            </div>
+            <p class="dnote">画面右上でいつでも切替。試合の途中で変えても記録は続きます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="part-title">Part B ｜ レポート編（B1〜B15）</div>
+
+    <!-- B1: スコアシート全体 -->
+    <div class="card-frame">
+        <div class="card" id="card-b1">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #1</p>
+                <h2 class="dtitle">試合が終われば<br>シートは<span class="accent">完成している</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="sheet">
+                    <div class="sh-title">MINI-BASKETBALL OFFICIAL SCORESHEET</div>
+                    <table>
+                        <tr><th>大会名</th><td colspan="3">◯◯ミニバス大会</td></tr>
+                        <tr><th>日付</th><td>2026年◯月◯日</td><th>会場</th><td>◯◯体育館</td></tr>
+                        <tr><th>時間</th><td>10:00</td><th>Game No.</th><td>12</td></tr>
+                    </table>
+                    <div class="sh-note">ロスター・ランニングスコア・ファウル欄まで自動で記入</div>
+                </div>
+            </div>
+            <p class="dnote">JBA公式様式に準拠したA4縦レイアウト。清書の時間はゼロに。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B2: ランニングスコア欄の記号 -->
+    <div class="card-frame">
+        <div class="card" id="card-b2">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #2</p>
+                <h2 class="dtitle">1点ずつ、<br><span class="accent">背番号</span>で埋まる</h2>
+            </div>
+            <div class="dvis">
+                <div class="sheet">
+                    <div class="sh-title">ランニングスコア</div>
+                    <table>
+                        <tr><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th></tr>
+                        <tr><td>7</td><td>7</td><td>12</td><td>12</td><td>▲</td><td>4</td><td>?</td><td>12</td></tr>
+                    </table>
+                    <div class="sh-note">得点者の背番号が順番に入る</div>
+                </div>
+                <div class="grid2">
+                    <div class="panel center"><div class="ptitle">▲</div><div class="ptext">オウンゴール</div></div>
+                    <div class="panel center"><div class="ptitle">？</div><div class="ptext">選手不明のまま確定</div></div>
+                </div>
+            </div>
+            <p class="dnote">空欄にせず記号で残すから、点数の帳尻は必ず合います。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B3: 出場時限とファウル欄 -->
+    <div class="card-frame">
+        <div class="card" id="card-b3">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #3</p>
+                <h2 class="dtitle">選手1人の試合が<br><span class="accent">1行</span>に収まる</h2>
+            </div>
+            <div class="dvis">
+                <div class="sheet">
+                    <table>
+                        <tr>
+                            <th rowspan="2">No.</th><th rowspan="2">選手名</th>
+                            <th colspan="4">出場時限</th><th colspan="3">ファウル</th>
+                        </tr>
+                        <tr><th>①</th><th>②</th><th>③</th><th>④</th><th>1</th><th>2</th><th>3</th></tr>
+                        <tr><td>7</td><td>やまだ</td><td>✓</td><td></td><td>✓</td><td>✓</td><td>P</td><td>P</td><td></td></tr>
+                        <tr><td>12</td><td>すずき</td><td></td><td>✓</td><td>✓</td><td>✓</td><td>P</td><td>U</td><td></td></tr>
+                    </table>
+                    <div class="sh-note">スタメン登録と選手交代から自動で記入</div>
+                </div>
+            </div>
+            <p class="dnote">全員出場ルールのミニバスでは、特に大切な記録です。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B4: チームファウル・タイムアウト欄 -->
+    <div class="card-frame">
+        <div class="card" id="card-b4">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #4</p>
+                <h2 class="dtitle">チームの記録も<br><span class="accent">様式どおり</span>に</h2>
+            </div>
+            <div class="dvis">
+                <div class="sheet">
+                    <table>
+                        <tr><th></th><th>①</th><th>②</th><th>③</th><th>④</th><th>OT</th></tr>
+                        <tr><th>チームファウル</th><td>2</td><td>4</td><td>3</td><td>5</td><td>—</td></tr>
+                        <tr><th>タイムアウト</th><td>✓</td><td></td><td>✓</td><td>✓</td><td>—</td></tr>
+                    </table>
+                    <div class="sh-note">ハーフタイムの区切り線も自動で描画</div>
+                </div>
+                <div class="chips">
+                    <span class="chip">ペナルティ判断に</span>
+                    <span class="chip">残り回数の管理に</span>
+                    <span class="chip">OT対応</span>
+                </div>
+            </div>
+            <p class="dnote">前半・後半の切れ目を間違えると集計が狂う。だから自動で。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B5: PDF/JPEG出力 -->
+    <div class="card-frame">
+        <div class="card" id="card-b5">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #5</p>
+                <h2 class="dtitle">出したあとの<br>「<span class="accent">送る</span>」まで</h2>
+            </div>
+            <div class="dvis">
+                <div class="grid2">
+                    <div class="panel center blue">
+                        <div class="pbig">📄</div>
+                        <div class="ptitle" style="margin-top: 10px;">PDF</div>
+                        <div class="ptext">印刷・提出用<br>A4に自動ページ分割</div>
+                    </div>
+                    <div class="panel center green">
+                        <div class="pbig">🖼️</div>
+                        <div class="ptitle" style="margin-top: 10px;">JPEG</div>
+                        <div class="ptext">共有用<br>LINEにそのまま貼れる</div>
+                    </div>
+                </div>
+                <div class="panel amber" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">📱 iPhoneでは<b style="color: var(--text-white);">共有シートを直接表示</b><br>「保存したのに見つからない」が起きません</div>
+                </div>
+            </div>
+            <p class="dnote">出力 → 共有シート → LINE。3ステップで届きます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B6: 試合サマリーCSV -->
+    <div class="card-frame">
+        <div class="card" id="card-b6">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #6</p>
+                <h2 class="dtitle">シーズンの記録を<br><span class="accent">表計算ソフト</span>へ</h2>
+            </div>
+            <div class="dvis">
+                <div class="sheet">
+                    <div class="sh-title">試合履歴CSV（8列）</div>
+                    <table>
+                        <tr><th>日付</th><th>大会名</th><th>自チーム</th><th>対戦相手</th></tr>
+                        <tr><td>2026/◯/◯</td><td>◯◯大会</td><td>MBC</td><td>△△ミニバス</td></tr>
+                        <tr><th>自チーム得点</th><th>相手得点</th><th>結果</th><th>会場</th></tr>
+                        <tr><td>42</td><td>38</td><td>勝利</td><td>◯◯体育館</td></tr>
+                    </table>
+                </div>
+                <div class="panel blue" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">白でも青でも、常に<b style="color: var(--text-white);">自チーム視点</b>で出力<br>勝った試合が「敗北」と書き出されません</div>
+                </div>
+            </div>
+            <p class="dnote">勝率の集計もグラフ化も、開いてすぐ。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B7: 詳細CSV 42列 -->
+    <div class="card-frame">
+        <div class="card" id="card-b7">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #7</p>
+                <h2 class="dtitle">選手1人＝1行<br><span class="accent">42列</span>の詳細データ</h2>
+            </div>
+            <div class="dvis">
+                <div class="row-list">
+                    <div class="lrow"><span class="lkey" style="min-width: 200px;">シュート</span><span class="lval">2P / 3P / FT / FG の成功・試投・成功率</span></div>
+                    <div class="lrow"><span class="lkey" style="min-width: 200px;">リバウンド</span><span class="lval">オフェンス・ディフェンス・総REB</span></div>
+                    <div class="lrow"><span class="lkey" style="min-width: 200px;">その他</span><span class="lval">アシスト・スティール・ブロック</span></div>
+                    <div class="lrow"><span class="lkey" style="min-width: 200px;">ターンオーバー</span><span class="lval">合計＋DD / TR / PM / CM の内訳</span></div>
+                    <div class="lrow"><span class="lkey" style="min-width: 200px;">出場</span><span class="lval">ファウル数・Q1〜Q4の出場</span></div>
+                </div>
+            </div>
+            <p class="dnote">成功率まで計算済み。開いてすぐ並べ替えられます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B8: CSVの安全設計 -->
+    <div class="card-frame">
+        <div class="card" id="card-b8">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #8</p>
+                <h2 class="dtitle">「開いたら文字化け」<br>を<span class="accent">起こさない</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="panel green" style="width: 100%;">
+                    <div class="ptitle" style="color: var(--accent-green);">① BOM付きで出力</div>
+                    <div class="ptext" style="margin-top: 8px;">日本語を含むCSVをExcelで開いても文字化けしません。ダブルクリックでそのまま使えます</div>
+                </div>
+                <div class="panel green" style="width: 100%;">
+                    <div class="ptitle" style="color: var(--accent-green);">② CSVインジェクション対策</div>
+                    <div class="ptext" style="margin-top: 8px;">= や + で始まるセルは無害化してから書き出し。チーム名に記号が入っていても安全です</div>
+                </div>
+            </div>
+            <p class="dnote">自分のデータを、安心して開けること。地味ですが大事です。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B9: 比較バーは3種類の作り方 -->
+    <div class="card-frame">
+        <div class="card" id="card-b9">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #9</p>
+                <h2 class="dtitle">グラフは「正しく<br><span class="accent">誤解させない</span>」仕事</h2>
+            </div>
+            <div class="dvis">
+                <div class="panel" style="width: 100%;">
+                    <div class="ptitle">📏 割合の行</div>
+                    <div class="barrow" style="margin-top: 12px;">
+                        <div class="barlabel"><span>FG成功率</span><span>48.4% ／ 44.8%</span></div>
+                        <div class="bartrack"><div class="barfill" style="width: 48.4%;"></div></div>
+                    </div>
+                    <div class="ptext" style="margin-top: 10px;">0〜100%の絶対スケール。僅差は僅差に見せる</div>
+                </div>
+                <div class="panel" style="width: 100%;">
+                    <div class="ptitle">🏀 シュートの実数行</div>
+                    <div class="barrow" style="margin-top: 12px;">
+                        <div class="barlabel"><span>3/20</span><span>長さ=試投、塗り=成功</span></div>
+                        <div class="bartrack"><div class="barfill split" style="width: 100%;"><i style="width: 15%;"></i></div></div>
+                    </div>
+                    <div class="ptext" style="margin-top: 10px;">3/20が2/4より長く見える誤読を防ぐ</div>
+                </div>
+            </div>
+            <p class="dnote">数字は正しいのにグラフが嘘をつく。それを起こさない。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B10: 少ない方が良い行 -->
+    <div class="card-frame">
+        <div class="card" id="card-b10">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #10</p>
+                <h2 class="dtitle">色が示すのは<br>「<span class="accent">良い方</span>」</h2>
+            </div>
+            <div class="dvis">
+                <div class="panel" style="width: 100%;">
+                    <div class="barrow">
+                        <div class="barlabel"><span>得点</span><span>42 ／ 38</span></div>
+                        <div class="bartrack"><div class="barfill" style="width: 100%;"></div></div>
+                    </div>
+                    <div class="ptext" style="margin-top: 10px;">多い方を濃色に</div>
+                </div>
+                <div class="panel amber" style="width: 100%;">
+                    <div class="barrow">
+                        <div class="barlabel"><span style="color: var(--accent-orange);">↓ ターンオーバー</span><span>8 ／ 14</span></div>
+                        <div class="bartrack"><div class="barfill" style="width: 57%;"></div></div>
+                    </div>
+                    <div class="ptext" style="margin-top: 10px;">TOとファウルは<b style="color: var(--text-white);">少ない方</b>を濃色に。ラベルに「↓」を表示</div>
+                </div>
+            </div>
+            <p class="dnote">見た目の印象と意味を、必ず一致させる。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B11: 試投5本未満は勝敗なし -->
+    <div class="card-frame">
+        <div class="card" id="card-b11">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #11</p>
+                <h2 class="dtitle">「100%」が一番<br>すごいとは<span class="accent">限らない</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="grid2">
+                    <div class="panel center">
+                        <div class="ptitle">1／1</div>
+                        <div class="pbig" style="color: var(--text-muted); margin: 10px 0;">100.0%</div>
+                        <div class="ptext">試投1本</div>
+                    </div>
+                    <div class="panel center green">
+                        <div class="ptitle">9／10</div>
+                        <div class="pbig" style="color: var(--accent-green); margin: 10px 0;">90.0%</div>
+                        <div class="ptext">試投10本</div>
+                    </div>
+                </div>
+                <div class="panel" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">左右どちらかが<b style="color: var(--text-white);">5本未満</b>なら勝敗を出さない<br>数字は表示、優劣は付けない</div>
+                </div>
+            </div>
+            <p class="dnote">ミニバスはFTが少ない。この状況は実際によく起きます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B12: 選手詳細ビュー -->
+    <div class="card-frame">
+        <div class="card" id="card-b12">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #12</p>
+                <h2 class="dtitle">選手1人のシーズンが<br><span class="accent">1画面</span>に</h2>
+            </div>
+            <div class="dvis">
+                <div class="row-list">
+                    <div class="lrow"><span class="lkey">🏀</span><span class="lval"><b>シューティング</b> — 2P/3P/FT/FGの成功率</span></div>
+                    <div class="lrow"><span class="lkey">🏀</span><span class="lval"><b>リバウンド比率</b> — OR/DRの内訳</span></div>
+                    <div class="lrow"><span class="lkey">📈</span><span class="lval"><b>パフォーマンス</b> — ブロック・ファウル</span></div>
+                    <div class="lrow"><span class="lkey">⏱️</span><span class="lval"><b>累計記録</b> — 得点・AST・BLKの通算</span></div>
+                    <div class="lrow"><span class="lkey">📋</span><span class="lval"><b>試合別詳細</b> — 日付・対戦相手・スコア</span></div>
+                </div>
+            </div>
+            <p class="dnote">「今シーズン伸びたね」を、感覚ではなく数字で。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B13: 直近フォームの比較成立 -->
+    <div class="card-frame">
+        <div class="card" id="card-b13">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #13</p>
+                <h2 class="dtitle">「±0.0」が嘘に<br>なる瞬間がある</h2>
+            </div>
+            <div class="dvis">
+                <div class="panel" style="width: 100%;">
+                    <div class="ptext" style="text-align: center; color: var(--text-white); font-size: 34px; letter-spacing: 0.04em;">6点 → 8点 → 10点 → 12点 → 14点</div>
+                    <div class="ptext" style="text-align: center; margin-top: 10px;">毎試合伸びている選手</div>
+                </div>
+                <div class="arrow">⬇️</div>
+                <div class="panel red" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">直近5試合＝全試合なので、同じ集合の比較になり<br><b style="color: var(--accent-red); font-size: 36px;">全項目 ± 0.0</b> と表示されてしまう</div>
+                </div>
+                <div class="panel green" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">✅ 比較が成立しない間はその旨を明示。<br>何試合目から比較できるかも表示します</div>
+                </div>
+            </div>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B14: 勝敗別スプリット -->
+    <div class="card-frame">
+        <div class="card" id="card-b14">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #14</p>
+                <h2 class="dtitle">勝った日と負けた日で<br>何が<span class="accent">違う？</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="sheet">
+                    <table>
+                        <tr><th></th><th>試合</th><th>得点</th><th>REB</th><th>AST</th><th>TO</th></tr>
+                        <tr><th>勝ち</th><td>8</td><td>10.2</td><td>5.1</td><td>2.4</td><td>1.8</td></tr>
+                        <tr><th>負け</th><td>5</td><td>7.4</td><td>3.8</td><td>1.6</td><td>3.6</td></tr>
+                        <tr><th>引分</th><td>1</td><td>9.0</td><td>4.0</td><td>2.0</td><td>2.0</td></tr>
+                    </table>
+                    <div class="sh-note">引き分けも独立した行に → 試合数の合計が必ず一致</div>
+                </div>
+            </div>
+            <p class="dnote">数えた数字が合わないと、他の数字も信用できなくなる。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B15: 出場クォーターで均した指標 -->
+    <div class="card-frame">
+        <div class="card" id="card-b15">
+            <div class="orb orb--blue"></div>
+            <div class="orb orb--green"></div>
+            <div class="dhead">
+                <p class="dkick">レポート #15</p>
+                <h2 class="dtitle">「1試合平均」だけでは<br><span class="accent">比べられない</span></h2>
+            </div>
+            <div class="dvis">
+                <div class="panel amber" style="width: 100%;">
+                    <div class="ptext" style="text-align: center;">全員出場ルール → 同じ「1試合」に<br><b style="color: var(--text-white);">1Qだけの選手と4Q出た選手</b>が混ざる</div>
+                </div>
+                <div class="grid2">
+                    <div class="panel center red">
+                        <div class="ptitle" style="font-size: 30px;">試合平均だけ</div>
+                        <div class="ptext" style="margin-top: 8px;">長く出た選手ほど過小<br>短い選手ほど過大</div>
+                    </div>
+                    <div class="panel center green">
+                        <div class="ptitle" style="font-size: 30px;">1Qあたりを併記</div>
+                        <div class="ptext" style="margin-top: 8px;">出場Qで割った<br>得点／REB／AST</div>
+                    </div>
+                </div>
+            </div>
+            <p class="dnote">出場時間の違う選手を、同じ土俵で比べられます。</p>
+            <div class="dfoot">
+                <div class="fbrand"><img src="./icon-512.png" alt="">MBCscore</div>
+                <div class="furl">boningori.github.io/MBCscore_pr</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD_SLOT_A -->
+
+</body>
+</html>
