@@ -5,7 +5,7 @@ import type { GameRecord } from '../../utils/gameHistoryStorage';
 
 vi.mock('../Toast/toastApi', () => ({ showToast: vi.fn() }));
 
-const gameRecord = {
+const gameRecord: GameRecord = {
     id: 'g1',
     date: new Date(Date.UTC(2026, 5, 5)).toISOString(),
     gameName: '第1節',
