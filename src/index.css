@@ -84,6 +84,21 @@
      --bg-tertiary より明るい面では使わない（そこでは --text-secondary 以上を使う） */
   --text-muted: #8695ad;
 
+  /* 色みを15%敷いた面（選手スタッツ分析の行・チップ。--stats-*-bg）の上で使う文字色。
+     この面は --bg-tertiary より明るいため、--bg-tertiary 基準で決めた
+     --danger-text / --text-secondary でも AA に届かない
+     （実測: --danger-text 3.90:1、--text-secondary 3.85:1、--team-blue-light 3.30:1、
+     --active-highlight-light 3.16:1）。詳細画面の数値がまとめて沈んでいた。
+     背景・枠線としての --*-light は据え置く。
+     緑と橙は既存の --secondary-text / --warning-light がこの面でも足りるので足さない。
+     「どんな面でも使える1組」にはしていない。そこまで持ち上げると色が白へ寄って
+     6色の区別が付かなくなるため、実際に敷いている面だけを
+     src/index.contrast.test.ts で列挙して縛っている */
+  --text-secondary-on-tint: #b6c1d0;
+  --team-blue-text-on-tint: #96c4fc;
+  --active-highlight-text-on-tint: #f8a8d2;
+  --danger-text-on-tint: #fbabab;
+
   --border: #334155;
   --border-light: #475569;
   --bg-hover: #475569;
@@ -981,6 +996,13 @@ textarea,
   font-size: var(--font-size-md);
   line-height: 1.6;
   margin: var(--spacing-lg) 0;
+}
+
+/* 「訂正・削除は続けられます」の補足。本文と同じ大きさだと、確認したい
+   「終了しますか？」と並んで読む量が増える。一段落として添える */
+.end-game-confirm-note {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
 }
 
 .modal-actions-column {

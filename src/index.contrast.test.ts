@@ -100,10 +100,109 @@ describe('塗りボタンの白文字', () => {
     });
 });
 
+// --bg-hover はホバー地だけでなく、選手カードの中のタイル地としても使われる
+// （PlayerStatsAnalysis の .stat-box / .highlight-stat）。--bg-tertiary より明るいので、
+// --bg-tertiary 基準で決めた --text-secondary はここでは足りない。
+// 一覧カードの REB/AST/FG ラベルが 3.48:1 で沈んでいた
+describe('--bg-hover（カード内タイルの地）の上の文字', () => {
+    it('--team-white はAAを満たす（.stat-label / .highlight-label が使う）', () => {
+        expect(contrast(color('--team-white'), color('--bg-hover'))).toBeGreaterThanOrEqual(AA);
+    });
+
+    it('--text-primary はAAを満たす（タイルの数値が使う）', () => {
+        expect(contrast(color('--text-primary'), color('--bg-hover'))).toBeGreaterThanOrEqual(AA);
+    });
+
+    it('--text-secondary はAAに届かない（この面では使わない）', () => {
+        expect(contrast(color('--text-secondary'), color('--bg-hover'))).toBeLessThan(AA);
+    });
+});
+
 describe('文字色に使ってはいけないトークンの記録', () => {
     it('--primary-light は --bg-tertiary 上でAAを満たさない（だから --primary-text がある）', () => {
         // この前提が崩れた（=--primary-lightが十分明るくなった）ときは
         // トークンを2本持つ理由が無くなるので、統合を検討する合図にする
         expect(contrast(color('--primary-light'), color('--bg-tertiary'))).toBeLessThan(AA);
+    });
+});
+
+// 色みを敷いたパネルの上の文字（選手スタッツ分析の行・チップ）。
+//
+// これらの面は「アクセント色を8〜20%、--bg-tertiary の上に重ねた」もので、
+// 素の --bg-tertiary より明るい。そのため --bg-tertiary 基準で決めた
+// --danger-text / --text-secondary でもAAに届かず、詳細画面の数値が
+// まとめて沈んでいた（実測: --danger-text 3.90:1、--text-secondary 3.85:1、
+// --team-blue-light 3.30:1、--active-highlight-light 3.16:1）。
+//
+// 「どんな面でも使える1組」にはしていない。そこまで持ち上げると色が白へ寄って
+// 6色の区別が付かなくなるうえ、実在しない組み合わせのために明度を捨てることになる。
+// 代わりに PlayerStatsAnalysis.css が実際に敷いている面だけを列挙して縛る。
+// 新しい色の面を足すときは、ここに1行足して通ることを確かめること。
+describe('色みを敷いた面の上の文字（--*-on-tint）', () => {
+    /** アクセント色を alpha で --bg-tertiary に重ねた面の色 */
+    function tint(accent: string, alpha: number): string {
+        const base = color('--bg-tertiary');
+        const mix = (i: number) => {
+            const a = parseInt(accent.slice(1 + i * 2, 3 + i * 2), 16);
+            const b = parseInt(base.slice(1 + i * 2, 3 + i * 2), 16);
+            return Math.round(a * alpha + b * (1 - alpha));
+        };
+        return '#' + [0, 1, 2].map(i => mix(i).toString(16).padStart(2, '0')).join('');
+    }
+
+    // [文字色トークン, 面の説明（CSSの規則名）, 敷いている色, 濃さ]
+    const pairs: [string, string, string, number][] = [
+        ['--text-secondary-on-tint', '.perf-row.stl の地', '#3b82f6', 0.15],
+        ['--text-secondary-on-tint', '.perf-row.blk の地', '#ec4899', 0.15],
+        ['--text-secondary-on-tint', '.perf-row.to の地', '#dc2626', 0.15],
+        ['--text-secondary-on-tint', '.perf-row.foul の地', '#d97706', 0.15],
+        ['--team-blue-text-on-tint', '.perf-row.stl / .stat-pts の地', '#3b82f6', 0.15],
+        ['--team-blue-text-on-tint', '.stat-stl の地（紫）', '#8b5cf6', 0.15],
+        ['--active-highlight-text-on-tint', '.perf-row.blk / .stat-blk の地', '#ec4899', 0.15],
+        ['--danger-text-on-tint', '.perf-row.to の地', '#dc2626', 0.15],
+        ['--danger-text-on-tint', '.stat-to の地', '#ef4444', 0.15],
+        ['--danger-text-on-tint', '.to-total の地（いちばん濃い）', '#ef4444', 0.2],
+        ['--danger-text-on-tint', '.to-dd 等の地（いちばん薄い）', '#ef4444', 0.08],
+        // 緑と橙は専用トークンを足さず既存で足りる。
+        // ここが割れたら、上と同じ形で -on-tint を足す合図
+        ['--secondary-text', '.stat-reb の地', '#22c55e', 0.15],
+        ['--warning-light', '.perf-row.foul の地', '#d97706', 0.15],
+        ['--warning-light', '.stat-ast の地', '#f59e0b', 0.15],
+    ];
+
+    it.each(pairs)('%s が %s でAAを満たす', (textToken, _label, accent, alpha) => {
+        expect(contrast(color(textToken), tint(accent, alpha))).toBeGreaterThanOrEqual(AA);
+    });
+
+    // 同じ行の中で面が変わっても色を切り替えずに済むよう、素の面でも成り立たせる
+    it.each([
+        '--text-secondary-on-tint',
+        '--team-blue-text-on-tint',
+        '--active-highlight-text-on-tint',
+        '--danger-text-on-tint',
+    ])('%s は --bg-tertiary の上でもAAを満たす', textToken => {
+        expect(contrast(color(textToken), color('--bg-tertiary'))).toBeGreaterThanOrEqual(AA);
+    });
+
+    // 差し替え元より明るいこと（=文字用に持ち上げた値である）。
+    // ここが崩れたらトークンを2本持つ理由が無くなるので、統合を検討する合図にする
+    it.each([
+        ['--text-secondary-on-tint', '--text-secondary'],
+        ['--team-blue-text-on-tint', '--team-blue-light'],
+        ['--active-highlight-text-on-tint', '--active-highlight-light'],
+        ['--danger-text-on-tint', '--danger-text'],
+    ])('%s は %s より明るい', (onTint, original) => {
+        expect(luminance(color(onTint))).toBeGreaterThan(luminance(color(original)));
+    });
+
+    // 差し替え前に使っていた色では足りなかったことを、実際に使われていた面で記録する。
+    // ここが「足りる」に変わったら、-on-tint を持つ理由が消えた合図
+    it.each([
+        ['--text-secondary', '.perf-label', '#3b82f6', 0.15],
+        ['--team-blue-light', '.stat-pts', '#3b82f6', 0.15],
+        ['--active-highlight-light', '.stat-blk', '#ec4899', 0.15],
+        ['--danger-light', '.to-total', '#ef4444', 0.2],
+    ])('%s は %s の面ではAAに届かない（だから -on-tint がある）', (token, _label, accent, alpha) => {
+        expect(contrast(color(token), tint(accent, alpha))).toBeLessThan(AA);
     });
 });

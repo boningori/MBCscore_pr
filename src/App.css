@@ -1057,7 +1057,10 @@
   }
 }
 
-/* シンプルモード：ベンチ選手リストは非表示、交代ボタンは表示 */
+/* シンプルモード：ベンチ行は非表示。中の交代・ベンチファウルは
+   .simple-bench-actions として選手カードの並びへ移してある（TeamPanel.tsx）。
+   ここを消したまま移し替えを忘れていたため、ベンチファウルがシンプルモードから
+   記録できなくなっていた */
 .app-container .game-main-area.simple-mode .team-bench {
   display: none;
 }
@@ -1072,33 +1075,79 @@
   min-height: auto !important;
 }
 
-/* シンプルモード：チームパネル内の交代ボタン（選手カードと同じ3列に並ぶため幅も同じ式） */
-.app-container .game-main-area.simple-mode .simple-sub-btn {
+/* シンプルモード：交代とベンチファウルの組（選手カードと同じ3列に並ぶため幅も同じ式）。
+   枠を分け合うのは、別々に置くとコート上の5人＋2枚で1行増えるため */
+.app-container .game-main-area.simple-mode .simple-bench-actions {
   flex: 0 0 calc((100% - 2 * var(--spacing-xs)) / 3);
   width: calc((100% - 2 * var(--spacing-xs)) / 3);
   min-width: 0;
   max-width: calc((100% - 2 * var(--spacing-xs)) / 3);
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-xs);
+  box-sizing: border-box;
+}
+
+.app-container .game-main-area.simple-mode .simple-sub-btn,
+.app-container .game-main-area.simple-mode .simple-bench-foul-btn {
+  flex: 1 1 0;
+  min-width: 0;
   min-height: clamp(55px, 8vh, 70px);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(59, 130, 246, 0.2);
-  border: 2px solid var(--primary);
+  gap: 2px;
   border-radius: var(--radius-md);
-  color: var(--primary-text);
   font-size: var(--font-size-md);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
   box-sizing: border-box;
+  padding: 0 2px;
+}
+
+.app-container .game-main-area.simple-mode .simple-sub-btn {
+  background: rgba(59, 130, 246, 0.2);
+  border: 2px solid var(--primary);
+  color: var(--primary-text);
+}
+
+/* ベンチファウルはフルモードの btn-danger と同じ色域にそろえる。
+   交代と同じ見た目にすると、狭い枠で押し間違える */
+.app-container .game-main-area.simple-mode .simple-bench-foul-btn {
+  background: rgba(220, 38, 38, 0.2);
+  border: 2px solid var(--danger);
+  color: var(--danger-text);
+}
+
+/* 絵文字の下にラベルを置く。枠を2つに割っても最小幅(375px)で収まる
+   （実測: ボタン内幅48pxに対し「ベンチ」30px）。
+   絵文字だけにすると、中央の「⚠️ ファウル」と見分けが付かない */
+.app-container .game-main-area.simple-mode .simple-btn-label {
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  white-space: nowrap;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .app-container .game-main-area.simple-mode .simple-sub-btn:hover {
+  .app-container .game-main-area.simple-mode .simple-sub-btn:hover:not(:disabled) {
     border-color: var(--primary);
     color: var(--primary-text);
     background: rgba(59, 130, 246, 0.1);
   }
+
+  .app-container .game-main-area.simple-mode .simple-bench-foul-btn:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.1);
+  }
+}
+
+/* 試合終了後は押せない。押せる見た目のまま無反応にすると、
+   記録できるのに効かないと読める */
+.app-container .game-main-area.simple-mode .simple-sub-btn:disabled,
+.app-container .game-main-area.simple-mode .simple-bench-foul-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* シンプルモード：アクションパネル */
@@ -1504,11 +1553,16 @@
   /* 3列にすると1パネル約210pxになり、3列カード(60.5px)では
      「#10 / 100 / F5」が23pxはみ出す。横向きでは2列に減らす */
   .app-container .game-main-area.simple-mode .mini-player-card,
-  .app-container .game-main-area.simple-mode .simple-sub-btn {
+  .app-container .game-main-area.simple-mode .simple-bench-actions {
     flex: 0 0 calc((100% - var(--spacing-xs)) / 2) !important;
     width: calc((100% - var(--spacing-xs)) / 2) !important;
     max-width: calc((100% - var(--spacing-xs)) / 2) !important;
     /* 2列×3行＋ヘッダーを204pxに収める（44pxはタップ領域の下限） */
+    min-height: 44px;
+  }
+
+  .app-container .game-main-area.simple-mode .simple-sub-btn,
+  .app-container .game-main-area.simple-mode .simple-bench-foul-btn {
     min-height: 44px;
   }
 

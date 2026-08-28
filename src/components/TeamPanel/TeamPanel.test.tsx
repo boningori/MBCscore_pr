@@ -249,7 +249,7 @@ describe('TeamPanel: ベンチ操作ボタンの色バリアント', () => {
 
 // 試合終了後は記録できない（アクションボタンが disabled になる）のに、
 // 選手カードだけは押せて選択マークが付いていた。押しても何も記録されない
-// 空振りの操作が残っているうえ、「終了するとデータの編集ができません」と
+// 空振りの操作が残っているうえ、「新しい記録の追加はできません」と
 // 確認したばかりの画面で選べてしまうのは、まだ記録できるように読める。
 describe('TeamPanel: 記録できない状態', () => {
     it('disabled のとき選手カードは押せない', () => {
@@ -272,5 +272,108 @@ describe('TeamPanel: 記録できない状態', () => {
 
         fireEvent.click(card);
         expect(onPlayerSelect).toHaveBeenCalledWith('a1', 'teamA');
+    });
+});
+
+// 選手カードとアクションボタンは disabled で止まるのに、ベンチ行の2つだけが
+// 抜けていた。交代は quartersPlayed に出場記録を書き、ベンチファウルは
+// ファウル・FT試投・得点をまとめて足す（foulHandlers）ため、
+// 「新しい記録の追加はできません」と確認した後の画面から
+// 最終スコアと公式様式の出場欄を動かせていた（実測: 5-3 の試合が 5-4 になる）。
+describe('TeamPanel: 試合終了後はベンチ操作も止まる', () => {
+    const benchButtons = () => ({
+        sub: screen.getByRole('button', { name: '交代' }) as HTMLButtonElement,
+        foul: screen.getByRole('button', { name: /ベンチ\s*ファウル/ }) as HTMLButtonElement,
+    });
+
+    it('disabled のとき交代・ベンチファウルは押せない', () => {
+        const onSubstitute = vi.fn();
+        const onCoachFoul = vi.fn();
+        renderPanel({ disabled: true, onSubstitute, onCoachFoul });
+
+        const { sub, foul } = benchButtons();
+        expect(sub.disabled).toBe(true);
+        expect(foul.disabled).toBe(true);
+
+        fireEvent.click(sub);
+        fireEvent.click(foul);
+        expect(onSubstitute).not.toHaveBeenCalled();
+        expect(onCoachFoul).not.toHaveBeenCalled();
+    });
+
+    it('既定（試合中）は両方とも押せる', () => {
+        const onSubstitute = vi.fn();
+        const onCoachFoul = vi.fn();
+        renderPanel({ onSubstitute, onCoachFoul });
+
+        const { sub, foul } = benchButtons();
+        expect(sub.disabled).toBe(false);
+        expect(foul.disabled).toBe(false);
+
+        fireEvent.click(sub);
+        fireEvent.click(foul);
+        expect(onSubstitute).toHaveBeenCalledTimes(1);
+        expect(onCoachFoul).toHaveBeenCalledTimes(1);
+    });
+});
+
+// シンプルモードは .team-bench を CSS で隠すため、そこに置いたままの
+// ベンチファウルはコーチ・A.コーチ・ベンチ関係者・交代要員のテクニカルを
+// 記録する唯一の導線ごと消えていた。800px以下は自動でシンプルモードに
+// なる（useGameMode）ので、iPad縦持ちとスマホでは既定でその状態だった。
+describe('TeamPanel: シンプルモードのベンチ操作', () => {
+    const simpleButtons = () => {
+        const panel = document.querySelector('.simple-bench-actions');
+        return {
+            panel,
+            sub: panel?.querySelector('.simple-sub-btn') as HTMLButtonElement | null,
+            foul: panel?.querySelector('.simple-bench-foul-btn') as HTMLButtonElement | null,
+        };
+    };
+
+    it('交代とベンチファウルの両方が選手カードの並びに出る', () => {
+        renderPanel({ gameMode: 'simple' });
+        const { panel, sub, foul } = simpleButtons();
+        expect(panel).toBeTruthy();
+        expect(sub).toBeTruthy();
+        expect(foul).toBeTruthy();
+    });
+
+    it('ベンチファウルを押すと onCoachFoul が呼ばれる', () => {
+        const onCoachFoul = vi.fn();
+        renderPanel({ gameMode: 'simple', onCoachFoul });
+        fireEvent.click(simpleButtons().foul!);
+        expect(onCoachFoul).toHaveBeenCalledTimes(1);
+    });
+
+    it('交代を押すと onSubstitute が呼ばれる', () => {
+        const onSubstitute = vi.fn();
+        renderPanel({ gameMode: 'simple', onSubstitute });
+        fireEvent.click(simpleButtons().sub!);
+        expect(onSubstitute).toHaveBeenCalledTimes(1);
+    });
+
+    // 絵文字は中央の「⚠️ ファウル」と重なるので、読み上げ名は絵文字とラベルに
+    // 頼らず明示する（ラベル自体は最小幅でも表示する。App.css）
+    it('読み上げ名が操作の内容を示す', () => {
+        renderPanel({ gameMode: 'simple' });
+        const { sub, foul } = simpleButtons();
+        expect(sub!.getAttribute('aria-label')).toBe('選手交代');
+        expect(foul!.getAttribute('aria-label')).toBe('ベンチファウル');
+    });
+
+    it('試合終了後はシンプルモードでも押せない', () => {
+        const onSubstitute = vi.fn();
+        const onCoachFoul = vi.fn();
+        renderPanel({ gameMode: 'simple', disabled: true, onSubstitute, onCoachFoul });
+
+        const { sub, foul } = simpleButtons();
+        expect(sub!.disabled).toBe(true);
+        expect(foul!.disabled).toBe(true);
+
+        fireEvent.click(sub!);
+        fireEvent.click(foul!);
+        expect(onSubstitute).not.toHaveBeenCalled();
+        expect(onCoachFoul).not.toHaveBeenCalled();
     });
 });
