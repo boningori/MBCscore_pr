@@ -16,14 +16,43 @@ const counts = (values: number[]) => buildAxisTicks(values, true);
 const averages = (values: number[]) => buildAxisTicks(values, false);
 
 describe('buildAxisTicks', () => {
-    it('目盛りは常に5本で、降順・最後が0', () => {
+    it('目盛りは降順で、最後が0', () => {
         for (const values of [[0.5], [1], [2], [3], [7], [12], [45], [130]]) {
             for (const ticks of [counts(values), averages(values)]) {
-                expect(ticks).toHaveLength(5);
-                expect(ticks[4]).toBe(0);
+                expect(ticks.length).toBeGreaterThanOrEqual(2);
+                expect(ticks[ticks.length - 1]).toBe(0);
                 for (let i = 1; i < ticks.length; i++) expect(ticks[i]).toBeLessThan(ticks[i - 1]);
             }
         }
+    });
+
+    it('平均値の軸は5本のまま（間隔を1未満にできるので上端を詰められる）', () => {
+        for (const values of [[0.5], [1], [2], [3], [7], [12], [45], [130]]) {
+            expect(averages(values)).toHaveLength(5);
+        }
+        // 最大0.4なら間隔0.1・上端0.4。回数のように上端が跳ね上がらない
+        expect(averages([0.1, 0.4])).toEqual([0.4, 0.3, 0.2, 0.1, 0]);
+    });
+
+    // 回数のグラフは間隔が整数に制限されるため、最小の間隔が1になる。
+    // 4等分を固定すると上端が必ず4以上になり、最大1のブロックのグラフでは
+    // 棒が高さの1/4までしか伸びない（実測: 0/1しか無い試合別グラフの軸が 4/3/2/1/0）。
+    // 上端を最大値に合わせ、そのぶん目盛りの本数を減らす
+    it('回数のグラフは、最大値が小さいときに軸を間延びさせない', () => {
+        expect(counts([0, 1, 0, 1])).toEqual([1, 0]);
+        expect(counts([0, 1, 2, 1])).toEqual([2, 1, 0]);
+        expect(counts([3, 1, 2])).toEqual([3, 2, 1, 0]);
+        // 最大4は間隔1の4等分がちょうど収まるので従来どおり
+        expect(counts([4, 1, 2])).toEqual([4, 3, 2, 1, 0]);
+        // 5以上は間隔を広げる側（従来の4等分）に戻る
+        expect(counts([5, 1, 2])).toEqual([8, 6, 4, 2, 0]);
+    });
+
+    it('小数の値でも、回数のグラフなら整数の上端に切り上げる', () => {
+        // 試合単位は回数そのものなので小数は来ないが、上端の決め方が
+        // 最大値を下回らないことは保っておく
+        expect(counts([0.5])).toEqual([1, 0]);
+        expect(counts([2.5])).toEqual([3, 2, 1, 0]);
     });
 
     it('最大値を必ず含む高さになる', () => {
@@ -35,13 +64,19 @@ describe('buildAxisTicks', () => {
 
     it('試合単位（回数）では目盛りも整数になる', () => {
         // スティール 0〜3（旧: 3/2.3/1.5/0.8/0）
-        expect(counts([0, 1, 2, 2, 3, 1])).toEqual([4, 3, 2, 1, 0]);
+        expect(counts([0, 1, 2, 2, 3, 1])).toEqual([3, 2, 1, 0]);
         // ブロック 0〜2（旧: 2/1.5/1/0.5/0）
-        expect(counts([0, 0, 1, 0, 1, 2])).toEqual([4, 3, 2, 1, 0]);
+        expect(counts([0, 0, 1, 0, 1, 2])).toEqual([2, 1, 0]);
         // 得点 6〜18
         expect(counts([6, 9, 8, 14, 18, 16])).toEqual([20, 15, 10, 5, 0]);
         // リバウンド 3〜10
         expect(counts([3, 5, 5, 8, 10, 9])).toEqual([12, 9, 6, 3, 0]);
+    });
+
+    it('回数のグラフの目盛りは、本数が減っても整数のまま', () => {
+        for (const values of [[0], [1], [2], [3], [4], [0.5]]) {
+            for (const tick of counts(values)) expect(Number.isInteger(tick)).toBe(true);
+        }
     });
 
     it('平均値（小数）では小数の目盛りを許す', () => {
@@ -64,10 +99,12 @@ describe('buildAxisTicks', () => {
         expect(averages([1, 4, 6, 8, 10, 11.7])[0]).toBe(12);
     });
 
-    it('データが空・全て0でも軸が成立する', () => {
+    it('データが空・全て0でも軸が成立し、期間の単位で食い違わない', () => {
+        // 同じ「記録なし」が、試合単位では 1/0・月単位では 4/3/2/1/0 と
+        // 別の軸で描かれていた（平均値側は間隔0に対して1が返るため）
         for (const build of [counts, averages]) {
-            expect(build([])[0]).toBeGreaterThan(0);
-            expect(build([0, 0, 0])[0]).toBeGreaterThan(0);
+            expect(build([])).toEqual([1, 0]);
+            expect(build([0, 0, 0])).toEqual([1, 0]);
         }
     });
 });

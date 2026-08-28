@@ -1,4 +1,4 @@
-/** Y軸の目盛り本数（0を含む） */
+/** Y軸の目盛り本数の上限（0を含む） */
 export const TICK_COUNT = 5;
 
 const INTERVALS = TICK_COUNT - 1;
@@ -20,10 +20,34 @@ const INTERVALS = TICK_COUNT - 1;
  * 1.0/4.0/6.0… の月は軸が 12/9/6/3/0、11.7 が混じる月は 20/15/10/5/0）。
  * 同じ画面に並ぶ6枚のグラフの間でも、データ次第で刻み方が食い違う。
  *
+ * 本数は4等分（5本）が基本だが、回数のグラフで最大値が小さいときだけ減らす。
+ * 理由は下の分岐のコメント。
+ *
  * @param wholeNumbers 回数そのもの（試合単位）なら true。平均値なら false
  */
 export function buildAxisTicks(values: number[], wholeNumbers: boolean): number[] {
     const rawMax = values.length > 0 ? Math.max(...values, 0) : 0;
+
+    // 記録が1つも無い（全部0）ときは、どちらの単位でも上端1の最小の軸にする。
+    // 平均値側は niceStep が 0 に対して間隔1を返すため上端4になり、同じ記録が
+    // 試合単位では 1/0、月単位では 4/3/2/1/0 と別の軸で描かれていた。
+    // 「0しか無い」ことを示すのに4まで目盛りを引く意味は無い。
+    if (rawMax <= 0) return [1, 0];
+
+    // 回数のグラフは間隔が整数に制限される＝いちばん細かくても1なので、
+    // 4等分を固定すると上端が必ず4以上になる。最大1のブロックのグラフでは
+    // 棒が高さの1/4までしか伸びず、「0か1か」が読み取りにくい
+    // （実測: 0と1しか無い試合別グラフの軸が 4/3/2/1/0）。
+    // 上端を最大値まで下げ、そのぶん目盛りの本数を減らす。間隔は1のままなので
+    // 「0.5回のスティール」のような目盛りは出ない。
+    //
+    // 平均値のグラフには要らない。間隔を1未満にできるので、4等分のままでも
+    // 上端が最大値に寄る（最大0.4なら間隔0.1・上端0.4）。
+    if (wholeNumbers && rawMax <= INTERVALS) {
+        const top = Math.ceil(rawMax);
+        return Array.from({ length: top + 1 }, (_, i) => top - i);
+    }
+
     const step = niceStep(rawMax / INTERVALS, wholeNumbers);
     const max = step * INTERVALS;
     return Array.from({ length: TICK_COUNT }, (_, i) => round(max - step * i));
