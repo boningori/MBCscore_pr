@@ -8,8 +8,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { migrateTeam } from './migrateTeam';
-import { createTeam } from '../types/game';
-import type { Team } from '../types/game';
+import { createTeam, createPlayer, createInitialStats } from '../types/game';
+import type { Player, Team } from '../types/game';
 
 describe('migrateTeam', () => {
     it('欠けている配列を空で補う', () => {
@@ -38,6 +38,56 @@ describe('migrateTeam', () => {
 
     it('補うものが無ければ同じオブジェクトを返す（無駄な再描画を起こさない）', () => {
         const team = createTeam('teamA', 'ホーム', 'コーチ');
+
+        expect(migrateTeam(team)).toBe(team);
+    });
+
+    it('stats を持たない選手に空のスタッツを補う', () => {
+        // 様式・チーム比較・選手スタッツ分析はどれも p.stats.points を素で読む。
+        // 欠けたまま渡すと画面ごと落ちる（実測: 手で編集したバックアップを
+        // 取り込んだあと、選手スタッツ分析と履歴の試合詳細が
+        // 「Cannot read properties of undefined (reading 'points')」で
+        // アプリ全体のエラー画面に置き換わる）
+        const team = createTeam('teamA', 'ホーム', 'コーチ');
+        team.players = [{ id: 'p1', number: 4, name: '選手A', isCaptain: false } as unknown as Player];
+
+        const migrated = migrateTeam(team);
+
+        expect(migrated.players[0].stats).toEqual(createInitialStats());
+        expect(migrated.players[0].fouls).toEqual([]);
+        expect(migrated.players[0].quartersPlayed).toEqual([false, false, false, false]);
+    });
+
+    it('選手の入っている値は書き換えない', () => {
+        const team = createTeam('teamA', 'ホーム', 'コーチ');
+        const player = createPlayer('p1', 4, '選手A');
+        player.stats.points = 12;
+        player.fouls = ['P'];
+        player.quartersPlayed = ['starter', false, 'sub', false];
+        // 別の選手が欠けていて作り直しになる経路でも、そろっている選手は触らない
+        team.players = [player, { id: 'p2', number: 5, name: '選手B', isCaptain: false } as unknown as Player];
+
+        const migrated = migrateTeam(team);
+
+        expect(migrated.players[0]).toBe(player);
+        expect(migrated.players[0].stats.points).toBe(12);
+        expect(migrated.players[0].fouls).toEqual(['P']);
+        expect(migrated.players[0].quartersPlayed).toEqual(['starter', false, 'sub', false]);
+    });
+
+    it('OTに入った試合では出場欄もピリオド数ぶん補う', () => {
+        // 様式もスタメン選択も quartersPlayed を添字で引く。4つ固定で補うと
+        // OTの枠だけ undefined になり、teamFouls と長さが食い違う
+        const team = createTeam('teamA', 'ホーム', 'コーチ');
+        team.teamFouls = [2, 3, 1, 4, 4];
+        team.players = [{ id: 'p1', number: 4, name: '選手A', isCaptain: false } as unknown as Player];
+
+        expect(migrateTeam(team).players[0].quartersPlayed).toHaveLength(5);
+    });
+
+    it('選手も含めて補うものが無ければ同じオブジェクトを返す', () => {
+        const team = createTeam('teamA', 'ホーム', 'コーチ');
+        team.players = [createPlayer('p1', 4, '選手A')];
 
         expect(migrateTeam(team)).toBe(team);
     });

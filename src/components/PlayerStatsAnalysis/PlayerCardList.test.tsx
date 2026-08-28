@@ -154,7 +154,9 @@ describe('選手カードの平均出場クォーターの母数', () => {
         );
 
         expect(screen.getByText('平均3.0Q')).toBeTruthy();
-        expect(screen.getByText('2試合分')).toBeTruthy();
+        // 括弧まで文字として出す。CSSの ::before/::after に預けると、
+        // 読み上げで拾われる保証が無く、文字列としてコピーしたときにも落ちる
+        expect(screen.getByText('（2試合分）')).toBeTruthy();
     });
 
     it('全試合に出場Qがあれば余計な注記は出さない', () => {

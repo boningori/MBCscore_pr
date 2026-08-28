@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Modal } from '../Modal';
 import { quarterLabel } from '../../utils/quarterLabel';
+import { formatPlayerNumber } from '../../utils/playerNumber';
+import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
 import './Scoreboard.css';
 
 interface ScoreboardProps {
@@ -30,6 +32,31 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
 
     // クォーター終了の確認モーダル（Q1〜Q3のみ。Q4以降はApp側の試合終了確認が兼ねる）
     const [showQuarterEndConfirm, setShowQuarterEndConfirm] = useState(false);
+    // 退場・失格の選手をコートに残したまま次のクォーターを始めようとしている
+    const [showDisqualifiedConfirm, setShowDisqualifiedConfirm] = useState(false);
+
+    /**
+     * いまコート上にいる退場・失格の選手（両チーム）。
+     *
+     * 「次のクォーターへ」は START_GAME を直接投げ、handleStartGame は isOnCourt だけを見て
+     * コート上の5人を新しいクォーターのスターターとして記録する（gameFlowHandlers）。
+     * 前のクォーターで5ファウル（またはD1つ・T/U2つ）になった選手が下がっていないと、
+     * この経路だけが何も言わずに出場記録を作っていた
+     * （実測: 5ファウルの選手の quartersPlayed[1] が 'starter' になる）。
+     *
+     * スタメン選択画面を通れば初期選択から外れる（QuarterLineup の initialSelection）。
+     * 同じ「次のQを始める」操作なのに経路で結果が食い違っていたことになる。
+     *
+     * 出場そのものは止めない —— 練習試合では合意のうえ続行することがあるという
+     * 方針は utils/disqualification のとおり。ここでは知らせて、選び直す導線を添える。
+     */
+    const disqualifiedOnCourt = phase === 'quarterEnd'
+        ? [...state.teamA.players, ...state.teamB.players]
+            .filter(p => p.isOnCourt)
+            .map(p => ({ player: p, reason: getDisqualification(p.fouls) }))
+            .filter((entry): entry is { player: typeof entry.player; reason: NonNullable<typeof entry.reason> } =>
+                entry.reason !== null)
+        : [];
 
     const executeQuarterEnd = () => {
         if (onQuarterEnd) {
@@ -37,6 +64,11 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
         } else {
             dispatch({ type: 'END_QUARTER' });
         }
+    };
+
+    const startNextQuarter = () => {
+        setShowDisqualifiedConfirm(false);
+        dispatch({ type: 'START_GAME' });
     };
 
     const handleQuarterManagement = () => {
@@ -47,6 +79,10 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
                 executeQuarterEnd();
             }
         } else if (phase === 'quarterEnd') {
+            if (disqualifiedOnCourt.length > 0) {
+                setShowDisqualifiedConfirm(true);
+                return;
+            }
             dispatch({ type: 'START_GAME' });
         }
     };
@@ -83,6 +119,55 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
                     終了する
                 </button>
                 <button className="btn btn-secondary btn-large" data-autofocus onClick={() => setShowQuarterEndConfirm(false)}>
+                    キャンセル
+                </button>
+            </div>
+        </Modal>
+    );
+
+    // 退場・失格の選手をコートに残したまま次のクォーターへ進もうとしたときの確認。
+    //
+    // 誰が対象かを必ず名指しする。「退場者がいます」とだけ出しても、どのカードを
+    // 入れ替えればよいのか分からず、確認を出す意味がない。
+    const disqualifiedConfirmModal = showDisqualifiedConfirm && (
+        <Modal
+            onClose={() => setShowDisqualifiedConfirm(false)}
+            contentClassName="modal-content end-game-confirm-modal"
+            labelledBy="disqualified-confirm-title"
+        >
+            <h3 id="disqualified-confirm-title">退場・失格の選手がコートに残っています</h3>
+            <ul className="disqualified-list">
+                {disqualifiedOnCourt.map(({ player, reason }) => (
+                    <li key={player.id}>
+                        #{formatPlayerNumber(player.number)} {player.courtName || player.name}
+                        <span className="disqualified-reason">{shortDisqualificationLabel(reason)}</span>
+                    </li>
+                ))}
+            </ul>
+            <p className="end-game-confirm-message">
+                このまま開始すると、{periodLabel}に出場したものとして記録されます。
+            </p>
+            <div className="modal-actions-column">
+                {/* 打ち消し側を先に置く。開始はいつでもできるが、誤って出場記録を
+                    作ってしまうと様式の出場欄を直す導線が無い */}
+                {onOpenLineup && (
+                    <button
+                        className="btn btn-primary btn-large"
+                        data-autofocus
+                        onClick={() => { setShowDisqualifiedConfirm(false); onOpenLineup(); }}
+                    >
+                        スタメンを選び直す
+                    </button>
+                )}
+                <button className="btn btn-secondary btn-large" onClick={startNextQuarter}>
+                    このまま開始
+                </button>
+                <button
+                    className="btn btn-secondary btn-large"
+                    // 選び直す導線が無いときは、ここが唯一の打ち消し側になる
+                    {...(onOpenLineup ? {} : { 'data-autofocus': true })}
+                    onClick={() => setShowDisqualifiedConfirm(false)}
+                >
                     キャンセル
                 </button>
             </div>
@@ -157,6 +242,7 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
             </div>
 
             {quarterEndConfirmModal}
+            {disqualifiedConfirmModal}
         </div>
     );
 }

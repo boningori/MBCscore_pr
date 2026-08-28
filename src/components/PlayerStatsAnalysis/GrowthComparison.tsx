@@ -1,7 +1,7 @@
 // 成長比較コンポーネント
 
 import { useState, useMemo, useEffect, useCallback, useRef, type CSSProperties } from 'react';
-import { buildAxisTicks, formatBarValue, formatTick, TICK_COUNT } from './chartAxis';
+import { buildAxisTicks, formatBarValue, formatTick } from './chartAxis';
 // 年をまたぐと「6月／6月」「Q2／Q2」が並んで区別できなくなる。
 // 判定には並び全体が要るので、1つずつではなくまとめて組み立てる
 import {
@@ -90,7 +90,10 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
         const wholeNumbers = periodType === 'game';
         const ticks = buildAxisTicks(values, wholeNumbers);
         const niceMax = ticks[0];
-        const tickCount = TICK_COUNT;
+        // 本数は固定ではない。回数のグラフは最大値が小さいと軸を詰めて減らす
+        // （chartAxis の buildAxisTicks）。TICK_COUNT を当てるとグリッド線が
+        // 目盛りの数と食い違い、線と数字がずれる
+        const tickCount = ticks.length;
 
         return (
             <div

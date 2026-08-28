@@ -430,14 +430,6 @@
     font-size: 0.9em;
 }
 
-.player-stats-container .player-info .player-quarters-basis::before {
-    content: '（';
-}
-
-.player-stats-container .player-info .player-quarters-basis::after {
-    content: '）';
-}
-
 .player-stats-container .player-stats-grid {
     display: flex;
     gap: 8px;

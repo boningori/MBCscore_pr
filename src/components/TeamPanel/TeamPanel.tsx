@@ -39,8 +39,17 @@ interface TeamPanelProps {
   actionHistoryHandlers: ActionHistoryHandlers;
   /** 現クォーターのチームファウル数（指定時のみヘッダーにTFバッジを表示） */
   teamFouls?: number;
-  /** 現クォーターのタイムアウト使用済みか */
+  /** チップが指すピリオドのタイムアウトが使用済みか */
   timeoutUsed?: boolean;
+  /**
+   * チップが指すピリオドの表記（「Q1」など）。
+   *
+   * 進行中は「いまのピリオド」で曖昧さが無いので渡さない。クォーター終了後の
+   * インターバル中だけ、チップが直前のピリオドを指していることを読み上げ名と
+   * ツールチップで示す（ヘッダーのTFバッジは次のピリオドを出しているため、
+   * 何も言わないと同じ場所の2つが別のピリオドを指していることが分からない）。
+   */
+  timeoutQuarterLabel?: string;
   /** タイムアウト記録の要求（指定時のみヘッダーに⏱チップを表示） */
   onTimeoutRequest?: () => void;
   /**
@@ -84,12 +93,21 @@ export function TeamPanel({
   actionHistoryHandlers,
   teamFouls,
   timeoutUsed,
+  timeoutQuarterLabel,
   onTimeoutRequest,
   onTimeoutCancel,
 }: TeamPanelProps) {
   const side = teamId === 'teamA' ? 'team-a' : 'team-b';
   // 記録済みなら取り消し、未記録なら記録。取り消し先が無い場合だけ従来どおり押せなくする
   const timeoutAction = timeoutUsed ? onTimeoutCancel : onTimeoutRequest;
+  // チップを出す条件。
+  //
+  // 以前は onTimeoutRequest の有無だけで決めていた。記録できない場面
+  // （クォーター終了後のインターバル）ではチップごと消えるため、直前の
+  // ピリオドで押し間違えたタイムアウトを取り消す手段が無くなっていた。
+  // 記録できるとき、または記録済みで取り消せるときに出す。
+  const showTimeoutChip = !!onTimeoutRequest || (!!timeoutUsed && !!onTimeoutCancel);
+  const timeoutScope = timeoutQuarterLabel ? `${timeoutQuarterLabel}の` : '';
 
   return (
     <div className={`team-panel ${side} color-${teamColor} ${isActive ? 'active' : ''}`}>
@@ -100,13 +118,13 @@ export function TeamPanel({
           {teamFouls !== undefined && (
             <span className={`tf-badge ${teamFouls >= 4 ? 'bonus' : ''}`}>TF {teamFouls}</span>
           )}
-          {onTimeoutRequest && (
+          {showTimeoutChip && (
             <button
               className={`btn-timeout-chip ${timeoutUsed ? 'used' : ''}`}
               onClick={timeoutAction}
               disabled={!timeoutAction}
-              aria-label={timeoutUsed ? 'タイムアウトを取り消す' : 'タイムアウト'}
-              title={timeoutUsed ? 'タイムアウト記録済み（タップで取り消し）' : 'タイムアウト'}
+              aria-label={timeoutUsed ? `${timeoutScope}タイムアウトを取り消す` : 'タイムアウト'}
+              title={timeoutUsed ? `${timeoutScope}タイムアウト記録済み（タップで取り消し）` : 'タイムアウト'}
             >
               ⏱ {timeoutUsed ? '済' : '残1'}
             </button>

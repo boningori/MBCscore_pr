@@ -998,6 +998,35 @@ textarea,
   margin: var(--spacing-lg) 0;
 }
 
+/* 次のクォーターへ進むときに名指しする、コート上の退場・失格の選手
+   （Scoreboard の disqualifiedConfirmModal）。
+   誰を入れ替えればよいかが読めないと確認を出す意味が無いので、
+   背番号・氏名・理由を1行ずつ並べる */
+.disqualified-list {
+  list-style: none;
+  margin: var(--spacing-md) 0 0;
+  padding: 0;
+  text-align: center;
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  line-height: 1.8;
+}
+
+.disqualified-list li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+/* 理由は色だけで区別しない（「退場」「失格(D)」と文字で出る。
+   色は同じ情報を補強するだけ） */
+.disqualified-reason {
+  color: var(--danger-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
 /* 「訂正・削除は続けられます」の補足。本文と同じ大きさだと、確認したい
    「終了しますか？」と並んで読む量が増える。一段落として添える */
 .end-game-confirm-note {
