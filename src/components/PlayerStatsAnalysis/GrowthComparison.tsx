@@ -21,6 +21,7 @@ import {
     STAT_LABELS,
     STAT_UNITS,
     STAT_COLORS,
+    STAT_TEXT_COLORS,
     type StatType,
     type GrowthComparisonProps,
 } from './types';
@@ -98,7 +99,9 @@ export function GrowthComparison({ gameHistory }: GrowthComparisonProps) {
                 style={{ '--chart-col-width': `${columnWidth}px` } as CSSProperties}
             >
                 <div className="chart-header">
-                    <span className="chart-title" style={{ color: STAT_COLORS[statType] }}>
+                    {/* 見出しは文字用の系列色。塗り用の STAT_COLORS を文字にすると
+                        カード地の上でAAに届かない（types.ts の STAT_TEXT_COLORS） */}
+                    <span className="chart-title" style={{ color: STAT_TEXT_COLORS[statType] }}>
                         {STAT_LABELS[statType]}
                     </span>
                     <span className="chart-unit">({STAT_UNITS[statType]})</span>

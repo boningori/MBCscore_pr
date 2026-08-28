@@ -28,7 +28,8 @@ export const STAT_UNITS: Record<StatType, string> = {
     turnovers: '回',
 };
 
-// スタッツカラー
+// スタッツカラー（棒グラフの塗り・凡例ドット用）。
+// 面として見える用途なので、求められるコントラストは3:1（WCAG 1.4.11）。
 export const STAT_COLORS: Record<StatType, string> = {
     points: '#3b82f6',
     rebounds: '#22c55e',
@@ -36,6 +37,27 @@ export const STAT_COLORS: Record<StatType, string> = {
     steals: '#8b5cf6',
     blocks: '#ec4899',
     turnovers: '#ef4444',
+};
+
+/**
+ * 同じ系列を「文字」に使うとき用（成長グラフの見出し）。
+ *
+ * 塗り用の STAT_COLORS をそのまま文字にすると、カード地の上でAA(4.5:1)に
+ * 届かない（実測: 得点 3.98、スティール 3.45、ブロック 4.15、TO 3.89)。
+ * アプリ本体の --primary / --primary-text と同じ「塗り用と文字用を分ける」
+ * 作法にそろえ、色相は保ったまま明度だけ上げる。
+ * 系列の見分けは棒の色が担うので、見出しが少し淡くなっても対応は崩れない。
+ *
+ * --bg-secondary（グラフカードの地）と --bg-tertiary の両方で4.6:1以上。
+ * 値の根拠は src/components/PlayerStatsAnalysis/statTextColors.test.ts。
+ */
+export const STAT_TEXT_COLORS: Record<StatType, string> = {
+    points: '#80aef9',
+    rebounds: '#26c661',
+    assists: '#f59e0b',  // 元から足りているので変えない
+    steals: '#ba9efa',
+    blocks: '#f38cbf',
+    turnovers: '#f69191',
 };
 
 // Props型
