@@ -80,8 +80,11 @@ export function PlayerCardList({
                                     <span className="player-quarters">
                                         平均{quartersPerGame}Q
                                         {/* 但し書きの意味は凡例に出す（title はタッチ端末で読めない） */}
+                                        {/* 括弧は文字として置く。CSSの ::before/::after で足すと、
+                                            読み上げでは拾われる保証が無く、文字列としてコピーしたときにも
+                                            落ちる。意味を担う記号をスタイルに預けない */}
                                         {isPartialQuarters && (
-                                            <span className="player-quarters-basis">{player.gamesWithQuarters}試合分</span>
+                                            <span className="player-quarters-basis">（{player.gamesWithQuarters}試合分）</span>
                                         )}
                                     </span>
                                 )}
