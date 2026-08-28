@@ -1,8 +1,9 @@
 // データバックアップ・復元ユーティリティ
 
 import type { GameRecord } from './gameHistoryStorage';
-import type { QuarterPlayType } from '../types/game';
+import type { QuarterPlayType, Team } from '../types/game';
 import { loadGameHistory, createGameId, saveGameHistory } from './gameHistoryStorage';
+import { migrateTeam } from './migrateTeam';
 import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
 import { loadMyTeams, loadOpponents, loadRecentOpponents, saveMyTeams, saveOpponents } from './teamStorage';
@@ -302,12 +303,18 @@ export function exportGameHistoryDetailCSV(): string {
     for (const game of gameHistory) {
         const date = formatRecordDate(game.date);
         const venue = game.gameInfo?.venue || '';
+        // 既に保存されてしまった、選手ごとのフィールドを欠くレコードでも書き出せるように
+        // 補ってから読む。取り込み側は塞いだが、それ以前に入ったデータは残っている
+        // （utils/migrateTeam）。CSVは記録を外へ持ち出す最後の手段なので、
+        // 1レコードのせいで全体が出力できなくなるのがいちばん困る
+        const teamA = migrateTeam(game.teamA);
+        const teamB = migrateTeam(game.teamB);
 
         // チームAの選手データ
         const resultA = game.finalScore.teamA > game.finalScore.teamB ? '勝利' :
             game.finalScore.teamA < game.finalScore.teamB ? '敗北' : '引分';
 
-        for (const player of game.teamA.players) {
+        for (const player of teamA.players) {
             const stats = player.stats;
             const twoPercent = stats.twoPointAttempt > 0 ? (stats.twoPointMade / stats.twoPointAttempt * 100).toFixed(1) : '-';
             const threePercent = stats.threePointAttempt > 0 ? (stats.threePointMade / stats.threePointAttempt * 100).toFixed(1) : '-';
@@ -372,7 +379,7 @@ export function exportGameHistoryDetailCSV(): string {
         const resultB = game.finalScore.teamB > game.finalScore.teamA ? '勝利' :
             game.finalScore.teamB < game.finalScore.teamA ? '敗北' : '引分';
 
-        for (const player of game.teamB.players) {
+        for (const player of teamB.players) {
             const stats = player.stats;
             const twoPercent = stats.twoPointAttempt > 0 ? (stats.twoPointMade / stats.twoPointAttempt * 100).toFixed(1) : '-';
             const threePercent = stats.threePointAttempt > 0 ? (stats.threePointMade / stats.threePointAttempt * 100).toFixed(1) : '-';
@@ -585,37 +592,46 @@ function sanitizeImportedTeam(raw: unknown): SavedTeam | null {
 }
 
 /**
+ * 取り込む試合のチームを矯正する。
+ *
+ * players を安全な配列にしたうえで、描画側が添字や素のプロパティで引くフィールドを
+ * migrateTeam で補う。以前はここが「players が配列でオブジェクトであること」までしか
+ * 見ておらず、選手ごとの stats を欠いたレコードがそのまま保存されていた。実測では
+ * その1件が入っているだけで選手スタッツ分析と履歴の試合詳細が落ち、ErrorBoundary に
+ * よってアプリ全体がエラー画面に置き換わる（原因のレコードも示されない）。
+ *
+ * 取り込む時点で直しておけば、以後どの読み手から開いても同じ前提が成り立つ。
+ */
+function fixImportedTeam(t: unknown): Team {
+    const players = isPlainObject(t) && Array.isArray(t.players) ? t.players.filter(isPlainObject) : [];
+    const base = isPlainObject(t) ? { ...t, players } : { players };
+    return migrateTeam(base as unknown as Team);
+}
+
+/**
  * インポートされた試合データを検証・矯正する。
  * - id を持たないレコードは取り込み不可として null を返す
- * - teamA / teamB が壊れていても players を安全な配列へ矯正する
+ * - teamA / teamB が壊れていても players と選手ごとのフィールドを矯正する
  */
 function sanitizeImportedGame(raw: unknown): GameRecord | null {
     if (!isPlainObject(raw)) return null;
     if (typeof raw.id !== 'string' || raw.id === '') return null;
-    const fixTeam = (t: unknown) => {
-        if (!isPlainObject(t)) return { players: [] };
-        return { ...t, players: Array.isArray(t.players) ? t.players.filter(isPlainObject) : [] };
-    };
-    return { ...raw, teamA: fixTeam(raw.teamA), teamB: fixTeam(raw.teamB) } as unknown as GameRecord;
+    return { ...raw, teamA: fixImportedTeam(raw.teamA), teamB: fixImportedTeam(raw.teamB) } as unknown as GameRecord;
 }
 
 /**
  * インポートされた進行中試合セッションを検証・矯正する。
  * - game を持たない、あるいは game がオブジェクトでないレコードは取り込み不可として null を返す
  * - game.id は必須ではない（GameSession の Game は保存済み試合と異なり id を持たない場合がある）
- * - teamA / teamB が壊れていても players を安全な配列へ矯正する
+ * - teamA / teamB が壊れていても players と選手ごとのフィールドを矯正する
  */
 function sanitizeImportedGameSession(raw: unknown): GameSession | null {
     if (!isPlainObject(raw)) return null;
     if (!isPlainObject(raw.game)) return null;
     const g = raw.game;
-    const fixTeam = (t: unknown) => {
-        if (!isPlainObject(t)) return { players: [] };
-        return { ...t, players: Array.isArray(t.players) ? t.players.filter(isPlainObject) : [] };
-    };
     return {
         ...raw,
-        game: { ...g, teamA: fixTeam(g.teamA), teamB: fixTeam(g.teamB) },
+        game: { ...g, teamA: fixImportedTeam(g.teamA), teamB: fixImportedTeam(g.teamB) },
     } as unknown as GameSession;
 }
 

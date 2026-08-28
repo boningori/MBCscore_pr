@@ -615,16 +615,24 @@ export function aggregatePlayerStats(
             // 非表示選手をスキップ
             if (hiddenPlayers.includes(key)) continue;
 
-            const hasStats = player.stats.points > 0 ||
-                player.stats.twoPointAttempt > 0 ||
-                player.stats.threePointAttempt > 0 ||
-                player.stats.freeThrowAttempt > 0 ||
-                player.stats.offensiveRebounds > 0 ||
-                player.stats.defensiveRebounds > 0 ||
-                player.stats.assists > 0 ||
-                player.stats.steals > 0 ||
-                player.stats.blocks > 0 ||
-                player.stats.turnovers > 0;
+            // 手で編集したバックアップ由来のレコードでは stats が欠けることがある。
+            // ここは履歴を丸ごと走査する唯一の場所で、落ちると分析画面ごと
+            // ——ErrorBoundary の性質上アプリ全体が——エラー画面に置き換わる。
+            // 取り込み側（dataBackup）と復元側（migrateTeam）で塞いだあとも、
+            // すでに保存されてしまったレコードのために読み側でも同じ既定へ寄せる。
+            // 記録が壊れているのは stats だけなので、その選手を一覧から消したりは
+            // しない（出場クォーターやファウルが残っていれば従来どおり出場として数える）
+            const stats = player.stats ?? createEmptyStats();
+            const hasStats = stats.points > 0 ||
+                stats.twoPointAttempt > 0 ||
+                stats.threePointAttempt > 0 ||
+                stats.freeThrowAttempt > 0 ||
+                stats.offensiveRebounds > 0 ||
+                stats.defensiveRebounds > 0 ||
+                stats.assists > 0 ||
+                stats.steals > 0 ||
+                stats.blocks > 0 ||
+                stats.turnovers > 0;
             // 'starter' | 'sub' | 'both'（と旧boolean形式の true）が出場。false / 未記録は非出場
             const quartersPlayed = player.quartersPlayed?.filter(q => q !== false && !!q).length ?? 0;
             const hasPlayedQuarters = quartersPlayed > 0;
@@ -640,7 +648,7 @@ export function aggregatePlayerStats(
                 gameId: record.id,
                 date: record.date,
                 opponent: opponentData.name,
-                stats: { ...player.stats },
+                stats: { ...stats },
                 result,
                 teamScore: myScore,
                 opponentScore: opponentScore,
@@ -674,11 +682,11 @@ export function aggregatePlayerStats(
             aggregated.totalQuartersPlayed += quartersPlayed;
             if (hasPlayedQuarters) {
                 aggregated.gamesWithQuarters += 1;
-                aggregated.statsWithQuarters = addStats(aggregated.statsWithQuarters, player.stats);
+                aggregated.statsWithQuarters = addStats(aggregated.statsWithQuarters, stats);
             }
             aggregated.totalFouls += gameRecord.fouls;
             if (gameRecord.fouledOut) aggregated.foulOutGames += 1;
-            aggregated.totalStats = addStats(aggregated.totalStats, player.stats);
+            aggregated.totalStats = addStats(aggregated.totalStats, stats);
             aggregated.gameHistory.push(gameRecord);
 
             // 氏名・背番号はいちばん新しい試合のものを使う。

@@ -222,6 +222,32 @@ describe('インポートのスキーマ検証', () => {
         expect(teams[0].players.map(p => p.name)).toEqual(['A', 'B']);
     });
 
+    it('stats を欠く選手は空のスタッツを補って取り込む（分析・様式のクラッシュ回避）', () => {
+        // 手で編集したバックアップでは選手ごとのフィールドが落ちる。選手スタッツ分析も
+        // 公式様式も p.stats.points を素で引くため、そのまま保存するとその画面を開いた
+        // 瞬間にアプリ全体がエラー画面になり、しかも原因のレコードが分からない
+        const json = backupWith({
+            gameHistory: [
+                {
+                    id: 'g1', date: '2026-07-10T00:00:00.000Z', gameName: 'テスト',
+                    createdAt: '2026-07-10T00:00:00.000Z',
+                    finalScore: { teamA: 0, teamB: 0 },
+                    teamA: { id: 'teamA', name: 'マイチーム', players: [{ id: 'p1', number: 4, name: '選手A' }] },
+                    teamB: { id: 'teamB', name: '相手', players: [] },
+                },
+            ],
+        });
+        executeImport(parseImportJSON(json));
+
+        const [record] = loadGameHistory();
+        expect(record.teamA.players[0].stats.points).toBe(0);
+        expect(record.teamA.players[0].fouls).toEqual([]);
+        expect(record.teamA.players[0].quartersPlayed).toEqual([false, false, false, false]);
+        // チーム単位の配列も同時にそろえる（様式は添字で引く）
+        expect(record.teamA.teamFouls).toEqual([0, 0, 0, 0]);
+        expect(record.teamA.coachFouls).toEqual([]);
+    });
+
     it('id を欠く試合データはバックアップから取り込まない', () => {
         const json = backupWith({
             gameHistory: [

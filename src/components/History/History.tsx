@@ -143,6 +143,14 @@ export function History({ onBack }: HistoryProps) {
     });
 
     if (selectedRecord) {
+        // 詳細の3つのタブは、どれも欠けたフィールドを添字や素のプロパティで引く
+        // （様式のコーチ行、チーム比較とスタッツ表の p.stats.points）。
+        // タブごとに migrateTeam を掛け忘れると、そのタブだけが落ちる —— 実際
+        // スタッツ表は素の players を受け取っていて、stats を欠くレコードで
+        // アプリ全体がエラー画面になっていた。入口で1度だけ通して全タブで使う。
+        const teamA = migrateTeam(selectedRecord.teamA);
+        const teamB = migrateTeam(selectedRecord.teamB);
+
         return (
             <div className="history-detail-view">
                 <div className="history-header">
@@ -206,8 +214,8 @@ export function History({ onBack }: HistoryProps) {
                 {viewMode === 'comparison' && (
                     <div className="history-comparison-view">
                         <TeamComparison
-                            teamA={migrateTeam(selectedRecord.teamA)}
-                            teamB={migrateTeam(selectedRecord.teamB)}
+                            teamA={teamA}
+                            teamB={teamB}
                             // 手で編集したバックアップや古い記録は配列を持たないことがある（recordToGame参照）
                             scoreHistory={selectedRecord.scoreHistory || []}
                             statHistory={selectedRecord.statHistory || []}
@@ -229,16 +237,16 @@ export function History({ onBack }: HistoryProps) {
                 {viewMode === 'stats' && (
                     <div className="history-stats-view">
                         <StatsPanel
-                            players={selectedRecord.teamA.players}
-                            teamName={selectedRecord.teamA.name}
+                            players={teamA.players}
+                            teamName={teamA.name}
                             isHistoryView={true}
                             teamId="teamA"
                             statHistory={selectedRecord.statHistory}
                         />
                         <div style={{ height: '32px' }}></div>
                         <StatsPanel
-                            players={selectedRecord.teamB.players}
-                            teamName={selectedRecord.teamB.name}
+                            players={teamB.players}
+                            teamName={teamB.name}
                             isHistoryView={true}
                             teamId="teamB"
                             statHistory={selectedRecord.statHistory}
