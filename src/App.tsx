@@ -680,6 +680,29 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   // フルモード: TeamPanelのタイムアウトチップから開く入力モーダル
   const [timeoutModalTeam, setTimeoutModalTeam] = useState<'teamA' | 'teamB' | null>(null);
 
+  /**
+   * タイムアウトのチップが指すピリオド。
+   *
+   * 記録は進行中のピリオドに付くが、クォーター終了直後（quarterEnd）は
+   * currentQuarter が既に次のピリオドを指している。チップの使用済み判定も
+   * 取り消しも currentQuarter を見ていたため、インターバル中は「まだ始まって
+   * いないピリオドの残り1回」を出すことになり、直前のピリオドで押し間違えた
+   * タイムアウトはそのまま公式様式に印字されて二度と直せなかった。
+   * タイムアウトはアクション履歴に載らないので、このチップが唯一の訂正経路になる。
+   *
+   * インターバル中は「いま終わったピリオド」を指す。ここは記録画面へ戻って
+   * 直前のクォーターを見直す場面なので、指す先もそちらに合わせるのが素直。
+   *
+   * 残る制限: さらに先のピリオドへ進んだあとで前のピリオドの誤りに気づいた場合は
+   * 直せない。ピリオドを選ばせるUIが要るため、ここでは扱わない。
+   */
+  const timeoutQuarter = phase === 'quarterEnd' ? currentQuarter - 1 : currentQuarter;
+  // 指す先が「いまのピリオド」でないときだけ、チップの読み上げ名にピリオドを添える。
+  // 同じヘッダーのTFバッジは currentQuarter を出しているため、黙っていると
+  // 隣り合う2つが別のピリオドを指していることが読み取れない
+  const timeoutQuarterLabel = timeoutQuarter !== currentQuarter ? quarterLabel(timeoutQuarter) : undefined;
+  const timeoutUsedFor = (team: Team) => team.timeouts.some(t => t.quarter === timeoutQuarter);
+
   // 記録済みタイムアウトの取り消し確認。
   // 経過分を打ち間違えても直せず、そのまま公式様式に印字されていたため、
   // 記録済みチップから取り消せるようにする（誤タップで消えないよう確認を挟む）
@@ -687,7 +710,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
   const handleTimeoutCancel = () => {
     if (!timeoutCancelTeam) return;
-    dispatch({ type: 'REMOVE_TIMEOUT', payload: { teamId: timeoutCancelTeam, quarter: currentQuarter } });
+    dispatch({ type: 'REMOVE_TIMEOUT', payload: { teamId: timeoutCancelTeam, quarter: timeoutQuarter } });
     setTimeoutCancelTeam(null);
   };
 
@@ -1293,7 +1316,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 onCoachFoul={() => handleCoachFoul('teamA')}
                 actionHistoryHandlers={actionHistoryHandlers}
                 teamFouls={state.teamA.teamFouls[currentQuarter - 1] || 0}
-                timeoutUsed={state.teamA.timeouts.some(t => t.quarter === currentQuarter)}
+                timeoutUsed={timeoutUsedFor(state.teamA)}
+                timeoutQuarterLabel={timeoutQuarterLabel}
                 onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamA') : undefined}
                 onTimeoutCancel={() => setTimeoutCancelTeam('teamA')}
               />
@@ -1375,7 +1399,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 onCoachFoul={() => handleCoachFoul('teamB')}
                 actionHistoryHandlers={actionHistoryHandlers}
                 teamFouls={state.teamB.teamFouls[currentQuarter - 1] || 0}
-                timeoutUsed={state.teamB.timeouts.some(t => t.quarter === currentQuarter)}
+                timeoutUsed={timeoutUsedFor(state.teamB)}
+                timeoutQuarterLabel={timeoutQuarterLabel}
                 onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamB') : undefined}
                 onTimeoutCancel={() => setTimeoutCancelTeam('teamB')}
               />
@@ -1960,8 +1985,13 @@ function AppContent({ screen, setScreen }: AppContentProps) {
       {timeoutCancelTeam && (
         <ConfirmModal
           title="タイムアウトの取り消し"
-          message={`${timeoutCancelTeam === 'teamA' ? state.teamA.name : state.teamB.name} の ${quarterLabel(currentQuarter)} のタイムアウトを取り消します`}
-          note="取り消すと、このクォーターにもう一度記録できます"
+          message={`${timeoutCancelTeam === 'teamA' ? state.teamA.name : state.teamB.name} の ${quarterLabel(timeoutQuarter)} のタイムアウトを取り消します`}
+          // インターバル中は終わったピリオドを取り消している。次のピリオドが
+          // 始まればチップはそちらを指すので、取り消したぶんを入れ直す手段は無い。
+          // 「もう一度記録できます」のままだと、やり直せると思って取り消してしまう
+          note={timeoutQuarterLabel
+            ? `${timeoutQuarterLabel}は終了しているため、取り消すと記録し直せません`
+            : '取り消すと、このクォーターにもう一度記録できます'}
           confirmLabel="取り消す"
           onConfirm={handleTimeoutCancel}
           onCancel={() => setTimeoutCancelTeam(null)}
