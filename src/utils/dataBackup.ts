@@ -1,9 +1,9 @@
 // データバックアップ・復元ユーティリティ
 
 import type { GameRecord } from './gameHistoryStorage';
-import type { QuarterPlayType, Team } from '../types/game';
+import type { QuarterPlayType } from '../types/game';
 import { loadGameHistory, createGameId, saveGameHistory, resolveFinalScore } from './gameHistoryStorage';
-import { migrateTeam } from './migrateTeam';
+import { coerceTeam, migrateTeam } from './migrateTeam';
 import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
 import { loadMyTeams, loadOpponents, loadRecentOpponents, saveMyTeams, saveOpponents } from './teamStorage';
@@ -629,22 +629,9 @@ function sanitizeImportedTeam(raw: unknown): SavedTeam | null {
     return { ...raw, players } as unknown as SavedTeam;
 }
 
-/**
- * 取り込む試合のチームを矯正する。
- *
- * players を安全な配列にしたうえで、描画側が添字や素のプロパティで引くフィールドを
- * migrateTeam で補う。以前はここが「players が配列でオブジェクトであること」までしか
- * 見ておらず、選手ごとの stats を欠いたレコードがそのまま保存されていた。実測では
- * その1件が入っているだけで選手スタッツ分析と履歴の試合詳細が落ち、ErrorBoundary に
- * よってアプリ全体がエラー画面に置き換わる（原因のレコードも示されない）。
- *
- * 取り込む時点で直しておけば、以後どの読み手から開いても同じ前提が成り立つ。
- */
-function fixImportedTeam(t: unknown): Team {
-    const players = isPlainObject(t) && Array.isArray(t.players) ? t.players.filter(isPlainObject) : [];
-    const base = isPlainObject(t) ? { ...t, players } : { players };
-    return migrateTeam(base as unknown as Team);
-}
+// 取り込む試合のチームの矯正は、履歴の読み込み（repairGameRecords）と同じ
+// coerceTeam を使う。入口ごとに別々の矯正を持つと、片方だけ直し忘れる
+const fixImportedTeam = coerceTeam;
 
 /**
  * インポートされた試合データを検証・矯正する。

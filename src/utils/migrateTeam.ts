@@ -76,3 +76,28 @@ export function migrateTeam(team: Team): Team {
 
     return { ...team, players, timeouts, teamFouls, coachFouls, assistantCoachFouls, benchFouls };
 }
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+    return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * 何が入っているか分からない値をチームとして扱える形に整える。
+ *
+ * migrateTeam は「チームであること」を前提に欠けたフィールドを補うので、
+ * null や文字列、players が配列でないものは相手にできない（実測: teamA が null の
+ * レコードが1件あるだけで履歴一覧が Cannot read properties of null で落ちる）。
+ * バックアップの取り込みと履歴の読み込みの両方から使うため、ここに1つだけ置く。
+ *
+ * 直すところが無ければ渡された値をそのまま返す（migrateTeam と同じ参照維持）。
+ */
+export function coerceTeam(value: unknown): Team {
+    if (!isPlainObject(value)) return migrateTeam({ players: [] } as unknown as Team);
+
+    const raw = value.players;
+    const players = Array.isArray(raw)
+        ? (raw.every(isPlainObject) ? raw : raw.filter(isPlainObject))
+        : [];
+    const base = players === raw ? value : { ...value, players };
+    return migrateTeam(base as unknown as Team);
+}

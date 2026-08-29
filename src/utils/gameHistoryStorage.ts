@@ -1,6 +1,7 @@
 import type { Team, ScoreEntry, StatEntry, FoulEntry, GameInfo } from '../types/game';
 import type { PendingAction } from '../types/pendingAction';
 import { createJsonStorage } from './createStorage';
+import { repairGameRecords } from './repairGameRecords';
 
 const GAME_HISTORY_KEY = 'minibasket-game-history';
 
@@ -252,16 +253,20 @@ export function saveGameHistory(records: GameRecord[]): boolean {
     return historyStorage.save(records);
 }
 
-// 試合履歴一覧取得（旧バージョン由来の重複IDはこの時点で修復する）
+// 試合履歴一覧取得
+// 旧バージョン由来の重複IDと、壊れたレコード（手で編集した／途中で切れた
+// バックアップの取り込み）はこの時点で修復する。読み手は全部ここを通るので、
+// 直す場所を1つにできる（utils/repairGameRecords）
 export function loadGameHistory(): GameRecord[] {
     const history = historyStorage.load();
     if (!Array.isArray(history)) return [];
 
-    const deduped = dedupeGameIds(history);
-    if (!deduped) return history;
+    const repaired = repairGameRecords(history) ?? history;
+    const deduped = dedupeGameIds(repaired);
+    const result = deduped ?? repaired;
 
-    historyStorage.save(deduped);
-    return deduped;
+    if (result !== history) historyStorage.save(result);
+    return result;
 }
 
 // 試合詳細取得
