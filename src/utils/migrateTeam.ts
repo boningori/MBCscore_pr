@@ -24,6 +24,12 @@
 
 import type { Player, Team } from '../types/game';
 import { createInitialStats } from '../types/game';
+import { coerceArray, isPlainObject } from './coerceStored';
+
+// 差し替えに使う配列は使い回す。毎回作ると、壊れたチームを読むたびに
+// 下の参照比較が外れて新しいオブジェクトが返り続ける
+const EMPTY: never[] = [];
+const DEFAULT_TEAM_FOULS = [0, 0, 0, 0];
 
 /**
  * 欠けている選手ごとのフィールドを補った選手を返す（欠けていなければそのまま返す）。
@@ -51,13 +57,16 @@ function migratePlayer(player: Player, periodCount: number): Player {
 export function migrateTeam(team: Team): Team {
     if (!team) return team;
 
-    const timeouts = team.timeouts ?? [];
-    const teamFouls = team.teamFouls ?? [0, 0, 0, 0];
-    const coachFouls = team.coachFouls ?? [];
-    const assistantCoachFouls = team.assistantCoachFouls ?? [];
-    const benchFouls = team.benchFouls ?? [];
+    // `?? []` では「文字列が入っている」形を素通しする。実測: 中断セッションの
+    // teamA.timeouts に文字列が入っていると、試合を再開した瞬間に
+    // state.teamA.timeouts.some is not a function で落ちる
+    const timeouts = coerceArray(team.timeouts, EMPTY);
+    const teamFouls = coerceArray(team.teamFouls, DEFAULT_TEAM_FOULS);
+    const coachFouls = coerceArray(team.coachFouls, EMPTY);
+    const assistantCoachFouls = coerceArray(team.assistantCoachFouls, EMPTY);
+    const benchFouls = coerceArray(team.benchFouls, EMPTY);
 
-    const rawPlayers = team.players ?? [];
+    const rawPlayers = coerceArray(team.players, EMPTY);
     const periodCount = Math.max(4, teamFouls.length);
     const migratedPlayers = rawPlayers.map(p => migratePlayer(p, periodCount));
     // 全員そのままなら配列も作り直さない（下の参照比較で同じチームを返すため）
@@ -75,10 +84,6 @@ export function migrateTeam(team: Team): Team {
     if (unchanged) return team;
 
     return { ...team, players, timeouts, teamFouls, coachFouls, assistantCoachFouls, benchFouls };
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-    return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
 /**

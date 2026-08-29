@@ -24,9 +24,15 @@ export function saveHiddenPlayers(teamId: string, playerKeys: string[]): void {
 }
 
 // チームの非表示選手キーを取得
+//
+// チーム単位の値まで壊れている場合に備える（手で編集したバックアップ等）。
+// 実測: 数値が入っていると選手スタッツ分析が
+// 「number 5 is not iterable」で落ち、アプリ全体がエラー画面になる
+// （呼び出し側が new Set(...) に渡すため）
 export function loadHiddenPlayers(teamId: string): string[] {
-    const all = loadAllHiddenPlayers();
-    return all[teamId] || [];
+    const keys = loadAllHiddenPlayers()[teamId];
+    if (!Array.isArray(keys)) return [];
+    return keys.every(k => typeof k === 'string') ? keys : keys.filter(k => typeof k === 'string');
 }
 
 // 全チームの非表示選手を取得
