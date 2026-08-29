@@ -307,6 +307,28 @@ function isSubstituteTech(entry: FoulEntry): boolean {
     return entry.playerId !== null && entry.coachFoulTarget === 'BENCH';
 }
 
+/**
+ * 旧データでファウル由来の得点を探すとき、ファウルの時刻から何ms後までを見るか。
+ *
+ * 記録側は昔からこう振っている（当時の handleAddFoulWithFreeThrows も同じ）:
+ *   バスケットカウント … now
+ *   FT の i 本目        … now + 1 + i
+ * ここでの now は FoulEntry.timestamp を作った直後の Date.now() なので、
+ * 「ファウルの時刻以降・FT本数ぶん＋わずかなずれ」の範囲にしか入らない。
+ * 保留アクションから解決した経路も now = pending.timestamp で同じ形になる。
+ *
+ * 以前は Math.abs(差) < 1000 で前後1秒を見ていた。旧データでは十分だったが、
+ * この推測は新しい形式のデータでも踏めてしまう —— 紐づく得点をアクション履歴から
+ * 先に削除すると linked が空になるため。その状態でファウルを取り消すと、
+ * 同じシューターが1秒以内に自力で決めた無関係な得点が巻き添えで消えていた
+ * （実測: 紐づくFTを消した0.3秒後に自力FTを記録 → ファウル取り消しでその
+ * 自力FTが消滅し、チーム得点が1点減る。バスケットカウントでも同様）。
+ *
+ * 人が2回タップする間隔はこの幅に収まらないので、詰めれば取り違えは起きない。
+ * 端末が詰まって2つの Date.now() がずれる場合に備えて数十msだけ余裕を持たせる。
+ */
+const TIMESTAMP_DRIFT_MS = 50;
+
 /** 配列から最初の該当を1つだけ取り除く。無ければ元の配列をそのまま返す */
 function removeOneFoul(list: FoulType[], target: FoulType): FoulType[] {
     const index = list.findIndex(f => f === target);
@@ -709,7 +731,7 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
 
     // このファウルが生成した得点エントリ（FT成功分＋バスケットカウント）を特定する。
     // sourceFoulId を持つ新しいデータは確実に引ける。持たない旧データだけ、
-    // 従来の「同じシューター・1秒以内」の推測にフォールバックする
+    // 「同じシューター・記録直後」の推測にフォールバックする
     const removedScoreEntries: ScoreEntry[] = [];
     if (entry.shooterPlayerId && (ftMade > 0 || basketPoints > 0)) {
         const linked = state.scoreHistory.filter(s => s.sourceFoulId === entry.id);
@@ -723,15 +745,23 @@ export function handleRemoveFoul(state: Game, payload: PayloadOf<'REMOVE_FOUL'>)
             // linked は空になるが、これは新しい形式のデータであって旧データでは
             // ない。ここで推測へ落ちると、同じシューターが1秒以内に自力で決めた
             // 無関係な得点まで消えていた（実測: 自力の2Pが消えチーム得点 2→0）。
+            //
+            // それでもこの分岐は、新しい形式のデータで踏めてしまう —— 紐づく
+            // 得点をアクション履歴から先に消してしまえば linked も
+            // removedStatEntries も空になる。そこで探す範囲を、記録側が実際に
+            // 振る時刻の幅まで詰める（maxSourceLag）。
             const basketType = entry.shotSituation === '3P' ? '3P' : '2P';
+            // FTは now+1+i まで伸びるので、本数ぶんの幅を足す（TIMESTAMP_DRIFT_MS）
+            const maxSourceLag = ftAttempts + TIMESTAMP_DRIFT_MS;
             let removedFt = 0;
             let basketRemoved = basketPoints === 0; // バスケットが無ければ対象なし
             for (const s of state.scoreHistory) {
                 if (s.sourceFoulId) continue; // 別のファウルに紐づく分は触らない
+                const lag = s.timestamp - entry.timestamp;
                 const sameShooter =
                     s.playerId === entry.shooterPlayerId &&
                     s.teamId === entry.shooterTeamId &&
-                    Math.abs(s.timestamp - entry.timestamp) < 1000; // 1秒以内
+                    lag >= 0 && lag <= maxSourceLag;
                 if (!sameShooter) continue;
                 if (s.scoreType === 'FT' && removedFt < ftMade) {
                     removedFt++;
