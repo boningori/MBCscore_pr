@@ -151,24 +151,30 @@ export function ActionHistory({
         }
     };
 
-    // ファウルタイプを表示用に変換
-    const getFoulLabel = (foulType: string, isCoachOrBench: boolean, freeThrows?: number): string => {
-        const ftSuffix = freeThrows && freeThrows > 0 ? freeThrows.toString() : '';
+    // ファウルタイプを表示用に変換。
+    //
+    // FT本数は付けない。公式様式の「P2」は種別と本数を1マスに詰めるための表記で、
+    // 和名に付けると「パーソナルファウル2」＝2個目のファウルとも読める。しかも
+    // すぐ隣に formatFtResult が「(FT: 1/2)」と本数付きで出すので、同じ数字を
+    // 二度、別の書き方で並べていた（実測: 「パーソナルファウル2 (FT: 1/2)」）。
+    // 本数が0なら元から接尾辞は付かず、0でなければ必ず (FT: n/m) が出るので、
+    // 落としても失う情報は無い。様式側（RunningScoresheet）の P2 表記は別物。
+    const getFoulLabel = (foulType: string, isCoachOrBench: boolean): string => {
         if (isCoachOrBench) {
             switch (foulType) {
-                case 'T': return `ベンチテクニカル${ftSuffix}`;
-                case 'BT': return `ベンチテクニカル${ftSuffix}`;
-                default: return `ベンチ${foulType}${ftSuffix}`;
+                case 'T': return 'ベンチテクニカル';
+                case 'BT': return 'ベンチテクニカル';
+                default: return `ベンチ${foulType}`;
             }
         }
         switch (foulType) {
-            case 'P': return `パーソナルファウル${ftSuffix}`;
-            case 'T': return `テクニカル${ftSuffix}`;
-            case 'BT': return `ベンチテクニカル${ftSuffix}`;
-            case 'U': return `アンスポ${ftSuffix}`;
-            case 'D': return `失格${ftSuffix}`;
-            case 'F': return `ファイティング${ftSuffix}`;
-            default: return `${foulType}${ftSuffix}`;
+            case 'P': return 'パーソナルファウル';
+            case 'T': return 'テクニカル';
+            case 'BT': return 'ベンチテクニカル';
+            case 'U': return 'アンスポ';
+            case 'D': return '失格';
+            case 'F': return 'ファイティング';
+            default: return foulType;
         }
     };
 
@@ -209,7 +215,7 @@ export function ActionHistory({
                 playerId: f.playerId || 'bench',
                 playerNumber: f.playerNumber,
                 playerName: f.isCoachOrBench ? 'ベンチ' : getPlayerName(f.playerId || ''),
-                description: getFoulLabel(f.foulType, f.isCoachOrBench, f.freeThrows)
+                description: getFoulLabel(f.foulType, f.isCoachOrBench)
                     + formatFtResult(f.freeThrows, countMadeFreeThrows(f, scoreHistory, statHistory)),
                 entryType: f.foulType,
                 // コーチ・ベンチのファウルは選手行に無いので付け替えられない
