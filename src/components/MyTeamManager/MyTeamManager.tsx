@@ -54,6 +54,18 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
         handleJsonImport, handleConfirmImport, handleCancelImport, handleImportTextSubmit,
     } = useTeamImportExport({ onImported: refreshTeams, defaultImportTarget: 'myTeam' });
 
+    const closeTextImport = () => {
+        setShowTextImport(false);
+        updateImportText('');
+    };
+
+    // 貼り付けパネルと取り込み確認も、編集フォームと同じく画面の中の一段。
+    // 受け取らないと、貼り付けたJSONや読み込んだファイルの内容を抱えたまま
+    // ホームまで飛ぶ（実測: 端末の戻るで appScreen が home になりパネルごと消える）。
+    // 2つが同時に開くことはない（貼り付けの確定でパネルが閉じてから確認が出る）
+    useBackHandler(showTextImport, closeTextImport);
+    useBackHandler(pendingImport !== null, handleCancelImport);
+
     const handleCreateNew = () => {
         setEditingTeam(createEmptySavedTeam());
     };
@@ -162,7 +174,7 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
                     updateImportText={updateImportText}
                     textValidation={textValidation}
                     onSubmit={handleImportTextSubmit}
-                    onCancel={() => { setShowTextImport(false); updateImportText(''); }}
+                    onCancel={closeTextImport}
                 />
             )}
 

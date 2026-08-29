@@ -5,9 +5,9 @@
 // 加算していないチームファウルが減ったりする。実際に両方起きていたため、
 // 追加と削除の往復で元の状態に戻ることをここで固定する。
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { gameReducer } from './reducers';
-import type { Game } from '../types/game';
+import type { Game, GameAction } from '../types/game';
 import { createInitialGame, createTeam, createPlayer } from '../types/game';
 
 function makeGame(): Game {
@@ -480,5 +480,108 @@ describe('gameReducer: ミス→成功へ戻したあとにシューターを付
 
         expect(state.scoreHistory).toHaveLength(0);
         expect(state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0)).toBe(0);
+    });
+});
+
+// 旧データ向けのフォールバック（sourceFoulId を持たない記録を「同じシューター・
+// 記録直後」で拾う）が、新しい形式のデータで無関係な得点を巻き込まないこと。
+//
+// 紐づく得点をアクション履歴から先に削除すると linked も removedStatEntries も
+// 空になり、この分岐へ落ちる。以前は前後1秒を見ていたため、同じ選手がその直後に
+// 自力で決めた得点が一緒に消えていた（実測: チーム得点が1点減る）。
+// 記録側がFTへ振る時刻は「ファウルの時刻 + 1 + i」なので、人が次のタップを
+// する間隔はこの幅に入らない（handleRemoveFoul の TIMESTAMP_DRIFT_MS）。
+describe('gameReducer: ファウル取り消しが無関係な得点を巻き込まない', () => {
+    afterEach(() => vi.useRealTimers());
+
+    /** ファウル記録 → 紐づく得点だけ削除 → lagMs 後に同じ選手が自力で得点 */
+    function setupOrphanedFoul(
+        payload: Extract<GameAction, { type: 'ADD_FOUL_WITH_FREE_THROWS' }>['payload'],
+        selfScore: '2P' | 'FT',
+        lagMs: number,
+    ): Game {
+        vi.useFakeTimers();
+        const clock = new Date('2026-08-28T10:00:00Z').getTime();
+        vi.setSystemTime(clock);
+
+        let state = gameReducer(makeGame(), { type: 'ADD_FOUL_WITH_FREE_THROWS', payload });
+        const foulId = state.foulHistory[0].id;
+        const linked = state.scoreHistory.filter(s => s.sourceFoulId === foulId);
+        expect(linked.length).toBeGreaterThan(0);
+        for (const s of linked) {
+            state = gameReducer(state, { type: 'REMOVE_SCORE', payload: { entryId: s.id } });
+        }
+        expect(state.scoreHistory).toHaveLength(0);
+
+        vi.setSystemTime(clock + lagMs);
+        return gameReducer(state, {
+            type: 'ADD_SCORE',
+            payload: { teamId: 'teamB', playerId: 'b1', scoreType: selfScore, entryId: 'self' },
+        });
+    }
+
+    it('FTの得点を先に消していても、直後の自力FTは残る', () => {
+        let state = setupOrphanedFoul({
+            teamId: 'teamA', playerId: 'a1', foulType: 'P',
+            shotSituation: 'none', shotMade: false,
+            freeThrows: 1, freeThrowResults: ['made'],
+            shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+        }, 'FT', 300);
+        const before = state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        expect(state.scoreHistory.map(s => s.id)).toEqual(['self']);
+        expect(state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0)).toBe(before);
+    });
+
+    it('バスケットカウントの得点を先に消していても、直後の自力2Pは残る', () => {
+        let state = setupOrphanedFoul({
+            teamId: 'teamA', playerId: 'a1', foulType: 'P',
+            shotSituation: '2P', shotMade: true,
+            freeThrows: 1, freeThrowResults: ['missed'],
+            shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+        }, '2P', 400);
+        const before = state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        expect(state.scoreHistory.map(s => s.id)).toEqual(['self']);
+        expect(state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0)).toBe(before);
+    });
+
+    // 旧データ（sourceFoulId を持たない）の救済は残す。記録側と同じ時刻で
+    // 入っている得点は、これまでどおりファウルと対で消えること
+    it('sourceFoulId を持たない旧データのFTは、これまでどおり対で消える', () => {
+        vi.useFakeTimers();
+        const clock = new Date('2026-08-28T11:00:00Z').getTime();
+        vi.setSystemTime(clock);
+
+        let state = gameReducer(makeGame(), {
+            type: 'ADD_FOUL_WITH_FREE_THROWS',
+            payload: {
+                teamId: 'teamA', playerId: 'a1', foulType: 'P',
+                shotSituation: 'none', shotMade: false,
+                freeThrows: 2, freeThrowResults: ['made', 'made'],
+                shooterTeamId: 'teamB', shooterPlayerId: 'b1',
+            },
+        });
+        // 旧バージョンで保存された中断セッションを模して紐付けだけ外す
+        state = {
+            ...state,
+            scoreHistory: state.scoreHistory.map(s => {
+                const legacy = { ...s };
+                delete legacy.sourceFoulId;
+                return legacy;
+            }),
+        };
+        expect(state.scoreHistory).toHaveLength(2);
+
+        state = gameReducer(state, { type: 'REMOVE_FOUL', payload: { entryId: state.foulHistory[0].id } });
+
+        expect(state.scoreHistory).toHaveLength(0);
+        expect(state.teamB.players.find(p => p.id === 'b1')!.stats).toMatchObject({
+            points: 0, freeThrowMade: 0, freeThrowAttempt: 0,
+        });
     });
 });

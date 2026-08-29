@@ -464,8 +464,12 @@
    .player-stats-grid は align-items 未指定＝stretch で、.stat-box も
    justify-content を持たないため、数値とラベルは4タイルとも上端で揃ったまま
    この行だけが下に足される。タイルの高さを揃えるためのCSSは要らない。 */
+/* 0.7rem（11.2px）はこの画面の最小だった。ズームを禁じている
+   （index.html の user-scalable=no）ぶん、読めない文字は拡大して逃げられない。
+   最小サイズ側で担保する方針なので、隣の .stat-label と同じ 0.75rem（12px）まで上げる。
+   数字だけの短い行なので、この差でタイル幅は変わらない */
 .player-stats-container .stat-box .stat-sub {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     line-height: 1.2;
     opacity: 0.7;
     font-variant-numeric: tabular-nums;

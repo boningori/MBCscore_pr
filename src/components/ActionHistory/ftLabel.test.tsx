@@ -116,6 +116,16 @@ describe('ActionHistory: ファウル行のFT表示', () => {
         expect(q.getByText(/\(FT: 2\/2\)/)).toBeTruthy();
     });
 
+    // 種別の和名にFT本数を付けない。様式の「P2」は1マスに詰めるための表記で、
+    // 和名に付けると「2個目のファウル」とも読めるうえ、すぐ隣の (FT: n/m) と
+    // 同じ数字を二度並べることになる（実測: 「パーソナルファウル2 (FT: 1/2)」）
+    it('種別の和名にFT本数を付けない', () => {
+        const q = renderFoulSide(withUnsportsmanlike(['made', 'missed']));
+
+        expect(q.getByText('アンスポ (FT: 1/2)')).toBeTruthy();
+        expect(q.queryByText(/アンスポ2/)).toBeNull();
+    });
+
     it('バスケットカウントの得点は成功FTに数えない', () => {
         const game = gameReducer(makeGame(), {
             type: 'ADD_FOUL_WITH_FREE_THROWS',
