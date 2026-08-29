@@ -1034,9 +1034,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   if (showBackupPrompt) {
     return (
       <BackupPrompt
+        // 保存できたときだけ閉じる。失敗を握って閉じると、バックアップが
+        // 無いまま「保存した」と思わせることになる（BackupPrompt 側で通知する）
         onBackup={async () => {
-          await shareBackup();
-          setShowBackupPrompt(false);
+          const saved = await shareBackup();
+          if (saved) setShowBackupPrompt(false);
+          return saved;
         }}
         onDismiss={() => setShowBackupPrompt(false)}
       />
