@@ -558,6 +558,8 @@ export function FoulInputFlow({
     // FT成功数を計算
     const ftMadeCount = freeThrowResults.filter(r => r === 'made').length;
     const ftAllEntered = freeThrowResults.every(r => r !== null);
+    /** 成否を選び終えた本数（残り本数の案内に使う） */
+    const ftEnteredCount = freeThrowResults.filter(r => r !== null).length;
 
     // 中断ブロックはシューターが確定して以降だけ出す。
     // 確定前はシューターがアプリのどこにも入っておらず、中断から戻ると
@@ -864,15 +866,21 @@ export function FoulInputFlow({
                             {Array.from({ length: freeThrows }).map((_, index) => (
                                 <div key={index} className="ft-result-row">
                                     <span className="ft-result-label">{index + 1}本目:</span>
+                                    {/* 選んだことを色だけで示していたため、読み上げでは
+                                        どちらを入れたのか分からなかった。合計欄も
+                                        全部埋まるまで成否を出さないので、状態を持つのは
+                                        このボタン自身になる */}
                                     <div className="ft-result-buttons">
                                         <button
                                             className={`ft-result-btn success ${freeThrowResults[index] === 'made' ? 'selected' : ''}`}
+                                            aria-pressed={freeThrowResults[index] === 'made'}
                                             onClick={() => handleFtResult(index, 'made')}
                                         >
                                             ○ 成功
                                         </button>
                                         <button
                                             className={`ft-result-btn fail ${freeThrowResults[index] === 'missed' ? 'selected' : ''}`}
+                                            aria-pressed={freeThrowResults[index] === 'missed'}
                                             onClick={() => handleFtResult(index, 'missed')}
                                         >
                                             × 失敗
@@ -881,8 +889,19 @@ export function FoulInputFlow({
                                 </div>
                             ))}
                         </div>
+                        {/*
+                          全部埋まるまでは成否を出さない。未入力の枠を「外した」と
+                          同じ 0 として数えていたため、開いた直後から
+                          「結果: 0/2 成功 (+0点)」と出ていた。2本とも外した結果と、
+                          まだ何も選んでいない状態が同じ文になる。
+                          埋まるまでは、代わりに「記録」が押せない理由を出す
+                          （disabled だけでは、なぜ押せないのかが分からない）。
+                          どの枠を入れ終えたかは各行のボタン（aria-pressed）が示す
+                        */}
                         <div className="ft-result-summary">
-                            結果: {ftMadeCount}/{freeThrows} 成功 (+{ftMadeCount}点)
+                            {ftAllEntered
+                                ? `結果: ${ftMadeCount}/${freeThrows} 成功 (+${ftMadeCount}点)`
+                                : `あと${freeThrows - ftEnteredCount}本の成否を選んでください`}
                         </div>
                         <button
                             className="btn btn-primary ft-result-next"

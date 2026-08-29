@@ -78,6 +78,18 @@ function clickInterrupt(name: string) {
 }
 
 /**
+ * FT結果として選び終えた成否のラベル（1本目から順に）。
+ *
+ * 合計欄は全部埋まるまで成否を出さないので、入力済みかは各行のボタンの
+ * aria-pressed で見る。選手カードにも aria-pressed が付いているため、
+ * FT結果の並びの中だけを見ること
+ */
+function enteredFtResults(): (string | null)[] {
+    const list = document.querySelector('.ft-result-list') as HTMLElement;
+    return within(list).getAllByRole('button', { pressed: true }).map(b => b.textContent);
+}
+
+/**
  * b が a より DOM 上で後ろの「兄弟以降」にあること。
  *
  * FOLLOWING は「a の子孫」でも立つ（CONTAINED_BY|FOLLOWING）ため、
@@ -141,7 +153,8 @@ describe('FT入力中の中断（App 通し）', () => {
     it('交代を実行して閉じた後、FT入力の状態が残りシューター候補が更新される', async () => {
         await goToFtResult();
         fireEvent.click(screen.getAllByText('○ 成功')[0]);
-        expect(screen.getByText('結果: 1/2 成功 (+1点)')).toBeTruthy();
+        // 全部埋まるまで合計欄は成否を出さないので、入力済みかは各行のボタンで見る
+        expect(enteredFtResults()).toEqual(['○ 成功']);
 
         clickInterrupt('選手交代');
         clickInterruptTeam('相手チーム');
@@ -156,7 +169,7 @@ describe('FT入力中の中断（App 通し）', () => {
         fireEvent.click(modal.getByLabelText('閉じる'));
 
         // FT結果入力に戻り、1本目の入力が残っている
-        expect(screen.getByText('結果: 1/2 成功 (+1点)')).toBeTruthy();
+        expect(enteredFtResults()).toEqual(['○ 成功']);
         // シューターが下がったので注意が出る
         expect(screen.getByText(/シューターが交代でコートを離れました/)).toBeTruthy();
         expect(screen.getByText('シューター: #5 選手5')).toBeTruthy();

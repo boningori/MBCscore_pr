@@ -169,14 +169,17 @@ describe('中断ブロック: チーム選択', () => {
         goToFtResult();
         const madeButtons = screen.getAllByText('○ 成功');
         fireEvent.click(madeButtons[0]);
-        expect(screen.getByText('結果: 1/2 成功 (+1点)')).toBeTruthy();
+        // 全部埋まるまで合計欄は成否を出さないので、入力済みかは各行のボタンで見る
+        expect(screen.getAllByRole('button', { pressed: true }).map(b => b.textContent))
+            .toEqual(['○ 成功']);
 
         fireEvent.click(interruptBtn('タイムアウト'));
         fireEvent.click(screen.getByText('東京中'));
 
         expect(onRequestTimeout).toHaveBeenCalledWith('teamA');
         // FT結果入力のまま、入れた1本目も残っている
-        expect(screen.getByText('結果: 1/2 成功 (+1点)')).toBeTruthy();
+        expect(screen.getAllByRole('button', { pressed: true }).map(b => b.textContent))
+            .toEqual(['○ 成功']);
         expect(screen.getByText('シューター: #10 相手1')).toBeTruthy();
     });
 

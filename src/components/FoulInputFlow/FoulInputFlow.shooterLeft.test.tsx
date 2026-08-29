@@ -133,8 +133,10 @@ describe('シューターがコートを離れたとき', () => {
         fireEvent.click(screen.getByText('交代選手').closest('button')!);
         fireEvent.click(screen.getByText('次へ'));
 
-        // 1本目の成功が残っている（handleBack と違い結果を初期化しない）
-        expect(screen.getByText('結果: 1/2 成功 (+1点)')).toBeTruthy();
+        // 1本目の成功が残っている（handleBack と違い結果を初期化しない）。
+        // 全部埋まるまで合計欄は成否を出さないので、各行のボタンで見る
+        expect(screen.getAllByRole('button', { pressed: true }).map(b => b.textContent))
+            .toEqual(['○ 成功']);
         expect(screen.getByText('シューター: #12 交代選手')).toBeTruthy();
 
         // 差し替え前のシューターが打った1本が混ざったままなので、
@@ -218,7 +220,9 @@ describe('途中でシューターを変更したときの告知', () => {
         fireEvent.click(screen.getByText('交代選手').closest('button')!);
         fireEvent.click(screen.getByText('次へ'));
 
-        expect(screen.getByText('結果: 0/2 成功 (+0点)')).toBeTruthy();
+        // 白紙に戻った＝どのボタンも選ばれていない
+        expect(screen.queryAllByRole('button', { pressed: true })).toEqual([]);
+        expect(screen.getByText('あと2本の成否を選んでください')).toBeTruthy();
         expect(screen.queryByText(/途中でシューターを変更しました/)).toBeNull();
     });
 
