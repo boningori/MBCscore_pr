@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { GameRecord } from '../../utils/gameHistoryStorage';
-import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo, updateGameRecordEndTime } from '../../utils/gameHistoryStorage';
+import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo, updateGameRecordEndTime, resolveFinalScore } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
 import { StatsPanel } from '../StatsPanel';
 import type { Game, GameInfo } from '../../types/game';
@@ -350,7 +350,11 @@ export function History({ onBack }: HistoryProps) {
                     </div>
                 ) : (
                     <div className="history-list">
-                        {visibleRecords.map(record => (
+                        {visibleRecords.map(record => {
+                            // finalScore を欠くレコード（手で編集したバックアップ由来）でも
+                            // 一覧が落ちないよう組み直してから読む（resolveFinalScore）
+                            const finalScore = resolveFinalScore(record);
+                            return (
                             <div key={record.id} className="history-card">
                                 {/*
                                   カード全体をbuttonにはできない（中の共有・削除と入れ子になる）。
@@ -370,18 +374,18 @@ export function History({ onBack }: HistoryProps) {
                                     <span className="history-score">
                                         <span className="history-team team-left">
                                             <span className="team-name">
-                                                {record.finalScore.teamA > record.finalScore.teamB && <span className="winner-star">★</span>}
+                                                {finalScore.teamA > finalScore.teamB && <span className="winner-star">★</span>}
                                                 {record.teamA.name}
                                             </span>
-                                            <span className="team-score-val">{record.finalScore.teamA}</span>
+                                            <span className="team-score-val">{finalScore.teamA}</span>
                                         </span>
                                         <span className="vs-divider">|</span>
                                         <span className="history-team team-right">
                                             <span className="team-name">
-                                                {record.finalScore.teamB > record.finalScore.teamA && <span className="winner-star">★</span>}
+                                                {finalScore.teamB > finalScore.teamA && <span className="winner-star">★</span>}
                                                 {record.teamB.name}
                                             </span>
-                                            <span className="team-score-val">{record.finalScore.teamB}</span>
+                                            <span className="team-score-val">{finalScore.teamB}</span>
                                         </span>
                                     </span>
                                 </button>
@@ -401,7 +405,8 @@ export function History({ onBack }: HistoryProps) {
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

@@ -2,7 +2,7 @@
 
 import type { PlayerStats } from '../types/game';
 import type { GameRecord } from './gameHistoryStorage';
-import { loadGameHistory } from './gameHistoryStorage';
+import { loadGameHistory, resolveFinalScore } from './gameHistoryStorage';
 import { loadMyTeams, type SavedPlayer, type SavedTeam } from './teamStorage';
 import { createJsonStorage } from './createStorage';
 import { formatRecordDate, recordDateParts, recordInputDate } from './localDate';
@@ -592,8 +592,13 @@ export function aggregatePlayerStats(
 
         const myTeamData = isTeamA ? record.teamA : record.teamB;
         const opponentData = isTeamA ? record.teamB : record.teamA;
-        const myScore = record.finalScore[isTeamA ? 'teamA' : 'teamB'];
-        const opponentScore = record.finalScore[isTeamA ? 'teamB' : 'teamA'];
+        // finalScore を欠くレコード（手で編集したバックアップ由来）でも落ちないよう
+        // 組み直してから読む。素で引いていたため、1件混ざるだけで分析画面ごと
+        // ——ErrorBoundary の性質上アプリ全体が——エラー画面に置き換わっていた
+        // （選手ごとの stats と同じ経路。詳細は resolveFinalScore）
+        const finalScore = resolveFinalScore(record);
+        const myScore = finalScore[isTeamA ? 'teamA' : 'teamB'];
+        const opponentScore = finalScore[isTeamA ? 'teamB' : 'teamA'];
 
         const result: 'win' | 'loss' | 'draw' =
             myScore > opponentScore ? 'win' :
@@ -863,8 +868,13 @@ export function getTeamRecord(myTeam: SavedTeam, startDate?: Date, endDate?: Dat
         if (startDate && gameDate < startDate) continue;
         if (endDate && gameDate > endDate) continue;
 
-        const myScore = record.finalScore[isTeamA ? 'teamA' : 'teamB'];
-        const opponentScore = record.finalScore[isTeamA ? 'teamB' : 'teamA'];
+        // finalScore を欠くレコード（手で編集したバックアップ由来）でも落ちないよう
+        // 組み直してから読む。素で引いていたため、1件混ざるだけで分析画面ごと
+        // ——ErrorBoundary の性質上アプリ全体が——エラー画面に置き換わっていた
+        // （選手ごとの stats と同じ経路。詳細は resolveFinalScore）
+        const finalScore = resolveFinalScore(record);
+        const myScore = finalScore[isTeamA ? 'teamA' : 'teamB'];
+        const opponentScore = finalScore[isTeamA ? 'teamB' : 'teamA'];
 
         if (myScore > opponentScore) wins++;
         else if (myScore < opponentScore) losses++;

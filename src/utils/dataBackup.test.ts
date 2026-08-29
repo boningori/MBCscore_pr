@@ -603,8 +603,9 @@ describe('shareFile モバイル共有（.json共有不可対策）', () => {
         expect(sharedFile.type).toBe('text/plain');
         // 共有先(Drive等)がファイル名に使うtitleも日付入りの.txt名にする
         expect(payload!.title).toBe('MBCscore_backup_2026-07-10_10-30.txt');
-        // 共有した中身は元のJSONのまま
-        expect(await sharedFile.text()).toBe(JSON.stringify({ a: 1 }, null, 2));
+        // 共有した中身は元のデータのまま（整形はしない。理由は serializeForFile）
+        expect(JSON.parse(await sharedFile.text())).toEqual({ a: 1 });
+        expect(await sharedFile.text()).toBe(JSON.stringify({ a: 1 }));
     });
 
     it('canShareがfalseを返す場合は共有せずfalseを返す（呼び出し側がダウンロードにフォールバック）', async () => {
