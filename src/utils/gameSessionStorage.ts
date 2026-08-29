@@ -3,6 +3,8 @@
 
 import type { Game } from '../types/game';
 import { createJsonStorage } from './createStorage';
+import { coerceTeam } from './migrateTeam';
+import { coerceEntries } from './coerceStored';
 
 const GAME_SESSION_KEY = 'minibasket-game-session';
 
@@ -31,9 +33,57 @@ export function saveGameSession(game: Game, gameName: string, date: string): voi
     });
 }
 
-// 試合セッションを読み込み
+/**
+ * 中断セッションを、再開しても落ちない形に整える。
+ *
+ * ここは履歴と違って「試合の途中」に効く。壊れたセッションを再開すると、
+ * 記録を続けようとしたその場でアプリがエラー画面になり、しかも
+ * localStorage に残るので再開のたびに再発する。
+ *
+ * 実測（v1.6.9・実ブラウザ・仕込んで「試合を再開」を押す）:
+ *   game が空                  → Cannot read properties of undefined (reading 'players')
+ *   teamA が null              → Cannot read properties of null (reading 'players')
+ *   players の要素が null      → Cannot read properties of null (reading 'isOnCourt')
+ *   timeouts が文字列          → state.teamA.timeouts.some is not a function
+ *   score/stat/foul/pending が配列でない  → .filter is not a function
+ *   同 要素が null             → Cannot read properties of null (reading 'teamId')
+ *
+ * 直すところが無ければ同じオブジェクトを返す（migrateTeam と同じ参照維持）。
+ */
+export function repairGameSession(session: GameSession): GameSession {
+    const g = session.game;
+    const teamA = coerceTeam(g?.teamA);
+    const teamB = coerceTeam(g?.teamB);
+    const scoreHistory = coerceEntries<Game['scoreHistory'][number]>(g?.scoreHistory);
+    const statHistory = coerceEntries<Game['statHistory'][number]>(g?.statHistory);
+    const foulHistory = coerceEntries<Game['foulHistory'][number]>(g?.foulHistory);
+    const pendingActions = coerceEntries<Game['pendingActions'][number]>(g?.pendingActions);
+
+    const unchanged =
+        teamA === g?.teamA &&
+        teamB === g?.teamB &&
+        scoreHistory === g?.scoreHistory &&
+        statHistory === g?.statHistory &&
+        foulHistory === g?.foulHistory &&
+        pendingActions === g?.pendingActions;
+    if (unchanged) return session;
+
+    return {
+        ...session,
+        game: { ...g, teamA, teamB, scoreHistory, statHistory, foulHistory, pendingActions },
+    };
+}
+
+// 試合セッションを読み込み（壊れていれば読み込みの時点で整える）
 export function loadGameSession(): GameSession | null {
-    return sessionStorage_.load();
+    const session = sessionStorage_.load();
+    if (!session) return null;
+
+    const repaired = repairGameSession(session);
+    // 直した形を書き戻す。再開するたびに直し続けるのは無駄で、
+    // 途中保存が走ったときに壊れた形へ戻る余地も残る
+    if (repaired !== session) sessionStorage_.save(repaired);
+    return repaired;
 }
 
 // 試合セッションをクリア

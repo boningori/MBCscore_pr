@@ -4,6 +4,7 @@ import type { Team } from '../types/game';
 import { unlinkSavedTeamId } from './gameHistoryStorage';
 import { createTeam, createPlayer } from '../types/game';
 import { createJsonStorage } from './createStorage';
+import { repairSavedTeams } from './repairSavedTeams';
 
 const MY_TEAMS_KEY = 'minibasket-my-teams';
 const OPPONENT_TEAMS_KEY = 'minibasket-opponent-teams';
@@ -104,8 +105,25 @@ export function saveMyTeams(teams: SavedTeam[]): boolean {
 }
 
 // マイチーム一覧取得
+
+/**
+ * 読み込んだチーム一覧を整えて返す（直した形は書き戻す）。
+ *
+ * 検査は「配列であること」までで、要素の中身は素通しだった。壊れた1件が
+ * あるだけでチーム管理画面がエラー画面になる（utils/repairSavedTeams）。
+ * 読み手が全部ここを通るので、直す場所を1つにできる。
+ */
+function loadRepaired(storage: ReturnType<typeof createJsonStorage<SavedTeam[]>>): SavedTeam[] {
+    const teams = storage.load();
+    if (!Array.isArray(teams)) return [];
+    const repaired = repairSavedTeams(teams);
+    if (!repaired) return teams;
+    storage.save(repaired);
+    return repaired;
+}
+
 export function loadMyTeams(): SavedTeam[] {
-    return myTeamsStorage.load();
+    return loadRepaired(myTeamsStorage);
 }
 
 // マイチーム取得（単一）
@@ -136,7 +154,7 @@ export function saveRecentOpponent(team: SavedTeam): void {
 
 // 最近使用した対戦チーム取得
 export function loadRecentOpponents(): SavedTeam[] {
-    return recentOpponentsStorage.load();
+    return loadRepaired(recentOpponentsStorage);
 }
 
 // 対戦チーム履歴クリア
@@ -167,7 +185,7 @@ export function saveOpponents(teams: SavedTeam[]): boolean {
 
 // 対戦チーム一覧取得
 export function loadOpponents(): SavedTeam[] {
-    return opponentsStorage.load();
+    return loadRepaired(opponentsStorage);
 }
 
 // 対戦チーム削除

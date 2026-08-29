@@ -30,21 +30,7 @@
 
 import type { GameRecord } from './gameHistoryStorage';
 import { coerceTeam } from './migrateTeam';
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-    return typeof v === 'object' && v !== null && !Array.isArray(v);
-}
-
-/**
- * 記録の配列を安全な配列にする。
- *
- * 健全なときは同じ配列をそのまま返す（参照が変わると useMemo や React.memo の
- * 比較が毎回外れる。migrateTeam と同じ理由）。
- */
-function coerceEntries<T>(value: unknown): T[] {
-    if (!Array.isArray(value)) return [];
-    return value.every(isPlainObject) ? (value as T[]) : (value.filter(isPlainObject) as T[]);
-}
+import { coerceEntries, isPlainObject } from './coerceStored';
 
 /** 試合名。数値などが入っていても文字にして残す（捨てない） */
 function coerceGameName(value: unknown): string {
