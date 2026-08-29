@@ -122,10 +122,12 @@
     align-items: flex-start;
 }
 
+/* 長押しでシュートファウルに分岐することを伝える唯一の表示。
+   --text-muted + opacity 0.7 で実測 2.44:1（10px・AAは4.5:1）だった。
+   スワイプヒントと同じで、読めなければ分岐が存在しないのと同じになる */
 .foul-input-flow .foul-type-hint {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-size: var(--font-size-xs);
-    opacity: 0.7;
 }
 
 /* シュート状況リスト */
@@ -565,8 +567,10 @@
     gap: var(--spacing-xs) var(--spacing-sm);
 }
 
+/* 地が --bg-tertiary より明るいので --text-muted は使えない
+   （index.css の運用。実測 3.41:1） */
 .foul-input-flow .foul-target-label {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-size: var(--font-size-xs);
 }
 
