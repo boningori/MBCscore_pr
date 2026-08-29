@@ -13,7 +13,7 @@ import { recognizePlayerList, isOCRAvailable } from '../../utils/imageOCR';
 import { getStoredApiKey } from '../../utils/geminiClient';
 import { showToast } from '../Toast/toastApi';
 import { DeleteConfirmModal } from '../TeamShared/DeleteConfirmModal';
-import { isPlayerLimitReached, playerLimitMessage } from '../TeamShared/playerLimit';
+import { isPlayerLimitReached, playerLimitMessage, MAX_PLAYERS_PER_TEAM } from '../TeamShared/playerLimit';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import {
     DOUBLE_ZERO_INTERNAL,
@@ -95,9 +95,16 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
             const result = await recognizePlayerList(file);
             if (result.success && result.players.length > 0) {
                 const newTeam = createEmptySavedTeam();
-                newTeam.players = result.players;
+                // 上限は手入力・番号グリッドと同じ規則で掛ける（playerLimit.ts）。
+                // 読み取れた人数をそのまま入れていたため、写真1枚で16人以上の
+                // 名簿ができ、スコアシートに現れない選手が生まれていた
+                newTeam.players = result.players.slice(0, MAX_PLAYERS_PER_TEAM);
                 setEditingTeam(newTeam);
                 setIsCreating(true);
+                const dropped = result.players.length - newTeam.players.length;
+                if (dropped > 0) {
+                    setOcrError(`${dropped}人は取り込みませんでした。${playerLimitMessage()}`);
+                }
             } else {
                 setOcrError(result.error || '選手情報を認識できませんでした');
             }

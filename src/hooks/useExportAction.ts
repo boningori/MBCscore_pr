@@ -5,12 +5,16 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '../components/Toast/toastApi';
+import type { ExportOutcome } from '../utils/pdfExport';
 
 export interface UseExportActionResult {
     /** 出力処理の実行中か（ボタンの無効化・ラベル差し替えに使う） */
     isExporting: boolean;
-    /** 出力処理を実行する。labelは通知文に使う表示名（例: 'PDF'） */
-    runExport: (task: () => Promise<void>, label: string) => Promise<void>;
+    /**
+     * 出力処理を実行する。labelは通知文に使う表示名（例: 'PDF'）。
+     * task が 'cancelled' を返したら成功として報告しない（ExportOutcome）
+     */
+    runExport: (task: () => Promise<ExportOutcome | void>, label: string) => Promise<void>;
 }
 
 export function useExportAction(): UseExportActionResult {
@@ -25,13 +29,17 @@ export function useExportAction(): UseExportActionResult {
         return () => { mountedRef.current = false; };
     }, []);
 
-    const runExport = useCallback(async (task: () => Promise<void>, label: string) => {
+    const runExport = useCallback(async (task: () => Promise<ExportOutcome | void>, label: string) => {
         if (runningRef.current) return;
         runningRef.current = true;
         setIsExporting(true);
 
         try {
-            await task();
+            const outcome = await task();
+            // iOSの共有シートを閉じただけ。ファイルはどこにも残っていないので
+            // 「出力しました」と言ってはいけない。利用者が自分でやめた操作なので
+            // 失敗の通知も出さず、黙って元の画面に戻る（ExportOutcome）
+            if (outcome === 'cancelled') return;
             showToast(`${label}を出力しました`, 'success');
         } catch (error) {
             console.error(`${label}出力エラー:`, error);

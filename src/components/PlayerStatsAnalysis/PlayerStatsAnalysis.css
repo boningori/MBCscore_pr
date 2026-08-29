@@ -2131,12 +2131,15 @@
     font-weight: 600;
 }
 
+/* 緑・赤を「文字色」に使うので、枠線・背景用の --secondary-light /
+   --danger-light ではなく文字用トークンを使う（index.css の運用）。
+   実測で .rf-delta.up が 4.08:1（AAは4.5:1）だった */
 .player-stats-container .recent-form-card .rf-delta.up {
-    color: var(--secondary-light);
+    color: var(--secondary-text);
 }
 
 .player-stats-container .recent-form-card .rf-delta.down {
-    color: var(--danger-light);
+    color: var(--danger-text);
 }
 
 .player-stats-container .recent-form-card .rf-delta.flat {

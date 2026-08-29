@@ -7,6 +7,18 @@
 import { FALLBACK_MODELS, GEMINI_API_BASE } from './geminiClient';
 import type { TranscriptionOutcome } from './voiceMemo';
 
+/**
+ * 出力の上限トークン数。
+ *
+ * 録音は最大60秒（useVoiceMemo の MAX_DURATION_MS）。日本語は1トークンが
+ * 1〜2文字なので、話速5〜6文字/秒だと60秒で300文字以上になる。
+ * 以前の 256 では40秒あたりから途中で切れていた。
+ */
+const MAX_OUTPUT_TOKENS = 1024;
+
+/** 上限で打ち切られた文字起こしの末尾に付ける印 */
+export const TRUNCATED_SUFFIX = '…（長すぎたため、ここで切れています）';
+
 export const TRANSCRIBE_PROMPT = `この音声は、バスケットボールの試合中に記録者が吹き込んだ日本語の短いメモです。
 聞こえたとおりに文字起こししてください。
 
@@ -50,7 +62,10 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
                     generationConfig: {
                         // 聞こえたままを出させたいので揺らぎを最小にする
                         temperature: 0,
-                        maxOutputTokens: 256,
+                        // 録音は最大60秒（useVoiceMemo の MAX_DURATION_MS）。
+                        // 日本語は1トークンが1〜2文字なので、256だと40秒あたりから
+                        // 途中で切れる。上限そのものを録音の長さに見合う値へ上げる
+                        maxOutputTokens: MAX_OUTPUT_TOKENS,
                     },
                 }),
             });
@@ -78,7 +93,7 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
                 return { success: false, error: errorMessage };
             }
 
-            let data: { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+            let data: { candidates?: { finishReason?: string; content?: { parts?: { text?: string }[] } }[] };
             try {
                 data = await response.json();
             } catch {
@@ -88,9 +103,14 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
                 // 残りの全モデルへ律儀に再送信して記録者を待たせてしまう
                 return { success: false, error: '応答の解析に失敗しました（ネットワーク環境をご確認ください）' };
             }
-            const text: string | undefined = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            const candidate = data.candidates?.[0];
+            const text: string | undefined = candidate?.content?.parts?.[0]?.text;
             if (text) {
-                return { success: true, text: text.trim() };
+                // 上限で打ち切られた応答も 200 で返る。黙って返すと、途中で切れた
+                // 文字起こしを「全部そう言った」と読んでしまう。印を添えて、
+                // 続きが失われていることを読み手に分かるようにする
+                const truncated = candidate?.finishReason === 'MAX_TOKENS';
+                return { success: true, text: text.trim() + (truncated ? TRUNCATED_SUFFIX : '') };
             }
             lastError = '応答に文字起こし結果が含まれていませんでした';
         } catch (error) {

@@ -4,6 +4,17 @@
 
 import { isIos } from './installState';
 
+/**
+ * 出力の結末。
+ *
+ * 'cancelled' は iOS の共有シートを利用者が閉じた場合で、ファイルはどこにも
+ * 残っていない。以前は exportElement が void を返していたため、呼び出し側
+ * （useExportAction）は例外が出ない＝成功とみなして「出力しました」を出していた
+ * （実測: iPadのUAで共有をキャンセルすると、ダウンロードは起きないのに
+ * 成功トーストだけが出る）。やめた操作を成功と報告しないよう、ここまで伝える。
+ */
+export type ExportOutcome = 'saved' | 'cancelled';
+
 /** 出力ファイルを共有シートに渡せたか */
 export type ExportShareResult =
     /** 共有シートに渡した（ダウンロードは不要） */
@@ -56,6 +67,26 @@ export async function shareExportFile(file: File): Promise<ExportShareResult> {
         // 共有が使えなかった。取りこぼすよりはダウンロードを試す
         return 'unsupported';
     }
+}
+
+/**
+ * canvas から実際に画像が取り出せたことを確かめる（取れなければ例外）。
+ *
+ * toDataURL は上限を超えた canvas に対して例外ではなく 'data:,' を返す。
+ * iOS Safari は canvas の面積に上限（広く知られている値で約16.78M px）があり、
+ * 選手詳細の出力は1試合の時点で 2458×8702 = 21.4M px に達する（実測）。
+ *
+ * 戻り値を検査していなかったため、中身の無いファイルを保存したうえで
+ * 「出力しました」と報告していた（実測: toDataURL に 'data:,' を返させると
+ * 0バイトの .jpg がダウンロードされ、成功トーストが出る）。
+ * ここで落とせば useExportAction が失敗として通知する。
+ */
+function assertRenderedImage(dataUrl: string, canvas: HTMLCanvasElement): void {
+    if (dataUrl.startsWith('data:image/')) return;
+    throw new Error(
+        `画像を生成できませんでした（${canvas.width}x${canvas.height}px）。`
+        + '端末の上限を超えた可能性があります',
+    );
 }
 
 /** DataURLをBlobに戻す（共有シートにはFileで渡す必要がある） */
@@ -295,7 +326,7 @@ interface ExportOptions {
 export async function exportElement(
     element: HTMLElement,
     options: ExportOptions
-): Promise<void> {
+): Promise<ExportOutcome> {
     const {
         filename,
         format,
@@ -368,18 +399,22 @@ export async function exportElement(
 
     if (format === 'jpeg') {
         const dataUrl = finalCanvas.toDataURL('image/jpeg', quality);
+        // 中身が空のまま保存して「出力しました」と言わない（assertRenderedImage）
+        assertRenderedImage(dataUrl, finalCanvas);
         const name = `${filename}.jpg`;
         // iOSでは共有シートに渡す（ダウンロードが当てにならない。shareExportFile）
         if (canAttemptExportShare()) {
             const shared = await shareExportFile(new File([dataUrlToBlob(dataUrl)], name, { type: 'image/jpeg' }));
-            if (shared !== 'unsupported') return;
+            if (shared === 'shared') return 'saved';
+            // やめたなら追い打ちのダウンロードはしない。成功とも言わない
+            if (shared === 'cancelled') return 'cancelled';
         }
         downloadDataUrl(dataUrl, name);
-    } else {
-        // jspdfの読み込みを待たずに戻ると、呼び出し側が完了と誤認して
-        // 「出力しました」を先に出してしまうためawaitする
-        await exportFitToPagePDF(finalCanvas, filename);
+        return 'saved';
     }
+    // jspdfの読み込みを待たずに戻ると、呼び出し側が完了と誤認して
+    // 「出力しました」を先に出してしまうためawaitする
+    return exportFitToPagePDF(finalCanvas, filename);
 }
 
 /**
@@ -519,7 +554,7 @@ function cropCanvas(source: HTMLCanvasElement, sourceY: number, sourceHeight: nu
 /**
  * PDF出力（A4幅いっぱいに描き、あふれた分は改ページ）
  */
-async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): Promise<ExportOutcome> {
     const { jsPDF } = await import('jspdf');
 
     const pdf = new jsPDF({
@@ -537,6 +572,8 @@ async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): 
         if (index > 0) pdf.addPage();
         const pageCanvas = cropCanvas(canvas, page.sourceY, page.sourceHeight);
         const imgData = pageCanvas.toDataURL('image/jpeg', 0.85);
+        // 1ページでも空なら中身の欠けたPDFになる。保存せず失敗として知らせる
+        assertRenderedImage(imgData, pageCanvas);
         // 上寄せ（余白はCSS側で設定済み）
         pdf.addImage(imgData, 'JPEG', page.x, 0, page.drawWidth, page.drawHeight);
     });
@@ -545,9 +582,11 @@ async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): 
     const name = `${filename}.pdf`;
     if (canAttemptExportShare()) {
         const shared = await shareExportFile(new File([pdf.output('blob')], name, { type: 'application/pdf' }));
-        if (shared !== 'unsupported') return;
+        if (shared === 'shared') return 'saved';
+        if (shared === 'cancelled') return 'cancelled';
     }
     pdf.save(name);
+    return 'saved';
 }
 
 /**

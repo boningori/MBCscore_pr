@@ -379,7 +379,11 @@ export function History({ onBack }: HistoryProps) {
                                             </span>
                                             <span className="team-score-val">{finalScore.teamA}</span>
                                         </span>
-                                        <span className="vs-divider">|</span>
+                                        {/* 両チーム名の間の区切り。意味を持たない飾りなので
+                                            読み上げから外す（読ませると「たてぼう」が挟まる）。
+                                            コントラストも 2.26:1 と低いが、装飾テキストは
+                                            WCAG 1.4.3 の対象外。aria-hidden で意図を明示する */}
+                                        <span className="vs-divider" aria-hidden="true">|</span>
                                         <span className="history-team team-right">
                                             <span className="team-name">
                                                 {finalScore.teamB > finalScore.teamA && <span className="winner-star">★</span>}

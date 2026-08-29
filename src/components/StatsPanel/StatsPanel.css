@@ -33,7 +33,9 @@
     border-radius: var(--radius-sm);
     font-size: var(--font-size-xs);
     font-weight: 600;
-    color: var(--text-muted);
+    /* 地が --bg-tertiary なので --text-muted は使えない（index.css の運用と
+       index.contrast.test.ts が保証する範囲は暗い2面まで）。実測 3.41:1 */
+    color: var(--text-secondary);
     text-transform: uppercase;
 }
 
@@ -113,6 +115,6 @@
 }
 
 .stats-panel .stats-header .stats-col-to {
-    color: var(--text-muted);
-    opacity: 0.8;
+    /* 見出し行の地は --bg-tertiary。--text-muted + opacity 0.8 で実測 2.74:1 */
+    color: var(--text-secondary);
 }

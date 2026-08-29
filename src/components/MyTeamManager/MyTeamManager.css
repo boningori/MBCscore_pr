@@ -211,7 +211,9 @@
 }
 
 :is(.my-team-manager, .my-team-editor) .player-license {
-    color: var(--text-muted);
+    /* 選手カードの地は --bg-tertiary。--text-muted では実測 3.41:1 で
+       AAに届かない（index.css の運用どおり暗い2面でしか使えない） */
+    color: var(--text-secondary);
     font-size: var(--font-size-sm);
     min-width: 80px;
     text-align: right;

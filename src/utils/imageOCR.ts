@@ -22,6 +22,17 @@ export interface ImageOCRResult {
     fallbackReason?: string; // GeminiからTesseractへのフォールバック理由
 }
 
+/**
+ * Geminiへ1リクエストで送る画像の上限（バイト）。
+ *
+ * Base64は4/3に膨らむので、8MBの写真で約10.7MBの本文になる。これを超える
+ * 端末（48MPのスマホなど）では、遅いうえに失敗しやすい経路へ黙って進んでいた。
+ *
+ * 超えたときは弾かずにTesseractへ回す。Tesseractは端末内で動くので送信量の
+ * 制約が無く、「大きすぎる写真では写真読込そのものが使えない」を作らないため。
+ */
+const GEMINI_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
 // 画像をBase64に変換
 export async function imageToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -145,6 +156,28 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
 }
 
 /**
+ * Geminiが返した背番号を、アプリ内部の背番号へ直す（使えない値は null）。
+ *
+ * Tesseract側は parsePlayerNumber + isValidPlayerNumber を通しているのに、
+ * こちらは範囲を見ていなかった。実測: 999 と -3 がそのまま名簿に入り、
+ * 文字列の "0" は `parseInt("0") || index + 1` の || が 0 を falsy と見て
+ * index+1（別番号）に化けていた。0番の選手が黙って違う番号で登録される。
+ *
+ * JSONの数値では「00」を表せないため、Gemini経由の 00 は 0 に潰れる。
+ * これは応答形式の限界なので、ここでは 0 として受ける（Tesseract経由は
+ * 文字列を見るので 00 を保てる）。
+ */
+function normalizeGeminiNumber(value: unknown): number | null {
+    const parsed = typeof value === 'number'
+        ? (Number.isInteger(value) ? value : null)
+        : typeof value === 'string'
+            ? parsePlayerNumber(value)
+            : null;
+    if (parsed === null || !isValidPlayerNumber(parsed)) return null;
+    return parsed;
+}
+
+/**
  * Gemini APIによるOCR処理
  */
 async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
@@ -222,25 +255,39 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
             // JSONを抽出
             const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
+            // 例外にする（return しない）。return すると recognizePlayerList の
+            // catch を通らず、Tesseract を試さないまま失敗が返る。実測では
+            // APIキーを入れている利用者だけが、キー無しなら読めた写真で
+            // 「応答形式が正しくありませんでした」を受け取っていた
             if (!jsonMatch) {
-                return {
-                    success: false,
-                    players: [],
-                    rawText: textResponse,
-                    error: 'Geminiからの応答形式が正しくありませんでした。',
-                    usedEngine: 'Gemini',
-                };
+                throw new Error('Geminiからの応答形式が正しくありませんでした');
             }
 
-            const players = JSON.parse(jsonMatch[0]) as SavedPlayer[];
+            const parsed: unknown = JSON.parse(jsonMatch[0]);
+            if (!Array.isArray(parsed)) throw new Error('Geminiの応答が選手の配列ではありませんでした');
 
-            // データ検証と正規化
-            const validatedPlayers: SavedPlayer[] = players.map((p, index) => ({
-                number: typeof p.number === 'number' ? p.number : parseInt(String(p.number), 10) || index + 1,
-                name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
-                licenseNo: typeof p.licenseNo === 'string' && p.licenseNo.trim() ? p.licenseNo.trim().replace(/[^a-zA-Z0-9]/g, '') : undefined,
-                isCaptain: false,
-            }));
+            // データ検証と正規化。背番号は Tesseract 側（parseOcrText）と同じ規則で
+            // 通す。以前はここだけ範囲を見ておらず、実測で 999 や -3 がそのまま
+            // 名簿に入り、文字列の "0" は parseInt("0") が falsy 判定に落ちて
+            // index+1（別番号）へ化けていた
+            const validatedPlayers: SavedPlayer[] = [];
+            for (const [index, raw] of parsed.entries()) {
+                const p = raw as Partial<SavedPlayer>;
+                const number = normalizeGeminiNumber(p.number);
+                if (number === null) continue;
+                validatedPlayers.push({
+                    number,
+                    name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
+                    licenseNo: typeof p.licenseNo === 'string' && p.licenseNo.trim() ? p.licenseNo.trim().replace(/[^a-zA-Z0-9]/g, '') : undefined,
+                    isCaptain: false,
+                });
+            }
+
+            // 1人も取れなければ Gemini は当てにならなかったということ。
+            // 例外にして Tesseract へ回す（recognizePlayerList の catch）
+            if (validatedPlayers.length === 0) {
+                throw new Error('Geminiの応答から有効な選手を取り出せませんでした');
+            }
 
             return {
                 success: true,
@@ -266,8 +313,11 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
 
     let fallbackReason = '';
 
-    // APIキーがあればGeminiを優先試行
-    if (apiKey) {
+    // APIキーがあればGeminiを優先試行。
+    // 大きすぎる写真は送らずTesseractへ回す（GEMINI_MAX_IMAGE_BYTES）
+    if (apiKey && imageFile.size > GEMINI_MAX_IMAGE_BYTES) {
+        fallbackReason = `画像が大きいため（${Math.round(imageFile.size / 1024 / 1024)}MB）AIへは送らず標準OCRで読み取りました`;
+    } else if (apiKey) {
         try {
             return await recognizeWithGemini(imageFile, apiKey);
         } catch (error) {

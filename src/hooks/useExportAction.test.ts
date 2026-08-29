@@ -49,6 +49,28 @@ describe('useExportAction', () => {
         expect(showToast.mock.calls[0][1]).toBe('success');
     });
 
+    // iOSの共有シートを閉じただけの場合、ファイルはどこにも残っていない。
+    // 例外は出ないので、以前はここを成功として「出力しました」と報告していた
+    // （実測: iPadのUAで共有をキャンセルすると、ダウンロードは起きないのに
+    // 成功トーストだけが出る）。利用者が自分でやめた操作なので失敗とも言わない
+    it('やめた（cancelled）ときは成功も失敗も知らせない', async () => {
+        const { result } = renderHook(() => useExportAction());
+
+        await act(async () => { await result.current.runExport(async () => 'cancelled' as const, 'JPEG'); });
+
+        expect(showToast).not.toHaveBeenCalled();
+        expect(result.current.isExporting).toBe(false);
+    });
+
+    it('saved を返したときは従来どおり完了を知らせる', async () => {
+        const { result } = renderHook(() => useExportAction());
+
+        await act(async () => { await result.current.runExport(async () => 'saved' as const, 'JPEG'); });
+
+        expect(showToast).toHaveBeenCalledTimes(1);
+        expect(showToast.mock.calls[0][1]).toBe('success');
+    });
+
     it('失敗したらエラーを知らせ、出力中を解除する', async () => {
         // html2canvasはタブレットのメモリ不足で失敗しうる。
         // 握りつぶすと「押したのに何も起きない」状態になるため必ず伝える
