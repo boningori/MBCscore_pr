@@ -67,12 +67,23 @@ export function ActionButtons({
                 消えていた（実測: 文言は入っているのに高さ0）。
                 注意書きは「いま記録すると次のQとして保存される」ことを伝える
                 唯一の手掛かりで、あとからピリオドを直す導線は無い。
-                隠してよいのはアイドルの案内文だけなので、両者をクラスで分ける */}
+                隠してよいのはアイドルの案内文だけなので、両者をクラスで分ける。
+
+                試合終了後（disabled）は、アイドルの案内文を出してはいけない。
+                入力ボタンも選手カードも止まっているのに「選手とアクションをタップ
+                して記録」と誘い続けることになり、押しても反応しない理由が画面の
+                どこにも無かった。ここは注意書き扱いにしてシンプルモードでも残す
+                —— 効かない操作の理由を伝えるのは、案内文よりクォーター間の
+                注意書きに近い。
+                記録待ち（activeAction）より優先する。終了前に立てた記録待ちが
+                残っていても、もう選手をタップして記録することはできないため */}
             <div
-                className={`action-status-bar ${activeAction ? 'active' : idleNotice ? 'has-notice' : ''}`}
+                className={`action-status-bar ${activeAction && !disabled ? 'active' : (disabled || idleNotice) ? 'has-notice' : ''}`}
                 role="status"
             >
-                {activeAction ? (
+                {disabled ? (
+                    <span className="status-notice">試合終了。記録の追加はできません（訂正はアクション履歴から）</span>
+                ) : activeAction ? (
                     <>
                         {/* この状態では選手タップが「選択」ではなく「即記録」になるため、
                             記録待ちであることを明示する */}

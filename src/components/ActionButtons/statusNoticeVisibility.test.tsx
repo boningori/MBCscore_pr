@@ -25,7 +25,11 @@ afterEach(cleanup);
 
 const noop = vi.fn();
 
-function renderWith(props: { idleNotice?: string | null; activeAction?: { type: string; value?: string } }) {
+function renderWith(props: {
+    idleNotice?: string | null;
+    activeAction?: { type: string; value?: string };
+    disabled?: boolean;
+}) {
     render(
         <ActionButtons
             onScore={noop}
@@ -48,6 +52,28 @@ describe('ActionButtons: クォーター間の注意書きは隠されない', (
     it('アイドルの案内文だけのときは付かない（シンプルモードでは隠してよい）', () => {
         const bar = renderWith({});
         expect(bar.className).not.toMatch(new RegExp(`\\b${NOTICE_CLASS}\\b`));
+    });
+
+    // 試合終了後は入力ボタンも選手カードも止まっている（App が disabled を渡す）。
+    // そこで「選手とアクションをタップして記録」と誘い続けると、押しても反応しない
+    // 理由が画面のどこにも無い。案内文ではなく注意書きとして出し、シンプルモードでも
+    // 隠さない（隠す指定は :not(.has-notice)）
+    describe('試合終了後', () => {
+        it('アイドルの案内文ではなく、記録できないことを出す', () => {
+            const bar = renderWith({ disabled: true });
+
+            expect(bar.textContent).toContain('試合終了');
+            expect(screen.queryByText('選手とアクションをタップして記録')).toBeNull();
+            expect(bar.className).toMatch(new RegExp(`\\b${NOTICE_CLASS}\\b`));
+        });
+
+        it('終了前に立てた記録待ちが残っていても、記録できないことを優先する', () => {
+            // 選手カードも止まっているので、この記録待ちはもう解決できない
+            const bar = renderWith({ disabled: true, activeAction: { type: 'SCORE', value: '2P' } });
+
+            expect(bar.textContent).toContain('試合終了');
+            expect(bar.className).not.toMatch(/\bactive\b/);
+        });
     });
 
     it('記録待ち中は注意書きより記録待ちの表示を優先する', () => {
