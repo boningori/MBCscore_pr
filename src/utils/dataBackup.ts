@@ -2,7 +2,7 @@
 
 import type { GameRecord } from './gameHistoryStorage';
 import type { QuarterPlayType, Team } from '../types/game';
-import { loadGameHistory, createGameId, saveGameHistory } from './gameHistoryStorage';
+import { loadGameHistory, createGameId, saveGameHistory, resolveFinalScore } from './gameHistoryStorage';
 import { migrateTeam } from './migrateTeam';
 import { formatPlayerNumber } from './playerNumber';
 import type { SavedTeam } from './teamStorage';
@@ -12,7 +12,7 @@ import { loadAppSettings, notifyAppSettingsChanged } from './appSettings';
 import type { GameSession } from './gameSessionStorage';
 import { loadGameSession, hasGameSession } from './gameSessionStorage';
 import { recordBackup } from './lastBackupStorage';
-import { formatInputDate, formatRecordDate } from './localDate';
+import { formatInputDate, formatRecordDate, recordInputDate } from './localDate';
 import { loadAllMergedPlayers } from './mergedPlayers';
 
 // バックアップデータのバージョン
@@ -219,8 +219,12 @@ export function exportGameHistoryCSV(): string {
         const mineIsA = isMyTeamOnSideA(game);
         const myTeam = mineIsA ? game.teamA : game.teamB;
         const opponentTeam = mineIsA ? game.teamB : game.teamA;
-        const myScore = mineIsA ? game.finalScore.teamA : game.finalScore.teamB;
-        const opponentScore = mineIsA ? game.finalScore.teamB : game.finalScore.teamA;
+        // finalScore を欠くレコードでも書き出せるように組み直してから読む
+        // （resolveFinalScore）。CSVは記録を外へ持ち出す最後の手段なので、
+        // 1レコードのせいで全体が出力できなくなるのがいちばん困る
+        const finalScore = resolveFinalScore(game);
+        const myScore = mineIsA ? finalScore.teamA : finalScore.teamB;
+        const opponentScore = mineIsA ? finalScore.teamB : finalScore.teamA;
         const result = myScore > opponentScore ? '勝利' :
             myScore < opponentScore ? '敗北' : '引分';
 
@@ -244,6 +248,26 @@ export function exportGameHistoryCSV(): string {
 
     // BOM付きUTF-8（Excelで正しく開くため）
     return '\uFEFF' + csvContent;
+}
+
+/** 出場種別の表示名（未出場は空欄） */
+function formatQuarterPlay(qp: QuarterPlayType): string {
+    if (qp === 'starter') return 'スタメン';
+    if (qp === 'sub') return '途中出場';
+    if (qp === 'both') return 'スタメン+再出場';
+    return '';
+}
+
+/**
+ * 延長（5ピリオド目以降）の出場を1セルにまとめる。
+ * 例: "OT1:スタメン / OT2:途中出場"。出ていなければ空欄
+ */
+function formatOvertimePlay(quartersPlayed: QuarterPlayType[]): string {
+    return (quartersPlayed ?? [])
+        .slice(4)
+        .map((qp, i) => (formatQuarterPlay(qp) ? `OT${i + 1}:${formatQuarterPlay(qp)}` : ''))
+        .filter(Boolean)
+        .join(' / ');
 }
 
 /**
@@ -295,6 +319,11 @@ export function exportGameHistoryDetailCSV(): string {
         'Q2出場',
         'Q3出場',
         'Q4出場',
+        // 延長の出場は1列にまとめる。quartersPlayed は延長のぶんだけ伸びる
+        // 可変長で（gameFlowHandlers の extendForOT）、公式様式には畳み込み先が
+        // 無いので印字していない。CSVは列を足せる媒体なので、ここでは残す
+        // ——そうしないと延長に出た記録がアプリの外へ一切持ち出せない
+        '延長出場',
     ];
 
     // データ行
@@ -309,10 +338,12 @@ export function exportGameHistoryDetailCSV(): string {
         // 1レコードのせいで全体が出力できなくなるのがいちばん困る
         const teamA = migrateTeam(game.teamA);
         const teamB = migrateTeam(game.teamB);
+        // 同じ理由で最終スコアも組み直しておく（resolveFinalScore）
+        const finalScore = resolveFinalScore(game);
 
         // チームAの選手データ
-        const resultA = game.finalScore.teamA > game.finalScore.teamB ? '勝利' :
-            game.finalScore.teamA < game.finalScore.teamB ? '敗北' : '引分';
+        const resultA = finalScore.teamA > finalScore.teamB ? '勝利' :
+            finalScore.teamA < finalScore.teamB ? '敗北' : '引分';
 
         for (const player of teamA.players) {
             const stats = player.stats;
@@ -323,13 +354,6 @@ export function exportGameHistoryDetailCSV(): string {
             const fgAttempt = stats.twoPointAttempt + stats.threePointAttempt;
             const fgPercent = fgAttempt > 0 ? (fgMade / fgAttempt * 100).toFixed(1) : '-';
 
-            const formatQuarterPlay = (qp: QuarterPlayType) => {
-                if (qp === 'starter') return 'スタメン';
-                if (qp === 'sub') return '途中出場';
-                if (qp === 'both') return 'スタメン+再出場';
-                return '';
-            };
-
             rows.push([
                 date,
                 game.gameName,
@@ -337,8 +361,8 @@ export function exportGameHistoryDetailCSV(): string {
                 game.teamA.name,
                 game.teamB.name,
                 resultA,
-                game.finalScore.teamA.toString(),
-                game.finalScore.teamB.toString(),
+                finalScore.teamA.toString(),
+                finalScore.teamB.toString(),
                 formatPlayerNumber(player.number),
                 player.name,
                 player.courtName || '',
@@ -372,12 +396,13 @@ export function exportGameHistoryDetailCSV(): string {
                 formatQuarterPlay(player.quartersPlayed[1]),
                 formatQuarterPlay(player.quartersPlayed[2]),
                 formatQuarterPlay(player.quartersPlayed[3]),
+                formatOvertimePlay(player.quartersPlayed),
             ]);
         }
 
         // チームBの選手データ
-        const resultB = game.finalScore.teamB > game.finalScore.teamA ? '勝利' :
-            game.finalScore.teamB < game.finalScore.teamA ? '敗北' : '引分';
+        const resultB = finalScore.teamB > finalScore.teamA ? '勝利' :
+            finalScore.teamB < finalScore.teamA ? '敗北' : '引分';
 
         for (const player of teamB.players) {
             const stats = player.stats;
@@ -388,13 +413,6 @@ export function exportGameHistoryDetailCSV(): string {
             const fgAttempt = stats.twoPointAttempt + stats.threePointAttempt;
             const fgPercent = fgAttempt > 0 ? (fgMade / fgAttempt * 100).toFixed(1) : '-';
 
-            const formatQuarterPlay = (qp: QuarterPlayType) => {
-                if (qp === 'starter') return 'スタメン';
-                if (qp === 'sub') return '途中出場';
-                if (qp === 'both') return 'スタメン+再出場';
-                return '';
-            };
-
             rows.push([
                 date,
                 game.gameName,
@@ -402,8 +420,8 @@ export function exportGameHistoryDetailCSV(): string {
                 game.teamB.name,
                 game.teamA.name,
                 resultB,
-                game.finalScore.teamB.toString(),
-                game.finalScore.teamA.toString(),
+                finalScore.teamB.toString(),
+                finalScore.teamA.toString(),
                 formatPlayerNumber(player.number),
                 player.name,
                 player.courtName || '',
@@ -437,6 +455,7 @@ export function exportGameHistoryDetailCSV(): string {
                 formatQuarterPlay(player.quartersPlayed[1]),
                 formatQuarterPlay(player.quartersPlayed[2]),
                 formatQuarterPlay(player.quartersPlayed[3]),
+                formatOvertimePlay(player.quartersPlayed),
             ]);
         }
     }
@@ -456,9 +475,28 @@ export function exportGameHistoryDetailCSV(): string {
 /**
  * データをJSONファイルとしてダウンロード
  */
+/**
+ * ファイルへ書き出すJSON。整形しない。
+ *
+ * 取り込み側は10MBを超えるファイルを弾く（parseImportFile）。整形すると
+ * インデントだけでサイズがほぼ倍になり、上限に届くのが端末の保存上限より
+ * 先に来かねない。実測（記録150件・12人×2チーム・日本語名の1試合）:
+ *   localStorage 上   52.9KB / 試合
+ *   整形JSON          103.1KB / 試合（1.95倍）→ 10MBに達するのは約101試合
+ *   localStorage 5MB の上限に達するのは約95〜99試合
+ * 差が2%しかなく、localStorage の上限がこれより広いブラウザでは
+ * 「自分で出したバックアップを自分で取り込めない」が起きる。
+ * 整形をやめれば約2倍の余裕ができる。
+ *
+ * 人が読む前提のクリップボードコピー（copyToClipboard）は整形のまま残す。
+ * あちらはサイズ上限の検査を通らないので、可読性を優先してよい。
+ */
+function serializeForFile(data: unknown): string {
+    return JSON.stringify(data);
+}
+
 export function downloadJSON(data: unknown, filename: string): void {
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    const blob = new Blob([serializeForFile(data)], { type: 'application/json' });
     downloadBlob(blob, filename);
 }
 
@@ -504,7 +542,7 @@ export async function shareFile(data: unknown, filename: string): Promise<boolea
     }
 
     try {
-        const json = JSON.stringify(data, null, 2);
+        const json = serializeForFile(data);
         // .json は共有許可リスト外のため .txt として共有する
         const shareName = filename.replace(/\.json$/i, '') + '.txt';
         const file = new File([json], shareName, { type: 'text/plain' });
@@ -612,11 +650,20 @@ function fixImportedTeam(t: unknown): Team {
  * インポートされた試合データを検証・矯正する。
  * - id を持たないレコードは取り込み不可として null を返す
  * - teamA / teamB が壊れていても players と選手ごとのフィールドを矯正する
+ * - finalScore が欠けていれば選手スタッツから組み直す（resolveFinalScore）。
+ *   読み手（履歴一覧・選手スタッツ分析）はどこも素で引いており、欠けた1件で
+ *   アプリ全体がエラー画面になる。選手ごとの stats と同じく、取り込む時点で
+ *   揃えておけば以後どの読み手から開いても同じ前提が成り立つ
  */
 function sanitizeImportedGame(raw: unknown): GameRecord | null {
     if (!isPlainObject(raw)) return null;
     if (typeof raw.id !== 'string' || raw.id === '') return null;
-    return { ...raw, teamA: fixImportedTeam(raw.teamA), teamB: fixImportedTeam(raw.teamB) } as unknown as GameRecord;
+    const fixed = {
+        ...raw,
+        teamA: fixImportedTeam(raw.teamA),
+        teamB: fixImportedTeam(raw.teamB),
+    } as unknown as GameRecord;
+    return { ...fixed, finalScore: resolveFinalScore(fixed) };
 }
 
 /**
@@ -1286,7 +1333,13 @@ export function generateBackupFilename(prefix: string = 'MBCscore_backup'): stri
  * 試合エクスポートファイル名を生成
  */
 export function generateGameFilename(gameName: string, date: string): string {
-    const dateStr = new Date(date).toISOString().slice(0, 10);
+    // new Date(date).toISOString() は日付が読めないと RangeError を投げる。
+    // 履歴のエクスポートは try/catch を持たないため、手で編集したバックアップ由来の
+    // 壊れた日付を1件掴むだけで共有ボタンが何も言わずに無反応になっていた
+    // （実測: Invalid time value）。画面の日付表示と同じ規則で読み、読めなければ
+    // 日付を付けない（recordInputDate は記録された暦日をそのまま返す。
+    // toISOString だとUTCへ寄って1日ずれる地域がある。理由は localDate.ts）
+    const dateStr = recordInputDate(date);
     const safeName = gameName
         .replace(/[\\/:*?"<>|]/g, '') // Windows非対応文字のみ削除
         .replace(/\s+/g, '-') // スペースはハイフンに
@@ -1294,7 +1347,8 @@ export function generateGameFilename(gameName: string, date: string): string {
         .trim();
     // マルチバイト文字を安全に切り詰め
     const truncated = Array.from(safeName).slice(0, 50).join('');
-    return `MBCscore_game_${truncated || 'unnamed'}_${dateStr}.json`;
+    const suffix = dateStr ? `_${dateStr}` : '';
+    return `MBCscore_game_${truncated || 'unnamed'}${suffix}.json`;
 }
 
 /**

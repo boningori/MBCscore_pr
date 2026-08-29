@@ -45,6 +45,35 @@ export interface GameRecord {
     createdAt: string;
 }
 
+/** チームの選手スタッツから合計得点を出す（saveGameResult と同じ数え方） */
+function sumTeamPoints(team: GameRecord['teamA'] | undefined): number {
+    if (!team || !Array.isArray(team.players)) return 0;
+    return team.players.reduce((sum, p) => sum + (p?.stats?.points ?? 0), 0);
+}
+
+/**
+ * 試合レコードの最終スコアを読む（欠けていれば選手スタッツから組み直す）。
+ *
+ * finalScore は saveGameResult が必ず書くので、記録エンジンを通ったレコードには
+ * 必ずある。欠けるのは手で編集した／途中で切れたバックアップを取り込んだ場合で、
+ * 読み手はどこも素で `record.finalScore.teamA` と引いていた。実測: finalScore を
+ * 落とした1件を取り込むと、選手スタッツ分析と履歴の一覧が
+ * 「Cannot read properties of undefined (reading 'teamA')」で落ち、ErrorBoundary に
+ * よってアプリ全体がエラー画面に置き換わる。localStorage に残るのでリロードしても
+ * 再発し、どのレコードが原因かも示されない。
+ *
+ * migrateTeam が選手ごとの stats に対してしたのと同じ扱いをレコード単位で行う。
+ * 0 で埋めずに選手スタッツから足すのは、saveGameResult がそもそもその合計を
+ * 書いているため。組み直せば勝敗も試合数も実態どおりに戻る。
+ */
+export function resolveFinalScore(record: GameRecord): { teamA: number; teamB: number } {
+    const stored = record?.finalScore;
+    if (stored && typeof stored.teamA === 'number' && typeof stored.teamB === 'number') {
+        return stored;
+    }
+    return { teamA: sumTeamPoints(record?.teamA), teamB: sumTeamPoints(record?.teamB) };
+}
+
 // 試合IDのランダムサフィックス（同一ミリ秒での衝突を防ぐ）
 function randomSuffix(): string {
     const c = globalThis.crypto;
