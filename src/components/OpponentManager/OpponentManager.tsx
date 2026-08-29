@@ -351,13 +351,22 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                 const newPlayers: SavedPlayer[] = [];
                 let duplicateCount = 0;
 
+                // 上限は手入力・番号グリッドと同じ規則で掛ける（isPlayerLimitReached）。
+                // ここだけ素通りしていたため、写真1枚で16人以上の名簿ができ、
+                // スコアシートに現れない選手が生まれていた（playerLimit.ts）
+                let overflowCount = 0;
+
                 for (const p of result.players) {
-                    if (!currentNumbers.has(p.number)) {
-                        newPlayers.push(p);
-                        currentNumbers.add(p.number);
-                    } else {
+                    if (currentNumbers.has(p.number)) {
                         duplicateCount++;
+                        continue;
                     }
+                    if (isPlayerLimitReached(editingTeam.players.length + newPlayers.length)) {
+                        overflowCount++;
+                        continue;
+                    }
+                    newPlayers.push(p);
+                    currentNumbers.add(p.number);
                 }
 
                 if (newPlayers.length > 0) {
@@ -375,7 +384,13 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     }
 
                     showStatus(message, 'success');
+                    // 上限で入らなかった分は、成功の通知に紛れないよう別に伝える
+                    if (overflowCount > 0) {
+                        setOcrError(`${overflowCount}人は追加できませんでした。${playerLimitMessage()}`);
+                    }
 
+                } else if (overflowCount > 0) {
+                    setOcrError(`読み取った選手を追加できませんでした。${playerLimitMessage()}`);
                 } else {
                     setOcrError('読み取った選手は全て登録済みか、有効なデータがありませんでした。');
                 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { transcribeAudio } from './audioTranscribe';
+import { transcribeAudio, TRUNCATED_SUFFIX } from './audioTranscribe';
 
 // jsdom の Blob には arrayBuffer があるが、base64化の経路を固定するためスタブする
 const wav = () => new Blob([new Uint8Array([1, 2, 3])], { type: 'audio/wav' });
@@ -112,5 +112,39 @@ describe('audioTranscribe: 失敗時', () => {
         const result = await transcribeAudio(wav(), 'key');
         expect(result.success).toBe(false);
         expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    });
+});
+
+// 出力の上限で打ち切られた応答も 200 で返ってくる。黙って返すと、途中で切れた
+// 文字起こしを「全部そう言った」と読んでしまう（実測: finishReason が
+// MAX_TOKENS でも success:true・途中までの文だけが返っていた）。
+describe('audioTranscribe: 上限で切れた応答', () => {
+    const truncatedResponse = (text: string) => ({
+        ok: true,
+        json: async () => ({
+            candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text }] } }],
+        }),
+    });
+
+    it('切れたことが分かる印を末尾に付ける', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce(truncatedResponse('4番が3ポイントを決めて') as never);
+
+        const result = await transcribeAudio(wav(), 'key');
+
+        expect(result.success).toBe(true);
+        expect(result.text).toBe('4番が3ポイントを決めて' + TRUNCATED_SUFFIX);
+    });
+
+    it('最後まで返った応答には印を付けない', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '4番が3ポイント' }] } }],
+            }),
+        } as never);
+
+        const result = await transcribeAudio(wav(), 'key');
+
+        expect(result.text).toBe('4番が3ポイント');
     });
 });

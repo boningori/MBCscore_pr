@@ -50,7 +50,9 @@
        index.html に記した「各画面の下限10〜12px」を唯一破っていた箇所。
        トークン（clamp(10px, 1.2vh, 12px)）に合わせる */
     font-size: var(--font-size-xs);
-    opacity: 0.6;
+    /* opacity 0.6 で実測 2.9:1（10px・AAは4.5:1）だった。
+       スワイプの向きを説明する唯一の表示なので薄めない */
+    color: var(--text-secondary);
     margin-top: 2px;
     line-height: 1;
 }

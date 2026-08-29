@@ -23,12 +23,14 @@
     position: relative;
 }
 
-/* スワイプヒント */
+/* スワイプヒント。
+   4方向スワイプが何になるかを説明する唯一の表示なので、読めなければ機能が
+   存在しないのと同じ。opacity 0.4 と --text-muted の組み合わせで実測 1.89:1
+   （10px・AAは4.5:1）だった。薄さで階層を作るのはやめ、色だけで本文と差をつける */
 .swipeable-turnover-wrapper .swipe-hints {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.4;
     /* 0.6rem = 9.6px だった。下限10pxのトークンに合わせる */
     font-size: var(--font-size-xs);
     font-weight: 600;
@@ -36,7 +38,7 @@
 
 .swipeable-turnover-wrapper .hint {
     position: absolute;
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .swipeable-turnover-wrapper .hint-up {

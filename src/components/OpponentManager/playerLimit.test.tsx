@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { OpponentManager } from './OpponentManager';
 import { OpponentSelect } from '../OpponentSelect';
 import { MAX_PLAYERS_PER_TEAM } from '../../types/game';
@@ -8,9 +8,10 @@ import type { SavedTeam } from '../../utils/teamStorage';
 const showToast = vi.hoisted(() => vi.fn());
 vi.mock('../Toast/toastApi', () => ({ showToast }));
 
+const recognizePlayerList = vi.hoisted(() => vi.fn());
 vi.mock('../../utils/imageOCR', () => ({
-    recognizePlayerList: vi.fn(),
-    isOCRAvailable: () => false,
+    recognizePlayerList,
+    isOCRAvailable: () => true,
 }));
 
 // getStoredApiKey は geminiClient に移動済み。実装のままだと localStorage / env
@@ -120,5 +121,94 @@ describe('対戦チームの選手数上限（試合設定の未登録チーム�
 
         expect(screen.getByText(`選手登録 (${MAX_PLAYERS_PER_TEAM}人)`)).toBeTruthy();
         expect(countPlayerChips()).toBe(MAX_PLAYERS_PER_TEAM);
+    });
+});
+
+// 写真読込だけが上限を素通りしていた。手入力・番号一括選択は
+// isPlayerLimitReached で止まるのに、OCRは読み取れた人数をそのまま足すため、
+// 写真1枚で16人以上の名簿ができ、スコアシートに現れない選手が生まれる。
+
+/** 画像ファイルを選んで写真読込を走らせる */
+function selectPhoto(container: HTMLElement) {
+    const input = container.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement;
+    const file = new File([new Uint8Array(4)], 'roster.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    fireEvent.change(input);
+}
+
+/** OCRが number 番の選手を count 人返すようにする */
+function ocrReturns(count: number, startNumber = 20) {
+    recognizePlayerList.mockResolvedValue({
+        success: true,
+        usedEngine: 'Tesseract',
+        players: Array.from({ length: count }, (_, i) => ({
+            number: startNumber + i, name: `読取${i + 1}`, isCaptain: false,
+        })),
+    });
+}
+
+describe('写真読込も選手数上限を守る', () => {
+    beforeEach(() => {
+        recognizePlayerList.mockReset();
+    });
+
+    it('満員のチームへ読み込んでも15人を超えない', async () => {
+        localStorage.setItem('minibasket-saved-opponents', JSON.stringify([fullTeam()]));
+        const { container } = render(<OpponentManager onBack={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: '編集' }));
+        ocrReturns(3);
+
+        selectPhoto(container);
+
+        await waitFor(() => expect(recognizePlayerList).toHaveBeenCalled());
+        await waitFor(() => {
+            expect(screen.getByText(`選手登録 (${MAX_PLAYERS_PER_TEAM}人)`)).toBeTruthy();
+        });
+        // 入らなかったことを黙って捨てない
+        await waitFor(() => {
+            expect(screen.getByText(/読み取った選手を追加できませんでした/)).toBeTruthy();
+        });
+    });
+
+    it('一部だけ入る場合は、入らなかった人数を伝える', async () => {
+        const almost = { ...fullTeam(), players: fullTeam().players.slice(0, MAX_PLAYERS_PER_TEAM - 1) };
+        localStorage.setItem('minibasket-saved-opponents', JSON.stringify([almost]));
+        const { container } = render(<OpponentManager onBack={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: '編集' }));
+        ocrReturns(3);
+
+        selectPhoto(container);
+
+        await waitFor(() => {
+            expect(screen.getByText(`選手登録 (${MAX_PLAYERS_PER_TEAM}人)`)).toBeTruthy();
+        });
+        await waitFor(() => {
+            expect(screen.getByText(/2人は追加できませんでした/)).toBeTruthy();
+        });
+    });
+
+    it('空のチームでも読み取り人数が多ければ15人で止める', async () => {
+        const empty = { ...fullTeam(), players: [] };
+        localStorage.setItem('minibasket-saved-opponents', JSON.stringify([empty]));
+        const { container } = render(<OpponentManager onBack={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: '編集' }));
+        ocrReturns(20, 1);
+
+        selectPhoto(container);
+
+        await waitFor(() => {
+            expect(screen.getByText(`選手登録 (${MAX_PLAYERS_PER_TEAM}人)`)).toBeTruthy();
+        });
+    });
+
+    it('試合設定の未登録チーム入力でも15人で止める', async () => {
+        const { container } = render(<OpponentSelect onSelect={vi.fn()} />);
+        ocrReturns(20, 1);
+
+        selectPhoto(container);
+
+        await waitFor(() => {
+            expect(screen.getByText(`選手登録 (${MAX_PLAYERS_PER_TEAM}人)`)).toBeTruthy();
+        });
     });
 });
