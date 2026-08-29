@@ -29,6 +29,7 @@ import type { ErrorLogEntry } from '../../utils/errorLog';
 import { LegalModal } from '../Legal';
 import type { LegalTab } from '../Legal';
 import { Modal, ConfirmModal } from '../Modal';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import { SettingsSection } from './SettingsSection';
 import { MirrorBackupList } from './MirrorBackupList';
 import { estimateStorageUsage, formatBytes } from '../../utils/storageUsage';
@@ -165,6 +166,18 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
         }
         onClose();
     };
+
+    const closeTextImport = () => {
+        setShowTextImport(false);
+        setImportText('');
+    };
+
+    // 端末の戻る操作は、まず貼り付けパネルを閉じる。
+    // 受け取らないと設定モーダルごと閉じ、貼り付けた途中のJSONが黙って消える
+    // （読み込み済みのデータ pendingImport は handleRequestClose が確認を出すが、
+    // 貼り付け途中はそこを通らない）。マイチーム管理・対戦チーム管理と扱いをそろえる。
+    // Modal より後に登録される＝スタックの上に載るので、こちらが先に閉じる
+    useBackHandler(showTextImport, closeTextImport);
 
     const handleSave = () => {
         saveApiKey(apiKey.trim());
@@ -625,7 +638,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                             </p>
                                         )}
                                         <div className="text-import-actions">
-                                            <button className="btn btn-secondary" onClick={() => { setShowTextImport(false); setImportText(''); }}>キャンセル</button>
+                                            <button className="btn btn-secondary" onClick={closeTextImport}>キャンセル</button>
                                             <button className="btn btn-primary" onClick={handleImportTextSubmit} disabled={!importText.trim()}>読み込む</button>
                                         </div>
                                     </div>

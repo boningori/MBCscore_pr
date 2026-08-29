@@ -124,6 +124,15 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     // マイチーム管理と同じ作りなので、同じ扱いにそろえる
     useBackHandler(editingTeam !== null, handleCancel);
 
+    const closeTextImport = () => {
+        setShowTextImport(false);
+        updateImportText('');
+    };
+
+    // 貼り付けパネルと取り込み確認も画面の中の一段。理由はマイチーム管理の同じ箇所
+    useBackHandler(showTextImport, closeTextImport);
+    useBackHandler(pendingImport !== null, handleCancelImport);
+
     const handleExportTeam = async (team: SavedTeam) => {
         const data = exportTeam(team);
         const filename = generateTeamFilename(team.name);
@@ -717,7 +726,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     updateImportText={updateImportText}
                     textValidation={textValidation}
                     onSubmit={handleImportTextSubmit}
-                    onCancel={() => { setShowTextImport(false); updateImportText(''); }}
+                    onCancel={closeTextImport}
                 />
             )}
 
