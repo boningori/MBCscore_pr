@@ -46,6 +46,20 @@ export function useScreenHistorySync<S extends string>(
     // 上のエントリを取り除くために自分で呼んだ history.back() の待ち。
     // この popstate は画面遷移ではないので setScreen まで通してはいけない
     const guardPopPendingRef = useRef(false);
+    /**
+     * ホームへ戻るために自分で呼んだ history.back() の待ち。
+     *
+     * この popstate は「利用者が戻った」ではないのに、下の handlePopState が
+     * まず closeTopModal() を呼ぶため、back() を出してから popstate が届くまでの
+     * 数msの間に開いたモーダルが身代わりに閉じられてしまう。
+     *
+     * 実測: 試合を保存してホームへ戻ると、handleGameFinished が
+     * setScreen('home') と setShowBackupPrompt(true) を続けて呼ぶ。
+     * バックアップ督促は mount の 8ms 後に unmount され、直後に
+     * popstate {"appScreen":"home"} が届いていた。つまりデータ保全のための
+     * 唯一の能動的な促しが、画面に出た瞬間に自分で消されていた。
+     */
+    const homePopPendingRef = useRef(false);
 
     // 初期エントリにホーム画面を記録
     useEffect(() => {
@@ -79,7 +93,10 @@ export function useScreenHistorySync<S extends string>(
         }
         if (screen === homeScreen) {
             if (current !== undefined) {
-                // アプリ内操作でホームへ戻った: 積んだエントリをポップして基点に戻す
+                // アプリ内操作でホームへ戻った: 積んだエントリをポップして基点に戻す。
+                // 自分で呼んだ戻りなので、届く popstate は素通しさせる
+                // （homePopPendingRef のコメント）
+                homePopPendingRef.current = true;
                 window.history.back();
             } else {
                 window.history.replaceState({ appScreen: homeScreen }, '');
@@ -95,6 +112,15 @@ export function useScreenHistorySync<S extends string>(
     // 戻る/進む操作への追従
     useEffect(() => {
         const handlePopState = (e: PopStateEvent) => {
+            // ホームへ戻るために自分で呼んだ戻り。画面はもうホームになっており、
+            // 履歴も基点に戻っただけなので何もしない。ここで closeTopModal() へ
+            // 進ませると、ホームへ移ると同時に開いたモーダル（バックアップ督促）を
+            // 身代わりに閉じてしまう（homePopPendingRef のコメント）
+            if (homePopPendingRef.current) {
+                homePopPendingRef.current = false;
+                return;
+            }
+
             // モーダル用に積んだエントリを取り除くための、自分で呼んだ戻り。
             // 画面遷移ではないので、いまの画面をこのエントリに書き込んで終わる
             // （積み直すと余分なエントリが残る）
