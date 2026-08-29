@@ -593,7 +593,10 @@
 .app-container .mini-player-card .player-check {
   /* ファウル表示が無い選手でも右端に揃える */
   margin-left: auto;
-  color: var(--active-highlight-light);
+  /* 選択中のカードは色みを敷いた面になるので、枠線・背景用の
+     --active-highlight-light では届かない（実測 3.91:1）。
+     色み面向けの文字トークンを使う（index.css） */
+  color: var(--active-highlight-text-on-tint);
   font-size: var(--font-size-lg);
   font-weight: 700;
   line-height: 1;

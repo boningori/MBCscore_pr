@@ -88,3 +88,30 @@ describe('直近フォームの増減は文字用トークンを使う', () => {
             .toContain('color: var(--danger-text)');
     });
 });
+
+// ファウル入力フローも同じ穴を持っていた（実測）:
+//   長押しの案内 2.44:1 / 「ファウルした選手」3.41:1 / 選択中の ✓ 3.91:1
+describe('ファウル入力フローの補助表示', () => {
+    it('長押しの案内を薄めない', () => {
+        const css = read('src/components/FoulInputFlow/FoulInputFlow.css');
+        const hint = block(css, '.foul-input-flow .foul-type-hint');
+
+        expect(hint).not.toContain('opacity');
+        expect(hint).toContain('color: var(--text-secondary)');
+    });
+
+    it('「ファウルした選手」の見出しに --text-muted を使わない', () => {
+        const css = read('src/components/FoulInputFlow/FoulInputFlow.css');
+
+        expect(block(css, '.foul-input-flow .foul-target-label'))
+            .toContain('color: var(--text-secondary)');
+    });
+
+    // 選択中のカードは色みを敷いた面。枠線・背景用の --*-light では届かない
+    it('選択中の ✓ は色み面向けの文字トークンを使う', () => {
+        const css = read('src/App.css');
+
+        expect(block(css, '.app-container .mini-player-card .player-check'))
+            .toContain('color: var(--active-highlight-text-on-tint)');
+    });
+});
