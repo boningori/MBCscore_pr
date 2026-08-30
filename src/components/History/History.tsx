@@ -171,13 +171,15 @@ export function History({ onBack }: HistoryProps) {
                         className={viewMode === 'stats' ? 'active' : ''}
                         onClick={() => setViewMode('stats')}
                     >
-                        スタッツ（画面表示）
+                        {/* 狭い画面での折り返し位置。括弧の途中で切れないよう、
+                            括弧の前だけを改行の候補にする（CSS の word-break: keep-all と対） */}
+                        スタッツ<wbr />（画面表示）
                     </button>
                     <button
                         className={viewMode === 'scoresheet' ? 'active' : ''}
                         onClick={() => setViewMode('scoresheet')}
                     >
-                        スコアシート（保存/PDF）
+                        スコアシート<wbr />（保存/PDF）
                     </button>
                 </div>
 

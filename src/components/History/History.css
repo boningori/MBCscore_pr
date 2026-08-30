@@ -355,6 +355,34 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    /* 日本語は既定でどこでも折り返すため、スマホでは「スタッツ（画面表 / 示）」
+       のように括弧の途中で切れていた。keep-all で自動の折り返しを止め、
+       TSX に置いた <wbr>（括弧の前）だけを改行の候補にする */
+    word-break: keep-all;
+    /* keep-all だけだと、括弧の中（例「（保存/PDF）」）が1行に入りきらない
+       極端に狭い画面でボタンからはみ出す。その場合だけ従来どおり折り返す */
+    overflow-wrap: anywhere;
+    /* 折り返して2行になったタブと1行のままのタブが混ざる。
+       高さは flex で揃うので、中身を中央に置いて下線との間隔を揃える */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* 3つのタブが1行に収まらない幅。横の余白を詰めて幅を3等分し、
+   折り返しても「名前」＋「（補足）」の2行で収まるようにする。
+   字は小さくしない（読めなくなる方が困る） */
+@media (max-width: 600px) {
+    .history-tabs {
+        gap: var(--spacing-sm);
+    }
+
+    .history-tabs button {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: var(--spacing-md) var(--spacing-xs);
+    }
 }
 
 @media (hover: hover) and (pointer: fine) {
