@@ -13,17 +13,43 @@ export interface QuarterScore {
     teamB: number;
 }
 
-/** 記録のあるクォーターの番号（Q1〜Q4は常に含む）。昇順 */
-export function recordedQuarters(scoreHistory: ScoreEntry[]): number[] {
+/** ピリオド番号だけを見る。スタッツ・ファウルの履歴をまとめて受けるための最小形 */
+interface HasQuarter {
+    quarter: number;
+}
+
+/**
+ * 記録のあるクォーターの番号（Q1〜Q4は常に含む）。昇順。
+ *
+ * 得点履歴だけを見てはいけない。延長が0-0のまま次の延長へ進むのは実際に
+ * 起こる —— 同点でなければ試合は終わるので、延長が無得点ならもう1つ延長を
+ * するしかない（gameFlowHandlers の handleEndQuarter）。
+ * 実測(v1.6.10): Q1とOT2にだけ得点がある試合で [1,2,3,4,6] を返し、
+ * スコアヘッダーとクォーター切替がQ4からOT2へ飛んでいた。そのOTで記録した
+ * リバウンド・ターンオーバー・ファウルはクォーター別からは参照できない。
+ *
+ * @param others スタッツ履歴・ファウル履歴など、ピリオドを持つ他の記録
+ */
+export function recordedQuarters(
+    scoreHistory: ScoreEntry[],
+    ...others: readonly HasQuarter[][]
+): number[] {
     const quarters = new Set<number>();
     for (let q = 1; q <= MAX_QUARTERS; q++) quarters.add(q);
     for (const entry of scoreHistory) quarters.add(entry.quarter);
+    for (const history of others) {
+        for (const entry of history) quarters.add(entry.quarter);
+    }
     return [...quarters].sort((a, b) => a - b);
 }
 
-export function computeQuarterScores(scoreHistory: ScoreEntry[]): QuarterScore[] {
+/** @param others recordedQuarters と同じ（行を落とさないため同じものを渡すこと） */
+export function computeQuarterScores(
+    scoreHistory: ScoreEntry[],
+    ...others: readonly HasQuarter[][]
+): QuarterScore[] {
     const rows = new Map<number, QuarterScore>();
-    for (const quarter of recordedQuarters(scoreHistory)) {
+    for (const quarter of recordedQuarters(scoreHistory, ...others)) {
         rows.set(quarter, { quarter, teamA: 0, teamB: 0 });
     }
 
