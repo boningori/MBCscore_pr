@@ -7,6 +7,9 @@
 // 実行: node scripts/generate-splash-screens.mjs
 // 生成物は public/splash/ に出力し、gitにコミットする（ビルド時には生成しない）。
 
+// sharp は devDependencies で、配布物には入らない（このスクリプトを手で叩いたときだけ動く）。
+// `npm audit` が high として報告し続けるが、上げない判断をしている。
+// 理由と、外部スキャン対策が必要になった場合の代替は scripts/README.md を参照。
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
