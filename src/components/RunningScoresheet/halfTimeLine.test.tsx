@@ -62,9 +62,21 @@ describe('ハーフタイムの太線', () => {
         expect(halfBorderIndex(gameWithFouls([1, 1], 2))).toBe(-1);
     });
 
-    it('前半だけで枠数(5)を超えた場合は最後の枠の右に引く', () => {
-        // 記入欄は5つしかないため、それ以上は最後の枠で頭打ちにする
-        expect(halfBorderIndex(gameWithFouls([1, 1, 2, 2, 2, 2, 3]))).toBe(4);
+    it('枠内に収まる位置には引く（前半4個なら4枠目の右）', () => {
+        expect(halfBorderIndex(gameWithFouls([1, 1, 2, 2, 3]))).toBe(3);
+    });
+
+    // 5枠目の右は表の外枠そのもの。ここに階段線を重ねると、その行だけ外枠が
+    // 2pxになり、表の縁の太さが揃わない（実測: 前半5ファウルの行の最終欄だけ
+    // borderRight が 2px）。紙の様式でも、区切りが枠と重なるときは引き直さない。
+    // 水平部分（上下の行との境目）は従来どおり引くので、どこまでが前半かは
+    // 読み取れる。
+    it('前半に5個すべて使った場合は最後の枠の右に引かない（そこは表の外枠）', () => {
+        expect(halfBorderIndex(gameWithFouls([1, 1, 2, 2, 2]))).toBe(-1);
+    });
+
+    it('前半だけで枠数(5)を超えた場合も同じ（頭打ちで最終枠になるため）', () => {
+        expect(halfBorderIndex(gameWithFouls([1, 1, 2, 2, 2, 2, 3]))).toBe(-1);
     });
 });
 
@@ -171,5 +183,26 @@ describe('ハーフタイムの太線: 水平部分の引き方', () => {
 
         expect(map[13].slice(0, 2)).toEqual(['B', 'B']); // 14人目の下辺として引く
         expect(map[14].every(c => c === '.')).toBe(true); // 15人目は何も要求しない
+    });
+});
+
+// 縦線を省いても、前半の範囲が読めなくならないこと。
+// 5枠すべてが前半のときは、上下の行との境目（水平部分）が5枠ぶん引かれ、
+// 右側は表の外枠が閉じる。
+describe('前半に5個すべて使った行の囲み', () => {
+    it('上下の行との境目は5枠ぶん引く', () => {
+        // 選手1: 前半0個 / 選手2: 前半5個 / 選手3: 前半0個
+        const map = borderMap(gameWithHalfCounts([0, 5, 0]));
+
+        expect(map[0]).toEqual(['B', 'B', 'B', 'B', 'B']); // 上の段
+        expect(map[1]).toEqual(['B', 'B', 'B', 'B', 'B']); // 下の段
+    });
+
+    it('最終欄に縦線のクラスを付けない', () => {
+        const { container } = render(<RunningScoresheet game={gameWithHalfCounts([0, 5, 0])} />);
+        const rows = container.querySelectorAll('.rs-roster-table tbody tr');
+        const cells = Array.from(rows[1].querySelectorAll('td.cell-foul'));
+
+        expect(cells.some(c => c.classList.contains('foul-half-border'))).toBe(false);
     });
 });
