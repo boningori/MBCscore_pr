@@ -113,3 +113,62 @@ describe('選手のフィールドが欠けた試合レコード', () => {
         expect(a?.totalStats.points).toBe(10);
     });
 });
+
+// 期間の絞り込みは new Date(record.date) の大小で判定している。
+// 読めない日付は Invalid Date になり、< も > も false を返すため、
+// どの期間で絞ってもすり抜けていた。
+// 実測(v1.6.10): 日付を壊した1件が「2030年のみ」の絞り込みでも 1件・
+// gamesPlayed 1 として出る。チームサマリーの試合数・勝率も同じ。
+// repairGameRecords は gameName と配列は矯正するが date は見ていない。
+describe('日付が読めない試合レコード', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    /** 保存済みの最新レコードの日付を、読めない文字列にする */
+    function breakDate() {
+        const history = loadGameHistory();
+        history[0].date = 'こわれた日付';
+        saveGameHistory(history);
+    }
+
+    it('期間で絞ったら、日付の読めない試合は入れない', () => {
+        recordGame(new Date('2026-07-10'));
+        breakDate();
+
+        const stats = aggregatePlayerStats(myTeam, new Date('2030-01-01'), new Date('2030-12-31'));
+
+        expect(stats).toHaveLength(0);
+    });
+
+    it('チームの戦績でも同じく除く', () => {
+        recordGame(new Date('2026-07-10'));
+        breakDate();
+
+        expect(getTeamRecord(myTeam, new Date('2030-01-01'), new Date('2030-12-31')).totalGames).toBe(0);
+    });
+
+    it('片側だけの絞り込みでも除く', () => {
+        recordGame(new Date('2026-07-10'));
+        breakDate();
+
+        expect(aggregatePlayerStats(myTeam, new Date('2030-01-01'))).toHaveLength(0);
+        expect(aggregatePlayerStats(myTeam, undefined, new Date('2000-01-01'))).toHaveLength(0);
+    });
+
+    it('絞り込みが無ければ従来どおり通算に含める（記録を消さない）', () => {
+        recordGame(new Date('2026-07-10'));
+        breakDate();
+
+        const stats = aggregatePlayerStats(myTeam);
+        expect(stats.find(p => p.name === '選手A')?.gamesPlayed).toBe(1);
+        expect(getTeamRecord(myTeam).totalGames).toBe(1);
+    });
+
+    it('健全なレコードは絞り込みで従来どおり残る', () => {
+        recordGame(new Date('2026-07-10'));
+
+        const stats = aggregatePlayerStats(myTeam, new Date('2026-07-01'), new Date('2026-07-31'));
+        expect(stats.find(p => p.name === '選手A')?.gamesPlayed).toBe(1);
+    });
+});
