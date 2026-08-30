@@ -4,7 +4,7 @@ import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
 import { useExportAction } from '../../hooks/useExportAction';
-import { countFirstHalfFouls } from './halfTimeFouls';
+import { countFirstHalfFouls, FOUL_CELL_COUNT } from './halfTimeFouls';
 import { licenseDigits } from './licenseDigits';
 import { GameInfoModal } from '../GameInfoModal';
 import './RunningScoresheet.css';
@@ -168,8 +168,15 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
 
                     // 第2Q終了時: 階段状の太線境界
                     if (isHalfFinished) {
-                        // 前半最後のファウル枠の右に太線
-                        if (isLastFirstHalfFoul) {
+                        // 前半最後のファウル枠の右に太線。
+                        //
+                        // ただし最終枠（5枠目）の右は表の外枠そのものなので引かない。
+                        // 重ねるとその行だけ外枠が 2px になり、表の縁の太さが揃わない
+                        // （実測: 前半5ファウルの行の最終欄だけ borderRight が 2px）。
+                        // 紙の様式でも、区切りが枠と重なるときは引き直さない。
+                        // 前半で5枠すべて使った行は上下の境目が5枠ぶん引かれ、右側は
+                        // 外枠が閉じるので、どこまでが前半かは変わらず読み取れる。
+                        if (isLastFirstHalfFoul && f < FOUL_CELL_COUNT - 1) {
                             classes.push('foul-half-border');
                         }
                         // 水平部分は必ず「上の行の下辺」として引く。
