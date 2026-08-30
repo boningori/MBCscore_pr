@@ -113,9 +113,10 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
         // 合計で数えると後半にファウルが増えるたびに区切りが右へ動いてしまう
         const halfCount = countFirstHalfFouls(foulHistory, player.id);
 
-        // 隣接選手の前半ファウル数（階段状境界線用）
-        const prevHalfCount = index > 0 ? countFirstHalfFouls(foulHistory, allPlayers[index - 1]?.id) : halfCount;
-        const nextHalfCount = index < 14 ? countFirstHalfFouls(foulHistory, allPlayers[index + 1]?.id) : halfCount;
+        // 下の行の前半ファウル数（階段状境界線用）。
+        // 名簿の最後より下は空行なので0として扱い、そこで階段を閉じる
+        const below = allPlayers[index + 1] as typeof player | undefined;
+        const nextHalfCount = below ? countFirstHalfFouls(foulHistory, below.id) : 0;
 
         // この選手のファウル履歴をfoulHistoryから取得（クォーター情報取得用）
         const playerFoulHistory = foulHistory
@@ -171,14 +172,21 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                         if (isLastFirstHalfFoul) {
                             classes.push('foul-half-border');
                         }
-                        // 上境界: このセルが前半で使用済みで、上の選手の同じ位置が未使用の場合
-                        // ただし選手1（index=0）の上辺は外枠なので除外
-                        if (isUsedInFirstHalf && index > 0 && prevHalfCount <= f) {
-                            classes.push('foul-half-border-top');
-                        }
-                        // 下境界: このセルが前半で使用済みで、下の選手の同じ位置が未使用の場合
-                        // ただし選手15（index=14）の下辺は外枠なので除外
-                        if (isUsedInFirstHalf && index < 14 && nextHalfCount <= f) {
+                        // 水平部分は必ず「上の行の下辺」として引く。
+                        //
+                        // 名簿表は片側border方式で描いており（テーブルが上辺と左辺、
+                        // セルが右辺と下辺）、上辺に border を置いてよいのはテーブルだけ。
+                        // この方式は html2canvas が border-collapse を実装せず、
+                        // 隣り合うセルの border を両方描いてしまうためにある
+                        // （RunningScoresheet.css）。
+                        // 以前はここだけ上辺に置いていたので、画面では collapse が
+                        // 2px にまとめる一方、出力では 上セルの border-bottom(1px) と
+                        // 並んで 3px になり、線が太くなったうえ1px下へずれていた。
+                        //
+                        // 下の行と使用状況が違えば、その境目がこのセルの下辺になる。
+                        // 選手15（index=14）の下辺は外枠なので引かない
+                        const isUsedBelowInFirstHalf = nextHalfCount > f;
+                        if (index < 14 && isUsedInFirstHalf !== isUsedBelowInFirstHalf) {
                             classes.push('foul-half-border-bottom');
                         }
                     }

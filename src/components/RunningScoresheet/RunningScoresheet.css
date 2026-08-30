@@ -1256,12 +1256,10 @@
     border-right: 2px solid #000;
 }
 
-/* 上境界: このセルが使用済みで、上の選手の同じ位置が未使用の場合 */
-.running-scoresheet-container .cell-foul.foul-half-border-top {
-    border-top: 2px solid #000;
-}
-
-/* 下境界: このセルが使用済みで、下の選手の同じ位置が未使用の場合 */
+/* 水平部分: 下の行と前半の使用状況が変わる境目。
+   上辺には置かない —— 片側border方式（セルは右辺と下辺だけを持つ）を守るため。
+   上辺に置くと border-collapse を実装しない html2canvas で、上セルの
+   border-bottom と並んで 3px になり、出力だけ線が太くずれる */
 .running-scoresheet-container .cell-foul.foul-half-border-bottom {
     border-bottom: 2px solid #000;
 }
