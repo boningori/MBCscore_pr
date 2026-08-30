@@ -87,8 +87,16 @@ export function TeamComparison({
     const leftColor = resolveTeamColor(teamA.color);
     const rightColor = resolveTeamColor(teamB.color);
 
-    const quarterScores = useMemo(() => computeQuarterScores(scoreHistory), [scoreHistory]);
-    const quarters = useMemo(() => recordedQuarters(scoreHistory), [scoreHistory]);
+    // 延長は得点履歴だけでは拾えない。0-0のまま次の延長へ進む試合があるため、
+    // スタッツ・ファウルの履歴も一緒に見る（quarterScores.recordedQuarters）
+    const quarterScores = useMemo(
+        () => computeQuarterScores(scoreHistory, statHistory, foulHistory),
+        [scoreHistory, statHistory, foulHistory],
+    );
+    const quarters = useMemo(
+        () => recordedQuarters(scoreHistory, statHistory, foulHistory),
+        [scoreHistory, statHistory, foulHistory],
+    );
 
     const totalsA = computeTeamTotals({ team: teamA, teamId: 'teamA', scoreHistory, statHistory, foulHistory }, filter);
     const totalsB = computeTeamTotals({ team: teamB, teamId: 'teamB', scoreHistory, statHistory, foulHistory }, filter);

@@ -94,3 +94,41 @@ describe('TeamComparison', () => {
         expect(screen.queryByText('この試合は3Pを使用していません')).toBeNull();
     });
 });
+
+// 無得点の延長。詳細は quarterScores.recordedQuarters のコメント
+describe('無得点の延長がある試合', () => {
+    const stat = (quarter: number): StatEntry => ({
+        id: `st-${quarter}`, teamId: 'teamA', playerId: 'teamA-1', playerNumber: 4,
+        statType: 'DREB', quarter, timestamp: 0,
+    });
+
+    function renderWithScorelessOT() {
+        return render(
+            <TeamComparison
+                teamA={team('teamA', '白チーム', 'white', 4)}
+                teamB={team('teamB', '青チーム', 'blue', 2)}
+                // Q1で2-2、OT(5)は無得点、OT2(6)で白が決めた
+                scoreHistory={[score('teamA', 1, 2, 0), score('teamB', 1, 2, 2), score('teamA', 6, 4, 2)]}
+                statHistory={[stat(5)]}
+                foulHistory={[]}
+            />,
+        );
+    }
+
+    it('クォーター切替にOTを出す（Q4からOT2へ飛ばない）', () => {
+        renderWithScorelessOT();
+
+        const group = screen.getByRole('group', { name: '表示するクォーター' });
+        const labels = [...group.querySelectorAll('button')].map(b => b.textContent);
+        expect(labels).toEqual(['全体', 'Q1', 'Q2', 'Q3', 'Q4', 'OT', 'OT2']);
+    });
+
+    it('OTを選ぶと、そのOTで記録したスタッツが読める', () => {
+        renderWithScorelessOT();
+
+        fireEvent.click(screen.getByRole('button', { name: 'OT' }));
+
+        const row = document.querySelector('[data-row-key="defensiveRebounds"]') as HTMLElement;
+        expect(row.textContent).toContain('1');
+    });
+});

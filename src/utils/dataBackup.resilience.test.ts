@@ -173,3 +173,79 @@ describe('詳細CSVの延長出場', () => {
         expect(rows[1]).not.toContain('OT1');
     });
 });
+
+// 復元は「データを失った人の最後の手段」なので、本体と関係のない付随項目
+// （非表示選手・統合設定）が壊れているだけで全部を止めてはいけない。
+//
+// 実測（v1.6.10）: hiddenPlayers の値が配列でないバックアップを取り込むと
+// `[...playerIds]` が投げ、importFullBackup の外側の catch まで飛んで
+// 「復元に失敗しました / playerIds is not iterable」になる。同じファイルに
+// 入っていた試合履歴・チーム・設定も1件も復元されない。
+// 読み側（loadHiddenPlayers）は同じ壊れ方を既に想定しているので、
+// 取り込み側の穴だけが残っていた。
+describe('付随項目が壊れたバックアップの復元', () => {
+    function importBackupWithExtras(extras: Record<string, unknown>) {
+        const backup = {
+            version: BACKUP_VERSION,
+            exportDate: '2026-05-02T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: { gameHistory: [gameWithoutFinalScore()], ...extras },
+        };
+        return executeImport(parseImportJSON(JSON.stringify(backup)));
+    }
+
+    it.each([
+        ['数値', 5],
+        ['null', null],
+        ['オブジェクト', { a: 1 }],
+    ])('hiddenPlayers の値が%sでも、試合履歴は復元される', (_label, value) => {
+        const result = importBackupWithExtras({ hiddenPlayers: { 'team-1': value } });
+
+        expect(result.success).toBe(true);
+        expect(loadGameHistory()).toHaveLength(1);
+    });
+
+    it('hiddenPlayers の壊れた項目だけ捨て、健全な項目は残す', () => {
+        importBackupWithExtras({
+            hiddenPlayers: { broken: 5, ok: ['佐藤_123'] },
+        });
+
+        expect(JSON.parse(localStorage.getItem('minibasket-hidden-players')!))
+            .toEqual({ ok: ['佐藤_123'] });
+    });
+
+    it('hiddenPlayers 自体が配列やnullでも復元は続く', () => {
+        expect(importBackupWithExtras({ hiddenPlayers: ['x'] }).success).toBe(true);
+        expect(loadGameHistory()).toHaveLength(1);
+    });
+
+    it('mergedPlayers の値が壊れていても、試合履歴は復元される', () => {
+        const result = importBackupWithExtras({ mergedPlayers: { 'team-1': 'こわれた' } });
+
+        expect(result.success).toBe(true);
+        expect(loadGameHistory()).toHaveLength(1);
+        // 壊れた項目は取り込まない（文字が1文字ずつキーになったりしない）
+        expect(JSON.parse(localStorage.getItem('minibasket-merged-players') ?? '{}'))
+            .toEqual({});
+    });
+
+    it('hiddenPlayers の配列に文字列でない要素が混ざっていたら取り除く', () => {
+        importBackupWithExtras({ hiddenPlayers: { ok: ['佐藤_123', 7, null] } });
+
+        expect(JSON.parse(localStorage.getItem('minibasket-hidden-players')!))
+            .toEqual({ ok: ['佐藤_123'] });
+    });
+
+    it('mergedPlayers の対応表に文字列でない寄せ先が混ざっていたら取り除く', () => {
+        importBackupWithExtras({ mergedPlayers: { t: { '佐藤': '佐藤_123', '鈴木': 9 } } });
+
+        expect(JSON.parse(localStorage.getItem('minibasket-merged-players')!))
+            .toEqual({ t: { '佐藤': '佐藤_123' } });
+    });
+
+    it('捨てた項目は errors で知らせる（黙って消さない）', () => {
+        const result = importBackupWithExtras({ hiddenPlayers: { broken: 5 } });
+
+        expect(result.errors?.join()).toContain('非表示選手');
+    });
+});

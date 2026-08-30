@@ -266,16 +266,30 @@ export function History({ onBack }: HistoryProps) {
                         gameName={selectedRecord.gameName}
                         date={recordInputDate(selectedRecord.date)}
                         onClose={() => setViewMode('comparison')}
+                        // 画面へ反映するのは保存できたときだけ。
+                        //
+                        // 更新関数の戻り値を捨てていたため、容量が尽きて
+                        // localStorage に書けていなくても、ここがメモリ上の複製を
+                        // 更新して「入力が反映された画面」を出していた。利用者は
+                        // 保存できたと思うが、再読み込みすると消えている。
+                        // 端末内だけでデータを持つアプリなので、失敗は必ず見せる
                         onUpdateGameInfo={(partialInfo) => {
                             const currentGameInfo = selectedRecord.gameInfo || createInitialGameInfo();
                             const updatedGameInfo = { ...currentGameInfo, ...partialInfo };
-                            updateGameRecordGameInfo(selectedRecord.id, updatedGameInfo);
+                            if (!updateGameRecordGameInfo(selectedRecord.id, updatedGameInfo)) {
+                                showToast('試合情報を保存できませんでした（端末の空き容量をご確認ください）', 'error');
+                                return;
+                            }
                             applyRecordUpdate(selectedRecord.id, r => ({ ...r, gameInfo: updatedGameInfo }));
                         }}
                         // 終了時間は gameInfo とは別フィールド。渡さないと、入力欄は
                         // 編集できて保存も押せるのに値がどこにも行かない
+                        // 反映は保存できたときだけ（onUpdateGameInfo のコメント）
                         onEndTimeChange={(endTime) => {
-                            updateGameRecordEndTime(selectedRecord.id, endTime);
+                            if (!updateGameRecordEndTime(selectedRecord.id, endTime)) {
+                                showToast('終了時間を保存できませんでした（端末の空き容量をご確認ください）', 'error');
+                                return;
+                            }
                             applyRecordUpdate(selectedRecord.id, r => ({
                                 ...r,
                                 endTime: endTime ? new Date(endTime).toISOString() : undefined,

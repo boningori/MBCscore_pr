@@ -1212,24 +1212,53 @@ function importFullBackup(data: BackupData): ImportResult {
             settingsImported = true;
         }
 
-        // 非表示選手情報のインポート（既存データとマージ）
-        if (data.data.hiddenPlayers) {
+        // 非表示選手情報のインポート（既存データとマージ）。
+        //
+        // 壊れた項目は「捨てて続ける」。全体を止めてはいけない。
+        // 実測(v1.6.10): 値が配列でないと `[...playerIds]` が投げ、
+        // importFullBackup の外側の catch まで飛んで
+        // 「復元に失敗しました / playerIds is not iterable」になっていた。
+        // 同じファイルの試合履歴・チーム・設定まで1件も復元されない。
+        // 復元はデータを失った人の最後の手段なので、本体と関係のない付随項目の
+        // 壊れが本体を道連れにしてよい理由が無い（試合履歴側の
+        // sanitizeImportedGames と同じ扱いにそろえる）。
+        //
+        // 読み側（loadHiddenPlayers / loadMergedPlayers）は同じ壊れ方を既に
+        // 想定している。塞ぐのは取り込み側に残っていた穴のほう。
+        if (isPlainObject(data.data.hiddenPlayers)) {
             const existingHidden = getHiddenPlayersData();
             const mergedHidden = { ...existingHidden };
             for (const [teamId, playerIds] of Object.entries(data.data.hiddenPlayers)) {
+                if (!Array.isArray(playerIds)) {
+                    errors.push(`不正な非表示選手データを1件スキップしました（${teamId}）`);
+                    continue;
+                }
+                // 要素は選手キー（文字列）。数値やnullが混ざると読み側で
+                // 取り除かれるので、保存する時点で落としておく
+                const keys = playerIds.filter((k): k is string => typeof k === 'string');
                 const existing = mergedHidden[teamId] || [];
-                mergedHidden[teamId] = [...new Set([...existing, ...playerIds])];
+                mergedHidden[teamId] = [...new Set([...existing, ...keys])];
             }
             writes.push(['minibasket-hidden-players', JSON.stringify(mergedHidden)]);
         }
 
         // 統合設定のインポート（既存データとマージ）。
-        // チームごとに項目単位で重ねる。同じキーがあればバックアップ側を採る
-        if (data.data.mergedPlayers) {
+        // チームごとに項目単位で重ねる。同じキーがあればバックアップ側を採る。
+        // 壊れた項目の扱いは非表示選手と同じ（上のコメント）。
+        // 素通しだと、対応表が文字列のときに1文字ずつがキーになって入る
+        // （実測: "こわれた" → {0:"こ",1:"わ",…}）
+        if (isPlainObject(data.data.mergedPlayers)) {
             const existingMerged = loadAllMergedPlayers();
             const mergedAll: Record<string, Record<string, string>> = { ...existingMerged };
             for (const [teamId, map] of Object.entries(data.data.mergedPlayers)) {
-                mergedAll[teamId] = { ...(mergedAll[teamId] ?? {}), ...map };
+                if (!isPlainObject(map)) {
+                    errors.push(`不正な統合設定を1件スキップしました（${teamId}）`);
+                    continue;
+                }
+                // 値は寄せ先の代表キー（文字列）
+                const pairs = Object.entries(map)
+                    .filter((pair): pair is [string, string] => typeof pair[1] === 'string');
+                mergedAll[teamId] = { ...(mergedAll[teamId] ?? {}), ...Object.fromEntries(pairs) };
             }
             writes.push(['minibasket-merged-players', JSON.stringify(mergedAll)]);
         }

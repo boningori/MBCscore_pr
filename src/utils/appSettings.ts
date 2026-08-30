@@ -20,7 +20,39 @@ const DEFAULT_SETTINGS: AppSettings = {
     voiceMemoConsented: false,
 };
 
-const settingsStorage = createJsonStorage<Partial<AppSettings>>(APP_SETTINGS_KEY, {}, 'app settings');
+// 配列やnull・文字列が入っていると、スプレッドで {"0":"a",…} のような
+// 別物が既定へ混ざるため、素のオブジェクトのみ受ける（他の保存領域と同じ判定）
+const settingsStorage = createJsonStorage<Record<string, unknown>>(
+    APP_SETTINGS_KEY, {}, 'app settings',
+    (v): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v),
+);
+
+const GAME_MODES: readonly string[] = ['full', 'simple'];
+
+/**
+ * 保存されている設定を、既知の項目・既知の型だけに絞って読む。
+ *
+ * 他の保存領域（試合履歴・チーム・中断セッション・非表示選手・統合設定）は
+ * 読み込みの時点で形を確かめているのに、ここにだけ検査が無かった。
+ * 実測(v1.6.10): {"defaultGameMode":999} がそのままモードとして扱われ、
+ * 'simple' でないので全端末がフルモードになる（横向きスマホでは3カラムが
+ * 畳まれて得点ボタンにスクロールが要る状態）。しかも hasStoredGameMode が
+ * true を返すため、画面幅への自動追従も止まったままになる。
+ * 経路は手で編集したバックアップの取り込みと、他アプリとのキー衝突。
+ *
+ * 壊れた項目だけを落とし、健全な項目は残す（レコード単位で捨てない、という
+ * 他の領域と同じ扱い）。
+ */
+function readStoredSettings(): Partial<AppSettings> {
+    const raw = settingsStorage.load();
+    const clean: Partial<AppSettings> = {};
+    if (typeof raw.defaultGameMode === 'string' && GAME_MODES.includes(raw.defaultGameMode)) {
+        clean.defaultGameMode = raw.defaultGameMode as GameMode;
+    }
+    if (typeof raw.voiceMemoEnabled === 'boolean') clean.voiceMemoEnabled = raw.voiceMemoEnabled;
+    if (typeof raw.voiceMemoConsented === 'boolean') clean.voiceMemoConsented = raw.voiceMemoConsented;
+    return clean;
+}
 
 // 設定変更の購読。
 //
@@ -53,13 +85,15 @@ export function notifyAppSettingsChanged(): void {
 // ストレージに書き込まれ、hasStoredGameMode()のような「明示的に保存したか」を
 // 見分ける処理が壊れる
 export function saveAppSettings(settings: Partial<AppSettings>): void {
-    settingsStorage.save({ ...settingsStorage.load(), ...settings });
+    // 壊れた項目はここで落ちる（readStoredSettings）。既定値で埋めた値を
+    // 土台にしてはいけない理由は上のコメントのとおり
+    settingsStorage.save({ ...readStoredSettings(), ...settings });
     notifyAppSettingsChanged();
 }
 
 // アプリ設定を読み込み
 export function loadAppSettings(): AppSettings {
-    return { ...DEFAULT_SETTINGS, ...settingsStorage.load() };
+    return { ...DEFAULT_SETTINGS, ...readStoredSettings() };
 }
 
 // シンプルモードが適する画面条件。CSSのブレークポイントと対にする。
@@ -85,15 +119,13 @@ export function getViewportGameMode(): GameMode {
 // モードが設定画面で明示的に保存されているか
 // （保存済みならユーザーの意思なので、画面幅による自動切り替えを行わない）
 export function hasStoredGameMode(): boolean {
-    return settingsStorage.load().defaultGameMode !== undefined;
+    return readStoredSettings().defaultGameMode !== undefined;
 }
 
 // デフォルトゲームモードを取得
 // 未設定時は画面幅で自動選択する（スマホ=シンプル / タブレット以上=フル）
 export function getDefaultGameMode(): GameMode {
-    const stored = settingsStorage.load();
-    if (stored.defaultGameMode) return stored.defaultGameMode;
-    return getViewportGameMode();
+    return readStoredSettings().defaultGameMode ?? getViewportGameMode();
 }
 
 // デフォルトゲームモードを保存

@@ -5,6 +5,7 @@ import {
     hasStoredGameMode,
     hasVoiceMemoConsent,
     isVoiceMemoEnabled,
+    loadAppSettings,
     notifyAppSettingsChanged,
     saveDefaultGameMode,
     setVoiceMemoEnabled,
@@ -218,5 +219,61 @@ describe('appSettings: 変更通知（毎レンダーでlocalStorageを読まず
         notifyAppSettingsChanged();
         expect(listener).toHaveBeenCalledTimes(1);
         unsubscribe();
+    });
+});
+
+// 保存データが壊れていても既定へ寄せる。
+//
+// 他の保存領域（試合履歴・チーム・中断セッション・非表示選手・統合設定）は
+// 読み込みの時点で形を確かめているのに、アプリ設定にだけ検査が無かった。
+// 実測(v1.6.10): 文字列が入っていると {"0":"a","1":"b",…} が既定にマージされ、
+// {"defaultGameMode":999} はそのままモードとして扱われる。
+// 経路は手で編集したバックアップの取り込みと、他アプリとのキー衝突。
+describe('アプリ設定: 壊れた保存データ', () => {
+    const KEY = 'minibasket-app-settings';
+
+    beforeEach(() => localStorage.clear());
+
+    it.each([
+        ['文字列', '"abc"'],
+        ['配列', '[1,2]'],
+        ['数値', '5'],
+        ['null', 'null'],
+        ['JSONとして壊れている', '{'],
+    ])('%sなら既定値を返す', (_label, raw) => {
+        localStorage.setItem(KEY, raw);
+
+        expect(loadAppSettings()).toEqual({
+            defaultGameMode: 'full',
+            voiceMemoEnabled: false,
+            voiceMemoConsented: false,
+        });
+    });
+
+    it('モードが既知の値でなければ既定に戻す', () => {
+        localStorage.setItem(KEY, JSON.stringify({ defaultGameMode: 999 }));
+
+        expect(loadAppSettings().defaultGameMode).toBe('full');
+    });
+
+    it('モードが壊れているなら「保存済み」とみなさない（画面幅への追従を止めない）', () => {
+        localStorage.setItem(KEY, JSON.stringify({ defaultGameMode: 999 }));
+
+        expect(hasStoredGameMode()).toBe(false);
+    });
+
+    it('真偽値でない同意・ONOFFは既定に戻す', () => {
+        localStorage.setItem(KEY, JSON.stringify({ voiceMemoEnabled: 'yes', voiceMemoConsented: 1 }));
+
+        expect(isVoiceMemoEnabled()).toBe(false);
+        expect(hasVoiceMemoConsent()).toBe(false);
+    });
+
+    it('健全な項目は、同じ設定内に壊れた項目があっても残す', () => {
+        localStorage.setItem(KEY, JSON.stringify({ defaultGameMode: 'simple', voiceMemoEnabled: 'yes' }));
+
+        expect(loadAppSettings().defaultGameMode).toBe('simple');
+        expect(loadAppSettings().voiceMemoEnabled).toBe(false);
+        expect(hasStoredGameMode()).toBe(true);
     });
 });

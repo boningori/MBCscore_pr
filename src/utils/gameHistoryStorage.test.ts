@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { saveGameResult, loadGameHistory, deleteGameRecord } from './gameHistoryStorage';
+import {
+    saveGameResult, loadGameHistory, deleteGameRecord,
+    updateGameRecordGameInfo, updateGameRecordEndTime,
+} from './gameHistoryStorage';
 import { createTeam, createPlayer } from '../types/game';
 
 // App.tsx と同じく <input type="date"> の YYYY-MM-DD を Date にして渡す
@@ -131,5 +134,51 @@ describe('試合ごとの設定の保存', () => {
 
         expect('showThreePoint' in record).toBe(false);
         expect('quarterMinutes' in record).toBe(false);
+    });
+});
+
+// 履歴から直した試合情報・終了時間も、書けたかどうかを呼び出し側へ返す。
+//
+// 戻り値を捨てていたため、容量が尽きた端末では localStorage に書けていないのに
+// History 側がメモリ上の複製だけ更新し、画面には入力が反映されたまま残っていた
+// （再読み込みで消える）。createStorage の save が戻り値を返すのは、
+// まさにこの「保存できたか」で分岐させるためのもの。
+describe('gameHistoryStorage: 履歴の後編集も成否を返す', () => {
+    const GAME_INFO = {
+        venue: '市民体育館', time: '', gameNo: '', crewChief: '', umpire: '',
+        scorer: '', assistantScorer: '', timer: '', shotClockOperator: '',
+    };
+
+    beforeEach(() => localStorage.clear());
+
+    it('試合情報を保存できたら true', () => {
+        const { record } = recordGame('第1試合', '2026-07-04');
+
+        expect(updateGameRecordGameInfo(record.id, GAME_INFO)).toBe(true);
+        expect(loadGameHistory()[0].gameInfo?.venue).toBe('市民体育館');
+    });
+
+    it('試合情報を保存できなかったら false', () => {
+        const { record } = recordGame('第1試合', '2026-07-04');
+        failStorageWrites();
+
+        expect(updateGameRecordGameInfo(record.id, GAME_INFO)).toBe(false);
+    });
+
+    it('該当する試合が無ければ false（書くものが無い）', () => {
+        recordGame('第1試合', '2026-07-04');
+
+        expect(updateGameRecordGameInfo('存在しないID', GAME_INFO)).toBe(false);
+        expect(updateGameRecordEndTime('存在しないID', new Date())).toBe(false);
+    });
+
+    it('終了時間を保存できたら true、できなかったら false', () => {
+        const { record } = recordGame('第1試合', '2026-07-04');
+
+        expect(updateGameRecordEndTime(record.id, new Date('2026-07-04T11:45:00'))).toBe(true);
+        expect(loadGameHistory()[0].endTime).toBeTruthy();
+
+        failStorageWrites();
+        expect(updateGameRecordEndTime(record.id, null)).toBe(false);
     });
 });

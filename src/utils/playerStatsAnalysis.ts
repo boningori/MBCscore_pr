@@ -567,6 +567,28 @@ export function effectiveMergedKeys(myTeam: SavedTeam): Set<string> {
     return canonicals;
 }
 
+/**
+ * この試合が指定した期間に入るか（期間の指定が無ければ常に true）。
+ *
+ * 日付が読めないレコードは、期間で絞っているときだけ除く。
+ * 以前は `new Date(record.date)` の大小をそのまま見ていたため、Invalid Date が
+ * < とも > とも false になり、どの期間で絞ってもすり抜けていた
+ * （実測(v1.6.10): 2026年の記録1件を「2030年のみ」で絞っても 1件・
+ * gamesPlayed 1。チームサマリーの試合数・勝率も同じ）。
+ *
+ * 絞っていないときは従来どおり含める。日付が読めないだけで記録そのものは
+ * 残っているので、通算から消してよい理由が無い（repairGameRecords と同じ判断で、
+ * 壊れているからといって捨てない）。
+ */
+function isWithinPeriod(date: string, startDate?: Date, endDate?: Date): boolean {
+    if (!startDate && !endDate) return true;
+    const time = new Date(date).getTime();
+    if (Number.isNaN(time)) return false;
+    if (startDate && time < startDate.getTime()) return false;
+    if (endDate && time > endDate.getTime()) return false;
+    return true;
+}
+
 // 選手別スタッツを集計
 export function aggregatePlayerStats(
     myTeam: SavedTeam,
@@ -592,9 +614,7 @@ export function aggregatePlayerStats(
     const conflictingMergeTargets = collectConflictingMergeTargets(rosterKeys, mergeMap);
 
     for (const [gameIndex, { record, isTeamA }] of games.entries()) {
-        const gameDate = new Date(record.date);
-        if (startDate && gameDate < startDate) continue;
-        if (endDate && gameDate > endDate) continue;
+        if (!isWithinPeriod(record.date, startDate, endDate)) continue;
 
         const myTeamData = isTeamA ? record.teamA : record.teamB;
         const opponentData = isTeamA ? record.teamB : record.teamA;
@@ -870,9 +890,7 @@ export function getTeamRecord(myTeam: SavedTeam, startDate?: Date, endDate?: Dat
     let wins = 0, losses = 0, draws = 0;
 
     for (const { record, isTeamA } of games) {
-        const gameDate = new Date(record.date);
-        if (startDate && gameDate < startDate) continue;
-        if (endDate && gameDate > endDate) continue;
+        if (!isWithinPeriod(record.date, startDate, endDate)) continue;
 
         // finalScore を欠くレコード（手で編集したバックアップ由来）でも落ちないよう
         // 組み直してから読む。素で引いていたため、1件混ざるだけで分析画面ごと

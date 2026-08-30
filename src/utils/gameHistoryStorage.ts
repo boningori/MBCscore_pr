@@ -275,14 +275,21 @@ export function loadGameRecord(infoId: string): GameRecord | null {
     return history.find(r => r.id === infoId) || null;
 }
 
-// 試合記録のgameInfoを更新
-export function updateGameRecordGameInfo(id: string, gameInfo: GameInfo): void {
+/**
+ * 試合記録のgameInfoを更新する（書けたら true）。
+ *
+ * 成否を返すのは saveGameResult と同じ理由。戻り値を捨てていたため、容量が
+ * 尽きた端末では localStorage に書けていないのに、呼び出し側（History）が
+ * メモリ上の複製だけ更新して「入力が反映された画面」を出していた。
+ * 再読み込みするとその入力は消える。
+ */
+export function updateGameRecordGameInfo(id: string, gameInfo: GameInfo): boolean {
     const history = loadGameHistory();
     const index = history.findIndex(r => r.id === id);
-    if (index !== -1) {
-        history[index].gameInfo = gameInfo;
-        recordStorage.save(history);
-    }
+    if (index === -1) return false;
+
+    history[index].gameInfo = gameInfo;
+    return recordStorage.save(history);
 }
 
 /**
@@ -291,11 +298,13 @@ export function updateGameRecordGameInfo(id: string, gameInfo: GameInfo): void {
  * gameInfo とは別フィールドなので updateGameRecordGameInfo では書けない。
  * これが無いと、履歴から開いたスコアシートの終了時間欄は入力も保存も
  * できるのに値がどこにも行かない（無言で捨てられる）。
+ *
+ * 書けたら true（成否を返す理由は updateGameRecordGameInfo と同じ）。
  */
-export function updateGameRecordEndTime(id: string, endTime: Date | null): void {
+export function updateGameRecordEndTime(id: string, endTime: Date | null): boolean {
     const history = loadGameHistory();
     const index = history.findIndex(r => r.id === id);
-    if (index === -1) return;
+    if (index === -1) return false;
 
     if (endTime) {
         history[index] = { ...history[index], endTime: new Date(endTime).toISOString() };
@@ -305,7 +314,7 @@ export function updateGameRecordEndTime(id: string, endTime: Date | null): void 
         delete cleared.endTime;
         history[index] = cleared;
     }
-    recordStorage.save(history);
+    return recordStorage.save(history);
 }
 
 // 履歴削除
