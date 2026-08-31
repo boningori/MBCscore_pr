@@ -48,3 +48,9 @@ CODE_REVIEW_REPORT.md
 
 # ブレインストーミング／実装進行の作業ファイル
 .superpowers/
+
+# Playwright（実行結果・レポート・ブラウザキャッシュ）
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
