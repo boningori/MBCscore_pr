@@ -30,6 +30,37 @@ jobs:
           path: dist
           retention-days: 7
 
+  # E2E（Playwright）。test-and-build が作った dist をそのまま preview で配って回す。
+  #
+  # deploy の needs には入れていない。導入したてで、実ブラウザ特有の不安定さが
+  # どれだけ出るか分かっていない段階でゲートにすると、アプリが壊れていないのに
+  # 公開が止まる。安定を確かめてから needs へ昇格させる。
+  e2e:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      # chromium だけ入れる（playwright.config.ts の projects と揃える）。
+      # --with-deps はヘッドレスChromiumが要るシステムライブラリを入れる
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      # 失敗したときだけレポートを残す。成功時の成果物は誰も見ない
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
   # main への push だけ公開する。以前は手元の npm run deploy だったため、
   # 作業ツリーが汚れたままの成果物が出る余地があった。
   # Pages の配信元は gh-pages ブランチのままにしてある（リポジトリ設定を

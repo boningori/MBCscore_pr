@@ -16,6 +16,9 @@
     // node:fs などを使うテストがあるため node の型も要る
     "types": ["vite/client", "node"]
   },
-  "include": ["src"],
+  // e2e/ も同じ理由で入れる。Playwright はテストを型検査せずに実行するので、
+  // ここに入れないと fixture と src の型がずれても実行時まで分からない
+  // （seedGame.ts は src/types/game.ts の型をそのまま使っている）
+  "include": ["src", "e2e", "playwright.config.ts"],
   "exclude": []
 }
