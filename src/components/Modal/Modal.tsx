@@ -70,9 +70,11 @@ export function Modal({
     useEffect(() => {
         const id = registerModal(() => {
             // 閉じない作りでも登録は保つ。戻るをここで受け止めないと、
-            // 画面遷移として扱われてダイアログごとホームへ飛ぶ
-            if (!closeOnBackRef.current) return;
+            // 画面遷移として扱われてダイアログごとホームへ飛ぶ。
+            // 受け止めただけであることは戻り値で伝える（modalStack）
+            if (!closeOnBackRef.current) return false;
             onCloseRef.current();
+            return true;
         });
         return () => unregisterModal(id);
     }, []);

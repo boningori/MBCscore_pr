@@ -30,7 +30,11 @@ export function useBackHandler(active: boolean, onBack: () => void): void {
 
     useEffect(() => {
         if (!active) return;
-        const id = registerModal(() => onBackRef.current());
+        // サブビューは必ず1段戻す（受け止めるだけの作りは無い）ので常に true
+        const id = registerModal(() => {
+            onBackRef.current();
+            return true;
+        });
         return () => unregisterModal(id);
     }, [active]);
 }

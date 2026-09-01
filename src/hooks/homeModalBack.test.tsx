@@ -105,6 +105,32 @@ describe('ホームでモーダルを開いたときの戻る操作', () => {
         await waitFor(() => expect(window.history.length).toBe(afterBack + 1));
     });
 
+    // 戻るを受け止めるだけで閉じないモーダル（復元プロンプト）。
+    //
+    // 閉じないので枚数が変わらず、購読側（subscribeModalCount）は動かない。
+    // popstate 側が積んだエントリを消費したまま積み直さないと、履歴は基点に
+    // 戻り、次の戻るでアプリごと終了する —— closeOnBack={false} を付けた
+    // 理由（エッジスワイプでの誤爆から復元の機会を守る）が2回目で崩れる。
+    //
+    // 実測（実ブラウザ・v1.6.14・復元プロンプトを出した状態）: 1回目の戻るで
+    // ダイアログは残るが、2回目でページごと離脱した（window に置いた目印が
+    // 消え、URLが別の履歴エントリへ変わった）。PWAではアプリ終了にあたる。
+    it('閉じない作りのモーダルでも、受け止めたぶんを積み直す', () => {
+        setupSync('home');
+        const onClose = vi.fn();
+        render(<Modal onClose={onClose} closeOnBack={false} ariaLabel="復元の確認">中身</Modal>);
+
+        const pushState = vi.spyOn(window.history, 'pushState');
+        fireBack();
+
+        // 閉じないのが仕様
+        expect(onClose).not.toHaveBeenCalled();
+        // 消費されたエントリを積み直す
+        expect(pushState).toHaveBeenCalledWith({ appScreen: 'home' }, '');
+
+        pushState.mockRestore();
+    });
+
     it('ホーム以外の画面では積まない（画面のエントリが既にある）', () => {
         setupSync('game');
         const before = window.history.length;
