@@ -13,7 +13,7 @@ vi.mock('../Toast/toastApi', () => ({ showToast: vi.fn() }));
 
 const CREATED_AT = new Date('2026-06-05T15:30:00').toISOString();
 
-function seed(endTime?: string) {
+function seed(endTime?: string, createdAt: string | null = CREATED_AT) {
     const team = (name: string) => ({
         id: name, name, coachName: 'C', assistantCoachName: '',
         players: [], timeouts: [], teamFouls: [0, 0, 0, 0],
@@ -25,7 +25,7 @@ function seed(endTime?: string) {
         finalScore: { teamA: 30, teamB: 20 },
         scoreHistory: [], statHistory: [], foulHistory: [],
         ...(endTime ? { endTime } : {}),
-        createdAt: CREATED_AT,
+        ...(createdAt ? { createdAt } : {}),
     }]));
 }
 
@@ -57,6 +57,46 @@ describe('履歴のスコアシート: 試合終了時間', () => {
         openScoresheet();
 
         expect(shownEndTime()).toBe('15:30');
+    });
+
+    // 終了時間も保存時刻も読めないレコード（手で編集した／途中で切れたバックアップ）。
+    //
+    // recordToGame は endTime を持たないレコードで `new Date(record.createdAt)` に
+    // 落とすため、createdAt が無いと Invalid Date になる。様式側はそれを truthy と
+    // 見て getHours() するので、公式様式の欄に「NaN:NaN」が印字されていた
+    // （実測(v1.6.14・実ブラウザ)。PDF/JPEG出力にもそのまま乗る）。
+    // 日付の表示は formatRecordDate が「読めなければ空文字」を守っているのに、
+    // 時刻の表示にだけ同じ守りが無かった。
+    it('終了時間も保存時刻も読めなければ空欄にする（NaN:NaN を出さない）', () => {
+        seed(undefined, null);
+        openScoresheet();
+
+        expect(shownEndTime()).toBe('');
+    });
+
+    it('保存された終了時間が読めない値でも空欄にする', () => {
+        seed('not-a-date', null);
+        openScoresheet();
+
+        expect(shownEndTime()).toBe('');
+    });
+
+    // 読めない終了時間を持つレコードでも、入力し直せば直せること。
+    //
+    // 保存は既存の endTime を日付の土台にして setHours する。読めない値をその
+    // まま土台にすると setHours しても Invalid Date のままなので、入力欄には
+    // 12:03 と打てて「保存」も押せるのに、保存されるのは Invalid Date になる
+    // ——「NaN:NaN」を直そうとした操作が直せない、という行き止まりになる。
+    it('読めない終了時間でも、入力し直せば保存できる', () => {
+        seed('not-a-date', null);
+        openScoresheet();
+
+        fireEvent.click(screen.getByRole('button', { name: '試合情報編集' }));
+        fireEvent.change(screen.getByLabelText('終了時間'), { target: { value: '12:03' } });
+        fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
+        expect(shownEndTime()).toBe('12:03');
+        expect(Number.isNaN(new Date(storedEndTime()).getTime())).toBe(false);
     });
 
     it('編集した終了時間が履歴に保存される', () => {

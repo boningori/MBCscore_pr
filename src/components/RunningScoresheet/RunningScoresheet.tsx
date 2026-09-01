@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { Game, GameInfo, FoulEntry } from '../../types/game';
 import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { formatClockTime } from '../../utils/localDate';
 import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
 import { useExportAction } from '../../hooks/useExportAction';
 import { countFirstHalfFouls, FOUL_CELL_COUNT } from './halfTimeFouls';
@@ -742,7 +743,9 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                         <div className="rs-game-end-time">
                             <span className="rs-result-label">試合終了時間</span>
                             <span className="rs-result-value">
-                                {endTime ? `${new Date(endTime).getHours().toString().padStart(2, '0')}:${new Date(endTime).getMinutes().toString().padStart(2, '0')}` : ''}
+                                {/* 読めない値は空欄にする。素で getHours() すると
+                                    公式様式に「NaN:NaN」が印字される（formatClockTime） */}
+                                {formatClockTime(endTime)}
                             </span>
                         </div>
                         <div className="rs-jba-credit">
