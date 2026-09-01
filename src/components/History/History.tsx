@@ -116,6 +116,13 @@ export function History({ onBack }: HistoryProps) {
         downloadJSON(data, filename);
     };
 
+    /** 読める日時だけ Date にする（読めなければ null。Invalid Date を作らない） */
+    const readableDate = (value: string | undefined): Date | null => {
+        if (!value) return null;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
     // GameRecordからGame型に変換するヘルパー関数
     const recordToGame = (record: GameRecord): Game => ({
         id: record.id,
@@ -130,10 +137,12 @@ export function History({ onBack }: HistoryProps) {
         phase: 'finished',
         selectedPlayerId: null,
         selectedTeamId: null,
-        startTime: record.date ? new Date(record.date) : null,
+        startTime: readableDate(record.date),
         // 記録者が入れた公式様式の終了時間。持たない旧レコードだけ、
-        // 従来どおり保存時刻(createdAt)で代用する
-        endTime: record.endTime ? new Date(record.endTime) : new Date(record.createdAt),
+        // 従来どおり保存時刻(createdAt)で代用する。
+        // どちらも読めないレコード（手で編集した／途中で切れたバックアップ）で
+        // Invalid Date を作らない —— 様式側が truthy と見て「NaN:NaN」を印字する
+        endTime: readableDate(record.endTime) ?? readableDate(record.createdAt),
         pendingActions: [],
         gameInfo: (record as { gameInfo?: GameInfo }).gameInfo || createInitialGameInfo(),
         // 記録し始める前の試合には入っていない。既定は試合設定と同じ側に寄せる

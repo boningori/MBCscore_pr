@@ -12,9 +12,28 @@
 
 interface RegisteredModal {
     id: number;
-    /** 最新の onClose を呼ぶラッパ。Modal 側が ref 経由で解決する */
-    close: () => void;
+    /**
+     * 最新の onClose を呼ぶラッパ。Modal 側が ref 経由で解決する。
+     *
+     * 戻り値は「閉じる要求を受け入れたか」。closeOnBack={false} のモーダルは
+     * 受け止めるだけで閉じないので false を返す（詳細は closeTopModal）。
+     */
+    close: () => boolean;
 }
+
+/**
+ * 戻る要求の行き先。
+ *
+ * - `'closed'`   … 最前面へ閉じる要求を渡した（そのモーダルは閉じる）
+ * - `'received'` … 最前面が受け止めたが閉じない（closeOnBack={false}）
+ * - `null`       … 開いているモーダルが無い＝戻るは画面遷移として扱ってよい
+ *
+ * `'closed'` と `'received'` を区別するのは、ホームで積んだ戻る用のエントリを
+ * 積み直すかどうかが変わるため。閉じるなら枚数の変化を購読側が拾って積み直すが、
+ * 閉じない場合は枚数が動かず誰も積み直さない（useScreenHistorySync）。
+ * null は falsy にしてある —— 呼び出し側が真偽で見ても意味が変わらない。
+ */
+export type CloseTopModalResult = 'closed' | 'received' | null;
 
 const stack: RegisteredModal[] = [];
 let nextId = 1;
@@ -51,7 +70,7 @@ export function subscribeModalCount(listener: ModalCountListener): () => void {
 }
 
 /** モーダルを最前面として登録し、解除に使うidを返す */
-export function registerModal(close: () => void): number {
+export function registerModal(close: () => boolean): number {
     const id = nextId++;
     stack.push({ id, close });
     notifyCount();
@@ -67,17 +86,16 @@ export function unregisterModal(id: number): void {
 }
 
 /**
- * 最前面のモーダルへ閉じる要求を出す（閉じるものが無ければ false）。
+ * 最前面のモーダルへ閉じる要求を出す（結果は CloseTopModalResult）。
  *
  * ここでスタックから外さないのは、onClose が state を変えて Modal が
  * アンマウントされ、その cleanup が unregisterModal を呼ぶため。
  * 二重に外すと、閉じない作りのモーダルが登録から消えてしまう。
  */
-export function closeTopModal(): boolean {
+export function closeTopModal(): CloseTopModalResult {
     const top = stack[stack.length - 1];
-    if (!top) return false;
-    top.close();
-    return true;
+    if (!top) return null;
+    return top.close() ? 'closed' : 'received';
 }
 
 /** 開いているモーダルがあるか（テストと診断用） */

@@ -34,6 +34,29 @@ function isCoachOrBenchId(playerId: string | null): boolean {
     return playerId === 'COACH' || playerId === 'ACOACH' || playerId === 'BENCH' || !playerId;
 }
 
+/**
+ * ファウルを1つ記録する（FTを伴わない、いちばん素の形）。
+ *
+ * 【UIからは到達しない。消さずに残している経路である】
+ *
+ * いまの記録画面はファウルを必ず FoulInputFlow に通すので、実際に走るのは
+ * handleAddFoulWithFreeThrows のほうである。にもかかわらずここを残すのは、
+ * 選手のファウル欄へ「素の FoulType 文字列」を書く唯一の経路だからである。
+ * FT付きフローが書くのは FoulRecord オブジェクトで、形が違う。
+ *
+ * 文字列の形は、FoulRecord を導入する前のバージョンが保存した記録に残っていて、
+ * 読み出し側は今もそれを相手にしている:
+ *   - findFoulIndexByContent … 欄と履歴の件数が食い違う古いデータの位置合わせ
+ *   - handleEditFoulFreeThrows … 文字列の欄には触らない（FTの情報を持たないため）
+ *   - RunningScoresheet … 欄の描画で文字列と FoulRecord を出し分ける
+ * その読み出し側を検査するテスト（foulOrderCorrection / foulChronology /
+ * gameReducer.foulEdit ほか）が、レガシーな形の state をここから組み立てている。
+ * 消すと、テストが手で state をでっち上げるか、旧データの経路の検査を落とすかに
+ * なる。どちらも記録を読む側の守りを弱めるので、UIから使わないまま残す。
+ *
+ * 新しい記録経路をここへ足さないこと。様式に出る場所へ書き分けるのは
+ * handleAddFoulWithFreeThrows の役目である（isCoachOrBenchId のコメント）。
+ */
 export function handleAddFoul(state: Game, payload: PayloadOf<'ADD_FOUL'>): Game {
     const { teamId, playerId, foulType } = payload;
 

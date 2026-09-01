@@ -73,6 +73,25 @@ export function formatRecordDateShort(iso: string): string {
     return parts ? `${parts.month}/${parts.day}` : '';
 }
 
+/**
+ * 時刻を HH:MM に（読めなければ空文字。画面に NaN:NaN を出さない）。
+ *
+ * 試合終了時間は endTime か、それを持たない旧レコードの createdAt から作る
+ * （History の recordToGame）。どちらも欠けたレコード —— 手で編集した／途中で
+ * 切れたバックアップ —— では Invalid Date になるが、呼び出し側は truthy と
+ * 見て getHours() していたため、公式様式の欄に「NaN:NaN」が印字されていた
+ * （実測(v1.6.14・実ブラウザ)。PDF/JPEG出力にもそのまま乗る）。
+ *
+ * 日付側の formatRecordDate と同じ約束にそろえる。時刻は現地で読む —— 記録者が
+ * 体育館の時計を見て入れる値で、暦日と違って現地時刻そのものが意味を持つ。
+ */
+export function formatClockTime(value: Date | string | null | undefined): string {
+    if (value === null || value === undefined) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
 /** 試合日を <input type="date"> と同じ YYYY-MM-DD に */
 export function recordInputDate(iso: string): string {
     const parts = recordDateParts(iso);

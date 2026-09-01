@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { GameInfo } from '../../types/game';
 import { Modal } from '../Modal';
+import { formatClockTime } from '../../utils/localDate';
 import './GameInfoModal.css';
 
 interface GameInfoModalProps {
@@ -11,11 +12,8 @@ interface GameInfoModalProps {
     onClose: () => void;
 }
 
-function formatEndTimeStr(endTime: Date | null): string {
-    if (!endTime) return '';
-    const d = new Date(endTime);
-    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-}
+/** 読めない値は空欄にする（NaN:NaN を入力欄の初期値にしない。localDate） */
+const formatEndTimeStr = formatClockTime;
 
 export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onClose }: GameInfoModalProps) {
     // 本モーダルはopenのたびに条件付きマウントされるため、マウント時の遅延初期化で初回同期を行う

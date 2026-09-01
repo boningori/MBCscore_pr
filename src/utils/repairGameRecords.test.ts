@@ -111,6 +111,36 @@ describe('repairGameRecords: 履歴全体', () => {
     });
 });
 
+// 試合日は読み手のほぼ全員が使う（履歴の並びと表示・期間の絞り込み・月次/年次の
+// 集計キー・成長グラフの軸・出力ファイル名）。読めない値が入っていると、その試合は
+// どの期間の絞り込みにも入らず、並びは NaN 比較で不定になり、成長グラフの軸には
+// 「not年NaN月」のようなゴミが出る（playerStatsAnalysis.brokenDate.test.ts）。
+//
+// 捨てはしない。保存時刻(createdAt)は saveGameResult が必ず書いていて、試合日と
+// 同じ日になるのが普通なので、読めないときだけそちらを採って時系列へ戻す。
+// 推論であることを隠さないため、両方読めなければ何も書かない。
+describe('repairGameRecord: 読めない試合日', () => {
+    it('date が読めなければ createdAt を採る', () => {
+        const fixed = repairGameRecord(validRecord({ date: 'not-a-date' }));
+        expect(fixed.date).toBe('2026-08-20T11:00:00.000Z');
+    });
+
+    it('date が無くても createdAt を採る', () => {
+        const fixed = repairGameRecord(validRecord({ date: undefined }));
+        expect(fixed.date).toBe('2026-08-20T11:00:00.000Z');
+    });
+
+    it('createdAt も読めなければ触らない（今日の日付をでっち上げない）', () => {
+        const fixed = repairGameRecord(validRecord({ date: 'not-a-date', createdAt: 'oops' }));
+        expect(fixed.date).toBe('not-a-date');
+    });
+
+    it('読める date はそのまま（同じオブジェクトを返す）', () => {
+        const record = validRecord();
+        expect(repairGameRecord(record)).toBe(record);
+    });
+});
+
 describe('loadGameHistory: 読み込みの時点で直り、直った形が書き戻る', () => {
     beforeEach(() => localStorage.clear());
 

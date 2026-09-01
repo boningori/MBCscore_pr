@@ -22,8 +22,12 @@ describe('戻る操作で閉じるか（closeOnBack）', () => {
         const onClose = vi.fn();
         render(<Modal onClose={onClose} ariaLabel="ダイアログ">中身</Modal>);
 
-        expect(closeTopModal()).toBe(true);
+        expect(closeTopModal()).toBe('closed');
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('閉じるものが無ければ null', () => {
+        expect(closeTopModal()).toBe(null);
     });
 
     it('closeOnBack={false} なら戻るで閉じない', () => {
@@ -38,9 +42,12 @@ describe('戻る操作で閉じるか（closeOnBack）', () => {
     it('閉じないだけで戻るは受け取る（下の画面へ通さない）', () => {
         render(<Modal onClose={vi.fn()} closeOnBack={false} ariaLabel="復元の確認">中身</Modal>);
 
-        // true を返さないと useScreenHistorySync が画面遷移として扱い、
-        // ダイアログを開いたままホームへ飛ぶ
-        expect(closeTopModal()).toBe(true);
+        // null を返すと useScreenHistorySync が画面遷移として扱い、
+        // ダイアログを開いたままホームへ飛ぶ。
+        // 'closed' と区別できないと、こんどはホームで積んだ戻る用の
+        // エントリが積み直されず、次の戻るでアプリごと終了する
+        // （useScreenHistorySync の handlePopState）
+        expect(closeTopModal()).toBe('received');
     });
 
     it('重なりの判定には従来どおり参加する（最前面が閉じない作りでも下は閉じない）', () => {

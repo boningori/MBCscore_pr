@@ -5,6 +5,7 @@ import {
     recordDateParts,
     formatRecordDate,
     formatRecordDateShort,
+    formatClockTime,
     recordInputDate,
     startOfInputDateUtc,
     endOfInputDateUtc,
@@ -99,5 +100,28 @@ describe('startOfInputDateUtc / endOfInputDateUtc', () => {
     it('空文字は undefined（絞り込みなし）', () => {
         expect(startOfInputDateUtc('')).toBeUndefined();
         expect(endOfInputDateUtc('')).toBeUndefined();
+    });
+});
+
+// 時刻の表示は、日付の formatRecordDate と同じ「読めなければ空文字」の約束にする。
+// 破ると公式様式の試合終了時間に「NaN:NaN」が印字され、PDF/JPEG出力にも乗る
+// （History.endTime.test.tsx が実際の画面で押さえている）
+describe('formatClockTime', () => {
+    it('Date を HH:MM にする', () => {
+        expect(formatClockTime(new Date('2026-06-05T09:05:00'))).toBe('09:05');
+    });
+
+    it('ISO文字列も読む（セッションを経由すると Date が文字列に戻る）', () => {
+        expect(formatClockTime('2026-06-05T21:07:00')).toBe('21:07');
+    });
+
+    it('null / undefined は空文字', () => {
+        expect(formatClockTime(null)).toBe('');
+        expect(formatClockTime(undefined)).toBe('');
+    });
+
+    it('読めない値は空文字（NaN:NaN を出さない）', () => {
+        expect(formatClockTime('こわれた値')).toBe('');
+        expect(formatClockTime(new Date('こわれた値'))).toBe('');
     });
 });

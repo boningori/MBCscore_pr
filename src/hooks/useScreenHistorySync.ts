@@ -145,16 +145,28 @@ export function useScreenHistorySync<S extends string>(
             // ここを通さないと、入力途中のダイアログを開いたまま画面ごと
             // ホームへ飛ばされる（Androidのエッジスワイプで日常的に起きる）。
             // Modal は Escape も見ているが、タブレットにEscapeキーは無い
-            if (closeTopModal()) {
+            const closed = closeTopModal();
+            if (closed) {
                 const current = screenRef.current;
                 // ブラウザは既に1段戻っているので、閉じる前の画面へ積み直す。
                 // ホームは基点なので積み増さず、stateだけ整合させる
                 if (current === homeScreen) {
-                    // 消費されたのはモーダル用に積んだエントリ。
-                    // まだ下にモーダルが残っていれば、閉じた1枚のアンマウントで
-                    // 購読側が積み直す
-                    modalGuardRef.current = false;
-                    window.history.replaceState({ appScreen: homeScreen }, '');
+                    if (closed === 'received') {
+                        // 受け止めただけで閉じないモーダル（復元プロンプト）。
+                        // 枚数が変わらないので購読側は動かない ——
+                        // ここで積み直さないと履歴が基点に戻り、次の戻るで
+                        // アプリごと終了する。実測(v1.6.14・実ブラウザ):
+                        // 1回目はダイアログが残るが、2回目でページごと離脱した。
+                        // closeOnBack={false} を付けた理由（エッジスワイプの
+                        // 誤爆から復元の機会を守る）が2回目で崩れていた
+                        window.history.pushState({ appScreen: homeScreen }, '');
+                    } else {
+                        // 消費されたのはモーダル用に積んだエントリ。
+                        // まだ下にモーダルが残っていれば、閉じた1枚のアンマウントで
+                        // 購読側が積み直す
+                        modalGuardRef.current = false;
+                        window.history.replaceState({ appScreen: homeScreen }, '');
+                    }
                 } else {
                     window.history.pushState({ appScreen: current }, '');
                 }

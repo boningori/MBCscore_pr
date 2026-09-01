@@ -20,7 +20,7 @@ describe('useBackHandler', () => {
         const onBack = vi.fn();
         render(<Harness active onBack={onBack} />);
 
-        expect(closeTopModal()).toBe(true);
+        expect(closeTopModal()).toBe('closed');
         expect(onBack).toHaveBeenCalledTimes(1);
     });
 
