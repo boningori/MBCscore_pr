@@ -759,19 +759,42 @@ export function aggregatePlayerStats(
         aggregated.avgStats = divideStats(aggregated.totalStats, aggregated.gamesPlayed);
         aggregated.stdDevStats = calculateStatsStdDev(aggregated.gameHistory, aggregated.avgStats);
         aggregated.reboundsStdDev = calculateReboundsStdDev(aggregated.gameHistory, aggregated.avgStats);
-        aggregated.gameHistory.sort((a, b) =>
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
+        // 新しい順。日付が読めない記録はいちばん古い側へ寄せる（periodSortTime）
+        aggregated.gameHistory.sort((a, b) => periodSortTime(b.date) - periodSortTime(a.date));
     }
 
     return Array.from(playerMap.values()).sort((a, b) => a.number - b.number);
+}
+
+/**
+ * 日付が読めない記録をまとめる期間キーと、その表示名。
+ *
+ * 以前は読めない日付をそのまま期間キーにしていたため、getPeriodLabel が
+ * その文字列を年月として解釈しようとして成長グラフの軸にゴミが出ていた
+ * （実測(v1.6.14): date:'not-a-date' の1件で 月単位「not年NaN月」・
+ * 四半期単位「not年a」・年単位「not-a-date年」）。
+ *
+ * 記録そのものは残っているので集計から落とさない（isWithinPeriod や
+ * repairGameRecords と同じ判断で、読めないからといって捨てない）。
+ * 束ねる先に名前を与えて、どの棒がそれなのかを読めるようにする。
+ */
+const UNDATED_PERIOD_KEY = '__undated__';
+const UNDATED_PERIOD_LABEL = '日付なし';
+
+/** 並べ替え用の時刻。読めない日付はいちばん古い側へ寄せる（NaN比較にしない） */
+function periodSortTime(date: Date | string): number {
+    const time = date instanceof Date ? date.getTime() : new Date(date).getTime();
+    // NaN を返す比較関数は順序が処理系任せになり、読める日付の前後まで崩れる
+    // （実測: 6月・読めない・8月 の3件で 6月 が 8月 より新しい側に並んだ）。
+    // 「直近5試合」は gameHistory の先頭5件なので、ここが崩れると直近も狂う
+    return Number.isNaN(time) ? -Infinity : time;
 }
 
 // 期間キーを生成。
 // 記録された暦日で束ねる（現地時刻に直すと、UTCより西では月初の試合が前月に入る）
 function getPeriodKey(iso: string, periodType: PeriodType): string {
     const parts = recordDateParts(iso);
-    if (!parts) return iso;
+    if (!parts) return UNDATED_PERIOD_KEY;
     const { year, month } = parts;
 
     switch (periodType) {
@@ -790,6 +813,7 @@ function getPeriodKey(iso: string, periodType: PeriodType): string {
 
 // 期間ラベルを生成
 function getPeriodLabel(periodKey: string, periodType: PeriodType): string {
+    if (periodKey === UNDATED_PERIOD_KEY) return UNDATED_PERIOD_LABEL;
     switch (periodType) {
         case 'month': {
             const [year, month] = periodKey.split('-');
@@ -865,8 +889,8 @@ export function aggregateByPeriod(
         });
     }
 
-    // 期間順にソート（新しい順）
-    return result.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+    // 期間順にソート（新しい順）。読めない日付の束はいちばん古い側へ（periodSortTime）
+    return result.sort((a, b) => periodSortTime(b.startDate) - periodSortTime(a.startDate));
 }
 
 // 日付フォーマット（記録された暦日をそのまま出す。理由は localDate.ts）
