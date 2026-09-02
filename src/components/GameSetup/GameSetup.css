@@ -341,6 +341,20 @@
     margin-top: var(--spacing-lg);
 }
 
+/* 各ステップの主ボタンは、下端に貼り付けて常に手の届く位置に置く。
+   ステップの中身は画面より縦に長くなる。実測(1280x720・確認ステップ):
+   ページ全高917pxに対して「スタメン選択へ」が y837-890 ＝ 折り返しの170px下で、
+   開いた時点では見えない。カードの下は地色が続くだけなので、まだ下に何かある
+   ことも読み取れず、スクロールに気づかないと先へ進めない。
+   sticky なので短いステップ（基本情報）では従来どおり流れの中に収まる。
+   ボタンは不透明な背景を持つので、重なった中身が透けることはない */
+.game-setup :is(.next-btn, .start-game-btn) {
+    position: sticky;
+    bottom: calc(var(--spacing-md) + var(--safe-bottom, 0px));
+    /* 下の中身の上に乗ることを影で示す（貼り付いている間だけ意味を持つ） */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
 /* My Team Select */
 .game-setup .team-select-list {
     display: grid;
