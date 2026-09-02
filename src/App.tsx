@@ -65,6 +65,7 @@ import { useWakeLock } from './hooks/useWakeLock';
 
 import { useScreenHistorySync } from './hooks/useScreenHistorySync';
 import { useBackHandler } from './hooks/useBackHandler';
+import { useScrollToTopOnOpen } from './hooks/useScrollToTopOnOpen';
 import './App.css';
 
 // 画面の識別子と試合系画面の集合は types/screens.ts に置く。
@@ -196,6 +197,11 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     guardedScreens: GAME_SCREENS,
     canShowGuarded: state.teamA.players.length > 0 && state.phase !== 'finished',
   });
+
+  // 画面を切り替えたらページの先頭から見せる。
+  // URLルーティングを持たないぶん、ブラウザの「新しいページは先頭から」が
+  // 効かない（詳細は useScrollToTopOnOpen）
+  useScrollToTopOnOpen(screen);
 
   // スコアシートとスタメン選択は、画面上の「戻る」が1段だけ戻す（試合画面・試合設定へ）。
   // 端末の戻る操作は画面のエントリを消費してホームへ抜けるため、同じ「戻る」で
@@ -664,6 +670,25 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     });
   };
 
+  /**
+   * そのチームの保留アクションのUI（1件も無ければ何も出さない）。
+   *
+   * 置き場所はチームパネルのヘッダー（TeamPanel の pendingSlot）。画面下端に
+   * 浮かせていた頃は、低い画面でアクション履歴の最新1行を覆っていた。
+   */
+  const renderPendingSlot = (teamId: 'teamA' | 'teamB') => {
+    const teamPending = pendingActions.filter(p => p.teamId === teamId);
+    if (teamPending.length === 0) return undefined;
+    return (
+      <PendingActionPanel
+        pendingActions={teamPending}
+        onResolveUnknown={handleResolveUnknown}
+        onRemove={handleRemovePendingAction}
+        onDirectResolve={handleDirectResolvePending}
+      />
+    );
+  };
+
   // アクション先行時のチーム選択モーダルは自動表示しない。
   // 選手カードの直接タップで即記録し、「選手がわからない」場合のみ
   // ActionButtonsのボタンから明示的に開く（保留アクション化）。
@@ -1110,6 +1135,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     return (
       <MyTeamManager
         onBack={handleBackToHome}
+        backLabel="ホーム"
       />
     );
   }
@@ -1321,6 +1347,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 teamFouls={state.teamA.teamFouls[currentQuarter - 1] || 0}
                 timeoutUsed={timeoutUsedFor(state.teamA)}
                 timeoutQuarterLabel={timeoutQuarterLabel}
+                pendingSlot={renderPendingSlot('teamA')}
                 onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamA') : undefined}
                 onTimeoutCancel={() => setTimeoutCancelTeam('teamA')}
               />
@@ -1404,6 +1431,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 teamFouls={state.teamB.teamFouls[currentQuarter - 1] || 0}
                 timeoutUsed={timeoutUsedFor(state.teamB)}
                 timeoutQuarterLabel={timeoutQuarterLabel}
+                pendingSlot={renderPendingSlot('teamB')}
                 onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamB') : undefined}
                 onTimeoutCancel={() => setTimeoutCancelTeam('teamB')}
               />
@@ -1517,29 +1545,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         </Modal>
       )}
 
-      {/* Team A 保留アクション (左下) */}
-      {pendingActions.filter(p => p.teamId === 'teamA').length > 0 && (
-        <div className="pending-actions-floating-left">
-          <PendingActionPanel
-            pendingActions={pendingActions.filter(p => p.teamId === 'teamA')}
-            onResolveUnknown={handleResolveUnknown}
-            onRemove={handleRemovePendingAction}
-            onDirectResolve={handleDirectResolvePending}
-          />
-        </div>
-      )}
-
-      {/* Team B 保留アクション (右下) */}
-      {pendingActions.filter(p => p.teamId === 'teamB').length > 0 && (
-        <div className="pending-actions-floating-right">
-          <PendingActionPanel
-            pendingActions={pendingActions.filter(p => p.teamId === 'teamB')}
-            onResolveUnknown={handleResolveUnknown}
-            onRemove={handleRemovePendingAction}
-            onDirectResolve={handleDirectResolvePending}
-          />
-        </div>
-      )}
+      {/* 保留アクションはチームパネルのヘッダーへ置く（renderPendingSlot） */}
 
       {/* 試合終了確認モーダル */}
       {endGameConfirmType && (

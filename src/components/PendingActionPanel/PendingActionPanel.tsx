@@ -128,8 +128,15 @@ export function PendingActionPanel({
                 setExpandedId(pendingActions[0].id);
             }
         };
+        // 読み上げ名は明示する。チームパネルのヘッダーへ置いたときは横幅が
+        // 足りず「保留」の文字をCSSで落とすため（App.css の .pending-slot）、
+        // 見えている文字だけに任せると絵文字と数字しか残らない
         return (
-            <button className="pending-badge" onClick={handleOpen}>
+            <button
+                className="pending-badge"
+                onClick={handleOpen}
+                aria-label={`保留 ${pendingActions.length}件 選手を割り当てる`}
+            >
                 <span className="pending-icon">⏳</span>
                 <span className="pending-title">保留</span>
                 <span className="pending-count">{pendingActions.length}</span>

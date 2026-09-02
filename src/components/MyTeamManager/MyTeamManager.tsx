@@ -16,6 +16,7 @@ import {
 } from '../../utils/dataBackup';
 import { parsePlayerNumber, formatPlayerNumber } from '../../utils/playerNumber';
 import { useBackHandler } from '../../hooks/useBackHandler';
+import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import {
     useTeamImportExport,
     TextImportPanel,
@@ -28,11 +29,21 @@ import './MyTeamManager.css';
 
 interface MyTeamManagerProps {
     onBack: () => void;
+    /**
+     * 戻るボタンに出す行き先。
+     *
+     * この画面は2つの場所から開く——ホームからの「マイチーム管理」と、
+     * 試合設定ウィザードの中からの「チーム管理・新規登録」——で、
+     * onBack の行き先がホームとウィザードに分かれる。ラベルを決め打ちすると
+     * どちらかが嘘になるので、開く側が渡す。
+     * 既定は行き先を言わない「戻る」（ウィザードの中はこちら）。
+     */
+    backLabel?: string;
     onSelectTeam?: (team: SavedTeam) => void;
     isSelectionMode?: boolean; // 選択モードかどうか
 }
 
-export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }: MyTeamManagerProps) {
+export function MyTeamManager({ onBack, backLabel = '戻る', onSelectTeam, isSelectionMode = false }: MyTeamManagerProps) {
     const [teams, setTeams] = useState<SavedTeam[]>(loadMyTeams);
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -40,6 +51,11 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
     // 端末の戻る操作は編集フォームを閉じて一覧へ。ここを受け取らないと、
     // 画面ごとホームへ飛んで未保存の名簿が確認なく消える（useBackHandler）
     useBackHandler(editingTeam !== null, () => setEditingTeam(null));
+
+    // 編集フォームは先頭から見せる。チームが増えるほど一覧を下までスクロール
+    // してから「編集」を押すので、位置を引き継ぐと名簿の途中で開く
+    // （詳細は useScrollToTopOnOpen）
+    useScrollToTopOnOpen(editingTeam?.id ?? null);
 
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
 
@@ -142,7 +158,7 @@ export function MyTeamManager({ onBack, onSelectTeam, isSelectionMode = false }:
         <main className="my-team-manager">
             <div className="manager-header">
                 <button className="btn btn-secondary" onClick={onBack}>
-                    ← 戻る
+                    ← {backLabel}
                 </button>
                 <h1>{isSelectionMode ? 'マイチーム選択' : 'マイチーム管理'}</h1>
             </div>

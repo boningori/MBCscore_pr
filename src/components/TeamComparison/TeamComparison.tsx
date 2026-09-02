@@ -101,6 +101,16 @@ export function TeamComparison({
     const totalsA = computeTeamTotals({ team: teamA, teamId: 'teamA', scoreHistory, statHistory, foulHistory }, filter);
     const totalsB = computeTeamTotals({ team: teamB, teamId: 'teamB', scoreHistory, statHistory, foulHistory }, filter);
 
+    // 見出しの最終スコアはクォーター切替に関係なく試合全体。
+    // 'all' は選手スタッツの合計なので、得点履歴を欠くレコードでも
+    // PTS行・履歴一覧・公式様式と同じ数字になる（詳細は ScoreHeader）
+    const gameTotalA = filter === 'all'
+        ? totalsA
+        : computeTeamTotals({ team: teamA, teamId: 'teamA', scoreHistory, statHistory, foulHistory }, 'all');
+    const gameTotalB = filter === 'all'
+        ? totalsB
+        : computeTeamTotals({ team: teamB, teamId: 'teamB', scoreHistory, statHistory, foulHistory }, 'all');
+
     const rows = buildComparisonRows(totalsA, totalsB, { threePointUnused });
     const evolution = buildEvolutionData(scoreHistory, filter);
 
@@ -110,6 +120,8 @@ export function TeamComparison({
                 leftName={teamA.name} leftColor={leftColor}
                 rightName={teamB.name} rightColor={rightColor}
                 quarterScores={quarterScores}
+                leftTotal={gameTotalA.points}
+                rightTotal={gameTotalB.points}
                 caption={caption}
             />
 

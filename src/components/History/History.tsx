@@ -18,6 +18,7 @@ import { quarterLabel } from '../../utils/quarterLabel';
 import { filterAndSortRecords, type HistoryOrder } from './historyFilter';
 import { DeleteConfirmModal } from '../TeamShared';
 import { useBackHandler } from '../../hooks/useBackHandler';
+import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import { migrateTeam } from '../../utils/migrateTeam';
 import { TeamComparison } from '../TeamComparison';
 import { buildComparisonCaption } from '../TeamComparison/comparisonCaption';
@@ -54,6 +55,11 @@ export function History({ onBack }: HistoryProps) {
         }
         setSelectedRecord(null);
     });
+
+    // 試合詳細は先頭（試合名と「← 一覧に戻る」がある側）から見せる。
+    // タブを切り替えたときも同じ——比較タブを下まで読んでから様式へ移ると、
+    // 縦に長い様式の途中で開く（詳細は useScrollToTopOnOpen）
+    useScrollToTopOnOpen(selectedRecord ? `${selectedRecord.id}:${viewMode}` : null);
 
     /**
      * 保存した内容を、開いている詳細と一覧の複製の両方へ反映する。
@@ -316,7 +322,7 @@ export function History({ onBack }: HistoryProps) {
         <main className="history-container">
             <div className="history-header">
                 <button className="btn btn-secondary" onClick={onBack}>
-                    ← ホームへ
+                    ← ホーム
                 </button>
                 <h1>試合履歴</h1>
             </div>

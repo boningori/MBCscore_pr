@@ -14,12 +14,23 @@ function score(teamId: string, quarter: number, points: number): ScoreEntry {
     };
 }
 
-function renderHeader(history: ScoreEntry[], caption = '2026-08-23 県大会 市民体育館') {
+/** 既定では履歴どおりの合計を渡す（記録エンジンを通ったレコードと同じ状態） */
+function sumOf(history: ScoreEntry[], teamId: string): number {
+    return history.filter(s => s.teamId === teamId).reduce((n, s) => n + s.points, 0);
+}
+
+function renderHeader(
+    history: ScoreEntry[],
+    caption = '2026-08-23 県大会 市民体育館',
+    totals?: { left: number; right: number },
+) {
     return render(
         <ScoreHeader
             leftName="福岡第一" leftColor="#3b82f6"
             rightName="中部大第一" rightColor="#e2e8f0"
             quarterScores={computeQuarterScores(history)}
+            leftTotal={totals?.left ?? sumOf(history, 'teamA')}
+            rightTotal={totals?.right ?? sumOf(history, 'teamB')}
             caption={caption}
         />,
     );
@@ -79,5 +90,28 @@ describe('ScoreHeader', () => {
 
         const table = document.querySelector('.quarter-score-table') as HTMLElement;
         expect(within(table).queryByText('OT')).toBeNull();
+    });
+
+    // 得点履歴を欠くレコードが実在する（手で編集した／途中で切れたバックアップの
+    // 取り込み）。ピリオド別の合算で見出しを作っていたため、そのとき見出しだけが
+    // 0-0 になり、すぐ下の PTS 行・履歴一覧・公式様式のスコア欄と食い違っていた。
+    // finalScore を欠くレコードで踏んだのと同じ事故（resolveFinalScore）
+    it('得点履歴が無くても、最終スコアは選手スタッツの合計を出す', () => {
+        renderHeader([], '2026-08-23 県大会', { left: 69, right: 47 });
+
+        const leftScore = document.querySelector('.comparison-score.left') as HTMLElement;
+        const rightScore = document.querySelector('.comparison-score.right') as HTMLElement;
+        expect(leftScore.textContent).toBe('69');
+        expect(rightScore.textContent).toBe('47');
+    });
+
+    // ピリオド別のマスは復元できないので埋めない（公式様式も同じ出方をする）。
+    // T列は最終スコアのほうに合わせる——一覧やPTS行と突き合わせる数字はこちら
+    it('得点履歴が無いとき、ピリオド別は空のまま T だけ最終スコアに合う', () => {
+        renderHeader([], '2026-08-23 県大会', { left: 69, right: 47 });
+
+        const rows = document.querySelectorAll('.quarter-score-table tbody tr');
+        const leftCells = [...rows[0].querySelectorAll('td')].map(td => td.textContent);
+        expect(leftCells).toEqual(['0', '0', '0', '0', '69']);
     });
 });

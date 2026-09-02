@@ -80,7 +80,8 @@ describe('App: ブラウザ履歴と画面遷移の同期', () => {
         await screen.findByText('+ 新規チーム作成');
         expect(window.history.state?.appScreen).toBe('myTeamManager');
 
-        fireEvent.click(screen.getByText('← 戻る'));
+        // 画面ごと抜ける戻るは行き先を名乗る（ホームへ帰る画面はどれも「← ホーム」）
+        fireEvent.click(screen.getByRole('button', { name: '← ホーム' }));
 
         expect(await screen.findByText('新規試合開始')).toBeTruthy();
         // history.back()は非同期でエントリがポップされる

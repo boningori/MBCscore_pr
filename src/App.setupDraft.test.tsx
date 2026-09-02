@@ -119,11 +119,13 @@ describe('試合設定の下書き', () => {
         walkToLineup();
         pressBack();
 
-        // 設定確認から「← 戻る」を4回でホームまで戻る
+        // 設定確認から「← 戻る」を4回で1つ目のステップまで戻る
         for (let i = 0; i < 4; i++) {
             fireEvent.click(screen.getByRole('button', { name: '← 戻る' }));
         }
-        fireEvent.click(screen.getByRole('button', { name: '← 戻る' }));
+        // 1つ目のステップの戻るだけは画面ごと抜ける＝行き先がホームなので、
+        // ラベルもそう名乗る（GameSetup.backLabel.test.tsx）
+        fireEvent.click(screen.getByRole('button', { name: '← ホーム' }));
 
         fireEvent.click(screen.getByRole('button', { name: /新規試合開始/ }));
 
