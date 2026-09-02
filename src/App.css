@@ -499,8 +499,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  /* 5人分の高さ - 画面サイズに応じてスケール */
-  height: clamp(300px, 60vh, 516px);
+  /* 5人分の高さ - 画面サイズに応じてスケール。
+     上限としてだけ効かせ、実際の高さはカード5枚に合わせる。
+     固定高(height)にしていたため、5枚（1枚 clamp(70px,11vh,100px)＋隙間）より
+     この枠のほうが高くなる領域では、カードの下に使われない余白が残っていた。
+     その余白は同じパネルの中で唯一伸縮するアクション履歴（flex:1）から
+     奪ったものになる。実測(1024x768): 枠461px・カード5枚435px＝26pxの死に領域、
+     そのぶん履歴の一覧が41px（行の高さ40pxなので1.02行）まで潰れていた。
+     min-height はコート上が5人未満のときに枠が縮んで見た目が跳ねるのを防ぐ */
+  height: auto;
+  max-height: clamp(300px, 60vh, 516px);
   min-height: clamp(250px, 45vh, 316px);
   flex: none;
   /* 伸縮させない */
@@ -879,30 +887,72 @@
   }
 }
 
-/* ===== 保留アクション (フローティング) =====
-   画面下端に固定（上部だとチームパネルのチーム名・TFバッジを覆ってしまう。
-   下端はアクション履歴の末尾で、隠れても影響が最も少ない） */
-.app-container .pending-actions-floating-left {
+/* ===== 保留アクション =====
+   畳んだバッジはチームパネルのヘッダーに置く（TeamPanel の pendingSlot）。
+   以前は画面下端に固定して浮かせていた。「下端はアクション履歴の末尾で、
+   隠れても影響が最も少ない」という前提だったが、履歴は新しい順に並ぶ
+   （ActionHistory）ので、そこにあるのは末尾ではなく「いま記録した1件」である。
+   しかもパネルの縦の配分は画面の高さで決まるため、低い画面ほど履歴の取り分が
+   減り、実測(1024x768)では一覧41px＝1行だけになってバッジがそれを覆っていた。
+   浮かせ先を変えても解決しない——その高さではパネルの下端に空きが無く、
+   どこへ動かしても選手カードか交代ボタンを覆う。 */
+.app-container .pending-slot {
+  display: flex;
+  align-items: center;
+  /* 畳んだバッジはヘッダーのチップ列の一員。TF・タイムアウトと同じ高さ44pxで、
+     チーム名（min-width:0 + ellipsis）が先に縮んで場所を空ける */
+  min-width: 0;
+}
+
+/* ヘッダーは横幅が限られる（実測1024pxで274px・TFとタイムアウトを置いた残りは
+   約37px）。足りないぶんはチーム名が縮んで埋めるので、チップは削れるだけ削る:
+   「保留」の文字を落とし、件数の座布団も外して絵文字＋数字だけにする。
+   意味はボタンの読み上げ名が持つ（PendingActionPanel の aria-label）。
+   高さ44pxは隣のTF・タイムアウトと揃えたまま変えない（タップ領域の下限） */
+.app-container .pending-slot .pending-badge .pending-title {
+  display: none;
+}
+
+.app-container .pending-slot .pending-badge {
+  padding: 6px 8px;
+  gap: 2px;
+}
+
+.app-container .pending-slot .pending-badge .pending-icon {
+  font-size: var(--font-size-md);
+}
+
+.app-container .pending-slot .pending-badge .pending-count {
+  background: transparent;
+  color: var(--warning-light);
+  padding: 0 2px;
+  font-size: var(--font-size-md);
+}
+
+/* 展開したパネルはビューポート下端に固定する。
+   一時的なオーバーレイなので下の操作を覆ってよい（畳めば元に戻る）。
+   position:fixed なのはチームパネルの overflow-y:auto に切られないため。
+   スタッキング順は index.css のコメント参照（モーダル1000より下） */
+.app-container .pending-slot .pending-action-panel {
   position: fixed;
   bottom: calc(var(--spacing-md) + var(--safe-bottom, 0px));
-  left: calc(var(--spacing-md) + var(--safe-left, 0px));
-  max-width: 380px;
+  width: min(380px, calc(100vw - var(--spacing-md) * 2));
+  margin: 0;
   z-index: 500;
 }
 
-.app-container .pending-actions-floating-right {
-  position: fixed;
-  bottom: calc(var(--spacing-md) + var(--safe-bottom, 0px));
+.app-container .pending-slot-team-a .pending-action-panel {
+  left: calc(var(--spacing-md) + var(--safe-left, 0px));
+}
+
+.app-container .pending-slot-team-b .pending-action-panel {
   right: calc(var(--spacing-md) + var(--safe-right, 0px));
-  max-width: 380px;
-  z-index: 500;
 }
 
 /* 2列レイアウト(〜800px)では下部がアクションボタン領域のため、従来どおり上部に表示 */
 @media (max-width: 800px) {
 
-  .app-container .pending-actions-floating-left,
-  .app-container .pending-actions-floating-right {
+  .app-container .pending-slot .pending-action-panel {
     bottom: auto;
     top: calc(80px + var(--safe-top, 0px));
   }
@@ -910,25 +960,17 @@
 
 @media (max-width: 600px) {
 
-  .app-container .pending-actions-floating-left,
-  .app-container .pending-actions-floating-right {
+  .app-container .pending-slot .pending-action-panel {
     /* ヘッダーがモバイルでは2行(約110px)に折り返すため、その下に配置 */
     top: calc(118px + var(--safe-top, 0px));
-    bottom: auto;
-    /* bottom指定を解除 */
+    width: calc(100vw - var(--spacing-sm) * 2);
+  }
+
+  .app-container .pending-slot-team-a .pending-action-panel {
     left: calc(var(--spacing-sm) + var(--safe-left, 0px));
-    right: auto;
-    max-width: none;
-    width: 48%;
-    /* スマホでは横並びにするか、スタックするか要調整 */
   }
 
-  .app-container .pending-actions-floating-left {
-    right: auto;
-  }
-
-  .app-container .pending-actions-floating-right {
-    left: auto;
+  .app-container .pending-slot-team-b .pending-action-panel {
     right: calc(var(--spacing-sm) + var(--safe-right, 0px));
   }
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Player, ScoreEntry, StatEntry, FoulEntry, ScoreType, StatType, FreeThrowResult } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
@@ -61,6 +62,26 @@ interface TeamPanelProps {
    */
   onTimeoutCancel?: () => void;
   /**
+   * このチームの保留アクション（PendingActionPanel）。ヘッダーのチップ列に置く。
+   *
+   * 以前は画面下端に固定して浮かせていた。下端はアクション履歴の位置で、
+   * そこは「いま記録した1件」を確かめる場所である（履歴は新しい順・
+   * ActionHistory）。パネルの縦の配分は画面の高さで決まるため、低い画面ほど
+   * 履歴の取り分が小さくなり、バッジがその1行を覆う。
+   * 実測(v1.6.15・本番ビルド・1024x768): 履歴の一覧は41px＝1行ぶんしか無く、
+   * バッジ(y712-756)がその行(y707-747)に重なる。行の背番号の位置を叩くと
+   * 当たるのはバッジのほうで、長押しの訂正もできない。
+   *
+   * 浮かせる場所を変えても解決しない——この高さではパネルの下端に空きが無く、
+   * どこへ動かしても選手カードか交代ボタンを覆う。チップ列へ入れて重なりを
+   * 無くす。TF・タイムアウトと同じ「このチームの状態」であり、置き場所としても
+   * 素直（それらと同じ高さ44pxのチップになる）。
+   *
+   * 展開時のパネルはビューポート下端に固定したまま（一時的なオーバーレイなので
+   * 下の操作を覆ってよい）。位置指定は App.css の .pending-slot 側にある。
+   */
+  pendingSlot?: ReactNode;
+  /**
    * 記録できない状態（試合終了後）。
    *
    * アクションボタンは phase === 'finished' で押せなくなるのに、選手カードだけは
@@ -96,6 +117,7 @@ export function TeamPanel({
   timeoutQuarterLabel,
   onTimeoutRequest,
   onTimeoutCancel,
+  pendingSlot,
 }: TeamPanelProps) {
   const side = teamId === 'teamA' ? 'team-a' : 'team-b';
   // 記録済みなら取り消し、未記録なら記録。取り消し先が無い場合だけ従来どおり押せなくする
@@ -128,6 +150,11 @@ export function TeamPanel({
             >
               ⏱ {timeoutUsed ? '済' : '残1'}
             </button>
+          )}
+          {/* 保留アクション。展開時の位置指定のため、側が分かる器で包む
+              （理由は pendingSlot のコメント） */}
+          {pendingSlot && (
+            <div className={`pending-slot pending-slot-${side}`}>{pendingSlot}</div>
           )}
         </div>
       </div>
