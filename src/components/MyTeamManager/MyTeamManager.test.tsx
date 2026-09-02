@@ -232,3 +232,22 @@ describe('MyTeamManager: アクセシビリティ', () => {
         expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('マイチーム管理');
     });
 });
+
+// この画面はホームからも試合設定ウィザードの中からも開く。onBack の行き先が
+// 変わるので、ラベルを決め打ちするとどちらかが嘘になる（詳細は backLabel）
+describe('MyTeamManager: 戻るボタンのラベル', () => {
+    it('既定は行き先を言わない「戻る」（ウィザードの中から開いたとき）', () => {
+        seed([team()]);
+        render(<MyTeamManager onBack={vi.fn()} />);
+
+        expect(screen.getByRole('button', { name: '← 戻る' })).toBeTruthy();
+    });
+
+    it('ホームから開いたときは行き先を名乗る', () => {
+        seed([team()]);
+        render(<MyTeamManager onBack={vi.fn()} backLabel="ホーム" />);
+
+        expect(screen.getByRole('button', { name: '← ホーム' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: '← 戻る' })).toBeNull();
+    });
+});

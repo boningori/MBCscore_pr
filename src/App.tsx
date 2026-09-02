@@ -65,6 +65,7 @@ import { useWakeLock } from './hooks/useWakeLock';
 
 import { useScreenHistorySync } from './hooks/useScreenHistorySync';
 import { useBackHandler } from './hooks/useBackHandler';
+import { useScrollToTopOnOpen } from './hooks/useScrollToTopOnOpen';
 import './App.css';
 
 // 画面の識別子と試合系画面の集合は types/screens.ts に置く。
@@ -196,6 +197,11 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     guardedScreens: GAME_SCREENS,
     canShowGuarded: state.teamA.players.length > 0 && state.phase !== 'finished',
   });
+
+  // 画面を切り替えたらページの先頭から見せる。
+  // URLルーティングを持たないぶん、ブラウザの「新しいページは先頭から」が
+  // 効かない（詳細は useScrollToTopOnOpen）
+  useScrollToTopOnOpen(screen);
 
   // スコアシートとスタメン選択は、画面上の「戻る」が1段だけ戻す（試合画面・試合設定へ）。
   // 端末の戻る操作は画面のエントリを消費してホームへ抜けるため、同じ「戻る」で
@@ -1110,6 +1116,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     return (
       <MyTeamManager
         onBack={handleBackToHome}
+        backLabel="ホーム"
       />
     );
   }

@@ -8,6 +8,7 @@ import { MAX_PLAYERS_PER_TEAM } from '../../types/game';
 import { MyTeamManager } from '../MyTeamManager';
 import { OpponentSelect } from '../OpponentSelect';
 import { useBackHandler } from '../../hooks/useBackHandler';
+import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import './GameSetup.css';
 
 // 履歴（時計を巻き戻す）アイコン
@@ -231,6 +232,12 @@ export function GameSetup({ onComplete, onBack, initialDraft, onDraftChange }: G
     useBackHandler(step !== 'basic', () => setStep(prev => getPrevStep(prev)));
     useBackHandler(showMyTeamManager, closeMyTeamManager);
 
+    // ステップを進めたら先頭から見せる。
+    // 「次へ」は各ステップの末尾にあるので、押した時点でページは下まで
+    // スクロールしている。位置を引き継ぐと、次のステップがステップ表示も
+    // 見出しも画面外の状態で開く（詳細は useScrollToTopOnOpen）
+    useScrollToTopOnOpen(step);
+
     const togglePlayerExclusion = (index: number) => {
         setExcludedPlayerIndices(prev => {
             const next = new Set(prev);
@@ -323,11 +330,14 @@ export function GameSetup({ onComplete, onBack, initialDraft, onDraftChange }: G
     return (
         <main className="game-setup">
             <div className="setup-header">
+                {/* ラベルは行き先に合わせる。1つ目のステップだけ画面ごと抜けて
+                    ホームへ帰る（＝入力が消える）のに、2つ目以降と同じ「戻る」だと
+                    そこだけ結果が違うことが読み取れない */}
                 <button
                     className="btn btn-secondary"
                     onClick={step === 'basic' ? onBack : () => setStep(prev => getPrevStep(prev))}
                 >
-                    ← 戻る
+                    ← {step === 'basic' ? 'ホーム' : '戻る'}
                 </button>
                 <h1>試合設定</h1>
             </div>

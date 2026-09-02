@@ -16,6 +16,7 @@ import {
 } from '../../utils/playerStatsAnalysis';
 import { startOfInputDateUtc, endOfInputDateUtc } from '../../utils/localDate';
 import { useBackHandler } from '../../hooks/useBackHandler';
+import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import { formatWinRate } from './winRate';
 import { sortPlayers, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSort';
 import { PlayerCardList } from './PlayerCardList';
@@ -170,6 +171,11 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
     // 端末の戻る操作は詳細を閉じて一覧へ。ここを受け取らないと、画面上の
     // 「← 一覧」と挙動が食い違い、ホームまで飛ぶ（useBackHandler）
     useBackHandler(viewMode === 'detail', handleBackToSummary);
+
+    // 詳細は先頭（選手名と「← 一覧」がある側）から見せる。
+    // 一覧を下までスクロールしてから選手を選ぶのが普通なので、位置を
+    // 引き継ぐと詳細の途中で開く（詳細は useScrollToTopOnOpen）
+    useScrollToTopOnOpen(viewMode === 'detail' ? selectedPlayer?.playerKey ?? 'detail' : null);
 
     // 集計が使っているキーをそのまま使う。氏名から組み直すと、同姓同名で
     // 背番号込みに分けたキー（buildPlayerKeys）と食い違い、片方を非表示に

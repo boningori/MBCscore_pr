@@ -30,6 +30,7 @@ import {
     playerLimitMessage,
 } from '../TeamShared';
 import { useBackHandler } from '../../hooks/useBackHandler';
+import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import '../../styles/number-grid.css';
 import './OpponentManager.css';
 
@@ -123,6 +124,9 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     // 画面ごとホームへ飛んで未保存の名簿が確認なく消える（useBackHandler）。
     // マイチーム管理と同じ作りなので、同じ扱いにそろえる
     useBackHandler(editingTeam !== null, handleCancel);
+
+    // 編集フォームは先頭から見せる。理由はマイチーム管理の同じ箇所
+    useScrollToTopOnOpen(editingTeam?.id ?? null);
 
     const closeTextImport = () => {
         setShowTextImport(false);
@@ -709,7 +713,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         <main className="opponent-manager-container">
             <div className="opponent-manager-header">
                 <button className="btn btn-secondary" onClick={onBack}>
-                    ← ホームへ
+                    ← ホーム
                 </button>
                 <h1>対戦チーム管理</h1>
             </div>
