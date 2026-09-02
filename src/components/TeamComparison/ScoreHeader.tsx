@@ -13,6 +13,24 @@ interface ScoreHeaderProps {
     rightName: string;
     rightColor: string;
     quarterScores: QuarterScore[];
+    /**
+     * 最終スコア（選手スタッツの合計）。
+     *
+     * クォーター別の合算では出さない。ピリオド別は得点履歴からしか作れないが、
+     * 履歴を欠くレコードが実在する（手で編集した／途中で切れたバックアップの
+     * 取り込み）。そのとき合算は 0 になり、すぐ下の PTS 行・履歴一覧・
+     * 公式様式のスコア欄（どれも選手スタッツの合計）と食い違う。
+     * 実測: 69-47 の試合の見出しだけが 0-0。
+     *
+     * 同じ事故は finalScore を欠くレコードで既に踏んでいて、読み側は
+     * resolveFinalScore で選手スタッツから組み直すことにした
+     * （gameHistoryStorage）。ここもその系統に合わせる。
+     *
+     * ピリオド別のマスは履歴のまま 0 が並ぶ。そこは本当に復元できないので、
+     * 埋めずに空けておく——公式様式の側も同じ出方をする（RunningScoresheet）。
+     */
+    leftTotal: number;
+    rightTotal: number;
     /** 日付・大会名・会場を1行にまとめたもの */
     caption: string;
 }
@@ -20,10 +38,8 @@ interface ScoreHeaderProps {
 export function ScoreHeader({
     leftName, leftColor,
     rightName, rightColor,
-    quarterScores, caption,
+    quarterScores, leftTotal, rightTotal, caption,
 }: ScoreHeaderProps) {
-    const leftTotal = quarterScores.reduce((n, r) => n + r.teamA, 0);
-    const rightTotal = quarterScores.reduce((n, r) => n + r.teamB, 0);
 
     return (
         <div className="comparison-score-header">
