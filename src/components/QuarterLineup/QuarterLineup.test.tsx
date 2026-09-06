@@ -349,7 +349,7 @@ describe('QuarterLineup 開始ボタンのラベル', () => {
 describe('QuarterLineup 選手の追加', () => {
     it('onAddPlayers が無ければ追加ボタンを出さない', () => {
         render(<QuarterLineup quarter={1} teamA={whiteTeam()} teamB={blueTeam()} onStart={vi.fn()} />);
-        expect(screen.queryByRole('button', { name: '＋ 選手を追加' })).toBeNull();
+        expect(screen.queryByRole('button', { name: '+ 選手を追加' })).toBeNull();
     });
 
     it('開いているタブのチームが追加先になる', () => {
@@ -366,7 +366,7 @@ describe('QuarterLineup 選手の追加', () => {
 
         // 青タブに切り替えてから追加する
         fireEvent.click(screen.getByRole('tab', { name: /青/ }));
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         // タブにも「青チーム」の文字があるので、見出しを名指しで確かめる
         expect(screen.getByRole('heading', { name: '選手を追加 - 青チーム' })).toBeTruthy();
 
@@ -391,7 +391,7 @@ describe('QuarterLineup 選手の追加', () => {
         );
 
         selectFive('白');
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
 
@@ -425,12 +425,12 @@ describe('QuarterLineup 選手の追加', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号12' }));
         fireEvent.click(screen.getByRole('button', { name: '2人を追加' }));
 
-        expect(screen.getByText('#9 #12 を追加しました')).toBeTruthy();
+        expect(screen.getByText('白チーム に #9 #12 を追加しました')).toBeTruthy();
     });
 
     it('キャンセルすると onAddPlayers は呼ばれない', () => {
@@ -445,7 +445,7 @@ describe('QuarterLineup 選手の追加', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }));
 
@@ -465,13 +465,13 @@ describe('QuarterLineup 選手の追加', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
-        expect(screen.getByText('#9 を追加しました')).toBeTruthy();
+        expect(screen.getByText('白チーム に #9 を追加しました')).toBeTruthy();
 
         fireEvent.click(screen.getByRole('tab', { name: /青/ }));
-        expect(screen.queryByText('#9 を追加しました')).toBeNull();
+        expect(screen.queryByText('白チーム に #9 を追加しました')).toBeNull();
     });
 
     it('クォーターが変わると状況表示は消える', () => {
@@ -479,13 +479,13 @@ describe('QuarterLineup 選手の追加', () => {
         const shared = { teamA: whiteTeam(), teamB: blueTeam(), onStart: vi.fn(), onAddPlayers };
         const { rerender } = render(<QuarterLineup quarter={1} {...shared} />);
 
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
-        expect(screen.getByText('#9 を追加しました')).toBeTruthy();
+        expect(screen.getByText('白チーム に #9 を追加しました')).toBeTruthy();
 
         rerender(<QuarterLineup quarter={2} {...shared} />);
-        expect(screen.queryByText('#9 を追加しました')).toBeNull();
+        expect(screen.queryByText('白チーム に #9 を追加しました')).toBeNull();
     });
 });
 

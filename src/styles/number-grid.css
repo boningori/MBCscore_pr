@@ -1,5 +1,5 @@
 /* 番号グリッド選択UI - 共通スタイル */
-/* OpponentManager, OpponentSelect で共有 */
+/* OpponentManager, OpponentSelect, AddPlayersPanel で共有 */
 
 .number-grid-container {
     background: var(--bg-secondary);

@@ -455,10 +455,15 @@ button.lineup-player-card {
     margin-bottom: var(--spacing-md);
 }
 
-/* 名簿から漏れた選手を足す入口。選手カード一覧の直下に置く */
+/* 名簿から漏れた選手を足す入口。選手カード一覧の直下に置く。
+   直下の追加通知（.lineup-added-notice）も含めて縦に積む。以前は
+   このパネルより後ろ・注意書き2段落よりさらに下に出しており、
+   スマホでは折り返しの下に隠れうる位置だった */
 .quarter-lineup .lineup-add-player {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
     margin: var(--spacing-sm) 0;
 }
 

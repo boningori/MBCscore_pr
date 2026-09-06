@@ -10,10 +10,12 @@ interface LineupTeamPanelProps {
     onToggle: (playerId: string) => void;
     /** 名簿から漏れた選手を足す入口。省略時はボタンを出さない */
     onRequestAddPlayer?: () => void;
+    /** 直前に追加した選手の状況表示。「+ 選手を追加」ボタンのすぐ下に出す */
+    addedNotice?: string;
 }
 
 /** 1チーム分のスタメン選択パネル。状態を持たない表示専用コンポーネント */
-export function LineupTeamPanel({ quarter, players, selectedIds, onToggle, onRequestAddPlayer }: LineupTeamPanelProps) {
+export function LineupTeamPanel({ quarter, players, selectedIds, onToggle, onRequestAddPlayer, addedNotice }: LineupTeamPanelProps) {
     // 5ファウルの選手も一覧に残し、選択も妨げない。
     // 練習試合では相手チームの同意のうえで退場者が出続けることがあり、除外すると
     // コートに戻す手段がなくなる。人数の少ない編成では残り5名を割って
@@ -125,8 +127,15 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle, onReq
             {onRequestAddPlayer && (
                 <div className="lineup-add-player">
                     <button type="button" className="btn btn-secondary" onClick={onRequestAddPlayer}>
-                        ＋ 選手を追加
+                        + 選手を追加
                     </button>
+                    {/* 以前はこの下に注意書き2段落を挟んでさらに下へ出しており、
+                        スマホでは折り返しの下に隠れうる位置だった。
+                        ボタンの直下に置き、取り違えたタブへ追加していないか
+                        あとから気づけるようチーム名も文言に含める */}
+                    {addedNotice && (
+                        <p className="lineup-added-notice" role="status">{addedNotice}</p>
+                    )}
                 </div>
             )}
 

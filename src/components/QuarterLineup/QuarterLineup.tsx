@@ -100,7 +100,9 @@ export function QuarterLineup({
     const handleAddPlayers = (added: NewPlayerInput[]) => {
         onAddPlayers?.(activeTab, added);
         setAddingPlayers(false);
-        setAddedNotice(`${added.map(p => `#${formatPlayerNumber(p.number)}`).join(' ')} を追加しました`);
+        // どのチームへの追加かをタブ取り違えに後から気づけるよう文言に含める
+        const numbers = added.map(p => `#${formatPlayerNumber(p.number)}`).join(' ');
+        setAddedNotice(`${teams[activeTab].name} に ${numbers} を追加しました`);
     };
 
     // 未完了チームの案内（開始ボタンが無効な理由）
@@ -177,12 +179,14 @@ export function QuarterLineup({
                 players={teams[activeTab].players}
                 selectedIds={selected[activeTab]}
                 onToggle={handleToggle}
-                onRequestAddPlayer={onAddPlayers ? () => setAddingPlayers(true) : undefined}
+                onRequestAddPlayer={onAddPlayers ? () => {
+                    // パネルを開いたら前回の追加通知を消す。残したままだと
+                    // パネルの裏でrole="status"が2つ同時に存在してしまう
+                    setAddedNotice(null);
+                    setAddingPlayers(true);
+                } : undefined}
+                addedNotice={addedNotice ?? undefined}
             />
-
-            {addedNotice && (
-                <p className="lineup-added-notice" role="status">{addedNotice}</p>
-            )}
 
             {addingPlayers && (
                 <AddPlayersPanel

@@ -143,7 +143,7 @@ describe('App: スタメン選択画面からの選手追加', () => {
         selectFive('ホーム');
 
         // 白（マイチーム）は背番号 4〜8 の5人。9番は空いている
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.change(screen.getByLabelText('背番号9の氏名'), { target: { value: '遅刻' } });
         fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
@@ -168,7 +168,7 @@ describe('App: スタメン選択画面からの選手追加', () => {
         // 白のスタメン5人を先に確定しておく（Q1は誰もコート上にいない状態で始まるため）
         selectFive('ホーム');
 
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.change(screen.getByLabelText('背番号9の氏名'), { target: { value: '遅刻' } });
         fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
@@ -196,7 +196,7 @@ describe('App: スタメン選択画面からの選手追加', () => {
         await proceedToLineup();
         selectFive('ホーム');
 
-        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号12' }));
         fireEvent.click(screen.getByRole('button', { name: '背番号00' }));
