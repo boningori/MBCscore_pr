@@ -10,8 +10,15 @@
     font-weight: 700;
 }
 
+/* 白・青を見分けられるようにする。タイムアウト入力（TimeoutInputModal）と
+   同じチーム色トークンを使う。--secondary-light は成功アクションの緑で、
+   チームの色ではない */
+.add-players-modal .add-players-team.white {
+    color: var(--team-white);
+}
+
 .add-players-modal .add-players-team.blue {
-    color: var(--secondary-light);
+    color: var(--team-blue-light);
 }
 
 /* 登録済みの番号は押せない。試合中は選手を削除する手段が無いため、
