@@ -19,6 +19,9 @@ const indexCss = strip(readFileSync(resolve(process.cwd(), 'src/index.css'), 'ut
 const lineupCss = strip(readFileSync(
     resolve(process.cwd(), 'src/components/QuarterLineup/QuarterLineup.css'), 'utf-8',
 ));
+const addPlayersCss = strip(readFileSync(
+    resolve(process.cwd(), 'src/components/QuarterLineup/AddPlayersPanel.css'), 'utf-8',
+));
 
 /** :root の --name: #rrggbb; を全て拾う（index.contrast.test.ts と同じ読み方） */
 function readTokens(): Record<string, string> {
@@ -47,9 +50,11 @@ function resolveColor(value: string): string {
     throw new Error(`解決できない色: ${value}`);
 }
 
-/** セレクタに完全一致するルールから、指定プロパティの値を取る */
-function declaration(selector: string, property: string): string {
-    const rules = [...lineupCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+/** セレクタに完全一致するルールから、指定プロパティの値を取る。
+ * 探索対象は既定で lineupCss。AddPlayersPanel.css も縛れるよう、
+ * 第3引数で読み込み済みの別CSSを渡せるようにする（既存の呼び出しは変えない） */
+function declaration(selector: string, property: string, css: string = lineupCss): string {
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
     const rule = rules.find(m => m[1].replace(/\s+/g, ' ').trim() === selector);
     if (!rule) throw new Error(`ルールが無い: ${selector}`);
     const decl = new RegExp(`(?:^|;)\\s*${property}\\s*:([^;]+)`).exec(rule[2]);
@@ -76,11 +81,41 @@ function contrast(fg: string, bg: string): number {
 const AA = 4.5;
 
 /** セレクタ自身が color と background を持つ場合の実測コントラスト */
-function selfContrast(selector: string): number {
+function selfContrast(selector: string, css: string = lineupCss): number {
     return contrast(
-        resolveColor(declaration(selector, 'color')),
-        resolveColor(declaration(selector, 'background')),
+        resolveColor(declaration(selector, 'color', css)),
+        resolveColor(declaration(selector, 'background', css)),
     );
+}
+
+/** #rrggbb 同士を alpha で合成する（source を alpha、backdrop を (1-alpha) で混ぜる） */
+function blendHex(source: string, backdrop: string, alpha: number): string {
+    const s = parseInt(source.slice(1), 16);
+    const d = parseInt(backdrop.slice(1), 16);
+    const mix = [16, 8, 0].map(shift =>
+        Math.round(alpha * ((s >> shift) & 255) + (1 - alpha) * ((d >> shift) & 255)),
+    );
+    return '#' + mix.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * opacity を考慮した実測コントラスト。opacity はセル自身の color/background を
+ * まとめて背後の地（backdrop）へ合成するため、宣言値をそのまま比べる selfContrast では
+ * 捉えられない（実際に selfContrast で opacity:0.5 版を測ると宣言値どうしの組み合わせが
+ * 偶然 AA を満たしてしまい、回帰を検知できなかった）。
+ * opacity が無ければ backdrop は使われず、宣言値そのものを比べるのと同じになる。
+ */
+function selfContrastComposited(selector: string, backdrop: string, css: string = lineupCss): number {
+    const fg = resolveColor(declaration(selector, 'color', css));
+    const bg = resolveColor(declaration(selector, 'background', css));
+    let opacity = 1;
+    try {
+        opacity = parseFloat(declaration(selector, 'opacity', css));
+    } catch {
+        // opacity 未指定なら 1（合成なし）のまま
+    }
+    if (opacity >= 1) return contrast(fg, bg);
+    return contrast(blendHex(fg, backdrop, opacity), blendHex(bg, backdrop, opacity));
 }
 
 describe('スタメン選択の文字コントラスト（WCAG AA 4.5:1）', () => {
@@ -124,6 +159,16 @@ describe('スタメン選択の文字コントラスト（WCAG AA 4.5:1）', () 
             declaration('.quarter-lineup .lineup-player-stats .stat-fouls', 'color'),
         );
         expect(contrast(foulColor, selectedBg)).toBeGreaterThanOrEqual(AA);
+    });
+
+    it('登録済みの背番号（追加パネル）', () => {
+        // セルの背後にあるのは number-grid-container の地（--bg-secondary）。
+        // opacity で薄くすると、セル自身の色だけでなくこの地と合成された後の値が
+        // 実際に読まれる文字色になる。実測 2.52:1 まで落ちていた（AAは4.5:1）
+        const backdrop = resolveColor('var(--bg-secondary)');
+        expect(
+            selfContrastComposited('.add-players-modal .number-grid-item:disabled', backdrop, addPlayersCss),
+        ).toBeGreaterThanOrEqual(AA);
     });
 });
 

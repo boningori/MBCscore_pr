@@ -22,12 +22,16 @@
 }
 
 /* 登録済みの番号は押せない。試合中は選手を削除する手段が無いため、
-   対戦チーム管理のように「タップで外せる」見た目にすると嘘になる */
+   対戦チーム管理のように「タップで外せる」見た目にすると嘘になる。
+   opacity で薄くすると地に溶けて 2.52:1 まで落ちた（AAは4.5:1）。
+   薄さではなく「破線の枠」で登録済みを示し、文字は読める濃さを保つ。
+   実測は lineupContrast.test.ts で縛る */
 .add-players-modal .number-grid-item:disabled {
     background: var(--bg-primary);
-    border-color: var(--border);
-    color: var(--text-muted);
-    opacity: 0.5;
+    border-color: var(--text-muted);
+    border-style: dashed;
+    color: var(--text-secondary);
+    font-weight: 400;
     cursor: default;
 }
 
