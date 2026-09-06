@@ -128,7 +128,9 @@ export function SubstitutionModal({
                 </div>
 
                 <div className="substitution-grid">
-                    <div className="substitution-column">
+                    {/* コート側は必ず5人。スマホでは2列に折り返して全員を出すため、
+                        ベンチ側と区別できるクラスを付ける */}
+                    <div className="substitution-column court">
                         <h3 className="sub-column-title">コート (OUT)</h3>
                         <div className="sub-player-list">
                             {onCourtPlayers.map(player => (
@@ -151,7 +153,7 @@ export function SubstitutionModal({
                         {playerOut && playerIn ? '⇄' : '→'}
                     </div>
 
-                    <div className="substitution-column">
+                    <div className="substitution-column bench">
                         <h3 className="sub-column-title">ベンチ (IN)</h3>
                         <div className="sub-player-list">
                             {benchPlayers.map(player => {

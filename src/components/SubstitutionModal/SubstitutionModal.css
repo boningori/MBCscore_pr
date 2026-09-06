@@ -224,13 +224,68 @@
         overflow-y: auto;
     }
 
+    /* スクロールする場所をベンチ(IN)の1か所だけにする。
+       元は OUT・IN それぞれの内側スクロールとモーダル全体で計3か所あり、
+       コート側は5人しかいないのに200px上限で必ず溢れていた
+       （実測: 375px幅で必要276px・枠200px）。
+       タブレット幅（601px以上）では元から OUT は溢れず外側も流れないので、
+       スマホをその状態に揃える */
+    .substitution-modal {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* 1カラムに積み、コート(OUT)は中身なりの高さ、ベンチ(IN)が残りを取る。
+       ベンチ行の下限220pxは「見出し41 + 一覧 + 『+ 選手を追加』66」が
+       収まる最小。ここを割ると grid がモーダルから溢れて外側スクロールに
+       戻る＝最後の逃げ道になる。下限を置かずに 0 にすると、ベンチ列だけが
+       行から静かにはみ出し、「+ 選手を追加」が貼り付いたフッターの裏に
+       入って二度と押せなくなる（実測で踏んだ） */
     .substitution-modal .substitution-grid {
         grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(220px, 1fr);
         gap: var(--spacing-sm);
+        flex: 1;
+        min-height: 0;
+        /* 既定の align-items: start だと行の高さに関わらず中身なりに伸びる */
+        align-items: stretch;
     }
 
     .substitution-modal .substitution-arrow {
         display: none;
+    }
+
+    /* コート(OUT)は必ず5人。2列に折り返して全員を出す。
+       1列のままだと281px使ってベンチがほぼ映らない（実測で残り14px） */
+    .substitution-modal .substitution-column.court .sub-player-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xs);
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    /* 2列だと幅が約160px。得点まで入れると名前が潰れるので、
+       コート側だけ落とす。誰を下げるかは背番号と名前で決まる */
+    .substitution-modal .substitution-column.court .sub-player-stats {
+        display: none;
+    }
+
+    .substitution-modal .substitution-column.court .sub-player-card {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        gap: var(--spacing-xs);
+    }
+
+    /* ベンチ(IN)だけが残りの高さでスクロールする。
+       min-height: 0 が無いと flex の既定（auto）で縮まず、列が行から溢れる */
+    .substitution-modal .substitution-column.bench {
+        min-height: 0;
+    }
+
+    .substitution-modal .substitution-column.bench .sub-player-list {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
     }
 
     .substitution-modal .sub-column-title {
@@ -244,8 +299,11 @@
         max-height: 200px;
     }
 
+    /* 縦の余白を詰める。--spacing-md だとカードが約67pxになり、
+       コート5人だけで338pxを使う。min-height 50px は残すので、
+       指で押す的の大きさは変えていない */
     .substitution-modal .sub-player-card {
-        padding: var(--spacing-md);
+        padding: var(--spacing-sm) var(--spacing-md);
         min-height: 50px;
     }
 
@@ -254,13 +312,11 @@
         min-width: 50px;
     }
 
-    .substitution-modal .substitution-actions {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-    }
-
+    /* ボタンは横並びのまま。縦に積むとフッターだけで211pxを取り、
+       その分ベンチの見える人数が減る（実測: 横並びで約50px戻る）。
+       375px幅なら1つあたり約150pxで、指で押すには十分 */
     .substitution-modal .substitution-actions .btn {
-        width: 100%;
+        flex: 1;
         padding: var(--spacing-md);
     }
 }
