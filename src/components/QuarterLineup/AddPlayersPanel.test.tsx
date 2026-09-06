@@ -123,3 +123,60 @@ describe('AddPlayersPanel: 確定', () => {
         expect(screen.getByRole('heading', { name: '選手を追加 - 青チーム' })).toBeTruthy();
     });
 });
+
+/** 背番号 10〜24 の15人（様式の枠がちょうど埋まった状態） */
+const fifteen = Array.from({ length: 15 }, (_, i) => ({ number: 10 + i, name: `既存${10 + i}` }));
+
+describe('AddPlayersPanel: 15人あふれの案内', () => {
+    it('溢れないうちは案内を出さない', () => {
+        setup({ players: fifteen.slice(0, 13) });
+        fireEvent.click(gridButton('背番号4'));
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('若い番号を足すと、押し出される既存選手を名指しで出す', () => {
+        setup({ players: fifteen });
+        fireEvent.click(gridButton('背番号4'));
+
+        const notice = screen.getByRole('status');
+        expect(notice.textContent).toContain('#24 既存24');
+        expect(notice.textContent).toContain('印刷・出力に載らなくなります');
+    });
+
+    it('大きい番号を足すと、載らないのは追加する本人だと伝える', () => {
+        setup({ players: fifteen });
+        fireEvent.click(gridButton('背番号99'));
+
+        const notice = screen.getByRole('status');
+        expect(notice.textContent).toContain('#99');
+        expect(notice.textContent).toContain('印刷・出力に載りません');
+    });
+
+    it('複数人が外れるときは全員を挙げる', () => {
+        setup({ players: fifteen });
+        fireEvent.click(gridButton('背番号4'));
+        fireEvent.click(gridButton('背番号5'));
+
+        const notice = screen.getByRole('status');
+        expect(notice.textContent).toContain('#23 既存23');
+        expect(notice.textContent).toContain('#24 既存24');
+    });
+
+    it('溢れても追加そのものは止めない（練習試合では人数が読めないまま始まる）', () => {
+        const { onSubmit } = setup({ players: fifteen });
+        fireEvent.click(gridButton('背番号4'));
+
+        const submit = screen.getByRole('button', { name: '1人を追加' }) as HTMLButtonElement;
+        expect(submit.disabled).toBe(false);
+        fireEvent.click(submit);
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    it('入力した氏名が案内にも反映される', () => {
+        setup({ players: fifteen });
+        fireEvent.click(gridButton('背番号99'));
+        fireEvent.change(screen.getByLabelText('背番号99の氏名'), { target: { value: '山田' } });
+
+        expect(screen.getByRole('status').textContent).toContain('#99 山田');
+    });
+});

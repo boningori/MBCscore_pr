@@ -78,6 +78,17 @@
     text-align: center;
 }
 
+.add-players-modal .add-players-notice {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
 .add-players-modal .add-players-actions {
     display: flex;
     gap: var(--spacing-sm);

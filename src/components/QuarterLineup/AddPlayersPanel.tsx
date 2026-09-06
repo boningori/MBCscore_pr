@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Modal } from '../Modal';
-import type { NumberedPlayer } from '../TeamShared';
+import { findOverflowPlayers, MAX_PLAYERS_PER_TEAM, type NumberedPlayer } from '../TeamShared';
 import { DOUBLE_ZERO_INTERNAL, formatPlayerNumber, sortPlayersByNumber } from '../../utils/playerNumber';
 import '../../styles/number-grid.css';
 import './AddPlayersPanel.css';
@@ -70,6 +70,23 @@ export function AddPlayersPanel({
         onSubmit(draft.map(d => ({ number: d.number, name: resolveName(d.number, d.name) })));
     };
 
+    // 追加後に公式様式（15人分）から外れる選手。
+    //
+    // 外れるのは「いま追加する選手」とは限らない。名簿は背番号順に並び
+    // （handleAddPlayerToTeam）、様式は先頭15人しか描かない
+    // （RunningScoresheet の players.slice(0, 15)）ため、若い番号を足すと
+    // 番号の大きい既存選手が押し出される。得点を記録済みの選手が黙って
+    // 様式から消えるので、誰が外れるかを確定前に名指しで伝える。
+    //
+    // 追加そのものは止めない。練習試合では人数が読めないまま始まることがあり、
+    // 止めると記録できなくなる（退場者を一覧から外さないのと同じ方針）。
+    const resolvedDraft = draft.map(d => ({ number: d.number, name: resolveName(d.number, d.name) }));
+    const overflow = findOverflowPlayers(players, resolvedDraft);
+    const overflowNew = overflow.filter(o => draftNumbers.has(o.number));
+    const overflowExisting = overflow.filter(o => !draftNumbers.has(o.number));
+    const listNames = (list: NumberedPlayer[]) =>
+        list.map(o => `#${formatPlayerNumber(o.number)} ${o.name}`).join('、');
+
     return (
         <Modal
             onClose={onClose}
@@ -138,6 +155,16 @@ export function AddPlayersPanel({
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {overflow.length > 0 && (
+                <div className="add-players-notice" role="status">
+                    スコアシートの選手欄は{MAX_PLAYERS_PER_TEAM}人分です。
+                    {overflowExisting.length > 0 &&
+                        `追加すると ${listNames(overflowExisting)} が印刷・出力に載らなくなります（記録は残ります）。`}
+                    {overflowNew.length > 0 &&
+                        `${listNames(overflowNew)} は印刷・出力に載りません（記録は残ります）。`}
                 </div>
             )}
 
