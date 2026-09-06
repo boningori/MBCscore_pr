@@ -181,4 +181,22 @@ describe('AddPlayersPanel: 15人あふれの案内', () => {
 
         expect(screen.getByRole('status').textContent).toContain('#99 山田');
     });
+
+    it('元から15人を超えている分は「今回のせい」にしない', () => {
+        // 既に16人（10〜25）。並べ替えは昇順で様式は先頭15人（若い番号）を残すため、
+        // 超過分は常に一番大きい番号から落ちる。#25 は追加する前から既に
+        // 16番目（=15枠の外）にいたので、この時点で既に載っていない。
+        // そこへ #4 を足すと17人になり、15枠に収まるのは #4,10〜23 の15人。
+        // 新たに枠の外へ出るのは、それまで15番目（枠の最後）にいた #24 だけ。
+        // #25 は元々枠の外なので、今回の追加が原因ではない。
+        const sixteen = [...fifteen, { number: 25, name: '既存25' }];
+        setup({ players: sixteen });
+        fireEvent.click(gridButton('背番号4'));
+
+        const notice = screen.getByRole('status');
+        expect(notice.textContent).toContain('追加すると #24 既存24 が印刷・出力に載らなくなります');
+        expect(notice.textContent).toContain('#25 既存25 はこの追加の前から載っていません');
+        // 元から外れていた選手を「追加すると載らなくなる」側に混ぜない
+        expect(notice.textContent).not.toContain('追加すると #25');
+    });
 });

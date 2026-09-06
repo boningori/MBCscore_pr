@@ -65,11 +65,6 @@ export function AddPlayersPanel({
         setDraft(prev => prev.map(d => (d.number === num ? { ...d, name } : d)));
     };
 
-    const handleSubmit = () => {
-        if (draft.length === 0) return;
-        onSubmit(draft.map(d => ({ number: d.number, name: resolveName(d.number, d.name) })));
-    };
-
     // 追加後に公式様式（15人分）から外れる選手。
     //
     // 外れるのは「いま追加する選手」とは限らない。名簿は背番号順に並び
@@ -81,11 +76,34 @@ export function AddPlayersPanel({
     // 追加そのものは止めない。練習試合では人数が読めないまま始まることがあり、
     // 止めると記録できなくなる（退場者を一覧から外さないのと同じ方針）。
     const resolvedDraft = draft.map(d => ({ number: d.number, name: resolveName(d.number, d.name) }));
+
+    // 追加する前から、既に15枠を超えて外れている選手。
+    // findOverflowPlayers 自身が「追加操作をしていないのに『載らなくなります』と
+    // 出すと、いま何をしたせいなのかが伝わらない」と述べている。その原則を、
+    // 既に超過している場合（16人以上の名簿に、さらに追加する場合）にも通す。
+    // playerLimit.ts は変更しない方針のため、差分はここで取る
+    const alreadyOverflow = sortPlayersByNumber([...players]).slice(MAX_PLAYERS_PER_TEAM);
+    const alreadyOverflowNumbers = new Set(alreadyOverflow.map(p => p.number));
+
     const overflow = findOverflowPlayers(players, resolvedDraft);
-    const overflowNew = overflow.filter(o => draftNumbers.has(o.number));
-    const overflowExisting = overflow.filter(o => !draftNumbers.has(o.number));
+    // 追加前から外れていた選手は、常に overflow にも含まれ続ける（並べ替えは
+    // 選手を足すだけで減らないため、一度15枠から外へ出た選手が追加によって
+    // 再び中へ戻ることはない）。「今回の追加のせい」で新たに外れた分だけを
+    // 別扱いにする
+    const newlyOff = overflow.filter(o => !alreadyOverflowNumbers.has(o.number));
+    const newlyOffNew = newlyOff.filter(o => draftNumbers.has(o.number));
+    const newlyOffExisting = newlyOff.filter(o => !draftNumbers.has(o.number));
     const listNames = (list: NumberedPlayer[]) =>
         list.map(o => `#${formatPlayerNumber(o.number)} ${o.name}`).join('、');
+
+    // 案内が名指しした内容と、実際に登録される内容を構造的に一致させるため、
+    // handleSubmit は resolvedDraft（描画に使ったのと同じ値）をそのまま渡す。
+    // 別々に組み立てると「たまたま一致している2つの計算」になり、
+    // 将来どちらかだけを直したときに案内と結果がずれても気づけない
+    const handleSubmit = () => {
+        if (draft.length === 0) return;
+        onSubmit(resolvedDraft);
+    };
 
     return (
         <Modal
@@ -158,13 +176,18 @@ export function AddPlayersPanel({
                 </div>
             )}
 
+            {/* 読み上げは氏名を1文字打つたびに内容が変わり、スクリーンリーダーが
+                全文を読み直す。うるさいが、確定の瞬間に古い案内が出ているほうが
+                危険なので、debounce などで遅延させずこのままにする */}
             {overflow.length > 0 && (
                 <div className="add-players-notice" role="status">
                     スコアシートの選手欄は{MAX_PLAYERS_PER_TEAM}人分です。
-                    {overflowExisting.length > 0 &&
-                        `追加すると ${listNames(overflowExisting)} が印刷・出力に載らなくなります（記録は残ります）。`}
-                    {overflowNew.length > 0 &&
-                        `${listNames(overflowNew)} は印刷・出力に載りません（記録は残ります）。`}
+                    {newlyOffExisting.length > 0 &&
+                        `追加すると ${listNames(newlyOffExisting)} が印刷・出力に載らなくなります（記録は残ります）。`}
+                    {newlyOffNew.length > 0 &&
+                        `${listNames(newlyOffNew)} は印刷・出力に載りません（記録は残ります）。`}
+                    {alreadyOverflow.length > 0 &&
+                        `${listNames(alreadyOverflow)} はこの追加の前から載っていません。`}
                 </div>
             )}
 
