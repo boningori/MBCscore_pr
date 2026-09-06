@@ -1,5 +1,5 @@
 import type { Player } from '../../types/game';
-import { PLAYERS_ON_COURT } from '../../types/game';
+import { MAX_PLAYERS_PER_TEAM, PLAYERS_ON_COURT } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
 
@@ -131,6 +131,17 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle, onReq
             )}
 
             <div className="quarter-rule-hint">
+                {/* あふれの案内はAddPlayersPanelの中にしかなく、確定して閉じると
+                    「#9を追加しました」しか残らない。得点済みの選手が様式に
+                    載らないことに、チーム合計と個人欄の合計を突き合わせるまで
+                    誰も気づけないため、超過している間は常設の注意を出す。
+                    文言はGameSetup（試合設定）の同種の注意と揃える */}
+                {players.length > MAX_PLAYERS_PER_TEAM && (
+                    <p className="lineup-oversized-warn" role="status">
+                        ⚠ このチームは{MAX_PLAYERS_PER_TEAM}人を超えています（{players.length}名）。
+                        スコアシートには背番号順で先頭{MAX_PLAYERS_PER_TEAM}人までしか印字されません。
+                    </p>
+                )}
                 {isRegularQuarter && quarter >= 2 && unplayedNumbers.length > 0 && (
                     <p className="rule-warn">
                         ⚠ 未出場（全員出場の目安）: {unplayedNumbers.map(n => `#${formatPlayerNumber(n)}`).join(', ')}

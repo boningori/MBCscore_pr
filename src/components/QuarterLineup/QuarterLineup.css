@@ -351,6 +351,16 @@
     text-align: center;
 }
 
+/* 15人超のまま確定した事実が画面から消えないようにする常設の注意。
+   --warning は --bg-primary（この画面の地）の上で 8.3:1 とAAを満たすので
+   そのまま文字色に使う。--text-muted は警告色ではないため使わない */
+.quarter-lineup .quarter-rule-hint .lineup-oversized-warn {
+    color: var(--warning);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+}
+
 .quarter-lineup .quarter-rule-hint .rule-warn {
     color: var(--warning);
     font-size: var(--font-size-sm);

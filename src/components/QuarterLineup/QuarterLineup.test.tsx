@@ -488,3 +488,31 @@ describe('QuarterLineup 選手の追加', () => {
         expect(screen.queryByText('#9 を追加しました')).toBeNull();
     });
 });
+
+describe('QuarterLineup 15人超過の常設注意', () => {
+    /** 背番号 1〜16 の16人（様式の15枠を1人超える） */
+    const sixteenPlayers = Array.from({ length: 16 }, (_, i) =>
+        player(`w${i + 1}`, i + 1, `白${i + 1}`, [false, false, false, false]),
+    );
+
+    it('16人いるチームでは常設の注意が出る', () => {
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam(sixteenPlayers)}
+                teamB={blueTeam()}
+                onStart={() => {}}
+            />,
+        );
+
+        expect(screen.getByText(/このチームは15人を超えています（16名）/)).toBeTruthy();
+    });
+
+    it('15人以下では注意を出さない', () => {
+        render(
+            <QuarterLineup quarter={1} teamA={whiteTeam()} teamB={blueTeam()} onStart={() => {}} />,
+        );
+
+        expect(screen.queryByText(/人を超えています/)).toBeNull();
+    });
+});
