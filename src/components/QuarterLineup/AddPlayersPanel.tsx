@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from '../Modal';
 import { findOverflowPlayers, MAX_PLAYERS_PER_TEAM, type NumberedPlayer } from '../TeamShared';
 import { DOUBLE_ZERO_INTERNAL, formatPlayerNumber, sortPlayersByNumber } from '../../utils/playerNumber';
@@ -63,6 +63,42 @@ export function AddPlayersPanel({
 
     const changeName = (num: number, name: string) => {
         setDraft(prev => prev.map(d => (d.number === num ? { ...d, name } : d)));
+    };
+
+    // 確定リストの「外す」ボタンは、押したボタン自身がDOMごと消える。
+    // Modal はポータルを使わず、Tabのトラップと Escape の処理をオーバーレイの
+    // onKeyDown に載せているため、フォーカスが body へ落ちると keydown が
+    // そのハンドラへ届かなくなる（bodyはオーバーレイの祖先で、子孫ではないため
+    // イベントが上がってこない）。消えた行の次に行が残っていればそこへ、
+    // 残っていなければ確定ボタンへ、フォーカスを確実に戻す
+    const draftRemoveButtonRefs = useRef(new Map<number, HTMLButtonElement>());
+    const submitButtonRef = useRef<HTMLButtonElement>(null);
+    const cancelButtonRef = useRef<HTMLButtonElement>(null);
+    const pendingFocusRef = useRef<number | 'submit' | null>(null);
+
+    useEffect(() => {
+        const target = pendingFocusRef.current;
+        if (target === null) return;
+        pendingFocusRef.current = null;
+        if (target === 'submit') {
+            // 1件しかない行を外すと確定ボタンは disabled になる。その場合は
+            // 常に押せるキャンセルボタンへ逃がす
+            const submit = submitButtonRef.current;
+            (submit && !submit.disabled ? submit : cancelButtonRef.current)?.focus();
+        } else {
+            draftRemoveButtonRefs.current.get(target)?.focus();
+        }
+    }, [draft]);
+
+    const removeDraftRow = (num: number) => {
+        setDraft(prev => {
+            const idx = prev.findIndex(d => d.number === num);
+            const next = prev.filter(d => d.number !== num);
+            // 消える行より後ろに行が残っているなら、繰り上がってくるその行の
+            // 「外す」ボタンへ。残っていなければ確定ボタンへ
+            pendingFocusRef.current = idx < prev.length - 1 ? next[idx].number : 'submit';
+            return next;
+        });
     };
 
     // 追加後に公式様式（15人分）から外れる選手。
@@ -165,8 +201,12 @@ export function AddPlayersPanel({
                                 <button
                                     type="button"
                                     className="btn btn-secondary btn-small add-players-draft-remove"
-                                    onClick={() => toggleNumber(d.number)}
+                                    onClick={() => removeDraftRow(d.number)}
                                     aria-label={`背番号${display}を外す`}
+                                    ref={el => {
+                                        if (el) draftRemoveButtonRefs.current.set(d.number, el);
+                                        else draftRemoveButtonRefs.current.delete(d.number);
+                                    }}
                                 >
                                     ✕
                                 </button>
@@ -192,10 +232,11 @@ export function AddPlayersPanel({
             )}
 
             <div className="add-players-actions">
-                <button className="btn btn-secondary btn-large" onClick={onClose}>
+                <button ref={cancelButtonRef} className="btn btn-secondary btn-large" onClick={onClose}>
                     キャンセル
                 </button>
                 <button
+                    ref={submitButtonRef}
                     className="btn btn-success btn-large"
                     onClick={handleSubmit}
                     disabled={draft.length === 0}

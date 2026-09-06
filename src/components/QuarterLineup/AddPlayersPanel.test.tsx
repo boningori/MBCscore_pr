@@ -57,6 +57,18 @@ describe('AddPlayersPanel: 番号グリッド', () => {
         fireEvent.click(screen.getByRole('button', { name: '背番号9を外す' }));
         expect(screen.queryByLabelText('背番号9の氏名')).toBeNull();
     });
+
+    it('行を外してもフォーカスがダイアログの外へ落ちない', () => {
+        setup();
+        fireEvent.click(gridButton('背番号9'));
+        fireEvent.click(gridButton('背番号12'));
+
+        fireEvent.click(screen.getByRole('button', { name: '背番号9を外す' }));
+
+        // body に落ちると Modal の Tab トラップと Escape が効かなくなる
+        expect(document.activeElement).not.toBe(document.body);
+        expect(document.activeElement?.tagName).toBe('BUTTON');
+    });
 });
 
 describe('AddPlayersPanel: 確定', () => {
