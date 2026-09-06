@@ -1,0 +1,82 @@
+/* スタメン選択画面の選手追加パネル */
+/* 番号グリッドの見た目は styles/number-grid.css と共有する */
+
+.add-players-modal {
+    max-width: 560px;
+    width: 100%;
+}
+
+.add-players-modal .add-players-team {
+    font-weight: 700;
+}
+
+.add-players-modal .add-players-team.blue {
+    color: var(--secondary-light);
+}
+
+/* 登録済みの番号は押せない。試合中は選手を削除する手段が無いため、
+   対戦チーム管理のように「タップで外せる」見た目にすると嘘になる */
+.add-players-modal .number-grid-item:disabled {
+    background: var(--bg-primary);
+    border-color: var(--border);
+    color: var(--text-muted);
+    opacity: 0.5;
+    cursor: default;
+}
+
+.add-players-modal .add-players-draft {
+    margin-top: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    max-height: 34vh;
+    overflow-y: auto;
+}
+
+.add-players-modal .add-players-draft-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.add-players-modal .add-players-draft-number {
+    flex: 0 0 auto;
+    min-width: 3.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.add-players-modal .add-players-draft-name {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+}
+
+.add-players-modal .add-players-draft-remove {
+    flex: 0 0 auto;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.add-players-modal .add-players-empty {
+    margin-top: var(--spacing-md);
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+.add-players-modal .add-players-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.add-players-modal .add-players-actions .btn {
+    flex: 1;
+}
