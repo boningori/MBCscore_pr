@@ -91,14 +91,15 @@ export function AddPlayersPanel({
     }, [draft]);
 
     const removeDraftRow = (num: number) => {
-        setDraft(prev => {
-            const idx = prev.findIndex(d => d.number === num);
-            const next = prev.filter(d => d.number !== num);
-            // 消える行より後ろに行が残っているなら、繰り上がってくるその行の
-            // 「外す」ボタンへ。残っていなければ確定ボタンへ
-            pendingFocusRef.current = idx < prev.length - 1 ? next[idx].number : 'submit';
-            return next;
-        });
+        // StrictModeはsetDraftの更新関数を開発時に2回呼ぶため、ref代入はその中に
+        // 置かない（今は同じprevから同じ値が出るので害はないが、純粋でなくなった
+        // 瞬間に無言で壊れる）。フォーカス先は現在のdraftから先に決めておく
+        const idx = draft.findIndex(d => d.number === num);
+        const remaining = draft.filter(d => d.number !== num);
+        // 消える行より後ろに行が残っているなら、繰り上がってくるその行の
+        // 「外す」ボタンへ。残っていなければ確定ボタンへ
+        pendingFocusRef.current = idx < draft.length - 1 ? remaining[idx].number : 'submit';
+        setDraft(prev => prev.filter(d => d.number !== num));
     };
 
     // 追加後に公式様式（15人分）から外れる選手。

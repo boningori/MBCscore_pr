@@ -22,6 +22,9 @@ const lineupCss = strip(readFileSync(
 const addPlayersCss = strip(readFileSync(
     resolve(process.cwd(), 'src/components/QuarterLineup/AddPlayersPanel.css'), 'utf-8',
 ));
+const numberGridCss = strip(readFileSync(
+    resolve(process.cwd(), 'src/styles/number-grid.css'), 'utf-8',
+));
 
 /** :root の --name: #rrggbb; を全て拾う（index.contrast.test.ts と同じ読み方） */
 function readTokens(): Record<string, string> {
@@ -81,10 +84,10 @@ function contrast(fg: string, bg: string): number {
 const AA = 4.5;
 
 /** セレクタ自身が color と background を持つ場合の実測コントラスト */
-function selfContrast(selector: string, css: string = lineupCss): number {
+function selfContrast(selector: string): number {
     return contrast(
-        resolveColor(declaration(selector, 'color', css)),
-        resolveColor(declaration(selector, 'background', css)),
+        resolveColor(declaration(selector, 'color')),
+        resolveColor(declaration(selector, 'background')),
     );
 }
 
@@ -162,10 +165,12 @@ describe('スタメン選択の文字コントラスト（WCAG AA 4.5:1）', () 
     });
 
     it('登録済みの背番号（追加パネル）', () => {
-        // セルの背後にあるのは number-grid-container の地（--bg-secondary）。
+        // セルの背後にあるのは number-grid-container の地。
         // opacity で薄くすると、セル自身の色だけでなくこの地と合成された後の値が
         // 実際に読まれる文字色になる。実測 2.52:1 まで落ちていた（AAは4.5:1）
-        const backdrop = resolveColor('var(--bg-secondary)');
+        // 地の値はCSSから読み取る（ここに書き写すと、コンテナが再配色されたときに
+        // テストだけ古い地のまま残り、実際の画面より甘い判定になりかねない）
+        const backdrop = resolveColor(declaration('.number-grid-container', 'background', numberGridCss));
         expect(
             selfContrastComposited('.add-players-modal .number-grid-item:disabled', backdrop, addPlayersCss),
         ).toBeGreaterThanOrEqual(AA);
