@@ -1826,10 +1826,15 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 <div className="sub-empty">ベンチに選手がいません</div>
               )}
             </div>
-            <div className="substitution-actions">
-              <button className="btn btn-secondary btn-large" onClick={() => setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' })}>
-                戻る
-              </button>
+            {/* 交代モーダルと同じ substitution-modal を使うため、ボタンも
+                同じ footer に入れる。入れないと下端の余白が無いまま
+                （.substitution-modal の padding-bottom: 0）ボタンが縁に貼り付く */}
+            <div className="substitution-footer">
+              <div className="substitution-actions">
+                <button className="btn btn-secondary btn-large" onClick={() => setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' })}>
+                  戻る
+                </button>
+              </div>
             </div>
           </Modal>
         );

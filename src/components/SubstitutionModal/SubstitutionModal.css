@@ -1,5 +1,9 @@
 .substitution-modal {
     max-width: 600px;
+    /* 下の余白は貼り付くフッター自身が持つ。ここに padding を残すと、
+       貼り付いたフッターの下にその分の帯ができ、選手カードがそこを流れて
+       覗く（.add-players-modal で実測したのと同じ現象） */
+    padding-bottom: 0;
 }
 
 .substitution-modal .substitution-grid {
@@ -120,12 +124,31 @@
     border-radius: var(--radius-md);
 }
 
+/* 案内とボタンをモーダルの下端に貼り付ける。
+   15人編成では名簿だけで枠を超え、既定の位置ではボタンが画面の外にあった
+   （実測: 375px幅でボタン上端781px・モーダル下端771px。172pxスクロール
+   しないと押せない）。交代は試合が止まっている短い間に何度も行う操作なので、
+   毎回ボタンを探しに行かせない。
+   地はモーダル本体（.modal-content の --bg-secondary）と同じにして、
+   裏を流れる選手カードが透けないようにする。
+   スタメン選択の追加パネル（.add-players-footer）と同じ作り */
+.substitution-modal .substitution-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    /* 左右は .modal-content の padding を打ち消して端まで届かせる */
+    margin: var(--spacing-md) calc(-1 * var(--spacing-lg)) 0;
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
 .substitution-modal .substitution-actions {
     display: flex;
     gap: var(--spacing-md);
     justify-content: center;
-    margin-top: var(--spacing-lg);
-    padding-top: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
     border-top: 1px solid var(--border);
 }
 

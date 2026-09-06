@@ -267,38 +267,49 @@ export function SubstitutionModal({
                 </div>
 
                 {/*
-                  実行前の案内と実行後の結果を同じ高さの枠で入れ替える。
-                  結果を後から差し込むとボタンが下にずれ、直前に「交代実行」が
-                  あった位置に「完了」が来る。連続でタップした指がモーダルを
-                  閉じてしまうため、枠は最初から場所を取っておく
+                  案内とボタンはモーダルの下端に貼り付ける。15人編成では
+                  名簿だけで枠を超え、既定の位置ではボタンが画面外にあった
+                  （実測: 375px幅でボタン上端781px・モーダル下端771px、
+                  172pxスクロールしないと押せない）。交代は試合が止まっている
+                  短い間に何度も行うので、探しに行かせない。
+                  案内を外に残すと、上の方を見ているあいだ「交代しました」が
+                  画面外になり、実行できたのか分からなくなる
                 */}
-                {doneCount > 0 ? (
-                    <div className="substitution-note done" role="status">
-                        <span className="substitution-note-pair">{lastDone}</span>
-                        <span className="substitution-note-sub">
-                            交代しました{doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
-                        </span>
-                    </div>
-                ) : (
-                    <div className="substitution-note">
-                        <span className="substitution-note-sub">
-                            交代実行してもこの画面は閉じません。続けて何人でも交代できます
-                        </span>
-                    </div>
-                )}
+                <div className="substitution-footer">
+                    {/*
+                      実行前の案内と実行後の結果を同じ高さの枠で入れ替える。
+                      結果を後から差し込むとボタンが下にずれ、直前に「交代実行」が
+                      あった位置に「完了」が来る。連続でタップした指がモーダルを
+                      閉じてしまうため、枠は最初から場所を取っておく
+                    */}
+                    {doneCount > 0 ? (
+                        <div className="substitution-note done" role="status">
+                            <span className="substitution-note-pair">{lastDone}</span>
+                            <span className="substitution-note-sub">
+                                交代しました{doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="substitution-note">
+                            <span className="substitution-note-sub">
+                                交代実行してもこの画面は閉じません。続けて何人でも交代できます
+                            </span>
+                        </div>
+                    )}
 
-                <div className="substitution-actions">
-                    {/* 交代はその場で確定するため、実行後に「キャンセル」を残すと取り消せると誤解される */}
-                    <button className="btn btn-secondary btn-large" onClick={onClose}>
-                        {doneCount > 0 ? '完了' : 'キャンセル'}
-                    </button>
-                    <button
-                        className="btn btn-success btn-large"
-                        onClick={handleConfirm}
-                        disabled={!playerOut || !playerIn}
-                    >
-                        交代実行
-                    </button>
+                    <div className="substitution-actions">
+                        {/* 交代はその場で確定するため、実行後に「キャンセル」を残すと取り消せると誤解される */}
+                        <button className="btn btn-secondary btn-large" onClick={onClose}>
+                            {doneCount > 0 ? '完了' : 'キャンセル'}
+                        </button>
+                        <button
+                            className="btn btn-success btn-large"
+                            onClick={handleConfirm}
+                            disabled={!playerOut || !playerIn}
+                        >
+                            交代実行
+                        </button>
+                    </div>
                 </div>
         </Modal>
     );
