@@ -452,4 +452,39 @@ describe('QuarterLineup 選手の追加', () => {
         expect(onAddPlayers).not.toHaveBeenCalled();
         expect(screen.queryByRole('button', { name: '背番号9' })).toBeNull();
     });
+
+    it('タブを切り替えると状況表示は消える（別チームの話だと誤読させない）', () => {
+        const onAddPlayers = vi.fn();
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam()}
+                teamB={blueTeam()}
+                onStart={vi.fn()}
+                onAddPlayers={onAddPlayers}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+        expect(screen.getByText('#9 を追加しました')).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('tab', { name: /青/ }));
+        expect(screen.queryByText('#9 を追加しました')).toBeNull();
+    });
+
+    it('クォーターが変わると状況表示は消える', () => {
+        const onAddPlayers = vi.fn();
+        const shared = { teamA: whiteTeam(), teamB: blueTeam(), onStart: vi.fn(), onAddPlayers };
+        const { rerender } = render(<QuarterLineup quarter={1} {...shared} />);
+
+        fireEvent.click(screen.getByRole('button', { name: '＋ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+        expect(screen.getByText('#9 を追加しました')).toBeTruthy();
+
+        rerender(<QuarterLineup quarter={2} {...shared} />);
+        expect(screen.queryByText('#9 を追加しました')).toBeNull();
+    });
 });
