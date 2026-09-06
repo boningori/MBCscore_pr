@@ -3,6 +3,8 @@ import type { Player, Team } from '../../types/game';
 import { PLAYERS_ON_COURT } from '../../types/game';
 import { isDisqualified } from '../../utils/disqualification';
 import { quarterLabel } from '../../utils/quarterLabel';
+import { formatPlayerNumber } from '../../utils/playerNumber';
+import { AddPlayersPanel, type NewPlayerInput } from './AddPlayersPanel';
 import { LineupTeamPanel } from './LineupTeamPanel';
 import './QuarterLineup.css';
 
@@ -20,6 +22,8 @@ interface QuarterLineupProps {
     onTabChange?: (tab: LineupTabId) => void;
     /** 両チーム5名揃った状態で開始したときに1回だけ呼ばれる */
     onStart: (selected: { teamA: string[]; teamB: string[] }) => void;
+    /** 名簿から漏れた選手を追加する。省略すると追加の入口を出さない */
+    onAddPlayers?: (teamId: LineupTabId, players: NewPlayerInput[]) => void;
     onBack?: () => void;
 }
 
@@ -36,6 +40,7 @@ export function QuarterLineup({
     initialTab = 'teamA',
     onTabChange,
     onStart,
+    onAddPlayers,
     onBack,
 }: QuarterLineupProps) {
     const computeInitialSelected = () => ({
@@ -46,12 +51,18 @@ export function QuarterLineup({
     const [activeTab, setActiveTab] = useState<LineupTabId>(initialTab);
     const [selected, setSelected] = useState<Record<LineupTabId, string[]>>(computeInitialSelected);
 
+    // 追加パネルの開閉と、閉じた直後の状況表示。
+    // 追加は取り消せないので、何を足したのかを画面に残す
+    const [addingPlayers, setAddingPlayers] = useState(false);
+    const [addedNotice, setAddedNotice] = useState<string | null>(null);
+
     // クォーターが変わったら両チームの選択をリセット
     // （レンダー中の状態調整。useEffectでのcascading render警告を避けるため）
     const [prevQuarter, setPrevQuarter] = useState(quarter);
     if (quarter !== prevQuarter) {
         setPrevQuarter(quarter);
         setSelected(computeInitialSelected());
+        setAddedNotice(null);
     }
 
     const teams: Record<LineupTabId, Team> = { teamA, teamB };
@@ -74,6 +85,7 @@ export function QuarterLineup({
 
     const handleTabClick = (tab: LineupTabId) => {
         setActiveTab(tab);
+        setAddedNotice(null);
         onTabChange?.(tab);
     };
 
@@ -83,6 +95,12 @@ export function QuarterLineup({
         if (isValid) {
             onStart({ teamA: selected.teamA, teamB: selected.teamB });
         }
+    };
+
+    const handleAddPlayers = (added: NewPlayerInput[]) => {
+        onAddPlayers?.(activeTab, added);
+        setAddingPlayers(false);
+        setAddedNotice(`${added.map(p => `#${formatPlayerNumber(p.number)}`).join(' ')} を追加しました`);
     };
 
     // 未完了チームの案内（開始ボタンが無効な理由）
@@ -159,7 +177,22 @@ export function QuarterLineup({
                 players={teams[activeTab].players}
                 selectedIds={selected[activeTab]}
                 onToggle={handleToggle}
+                onRequestAddPlayer={onAddPlayers ? () => setAddingPlayers(true) : undefined}
             />
+
+            {addedNotice && (
+                <p className="lineup-added-notice" role="status">{addedNotice}</p>
+            )}
+
+            {addingPlayers && (
+                <AddPlayersPanel
+                    teamName={teams[activeTab].name}
+                    teamColor={teams[activeTab].color}
+                    players={teams[activeTab].players}
+                    onSubmit={handleAddPlayers}
+                    onClose={() => setAddingPlayers(false)}
+                />
+            )}
 
             <div className="quarter-lineup-actions">
                 <button

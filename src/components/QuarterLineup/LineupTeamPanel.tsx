@@ -8,10 +8,12 @@ interface LineupTeamPanelProps {
     players: Player[];
     selectedIds: string[];
     onToggle: (playerId: string) => void;
+    /** 名簿から漏れた選手を足す入口。省略時はボタンを出さない */
+    onRequestAddPlayer?: () => void;
 }
 
 /** 1チーム分のスタメン選択パネル。状態を持たない表示専用コンポーネント */
-export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: LineupTeamPanelProps) {
+export function LineupTeamPanel({ quarter, players, selectedIds, onToggle, onRequestAddPlayer }: LineupTeamPanelProps) {
     // 5ファウルの選手も一覧に残し、選択も妨げない。
     // 練習試合では相手チームの同意のうえで退場者が出続けることがあり、除外すると
     // コートに戻す手段がなくなる。人数の少ない編成では残り5名を割って
@@ -117,6 +119,16 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                     );
                 })}
             </div>
+
+            {/* 「あの子のカードが無い」と気づく場所の直下に置く。
+                試合設定まで戻らず、交代モーダルまで回り道せずに足せるようにする */}
+            {onRequestAddPlayer && (
+                <div className="lineup-add-player">
+                    <button type="button" className="btn btn-secondary" onClick={onRequestAddPlayer}>
+                        ＋ 選手を追加
+                    </button>
+                </div>
+            )}
 
             <div className="quarter-rule-hint">
                 {isRegularQuarter && quarter >= 2 && unplayedNumbers.length > 0 && (

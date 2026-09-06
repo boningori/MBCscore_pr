@@ -444,3 +444,17 @@ button.lineup-player-card {
     font-weight: 600;
     margin-bottom: var(--spacing-md);
 }
+
+/* 名簿から漏れた選手を足す入口。選手カード一覧の直下に置く */
+.quarter-lineup .lineup-add-player {
+    display: flex;
+    justify-content: center;
+    margin: var(--spacing-sm) 0;
+}
+
+.quarter-lineup .lineup-added-notice {
+    margin: var(--spacing-sm) 0 0;
+    text-align: center;
+    color: var(--secondary-light);
+    font-size: var(--font-size-sm);
+}
