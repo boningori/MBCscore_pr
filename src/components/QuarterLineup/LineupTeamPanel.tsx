@@ -146,7 +146,7 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle, onReq
                     誰も気づけないため、超過している間は常設の注意を出す。
                     文言はGameSetup（試合設定）の同種の注意と揃える */}
                 {players.length > MAX_PLAYERS_PER_TEAM && (
-                    <p className="lineup-oversized-warn" role="status">
+                    <p className="lineup-oversized-warn">
                         ⚠ このチームは{MAX_PLAYERS_PER_TEAM}人を超えています（{players.length}名）。
                         スコアシートには背番号順で先頭{MAX_PLAYERS_PER_TEAM}人までしか印字されません。
                     </p>

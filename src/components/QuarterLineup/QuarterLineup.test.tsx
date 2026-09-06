@@ -515,4 +515,22 @@ describe('QuarterLineup 15人超過の常設注意', () => {
 
         expect(screen.queryByText(/人を超えています/)).toBeNull();
     });
+
+    it('ちょうど15人（様式の上限）では注意を出さない', () => {
+        // > と >= の取り違えを検知する境界値。15人は様式にちょうど収まる、
+        // このアプリで最も一般的なフル編成なので、誤警告は特に避けたい。
+        const fifteenPlayers = Array.from({ length: 15 }, (_, i) =>
+            player(`w${i + 1}`, i + 1, `白${i + 1}`, [false, false, false, false]),
+        );
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam(fifteenPlayers)}
+                teamB={blueTeam()}
+                onStart={() => {}}
+            />,
+        );
+
+        expect(screen.queryByText(/人を超えています/)).toBeNull();
+    });
 });
