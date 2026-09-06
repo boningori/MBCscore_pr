@@ -148,7 +148,9 @@ describe('AddPlayersPanel: 15人あふれの案内', () => {
         fireEvent.click(gridButton('背番号99'));
 
         const notice = screen.getByRole('status');
-        expect(notice.textContent).toContain('#99');
+        // 氏名を空欄のまま追加すると「選手99」になる。案内にも、利用者が
+        // 実際に手にする名前が出ていないと誰が載らないのか分からない
+        expect(notice.textContent).toContain('#99 選手99');
         expect(notice.textContent).toContain('印刷・出力に載りません');
     });
 
