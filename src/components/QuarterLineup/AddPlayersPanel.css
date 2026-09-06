@@ -4,6 +4,12 @@
 .add-players-modal {
     max-width: 560px;
     width: 100%;
+    /* 下の余白は貼り付くフッター自身が持つ。ここに padding を残すと、
+       貼り付いたフッターの下にその分の帯ができ、グリッドのセルがそこを
+       流れて覗く（実測: 375px幅で5マス）。
+       calc(-1 * var(--spacing-lg)) で相殺する手もあるが、clamp のため
+       同じトークンが文脈によって違う値に解決され、ずれが残った */
+    padding-bottom: 0;
 }
 
 .add-players-modal .add-players-team {
@@ -82,8 +88,31 @@
     text-align: center;
 }
 
+/* 案内と確定ボタンをパネルの下端に貼り付ける。
+   101マスのグリッドは 375px 幅で1200px を超え、確定ボタンが折り返しの
+   約790px下に沈んでいた（実測）。番号を選ぶたびに画面2つ分スクロールしないと
+   確定できず、試合が止まっている短い時間に間に合わない。
+   あふれの案内も同じ枠に入れて一緒に貼る。ボタンだけ貼ると、案内を一度も
+   見ないまま確定できてしまう。
+   地はモーダル本体（.modal-content の --bg-secondary）と同じにして、
+   裏を流れるグリッドが透けないようにする */
+.add-players-modal .add-players-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    /* 左右は .modal-content の padding を打ち消して端まで届かせる */
+    margin: var(--spacing-md) calc(-1 * var(--spacing-lg)) 0;
+    padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    /* 案内の有無で余白が変わらないよう、間隔は gap に集約する */
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
 .add-players-modal .add-players-notice {
-    margin-top: var(--spacing-sm);
     padding: var(--spacing-sm);
     background: var(--bg-tertiary);
     border: 1px solid var(--warning);
@@ -96,7 +125,6 @@
 .add-players-modal .add-players-actions {
     display: flex;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-md);
 }
 
 .add-players-modal .add-players-actions .btn {

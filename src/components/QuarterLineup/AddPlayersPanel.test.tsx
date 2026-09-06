@@ -211,4 +211,17 @@ describe('AddPlayersPanel: 15人あふれの案内', () => {
         // 元から外れていた選手を「追加すると載らなくなる」側に混ぜない
         expect(notice.textContent).not.toContain('追加すると #25');
     });
+
+    it('案内は確定ボタンと同じ枠に入る（見ないまま確定できないようにする）', () => {
+        // 確定ボタンはパネル下端に貼り付いている（101マスのグリッドの下に
+        // 埋もれると押しに行けないため）。案内を同じ枠に入れておかないと、
+        // グリッドの下にある案内を一度も見ないまま確定できてしまう
+        setup({ players: fifteen });
+        fireEvent.click(gridButton('背番号4'));
+
+        const footer = screen.getByRole('status').closest('.add-players-footer');
+        expect(footer).not.toBeNull();
+        expect(footer!.contains(screen.getByRole('button', { name: '1人を追加' }))).toBe(true);
+        expect(footer!.contains(screen.getByRole('button', { name: 'キャンセル' }))).toBe(true);
+    });
 });

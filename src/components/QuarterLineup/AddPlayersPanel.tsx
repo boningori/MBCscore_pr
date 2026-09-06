@@ -217,33 +217,38 @@ export function AddPlayersPanel({
                 </div>
             )}
 
-            {/* 読み上げは氏名を1文字打つたびに内容が変わり、スクリーンリーダーが
-                全文を読み直す。うるさいが、確定の瞬間に古い案内が出ているほうが
-                危険なので、debounce などで遅延させずこのままにする */}
-            {overflow.length > 0 && (
-                <div className="add-players-notice" role="status">
-                    スコアシートの選手欄は{MAX_PLAYERS_PER_TEAM}人分です。
-                    {newlyOffExisting.length > 0 &&
-                        `追加すると ${listNames(newlyOffExisting)} が印刷・出力に載らなくなります（記録は残ります）。`}
-                    {newlyOffNew.length > 0 &&
-                        `${listNames(newlyOffNew)} は印刷・出力に載りません（記録は残ります）。`}
-                    {alreadyOverflow.length > 0 &&
-                        `${listNames(alreadyOverflow)} はこの追加の前から載っていません。`}
-                </div>
-            )}
+            {/* あふれの案内と確定ボタンは必ず同じ枠に入れる。
+                ボタンだけを貼り付けると、101マスのグリッドの下にある案内を
+                一度も見ないまま確定できてしまい、案内の意味が無くなる */}
+            <div className="add-players-footer">
+                {/* 読み上げは氏名を1文字打つたびに内容が変わり、スクリーンリーダーが
+                    全文を読み直す。うるさいが、確定の瞬間に古い案内が出ているほうが
+                    危険なので、debounce などで遅延させずこのままにする */}
+                {overflow.length > 0 && (
+                    <div className="add-players-notice" role="status">
+                        スコアシートの選手欄は{MAX_PLAYERS_PER_TEAM}人分です。
+                        {newlyOffExisting.length > 0 &&
+                            `追加すると ${listNames(newlyOffExisting)} が印刷・出力に載らなくなります（記録は残ります）。`}
+                        {newlyOffNew.length > 0 &&
+                            `${listNames(newlyOffNew)} は印刷・出力に載りません（記録は残ります）。`}
+                        {alreadyOverflow.length > 0 &&
+                            `${listNames(alreadyOverflow)} はこの追加の前から載っていません。`}
+                    </div>
+                )}
 
-            <div className="add-players-actions">
-                <button ref={cancelButtonRef} className="btn btn-secondary btn-large" onClick={onClose}>
-                    キャンセル
-                </button>
-                <button
-                    ref={submitButtonRef}
-                    className="btn btn-success btn-large"
-                    onClick={handleSubmit}
-                    disabled={draft.length === 0}
-                >
-                    {draft.length > 0 ? `${draft.length}人を追加` : '追加'}
-                </button>
+                <div className="add-players-actions">
+                    <button ref={cancelButtonRef} className="btn btn-secondary btn-large" onClick={onClose}>
+                        キャンセル
+                    </button>
+                    <button
+                        ref={submitButtonRef}
+                        className="btn btn-success btn-large"
+                        onClick={handleSubmit}
+                        disabled={draft.length === 0}
+                    >
+                        {draft.length > 0 ? `${draft.length}人を追加` : '追加'}
+                    </button>
+                </div>
             </div>
         </Modal>
     );
