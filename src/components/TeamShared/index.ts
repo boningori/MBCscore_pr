@@ -3,4 +3,5 @@ export type { ImportTarget, UseTeamImportExportOptions } from './useTeamImportEx
 export { TextImportPanel } from './TextImportPanel';
 export { ImportConfirmPanel } from './ImportConfirmPanel';
 export { DeleteConfirmModal } from './DeleteConfirmModal';
-export { isPlayerLimitReached, playerLimitMessage, MAX_PLAYERS_PER_TEAM } from './playerLimit';
+export { isPlayerLimitReached, playerLimitMessage, findOverflowPlayer, findOverflowPlayers, MAX_PLAYERS_PER_TEAM } from './playerLimit';
+export type { NumberedPlayer } from './playerLimit';

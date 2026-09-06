@@ -4,7 +4,7 @@
 // 記録は残るのに提出物からだけ消えるので、誰が外れるかを事前に示す必要がある。
 
 import { describe, it, expect } from 'vitest';
-import { findOverflowPlayer } from './playerLimit';
+import { findOverflowPlayer, findOverflowPlayers } from './playerLimit';
 
 const p = (number: number, name = `選手${number}`) => ({ number, name });
 
@@ -36,5 +36,36 @@ describe('findOverflowPlayer', () => {
     it('16人を超えていても、外れるのは様式の16番目に当たる選手', () => {
         const sixteen = [...full, p(30)];
         expect(findOverflowPlayer(sixteen, p(4))).toEqual(p(24));
+    });
+});
+
+describe('findOverflowPlayers（複数人まとめて追加する場合）', () => {
+    it('溢れないなら空配列', () => {
+        expect(findOverflowPlayers(full.slice(0, 12), [p(4), p(5)])).toEqual([]);
+    });
+
+    it('ちょうど15人に収まるなら空配列', () => {
+        expect(findOverflowPlayers(full.slice(0, 13), [p(4), p(5)])).toEqual([]);
+    });
+
+    it('若い番号を2人足すと、番号の大きい既存選手が2人押し出される', () => {
+        expect(findOverflowPlayers(full, [p(4), p(5)])).toEqual([p(23), p(24)]);
+    });
+
+    it('大きい番号を足すと、追加した本人が外れる', () => {
+        expect(findOverflowPlayers(full, [p(98), p(99)])).toEqual([p(98), p(99)]);
+    });
+
+    it('既存と追加が混ざって外れることもある', () => {
+        // 10〜24 の15人 + #4（若い）と #99（大きい）→ 17人。外れるのは #24 と #99
+        expect(findOverflowPlayers(full, [p(4), p(99)])).toEqual([p(24), p(99)]);
+    });
+
+    it('00 は最後に並ぶので、00 を足すと本人が外れる', () => {
+        expect(findOverflowPlayers(full, [p(100, 'ダブルゼロ')])).toEqual([p(100, 'ダブルゼロ')]);
+    });
+
+    it('追加が0人なら、既に16人いても空配列（追加操作をしていないので案内しない）', () => {
+        expect(findOverflowPlayers([...full, p(30)], [])).toEqual([]);
     });
 });
