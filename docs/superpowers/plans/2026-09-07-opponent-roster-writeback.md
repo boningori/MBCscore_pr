@@ -537,6 +537,18 @@ beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     sessionStorage.setItem('mbc-restore-dismissed', '1');
+    // マイチームが1つも無いと Home はメニューを出さず「まずマイチームを
+    // 登録してください」の案内になる（Home.tsx の hasMyTeams）。
+    // 「試合結果を保存」に辿り着けないので必ず仕込む
+    localStorage.setItem('minibasket-my-teams', JSON.stringify([{
+        id: 'team-1',
+        name: 'ホームチーム',
+        coachName: 'コーチ',
+        assistantCoachName: '',
+        players: [{ number: 4, name: 'ホーム1', isCaptain: true }],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+    }]));
     // 試合を保存すると履歴が1件増え、バックアップ未記録なら isBackupDue() が
     // 真になる。督促は画面ごと差し替える早期returnなので、素のままだと
     // ホーム画面の表明が落ちる。既にバックアップ済みということにして黙らせる
@@ -668,7 +680,7 @@ describe('App: 追加した相手選手を名簿へ取り込む', () => {
 npx vitest run src/App.opponentRosterWriteback.test.tsx
 ```
 
-Expected: 「両方に登録される」「登録しない」「背番号と名前を出す」が FAIL（ダイアログが出ない）。「尋ねない」3件は PASS（もともと出ないため）。
+Expected: 「両方に登録される」「登録しない」「背番号と名前を出す」「督促の順序」の4件が FAIL（ダイアログが出ない）。「尋ねない」3件は PASS（もともと出ないため）。
 
 - [ ] **Step 3: 実装する**
 
