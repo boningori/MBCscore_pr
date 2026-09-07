@@ -58,10 +58,11 @@ describe('planOpponentWriteback: 尋ねない場合', () => {
         expect(planOpponentWriteback(myTeam(), opponent, registry, [])).toBeNull();
     });
 
-    it('直近履歴で同名が2件見つかったら null', () => {
+    it('直近履歴で同名が2件見つかったら null（登録一覧は一意に一致させ、直近履歴側の曖昧判定に届かせる）', () => {
         const opponent = gameTeam('相手', [10, 99], false);
+        const registry = [saved('o1', '相手', [10])];
         const recent = [saved('r1', '相手', [10]), saved('r2', '相手', [10])];
-        expect(planOpponentWriteback(myTeam(), opponent, [], recent)).toBeNull();
+        expect(planOpponentWriteback(myTeam(), opponent, registry, recent)).toBeNull();
     });
 
     it('どちらにも見つからなければ null（改名・未登録）', () => {
