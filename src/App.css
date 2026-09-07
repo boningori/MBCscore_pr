@@ -1312,10 +1312,15 @@
   min-height: clamp(70px, 10vh, 90px) !important;
 }
 
-/* シンプルモード：ファウルボタンも同じ高さに統一 */
+/* シンプルモード：ファウルボタンも同じ高さに統一。
+   高さは min- だけで足りる。すぐ上の .stat-btn / .swipeable-score-btn も
+   min-height だけで揃えており、ここだけ同じ値の height を重ねていた。
+   同値なので見た目は変わらないが、中身が1行に収まらなくなった場合に
+   固定値だと overflow: visible のまま隣のボタンへはみ出す
+   （実測 740×360: 枠70pxに対し中身66pxで余裕は4pxしかない）。
+   コンポーネント側（ActionButtons.css）が min-height を選んでいる意図にも合わせる */
 .app-container .game-main-area.simple-mode .btn-foul {
   min-height: clamp(70px, 10vh, 90px) !important;
-  height: clamp(70px, 10vh, 90px) !important;
   padding: 0 var(--spacing-sm) !important;
   display: flex !important;
   align-items: center !important;
@@ -1497,14 +1502,11 @@
     font-size: var(--font-size-md);
   }
 
-  .app-container .history-popup-content .history-header {
-    height: 32px;
-    padding: 0 var(--spacing-md);
-  }
-
-  .app-container .history-popup-content .history-header .team-name {
-    font-size: var(--font-size-md);
-  }
+  /* ここにポップアップ内 .history-header の拡大指定があったが、そのヘッダーは
+     同じセレクタの display:none で常に隠れている（上の「ポップアップ内では
+     ActionHistoryのヘッダーを非表示」）。チーム名は .history-popup-team h4 が
+     出しているので、これらは一度も描かれない完全な死にコードだった。
+     RunningScoresheet.css の同種のno-opと同じ理由で削除する */
 }
 
 /* 履歴ポップアップ：スマホ向け改善 */
