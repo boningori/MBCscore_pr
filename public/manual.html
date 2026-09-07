@@ -403,7 +403,7 @@
   <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">v1.7 対応</div>
+  <div class="cover-version">v1.8 対応</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -1428,6 +1428,37 @@
   <li><span class="btn-sample btn-red">保存せずにホームへ</span>: 確認ダイアログの後、データを保存せずに終了します</li>
 </ul>
 
+<div class="tip-box">
+  <div class="box-title">相手チームに追加した選手を名簿に残せます</div>
+  試合中に<strong>相手チーム</strong>へ追加した選手がいる場合、保存の直後に
+  <strong>「相手チームの名簿に登録しますか？」</strong>と尋ねられます。
+  <span class="btn-sample btn-blue">登録する</span> を選ぶと対戦チームの名簿に加わり、
+  <strong>次の試合からその選手を最初から選べる</strong>ようになります。
+  <ul>
+    <li>登録されるのは<strong>背番号と名前だけ</strong>です。コートネームやライセンスNo. は対戦チーム管理で追加してください</li>
+    <li>既に登録済みの選手の情報が書き換わることはありません</li>
+    <li><span class="btn-sample btn-gray">登録しない</span> を選んでも、その試合の記録は通常どおり履歴に残ります</li>
+  </ul>
+</div>
+
+<div class="info-box">
+  <div class="box-title">尋ねられない場合があります</div>
+  この確認は、相手チームが<strong>「対戦チーム管理」に登録されている</strong>ときだけ表示されます。
+  <ul>
+    <li><strong>その場で手入力した相手</strong>（登録していない相手）では表示されません。一度限りの練習試合の相手が名簿に溜まらないようにするためです</li>
+    <li>相手チーム名を<strong>変更した後</strong>や、<strong>同じ名前のチームが2つ登録されている</strong>場合も表示されません。どちらの名簿に入れるべきか決められないためです</li>
+  </ul>
+  表示されなかった場合は、これまでどおり<strong>「対戦チーム管理」</strong>から手で登録してください。
+</div>
+
+<div class="warn-box">
+  <div class="box-title">登録する前に一覧を確認してください</div>
+  表示されるのは<strong>「この試合の名簿にあって、登録済みの名簿に無い選手」</strong>です。
+  対戦チーム管理で背番号を変更した後に古い対戦履歴から試合を始めた場合など、
+  <strong>変更前の背番号がここに並ぶことがあります</strong>。
+  そのまま登録すると同じ選手が二重に登録されるので、背番号と名前を確認してから選んでください。
+</div>
+
 <div class="info-box">
   <div class="box-title">自動セッション保存</div>
   試合中のデータは<strong>自動的にブラウザに保存</strong>されています。
@@ -1599,7 +1630,7 @@
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
   <!-- アプリ本体のマイナーバージョンと揃える（ずれたら manualVersion.test.ts が落ちる） -->
-  <p>使用説明書 v1.7 対応</p>
+  <p>使用説明書 v1.8 対応</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
