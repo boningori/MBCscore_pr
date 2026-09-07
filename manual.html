@@ -403,7 +403,7 @@
   <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">v1.6 対応</div>
+  <div class="cover-version">v1.7 対応</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -770,6 +770,42 @@
   登録人数が少なく条件を満たせないチームでも、警告が出たまま問題なく試合を開始・記録できます。
 </div>
 
+<div class="tip-box">
+  <div class="box-title">名簿から漏れた選手をその場で追加できます</div>
+  遅れて到着した選手や、当日メンバーが入れ替わった相手チームなど、名簿に無い選手はこの画面で追加できます。
+  選手カード一覧の下の <span class="btn-sample btn-gray">+ 選手を追加</span> をタップすると、
+  <strong>0〜99 と 00 の背番号パネル</strong>が開きます。
+  <ol class="steps">
+    <li>背番号をタップして選びます。<strong>何人でもまとめて選べます</strong></li>
+    <li>選んだ番号が下に並ぶので、分かるなら氏名を入れます（<strong>空欄でも構いません</strong>。「選手7」のように入ります）</li>
+    <li><span class="btn-sample btn-green">◯人を追加</span> をタップして確定します</li>
+  </ol>
+  追加先は<strong>そのとき開いているタブのチーム</strong>です。パネルの見出しにチーム名が出るので確認してください。
+</div>
+
+<div class="warn-box">
+  <div class="box-title">確定するまでは登録されません</div>
+  背番号パネルをタップしただけでは登録されません。<strong>「◯人を追加」を押して初めて確定</strong>します。
+  <strong>試合中に選手を削除する機能はありません</strong>ので、確定前に番号と氏名を必ず確認してください。<br>
+  すでに登録済みの背番号は<strong>選べません</strong>（破線の枠で表示されます）。同じ番号が二重に登録されることはありません。
+</div>
+
+<div class="warn-box">
+  <div class="box-title">15人を超えるとスコアシートに載らない選手が出ます</div>
+  公式様式の選手欄は<strong>15人分</strong>で、背番号順に先頭15人までしか印字されません。
+  16人目を追加すると誰かが印字対象から外れます。
+  <strong>外れるのは追加した選手とは限りません</strong>——若い番号を足すと、番号の大きい既存選手が押し出されます。<br>
+  確定する前に「誰が載らなくなるか」を背番号と氏名で案内します。追加自体は止めませんので、
+  内容を確認したうえで判断してください（記録そのものはアプリ内に残ります）。
+  人数が15人を超えているあいだは、選手一覧の下にも注意が出続けます。
+</div>
+
+<div class="info-box">
+  <div class="box-title">追加した選手は自動では出場しません</div>
+  追加した選手は<strong>背番号順にカードが増えるだけ</strong>で、スタメンには自動で入りません。
+  出場させる場合は、他の選手と同じようにカードをタップして選んでください。
+</div>
+
 <div class="info-box">
   <div class="box-title">試合画面から戻ってきたときは</div>
   スタメン選択画面から試合画面に戻った場合でも、<span class="btn-sample btn-gray">Q終了</span> 後の
@@ -1003,21 +1039,36 @@
 <ol class="steps">
   <li>チームパネル下部の <span class="btn-sample btn-gray">交代</span> ボタンをタップ</li>
   <li>交代モーダルが表示されます</li>
-  <li><strong>退く選手</strong>（コート上）を選択</li>
-  <li><strong>入る選手</strong>（ベンチ）を選択</li>
-  <li><span class="btn-sample btn-green">交代実行</span> をタップ</li>
-  <li>モーダルは開いたままです。続けて次の組を選べば、何人でも続けて交代できます</li>
+  <li><strong>退く選手</strong>（コート上）を選びます。<strong>何人でも選べます</strong></li>
+  <li><strong>入る選手</strong>（ベンチ）を<strong>同じ人数だけ</strong>選びます</li>
+  <li><span class="btn-sample btn-green">交代実行</span> をタップ。選んだ全員がまとめて入れ替わります</li>
+  <li>モーダルは開いたままです。続けて次の交代に進めます</li>
   <li>終わったら <span class="btn-sample btn-gray">完了</span> をタップして閉じます</li>
 </ol>
 
 <div class="tip-box">
-  <div class="box-title">複数人の交代</div>
-  タイムアウト明けなどでまとめて交代する場合も、<strong>1組ずつ</strong>選んで <span class="btn-sample btn-green">交代実行</span> を繰り返します。
-  実行するたびにその場で確定し、画面には直前の組と件数が表示されます。
+  <div class="box-title">複数人をまとめて交代できます</div>
+  「4番と5番を下げて、9番と10番を入れて」のような指示は、<strong>4人まとめて選んで1回で実行</strong>できます。
+  1組ずつ分けてタップし直す必要はありません。<br>
+  選んだ人数は各見出しの右に「2人選択」と表示され、<strong>コートとベンチが同じ人数になると緑</strong>、
+  食い違っているあいだは<strong>オレンジ</strong>になります。緑になれば <span class="btn-sample btn-green">交代実行</span> が押せます。
 </div>
 
 <div class="tip-box">
-  未登録の選手が急遽出場する場合は、交代モーダル内の<strong>「選手追加」</strong>フォームから背番号と名前を入力してその場で追加できます。
+  <div class="box-title">選びすぎても大丈夫です</div>
+  うっかり多く選んでも、人数が合わないあいだは <span class="btn-sample btn-green">交代実行</span> が押せないだけです。
+  間違った交代がそのまま実行されることはありません。もう一度タップすれば選択を外せます。
+</div>
+
+<div class="tip-box">
+  未登録の選手が急遽出場する場合は、交代モーダル内の<strong>「+ 選手を追加」</strong>から背番号と名前を入力してその場で追加できます。
+</div>
+
+<div class="tip-box">
+  <div class="box-title">スマートフォンでの表示</div>
+  画面が狭いときは、コート・ベンチとも<strong>2列</strong>に並びます。カードには<strong>背番号</strong>とコートネーム、
+  コート側は<strong>得点</strong>、ベンチ側は<strong>出場したクォーター</strong>が出ます。
+  コートネームを登録していない選手は背番号だけの表示になります（交代は背番号で見分けられるため）。
 </div>
 
 <hr>
@@ -1548,7 +1599,7 @@
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
   <!-- アプリ本体のマイナーバージョンと揃える（ずれたら manualVersion.test.ts が落ちる） -->
-  <p>使用説明書 v1.6 対応</p>
+  <p>使用説明書 v1.7 対応</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
