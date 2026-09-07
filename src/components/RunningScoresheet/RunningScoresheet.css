@@ -14,6 +14,13 @@
 
 .running-scoresheet-container .scoresheet-toolbar {
     display: flex;
+    /*
+      入り切らないときは行を折り返す。折り返さないとボタン自身が押し潰され、
+      ラベルが文字単位で改行される。実測(375px): 「閉じる」が54×76pxになり
+      「閉／じ／る」と縦に3行、「試合情報編集」も「試合情／報編集」と
+      語の途中で割れていた（履歴からの経路は枠が310pxでさらに狭い）
+    */
+    flex-wrap: wrap;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
     background: var(--bg-secondary);
@@ -22,6 +29,19 @@
     position: sticky;
     left: 0;
     align-items: center;
+}
+
+/* ラベルは語の途中で折らない。折り返しは行単位（上の flex-wrap）で行う */
+.running-scoresheet-container .scoresheet-toolbar > button {
+    white-space: nowrap;
+}
+
+/* 狭い画面では隙間を詰めて、1行に収まる幅を稼ぐ */
+@media (max-width: 480px) {
+    .running-scoresheet-container .scoresheet-toolbar {
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+    }
 }
 
 /* 出力中の表示。空文字のときも高さを持たせず、

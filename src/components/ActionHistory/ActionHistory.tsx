@@ -99,6 +99,8 @@ export function ActionHistory({
     const [editingItem, setEditingItem] = useState<HistoryItem | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    // 開いているメニュー。開いた瞬間に見える位置へ寄せるために持つ（下の useEffect）
+    const menuRef = useRef<HTMLDivElement>(null);
     const dialRef = useRef<HTMLDivElement>(null);
     const [dialAngle, setDialAngle] = useState(0);
     const lastAngle = useRef(0);
@@ -407,6 +409,24 @@ export function ActionHistory({
     // 載るので、開いている間はそちらが先に閉じる（modalStack の LIFO）
     useBackHandler(selectedItemId !== null, handleCancel);
 
+    /**
+     * 開いたメニューを一覧の見える範囲へ寄せる。
+     *
+     * メニューは行の中に流し込んでいる（ActionHistory.css の .action-menu）ので、
+     * 開くと行がそのぶん伸びる。一覧の見える高さが行より低い置き場では、
+     * 伸びた先が枠の外へ落ちて overflow:hidden に切られる。
+     * 実測(1024×768・フルモード): チームパネルのこの一覧は見える高さが67pxしかなく、
+     * メニューを開いた行は94pxになるため、ボタンの下半分が枠外に出ていた。
+     *
+     * 寄せる先は行ではなくメニュー。行のほうが枠より高い場合、行を基準にすると
+     * 上端が揃ってメニューは枠外のままになる。block:'nearest' なので、
+     * 既に全部見えている（シンプルモードの履歴ポップアップなど）ときは動かない。
+     */
+    useEffect(() => {
+        if (selectedItemId === null) return;
+        menuRef.current?.scrollIntoView({ block: 'nearest' });
+    }, [selectedItemId]);
+
     return (
         <div className="action-history">
             <div className="history-header">
@@ -447,7 +467,7 @@ export function ActionHistory({
                                     <span className="action-desc">{item.description}</span>
                                 </button>
                                 {selectedItemId === item.id && (
-                                    <div className="action-menu">
+                                    <div className="action-menu" ref={menuRef}>
                                         {/*
                                           直せない行に編集を出さない。ファウルは選手の付け替えだけを
                                           扱い（EDIT_FOUL）、コーチ・ベンチのファウルは移す先の選手行が

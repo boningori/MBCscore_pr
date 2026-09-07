@@ -1717,12 +1717,21 @@
         grid-template-columns: 1fr;
     }
 
+    /*
+      分母（18/24）はスマホでも残す。列を詰めてバーを短くするほうを選ぶ。
+      以前は display:none にしていたが、そうすると一覧のカードには
+      「18/24」が出ているのに、そこから開いた詳細では消えるという逆転になる。
+      FG%順の並べ替えは「規定試投に満たない選手を下へ回す」ので（playerSort）、
+      なぜ下にいるのかを読む手掛かりが分母しかない。
+      実測(375px): バーの容器223px → 分母52pxを足しても167px残る
+    */
     .player-stats-container .shooting-bar-row {
-        grid-template-columns: 28px 1fr 40px;
+        grid-template-columns: 26px 1fr 36px 52px;
+        gap: 6px;
     }
 
     .player-stats-container .shooting-made {
-        display: none;
+        white-space: nowrap;
     }
 
     .player-stats-container .total-stats-grid {
@@ -2054,9 +2063,9 @@
     grid-template-columns: 32px 1fr 50px 60px;
 }
 
-.player-stats-container .detail-export-area.exporting .shooting-made {
-    display: inline;
-}
+/* 出力時に分母を出し直す上書きがここにあったが、狭い画面での display:none を
+   打ち消すためだけのものだった。その display:none を廃した（分母はスマホでも
+   出す）ので、いまは基底値と同値の no-op になっている */
 
 /*
   出力（PDF/JPEG）の下地は白。pdfExport.exportElement が html2canvas に

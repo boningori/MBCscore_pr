@@ -94,8 +94,13 @@
 .action-history .history-item {
     display: flex;
     align-items: center;
+    /* 編集・削除メニューは選ばれた行の中へ流し込む（.action-menu）。
+       行を伸ばすので高さは固定できない */
+    flex-wrap: wrap;
     gap: var(--spacing-xs);
-    height: 40px;
+    min-height: 40px;
+    /* 縦フレックスの中で、メニューを開いた行が縮められないようにする */
+    flex: none;
     padding: 0 var(--spacing-sm);
     margin: 0;
     /* マージンを明示的に0に */
@@ -149,7 +154,10 @@
     gap: var(--spacing-xs);
     flex: 1;
     min-width: 0;
-    height: 100%;
+    /* 行が伸びても、長押しの的は1行ぶん（40px）を保つ。
+       height:100% にしていたが、メニューを開いた行では親の高さが不定になり
+       内容の高さ（21px）まで縮んで的が半分になっていた */
+    min-height: 40px;
     padding: 0;
     margin: 0;
     background: none;
@@ -176,20 +184,31 @@
     color: var(--text-secondary);
 }
 
+/*
+  編集・削除メニューは、選ばれた行の中に流し込んで行を伸ばす。
+  以前は position:absolute で行の中央に浮かせていたが、行の高さが40px固定
+  だったためメニュー（折り返すと最大95px）が上下にはみ出し、2つの形で
+  操作できなくなっていた:
+    - 後続の行も position:relative なので、DOM順で後の行がメニューの
+      下半分の上に描かれる。z-index が無く、はみ出した「キャンセル」の
+      当たり判定が隣の行に取られていた
+    - 先頭・末尾の行では .action-history の overflow:hidden に切られる。
+      実測(375px・シンプルモードの履歴ポップアップ): いちばん新しい記録を
+      長押しすると「編集」「削除」がリスト上端より上に出て消え、
+      elementFromPoint が背後の .history-popup-team を返した
+      ＝ 直したい記録ほど直せない状態だった
+  流し込みにすれば、はみ出す先が無いので切られも被られもしない。
+  幅が狭ければボタンが折り返し、そのぶん行が伸びるだけになる。
+*/
 .action-history .action-menu {
-    position: absolute;
-    right: var(--spacing-xs);
-    top: 50%;
-    transform: translateY(-50%);
+    /* 行の2行目を丸ごと使う（.history-item は flex-wrap: wrap） */
+    flex-basis: 100%;
     display: flex;
+    justify-content: flex-end;
     gap: var(--spacing-xs);
-    background: var(--bg-secondary);
-    padding: 2px;
-    border-radius: var(--radius-sm);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    padding: 2px 0 4px;
     /* ファウルの注記が入ると横並びでは収まらないので折り返す */
     flex-wrap: wrap;
-    max-width: 100%;
     align-items: center;
 }
 

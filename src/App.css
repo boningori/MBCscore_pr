@@ -1403,6 +1403,26 @@
   overflow: hidden;
 }
 
+/*
+  狭い画面では両チームを縦に積む。
+  2カラムのままだと1枚あたりの幅が足りない。実測(375px): ポップアップの中身343px
+  → 2カラム＋ジョグダイヤルで一覧が117pxしか残らず、「オフェンスREB」のような
+  短い語まで2行に折り返していた。編集・削除メニューも3行に割れる。
+  記録画面（シンプルモード）が既に両チームを縦に積んでいるので、並びもそれに揃う。
+
+  タブではなく縦積みにしたのは、相手チームの記録が0件のことが普通にあるため。
+  タブだと空のタブへ切り替える手間が要るが、縦積みなら「記録なし」が畳まれて見える。
+  横向き（812×375）は幅があるので2カラムのまま——高さが足りない側なので、
+  ここで縦に積むと1枚あたりの行数がかえって減る
+*/
+@media (max-width: 480px) {
+  .app-container .history-popup-body {
+    grid-template-columns: 1fr;
+    /* 上下で均等に分ける。片方が長くても、もう片方が押し出されない */
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
 .app-container .history-popup-team.color-white {
   border-left-color: var(--team-white);
 }
@@ -1455,10 +1475,17 @@
     padding: var(--spacing-sm) var(--spacing-md);
   }
 
-  /* 履歴アイテムを大きく表示 */
+  /* 履歴アイテムを大きく表示。
+     高さは min- で置く。編集・削除メニューは行の中に流し込んで行を伸ばす作りなので
+     （ActionHistory.css の .action-menu）、固定値にするとメニューが行からはみ出し、
+     隣の行に隠れる・枠に切られるという元の症状がこの経路だけで戻る */
   .app-container .history-popup-content .history-item {
-    height: 48px;
+    min-height: 48px;
     padding: 0 var(--spacing-md);
+  }
+
+  .app-container .history-popup-content .history-item-main {
+    min-height: 48px;
   }
 
   .app-container .history-popup-content .history-item .player-number {
