@@ -101,10 +101,10 @@ export interface OpponentWriteback {
     teamName: string;
     /** 取り込む選手（背番号順） */
     added: SavedPlayer[];
-    /** saveOpponent へそのまま渡す。名前が一致しなければ空 */
-    updatedRegistry: SavedTeam[];
-    /** saveRecentOpponent へそのまま渡す。名前が一致しなければ空 */
-    updatedRecent: SavedTeam[];
+    /** saveOpponent へそのまま渡す。名前が一致しなければ null */
+    updatedRegistry: SavedTeam | null;
+    /** saveRecentOpponent へそのまま渡す。名前が一致しなければ null */
+    updatedRecent: SavedTeam | null;
     /** 登録後の人数（最大のもの）。15人超過の案内に使う */
     resultCount: number;
 }
@@ -167,9 +167,9 @@ confirmVariant?: 'danger' | 'primary';
 - 登録一覧で同名が2件見つかったら null（曖昧）
 - 直近履歴で同名が2件見つかったら null（曖昧）
 - どちらにも見つからなければ null
-- 登録一覧だけに一致 → `updatedRegistry` にだけ入る
-- 直近履歴だけに一致 → `updatedRecent` にだけ入る
-- 両方に一致 → 両方に入る
+- 登録一覧だけに一致 → `updatedRegistry` だけが埋まり `updatedRecent` は null
+- 直近履歴だけに一致 → `updatedRecent` だけが埋まり `updatedRegistry` は null
+- 両方に一致 → 両方が埋まる
 - 追加された選手が背番号順に並ぶこと
 - 更新後の `players` が背番号順に並ぶこと（若い番号を足したら先頭に来る）
 - 取り込むのは `number` と `name` だけで、`isCaptain` が false になること
