@@ -277,10 +277,12 @@
     }
 
     /* コート(OUT)は必ず5人。2列に折り返して全員を出す。
-       1列のままだと281px使ってベンチがほぼ映らない（実測で残り14px） */
+       1列のままだと281px使ってベンチがほぼ映らない（実測で残り14px）。
+       列は minmax(0, 1fr)。`1fr` は `minmax(auto, 1fr)` と同義で最小幅が
+       中身で決まるため、長い氏名がカードごとモーダルの外へ押し出される */
     .substitution-modal .substitution-column.court .sub-player-list {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: var(--spacing-xs);
         max-height: none;
         overflow-y: visible;
@@ -292,38 +294,56 @@
         display: none;
     }
 
-    .substitution-modal .substitution-column.court .sub-player-card {
-        padding: var(--spacing-xs) var(--spacing-sm);
-        gap: var(--spacing-xs);
-    }
-
     /* ベンチ(IN)だけが残りの高さでスクロールする。
        min-height: 0 が無いと flex の既定（auto）で縮まず、列が行から溢れる */
     .substitution-modal .substitution-column.bench {
         min-height: 0;
     }
 
+    /* ベンチ(IN)も2列にする。複数人を選ぶには一覧性が要る
+       （実測: 一度に見える人数が 2.7人 → 5.6人）。
+       align-content: start が無いと、人数が少ないとき行が縦に間延びする */
     .substitution-modal .substitution-column.bench .sub-player-list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--spacing-xs);
+        align-content: start;
         flex: 1;
         min-height: 0;
         max-height: none;
     }
 
-    .substitution-modal .sub-player-list {
-        max-height: 200px;
+    /* 出場Qは2列に入らない。出場ルールの目安はスタメン選択画面も担っている。
+       タブレット・PCでは残す。退場バッジは消さない */
+    .substitution-modal .substitution-column.bench .sub-player-quarters {
+        display: none;
     }
 
-    /* 縦の余白を詰める。--spacing-md だとカードが約67pxになり、
-       コート5人だけで338pxを使う。min-height 50px は残すので、
-       指で押す的の大きさは変えていない */
+    /* 2列なのでカード幅は約160px。縦横とも余白を詰める。
+       min-height 50px は残すので、指で押す的の大きさは変えていない */
     .substitution-modal .sub-player-card {
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        gap: var(--spacing-xs);
         min-height: 50px;
     }
 
+    /* 背番号は識別子なので文字は大きいまま。ただし min-width は外す。
+       1列で桁を揃えるための指定で、2列では23pxの無駄になる
+       （実測: 名前に使える幅が 61px → 84px に増える） */
     .substitution-modal .sub-player-number {
         font-size: var(--font-size-xl);
-        min-width: 50px;
+        min-width: 0;
+    }
+
+    /* 名前は折り返させず1行で切り詰める。折り返すと番号の位置が行ごとに動き、
+       番号で拾う読み方が成立しない。コートネームは短いので、実際に切れるのは
+       コートネーム未設定でフルネームに落ちた選手だけ */
+    .substitution-modal .sub-player-name {
+        font-size: var(--font-size-sm);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
     }
 
     /* ボタンは横並びのまま。縦に積むとフッターだけで211pxを取り、
