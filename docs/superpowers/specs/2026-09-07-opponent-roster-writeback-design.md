@@ -14,7 +14,7 @@ v1.7.0 で、スタメン選択画面と交代モーダルから試合中に選�
 |---|---|
 | 進行中の試合（`minibasket-game-session`） | 居る |
 | 試合履歴（`saveGameResult`） | 居る（チームまるごと保存される） |
-| チーム名簿（`minibasket-opponent-teams` ほか） | **居ない** |
+| チーム名簿（登録一覧・直近履歴とも） | **居ない** |
 
 名簿へ書き込むのは「マイチーム管理・対戦チーム管理・対戦チーム選択・データインポート」の4か所だけで、試合中の `ADD_PLAYER_TO_TEAM` はどこからも名簿に書き戻していない。対戦チームの保存（`saveRecentOpponent`、`App.tsx:313`）も**試合開始時に一度だけ**、設定ウィザードで選んだ時点の名簿を保存している。
 
@@ -52,10 +52,12 @@ v1.7.0 で、スタメン選択画面と交代モーダルから試合中に選�
 
 ### 保存先は2つある
 
-| キー | 何 | いつ書かれるか |
-|---|---|---|
-| `minibasket-opponent-teams` | 対戦チーム管理の登録一覧 | 対戦チーム管理での保存、または対戦チーム選択で「登録する」を選んだとき |
-| `minibasket-recent-opponents` | 直近の対戦履歴 | 相手を選ぶたび・試合開始時 |
+| 読み書きする関数 | 実際のキー | 何 | いつ書かれるか |
+|---|---|---|---|
+| `saveOpponent` / `loadOpponents` | `minibasket-saved-opponents` | 対戦チーム管理の登録一覧 | 対戦チーム管理での保存、または対戦チーム選択で「登録する」を選んだとき |
+| `saveRecentOpponent` / `loadRecentOpponents` | `minibasket-opponent-teams` | 直近の対戦履歴（最大10件） | 相手を選ぶたび・試合開始時 |
+
+**キー名と定数名が交差している。** `teamStorage.ts` では `OPPONENT_TEAMS_KEY = 'minibasket-opponent-teams'` が**直近履歴**の側、`SAVED_OPPONENTS_KEY = 'minibasket-saved-opponents'` が**登録一覧**の側に割り当てられている。名前から素直に推測すると逆になるので、テストでキーを直接触るときは必ず上の表で確認すること。
 
 試合設定は**どちらからも選べる**（`OpponentSelect` が両方を並べる）。片方だけ更新すると、次の試合でもう片方から選んだときに古い名簿が出てきて「登録したのに反映されない」ように見える。
 
@@ -128,6 +130,8 @@ export function planOpponentWriteback(
 
 更新後の `players` は `sortPlayersByNumber` で背番号順に並べ直す。名簿の並びは全体でこの順序に揃えてある。
 
+**`Team` を `SavedTeam` へ丸ごと変換しない。** 追加された選手だけを既存の `SavedTeam.players` へ足す。`teamStorage.ts` には以前 `teamToSavedTeam` があったが、`courtName` / `licenseNo` / `bibNumber` / `uniformNumber` を静かに落とす実装だったため削除された経緯がコメントに残っている。名簿を作り直すと既存選手のこれらが消える。
+
 **返す `SavedTeam` は元の `id` をそのまま保つ。** `saveOpponent` は `id` で既存レコードを探して差し替え、見つからなければ追加する（`teamStorage.ts:169-179`）。`saveRecentOpponent` も `id` で既存を除いてから先頭に積む。`id` を保っていれば新しいレコードが増えることはない。
 
 ## 確認ダイアログ
@@ -180,7 +184,7 @@ confirmVariant?: 'danger' | 'primary';
 ### App 統合（新規 `src/App.opponentRosterWriteback.test.tsx`）
 
 - 試合中に相手チームへ選手を追加して試合を終えると、確認ダイアログが出ること
-- 「登録する」で `minibasket-opponent-teams` に追加されること
+- 「登録する」で登録一覧・直近履歴の両方に追加されること（キーを直に読まず `loadOpponents()` / `loadRecentOpponents()` で確かめる。キー名は紛らわしい）
 - 「登録しない」で名簿が変わらないこと
 - 追加していなければダイアログが出ないこと
 - 保存に失敗したときはダイアログが出ないこと
