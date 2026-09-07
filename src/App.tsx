@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import type { Team, Player, FoulType, FreeThrowResult, ShotSituation, ScoreType, StatType } from './types/game';
+import { MAX_PLAYERS_PER_TEAM } from './types/game';
 import type { SavedTeam, NumberType } from './utils/teamStorage';
 import { formatPlayerNumber } from './utils/playerNumber';
 // 表示名は utils/actionLabels に集約する。以前はこのファイルと保留パネル・
@@ -9,7 +10,7 @@ import { actionLabel, statLabel } from './utils/actionLabels';
 import { todayInputDate } from './utils/localDate';
 import { quarterLabel } from './utils/quarterLabel';
 import { createPendingAction } from './types/pendingAction';
-import { saveRecentOpponent } from './utils/teamStorage';
+import { saveRecentOpponent, saveOpponent, loadOpponents, loadRecentOpponents } from './utils/teamStorage';
 import { buildMatchTeams } from './utils/matchTeams';
 import { migrateSavedTeamIds } from './utils/savedTeamIdMigration';
 import { saveGameResult } from './utils/gameHistoryStorage';
@@ -53,6 +54,7 @@ import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage }
 import { startOcrAssetWarmup } from './utils/ocrAssetCache';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
 import { isBackupDue } from './utils/lastBackupStorage';
+import { planOpponentWriteback, type OpponentWriteback } from './utils/opponentRosterWriteback';
 import { shareBackup } from './utils/dataBackup';
 import { wouldOverflowFoulColumns } from './utils/foulColumns';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
@@ -189,6 +191,9 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
   const [restoreCandidate, setRestoreCandidate] = useState<MirrorSnapshot | null>(null);
   const [showBackupPrompt, setShowBackupPrompt] = useState(false);
+  // 試合中に相手チームへ足した選手を名簿に取り込むかの確認。
+  // null なら尋ねない（一意に特定できたときだけ値が入る）
+  const [rosterWriteback, setRosterWriteback] = useState<OpponentWriteback | null>(null);
 
   // ブラウザ履歴と画面遷移を同期（Androidの戻るボタン/ジェスチャでアプリが終了しないように）。
   // 試合系画面は表示できる試合がない場合（未設定/終了保存後）に復元せずホームへ差し替える
@@ -853,6 +858,19 @@ function AppContent({ screen, setScreen }: AppContentProps) {
    * できていた。トーストは「設定画面からバックアップを」と案内するが、
    * その時点で対象データはもう存在しない、という状態だった。
    */
+  /**
+   * 前回バックアップ後に試合が増えていれば督促する。
+   *
+   * 呼ぶ場所を選べるように切り出す。showBackupPrompt は画面ごと差し替える
+   * 早期returnなので、先に立てると名簿の取り込みダイアログが描画されない。
+   * 取り込みを尋ねるときは、閉じた後にここを呼ぶ
+   */
+  const promptBackupIfDue = () => {
+    if (isBackupDue()) {
+      setShowBackupPrompt(true);
+    }
+  };
+
   const handleGameFinished = (options?: { skipPendingCheck?: boolean }) => {
     // 保留中の記録はどの選手のスタッツにも入っていない＝最終スコアに現れない。
     // 黙って保存すると実際の試合と違うスコアが履歴に残るので、必ず一度知らせる。
@@ -891,10 +909,23 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     voiceMemo.clearAll();
     setScreen('home');
 
-    // 前回バックアップ後に試合が増えていれば督促
-    if (isBackupDue()) {
-      setShowBackupPrompt(true);
+    // 試合中に相手チームへ足した選手を名簿へ取り込むか尋ねる。
+    // 相手は名前でしか登録レコードと結び付けられないので、一意に決まるときだけ。
+    // 詳しくは utils/opponentRosterWriteback.ts
+    const writeback = planOpponentWriteback(
+      state.teamA,
+      state.teamB,
+      loadOpponents(),
+      loadRecentOpponents(),
+    );
+    if (writeback) {
+      setRosterWriteback(writeback);
+      // 督促はダイアログを閉じてから。同時に立てると督促が画面ごと差し替えて
+      // ダイアログが出ないまま消える
+      return;
     }
+
+    promptBackupIfDue();
   };
 
   // ホーム画面に戻る。
@@ -2053,6 +2084,33 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         isOpen={showAppSettings}
         onClose={() => setShowAppSettings(false)}
       />
+      {/* 試合終了直後、相手チームへ足した選手を名簿へ取り込むかの確認。
+          ホームへ遷移した後に出るので、早期returnの外側に置く */}
+      {rosterWriteback && (
+        <ConfirmModal
+          title="相手チームの名簿に登録しますか？"
+          message={`この試合で追加した ${rosterWriteback.added.map(p => `#${formatPlayerNumber(p.number)} ${p.name}`).join('、')} を「${rosterWriteback.teamName}」の名簿に登録します。次の試合から選べるようになります。`}
+          // 上限は超えても止めない。退場者やスコアシートあふれと同じで、
+          // 事実だけ伝えて判断は利用者に任せる
+          note={rosterWriteback.resultCount > MAX_PLAYERS_PER_TEAM
+            ? `登録すると${rosterWriteback.resultCount}人になります。対戦チーム管理の上限は${MAX_PLAYERS_PER_TEAM}人です。`
+            : undefined}
+          confirmLabel="登録する"
+          cancelLabel="登録しない"
+          // 名簿への登録は取り返しのつかない操作ではないので赤にしない
+          confirmVariant="primary"
+          onConfirm={() => {
+            if (rosterWriteback.updatedRegistry) saveOpponent(rosterWriteback.updatedRegistry);
+            if (rosterWriteback.updatedRecent) saveRecentOpponent(rosterWriteback.updatedRecent);
+            setRosterWriteback(null);
+            promptBackupIfDue();
+          }}
+          onCancel={() => {
+            setRosterWriteback(null);
+            promptBackupIfDue();
+          }}
+        />
+      )}
     </>
   );
 }
