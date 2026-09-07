@@ -365,11 +365,14 @@
         line-height: 1.1;
     }
 
-    /* 失格者にだけ出場Qを出さない。
+    /* バッジが入るカードは、名前も出場Qも出さない。
        退場バッジのうち最長の「失格(2回)」がコートネームと並ぶと1行目で幅を
-       使い切り、3行目が要る。実測でカード高50pxを7px超え、下の行に重なった。
-       そもそも入れない前提の選手なので出場時間の目安は判断に要らず、
-       バッジのほうが要る。タブレット・PCでは出る */
+       使い切る。名前を残すとバッジに押されて「ミ…」の1文字まで縮み、
+       読めないまま幅だけ取っていた（実機で確認）。出場Qを残すと3行目が要り、
+       実測でカード高50pxを7px超えて下の行に重なった。
+       番号とバッジがあれば誰か分かる。そもそも入れない前提の選手なので
+       出場時間の目安も判断に要らない。タブレット・PCではどちらも出る */
+    .substitution-modal .substitution-grid .sub-player-card.fouled-out .sub-player-name,
     .substitution-modal .substitution-grid .sub-player-card.fouled-out .sub-player-quarters {
         display: none;
     }

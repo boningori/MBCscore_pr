@@ -82,6 +82,13 @@ describe('スマホのカードに載せる情報', () => {
         }
     });
 
+    it('バッジが入るカードは名前も出さない', () => {
+        // バッジに押されて名前が「ミ…」の1文字まで縮み、読めないまま幅を取っていた。
+        // 番号とバッジがあれば誰か分かるので、名前は譲る
+        const body = ruleBody('.substitution-modal .substitution-grid .sub-player-card.fouled-out .sub-player-name');
+        expect(body).toMatch(/display:\s*none/);
+    });
+
     it('失格者にだけ出場Qを出さない', () => {
         // 最長の「失格(2回)」がコートネームと並ぶと3行目が要り、カード高を超える。
         // 入れない前提の選手なので出場時間の目安は要らず、バッジのほうが要る
