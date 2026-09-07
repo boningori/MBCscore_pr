@@ -8,6 +8,12 @@ interface ConfirmModalProps {
     confirmLabel?: string;
     /** 打ち消し側のラベル（既定: キャンセル） */
     cancelLabel?: string;
+    /**
+     * 実行側の見た目（既定: danger）。
+     * 赤は取り返しのつかない操作のための色。名簿への登録のような
+     * 破壊的でない確認では primary にする
+     */
+    confirmVariant?: 'danger' | 'primary';
     onConfirm: () => void;
     onCancel: () => void;
 }
@@ -26,6 +32,7 @@ export function ConfirmModal({
     note,
     confirmLabel = '削除する',
     cancelLabel = 'キャンセル',
+    confirmVariant = 'danger',
     onConfirm,
     onCancel,
 }: ConfirmModalProps) {
@@ -38,7 +45,7 @@ export function ConfirmModal({
                 <button className="btn btn-secondary" data-autofocus onClick={onCancel}>
                     {cancelLabel}
                 </button>
-                <button className="btn btn-danger" onClick={onConfirm}>
+                <button className={`btn btn-${confirmVariant}`} onClick={onConfirm}>
                     {confirmLabel}
                 </button>
             </div>
