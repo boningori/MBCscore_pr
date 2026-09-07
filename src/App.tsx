@@ -851,14 +851,6 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
 
   /**
-   * 試合終了・保存してホームへ。
-   *
-   * 保存できたときだけセッションを消す。以前は成否を見ずに消していたため、
-   * 容量超過などで履歴に書けないと、履歴にもセッションにも残らない試合が
-   * できていた。トーストは「設定画面からバックアップを」と案内するが、
-   * その時点で対象データはもう存在しない、という状態だった。
-   */
-  /**
    * 前回バックアップ後に試合が増えていれば督促する。
    *
    * 呼ぶ場所を選べるように切り出す。showBackupPrompt は画面ごと差し替える
@@ -871,6 +863,14 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     }
   };
 
+  /**
+   * 試合終了・保存してホームへ。
+   *
+   * 保存できたときだけセッションを消す。以前は成否を見ずに消していたため、
+   * 容量超過などで履歴に書けないと、履歴にもセッションにも残らない試合が
+   * できていた。トーストは「設定画面からバックアップを」と案内するが、
+   * その時点で対象データはもう存在しない、という状態だった。
+   */
   const handleGameFinished = (options?: { skipPendingCheck?: boolean }) => {
     // 保留中の記録はどの選手のスタッツにも入っていない＝最終スコアに現れない。
     // 黙って保存すると実際の試合と違うスコアが履歴に残るので、必ず一度知らせる。
@@ -2085,7 +2085,11 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         onClose={() => setShowAppSettings(false)}
       />
       {/* 試合終了直後、相手チームへ足した選手を名簿へ取り込むかの確認。
-          ホームへ遷移した後に出るので、早期returnの外側に置く */}
+          restoreCandidate / showBackupPrompt の早期returnは、この
+          フラグメントより手前にあるので、このダイアログはそれらの内側にいる
+          （showBackupPrompt が立つと画面ごと差し替わり、ここは描かれない）。
+          だからバックアップ督促はダイアログを閉じた後にしか立てない
+          （promptBackupIfDue の呼び場所） */}
       {rosterWriteback && (
         <ConfirmModal
           title="相手チームの名簿に登録しますか？"
@@ -2109,6 +2113,10 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           onConfirm={() => {
             if (rosterWriteback.updatedRegistry) saveOpponent(rosterWriteback.updatedRegistry);
             if (rosterWriteback.updatedRecent) saveRecentOpponent(rosterWriteback.updatedRecent);
+            // 保存失敗は意図的に検出しない（saveOpponent/saveRecentOpponent は
+            // void を返す作り）ので、成功の手がかりが無いと利用者は何も分から
+            // ない。OpponentManager・OpponentSelect も保存後に通知する流儀に合わせる
+            showToast(`「${rosterWriteback.teamName}」の名簿に${rosterWriteback.added.length}人を登録しました`, 'success');
             setRosterWriteback(null);
             promptBackupIfDue();
           }}
