@@ -48,6 +48,25 @@ export function findOverflowPlayer(
     players: readonly NumberedPlayer[],
     newPlayer: NumberedPlayer,
 ): NumberedPlayer | null {
-    const ordered = sortPlayersByNumber([...players, newPlayer]);
-    return ordered[MAX_PLAYERS_PER_TEAM] ?? null;
+    return findOverflowPlayers(players, [newPlayer])[0] ?? null;
+}
+
+/**
+ * まとめて追加したときに公式様式（15人分）から外れる選手を、背番号順で全て返す。
+ * 溢れないなら空配列。
+ *
+ * スタメン選択画面の一括登録では複数人を同時に足すため、単数版では
+ * 「1人目しか案内できない」。並べ替えを別実装で書くと案内と実際の結果が
+ * ずれるので、判定はこの関数に集約し、単数版もここを通す。
+ *
+ * 追加が0人のときは、既に16人以上いても空配列を返す。追加操作をしていない
+ * のに「載らなくなります」と出すと、いま何をしたせいなのかが伝わらない。
+ */
+export function findOverflowPlayers(
+    players: readonly NumberedPlayer[],
+    newPlayers: readonly NumberedPlayer[],
+): NumberedPlayer[] {
+    if (newPlayers.length === 0) return [];
+    const ordered = sortPlayersByNumber([...players, ...newPlayers]);
+    return ordered.slice(MAX_PLAYERS_PER_TEAM);
 }

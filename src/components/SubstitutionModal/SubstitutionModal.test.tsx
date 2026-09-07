@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { SubstitutionModal } from './SubstitutionModal';
@@ -260,13 +262,22 @@ describe('SubstitutionModal 連続交代', () => {
         ]);
     });
 
-    // 実行前後で枠の高さを揃えるため、案内の枠は最初から置いてある。
-    // 実行済みの表示（status）だけが後から入る
-    it('実行前は連続交代できることを案内し、まだ status は出さない', () => {
+    // 案内の枠は role="status" を最初から持つ固定のライブリージョンにしてある（F4）。
+    // 以前は3分岐で <div> ごと出し入れしており、最初のタップで role="status" が
+    // 付くのと文言が入るのが同じコミットになっていた。多くのスクリーンリーダーは
+    // ライブリージョンが生成された（role を得た）その瞬間の内容は読み上げないため、
+    // 実行できない理由や結果が一度も読まれない可能性が高かった。
+    // このテストが守りたいのは「何もしていないのに読み上げが走らないこと」で、
+    // 枠が最初から在ること・空でない案内を最初から持つこと自体は問題ない
+    // （枠の出現そのものは読み上げの起点にならず、あとから中身が変わったときだけ
+    // 読み上げの対象になる）
+    it('実行前は連続交代できることを案内する。ライブリージョンは最初から在り、結果でも理由でもない', () => {
         renderWithParent(roster());
 
-        expect(screen.queryByRole('status')).toBeNull();
-        expect(document.querySelector('.substitution-note')?.textContent).toContain('続けて');
+        const status = screen.getByRole('status');
+        expect(status.textContent).toContain('続けて');
+        expect(status.textContent).not.toContain('選んでください');
+        expect(status.classList.contains('done')).toBe(false);
     });
 
     it('実行済みの交代を件数つきで知らせる', () => {
@@ -292,5 +303,310 @@ describe('SubstitutionModal 連続交代', () => {
 
         expect(screen.queryByRole('button', { name: 'キャンセル' })).toBeNull();
         expect(screen.getByRole('button', { name: '完了' })).toBeTruthy();
+    });
+});
+
+// 交代は背番号で認識する。氏名（フルネーム）ではなくコートネームを出す。
+// courtName || name はアプリ全体の既定（Scoreboard / TeamPanel / ActionHistory ほか）で、
+// 素の name を出していたのはこのモーダルだけだった
+describe('SubstitutionModal 表示名', () => {
+    const named = (id: string, number: number, name: string, courtName: string | undefined, isOnCourt: boolean): Player => ({
+        ...player(id, number, name, isOnCourt),
+        courtName,
+    });
+
+    it('コートネームがあればコートネームを出す（コート・ベンチとも）', () => {
+        renderModal([
+            named('a', 4, '山田太郎', 'タロウ', true),
+            named('x', 10, '鈴木一郎', 'イチ', false),
+        ]);
+
+        expect(screen.getByRole('button', { name: /タロウ/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /イチ/ })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: /山田太郎/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: /鈴木一郎/ })).toBeNull();
+    });
+
+    it('コートネームが無ければ氏名に落ちる（対戦相手には courtName が無い）', () => {
+        renderModal([
+            named('a', 4, '山田太郎', undefined, true),
+            named('x', 10, '鈴木一郎', undefined, false),
+        ]);
+
+        expect(screen.getByRole('button', { name: /山田太郎/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /鈴木一郎/ })).toBeTruthy();
+    });
+
+    it('実行結果の表示もコートネームを使う', () => {
+        renderModal([
+            named('a', 4, '山田太郎', 'タロウ', true),
+            named('x', 10, '鈴木一郎', 'イチ', false),
+        ]);
+
+        fireEvent.click(screen.getByRole('button', { name: /タロウ/ }));
+        fireEvent.click(screen.getByRole('button', { name: /イチ/ }));
+        fireEvent.click(screen.getByRole('button', { name: '交代実行' }));
+
+        expect(document.querySelector('.substitution-note-pair')?.textContent)
+            .toBe('#4 タロウ → #10 イチ');
+    });
+});
+
+// バスケではタイムアウト明けに複数人まとめて替えるのが普通で、コーチの指示も
+// 「4番と5番を下げて9番と10番を入れて」とまとめて来る。1組ずつに分解させない
+describe('SubstitutionModal 一括交代', () => {
+    const roster5 = () => [
+        player('a', 4, 'コートA', true),
+        player('b', 5, 'コートB', true),
+        player('c', 6, 'コートC', true),
+        player('x', 10, 'ベンチX', false),
+        player('y', 11, 'ベンチY', false),
+        player('z', 12, 'ベンチZ', false),
+    ];
+
+    const confirmBtn = () => screen.getByRole('button', { name: '交代実行' }) as HTMLButtonElement;
+    const card = (name: string) => screen.getByRole('button', { name: new RegExp(name) });
+
+    it('コート・ベンチとも複数選べ、もう一度タップで外れる', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        expect(card('コートA').getAttribute('aria-pressed')).toBe('true');
+        expect(card('コートB').getAttribute('aria-pressed')).toBe('true');
+
+        fireEvent.click(card('コートA'));
+        expect(card('コートA').getAttribute('aria-pressed')).toBe('false');
+        expect(card('コートB').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('人数が違うあいだは実行できない（コートが多い場合）', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチX'));
+
+        expect(confirmBtn().disabled).toBe(true);
+    });
+
+    it('人数が違うあいだは実行できない（ベンチが多い場合）', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(card('ベンチY'));
+
+        expect(confirmBtn().disabled).toBe(true);
+    });
+
+    it('同数にすると実行できるようになる', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチX'));
+        expect(confirmBtn().disabled).toBe(true);
+
+        fireEvent.click(card('ベンチY'));
+        expect(confirmBtn().disabled).toBe(false);
+    });
+
+    it('3人まとめて実行すると onSubstitute が背番号順に3回呼ばれる', () => {
+        const onSubstitute = renderModal(roster5());
+
+        // わざとばらばらの順にタップする
+        fireEvent.click(card('コートC'));
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチZ'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(card('ベンチY'));
+
+        fireEvent.click(confirmBtn());
+
+        expect(onSubstitute.mock.calls).toEqual([
+            ['x', 'a'],
+            ['y', 'b'],
+            ['z', 'c'],
+        ]);
+    });
+
+    it('実行後は選択が解除され、モーダルは閉じない', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(confirmBtn());
+
+        expect(screen.queryAllByRole('button', { pressed: true }).length).toBe(0);
+        expect(confirmBtn().disabled).toBe(true);
+    });
+
+    it('複数のときの案内は背番号だけを並べる', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(card('ベンチY'));
+        fireEvent.click(confirmBtn());
+
+        expect(document.querySelector('.substitution-note-pair')?.textContent)
+            .toBe('#4 #5 ⇄ #10 #11');
+        expect(document.querySelector('.substitution-note-sub')?.textContent)
+            .toContain('2人交代しました');
+    });
+
+    it('1組のときの案内は今までどおり氏名まで出す', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(confirmBtn());
+
+        expect(document.querySelector('.substitution-note-pair')?.textContent)
+            .toBe('#4 コートA → #10 ベンチX');
+        expect(document.querySelector('.substitution-note-sub')?.textContent)
+            .toContain('交代しました');
+    });
+
+    it('人数が食い違うと、その理由を出す', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        expect(document.querySelector('.substitution-note')?.textContent)
+            .toContain('ベンチから2人選んでください');
+
+        fireEvent.click(card('ベンチX'));
+        expect(document.querySelector('.substitution-note')?.textContent)
+            .toContain('コート2人・ベンチ1人を選んでいます');
+    });
+
+    it('何も選んでいないときは理由ではなく既存の案内を出す', () => {
+        renderModal(roster5());
+
+        const note = document.querySelector('.substitution-note')?.textContent ?? '';
+        expect(note).toContain('続けて');
+        expect(note).not.toContain('選んでください');
+    });
+
+    // AddPlayersPanel の .add-players-footer と同じ固定。誰かが .substitution-note を
+    // .substitution-footer の外に戻すと、案内だけがスクロールで流れて見えなくなる
+    // （63c252c で直した不具合が戻る）
+    it('案内と確定ボタンは同じ枠に入る（案内だけ流れて見えなくならないように）', () => {
+        renderModal(roster5());
+
+        const footer = document.querySelector('.substitution-footer');
+        expect(footer).not.toBeNull();
+        expect(footer!.querySelector('.substitution-note')).not.toBeNull();
+        expect(footer!.contains(screen.getByRole('button', { name: '交代実行' }))).toBe(true);
+    });
+});
+
+// 見出しの <h3> が選手カードの <button> と同じ背景色・同じ角丸で、
+// 押せるように見えて押せなかった（スマホのメディアクエリの上書きが原因）
+describe('SubstitutionModal 見出し', () => {
+    const roster = () => [
+        player('a', 4, 'コートA', true),
+        player('b', 5, 'コートB', true),
+        player('x', 10, 'ベンチX', false),
+    ];
+
+    const counts = () => [...document.querySelectorAll('.sub-column-count')].map(e => ({
+        text: e.textContent,
+        match: e.classList.contains('match'),
+        mismatch: e.classList.contains('mismatch'),
+    }));
+
+    it('何も選んでいないときは選択数を出さない', () => {
+        renderModal(roster());
+        expect(counts()).toEqual([]);
+    });
+
+    it('人数が食い違うあいだは「足りない」側の色になる', () => {
+        renderModal(roster());
+
+        fireEvent.click(screen.getByRole('button', { name: /コートA/ }));
+
+        expect(counts()).toEqual([
+            { text: '1人選択', match: false, mismatch: true },
+        ]);
+    });
+
+    it('同数になると「揃った」側の色になる', () => {
+        renderModal(roster());
+
+        fireEvent.click(screen.getByRole('button', { name: /コートA/ }));
+        fireEvent.click(screen.getByRole('button', { name: /ベンチX/ }));
+
+        expect(counts()).toEqual([
+            { text: '1人選択', match: true, mismatch: false },
+            { text: '1人選択', match: true, mismatch: false },
+        ]);
+    });
+
+    it('見出しに選手カードと同じ背景色を敷かない（押せる要素と見分けられる）', () => {
+        const css = readFileSync(
+            resolve(process.cwd(), 'src/components/SubstitutionModal/SubstitutionModal.css'),
+            'utf-8',
+        );
+        // スマホの上書きで .sub-column-title に --bg-tertiary（選手カードの地）を
+        // 敷いていた。同じ地を敷き直したらこのテストで気づける
+        const titleRules = [...css.matchAll(/\.sub-column-title\s*\{([^}]*)\}/g)].map(m => m[1]);
+        expect(titleRules.length).toBeGreaterThan(0);
+        for (const body of titleRules) {
+            expect(body).not.toMatch(/background\s*:\s*var\(--bg-tertiary\)/);
+        }
+    });
+});
+
+// スマホ（〜600px）では、切り詰められた氏名より出場Q・得点のほうが交代の判断に効く。
+// コートネームが無い選手は名前を出さず番号だけにする。jsdom はメディアクエリを
+// 評価しないので、描画側は「どちらか判別できる目印」を出すところまでを見て、
+// 実際に隠すのは CSS 側のテスト（substitutionGrid.test.ts）で縛る
+describe('SubstitutionModal スマホで隠すための目印', () => {
+    const named = (id: string, number: number, name: string, courtName: string | undefined, isOnCourt: boolean): Player => ({
+        ...player(id, number, name, isOnCourt),
+        courtName,
+    });
+
+    const nameSpanOf = (label: string) =>
+        screen.getByRole('button', { name: new RegExp(label) }).querySelector('.sub-player-name');
+
+    it('コートネームが無い選手の名前には fallback が付く（スマホで隠す目印）', () => {
+        renderModal([
+            named('a', 4, '山田太郎', undefined, true),
+            named('x', 10, '鈴木一郎', undefined, false),
+        ]);
+
+        // コート側・ベンチ側の両方
+        expect(nameSpanOf('山田太郎')!.classList.contains('fallback')).toBe(true);
+        expect(nameSpanOf('鈴木一郎')!.classList.contains('fallback')).toBe(true);
+    });
+
+    it('コートネームがある選手の名前には fallback が付かない', () => {
+        renderModal([
+            named('a', 4, '山田太郎', 'タロウ', true),
+            named('x', 10, '鈴木一郎', 'イチ', false),
+        ]);
+
+        expect(nameSpanOf('タロウ')!.classList.contains('fallback')).toBe(false);
+        expect(nameSpanOf('イチ')!.classList.contains('fallback')).toBe(false);
+    });
+
+    it('失格した選手のカードには fouled-out が付く（スマホで出場Qを隠す目印）', () => {
+        // 失格バッジのうち最長の「失格(2回)」がコートネームと並ぶと3行目が要り、
+        // カード高を超えて下の行に重なる。失格者は出場Qを出さないことで揃える
+        renderModal([
+            player('a', 4, 'コートA', true),
+            { ...player('x', 10, 'ベンチX', false), fouls: ['P', 'P', 'P', 'P', 'P'] },
+        ]);
+
+        const card = screen.getByRole('button', { name: /ベンチX/ });
+        expect(card.classList.contains('fouled-out')).toBe(true);
+        // 出場Qの要素自体はDOMに残す（隠すのはCSS。タブレットでは出す）
+        expect(card.querySelector('.sub-player-quarters')).not.toBeNull();
     });
 });

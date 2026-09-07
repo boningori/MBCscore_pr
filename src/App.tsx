@@ -1191,6 +1191,14 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         initialTab={lineupTab}
         onTabChange={setLineupTab}
         onStart={handleLineupStart}
+        // 名簿から漏れた選手をこの画面で登録する。
+        // 交代モーダルの「+ 選手を追加」と同じ action を使うので、
+        // 背番号順への並べ替えも様式あふれの扱いも1か所のまま
+        onAddPlayers={(teamId, added) => {
+          added.forEach(p =>
+            dispatch({ type: 'ADD_PLAYER_TO_TEAM', payload: { teamId, number: p.number, name: p.name } }),
+          );
+        }}
         // 戻る先: 試合前なら設定へ・試合中ならゲーム画面へ（Q終了の取り消しが可能）
         onBack={phase === 'setup' ? () => setScreen('gameSetup') : () => setScreen('game')}
       />
@@ -1818,10 +1826,15 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 <div className="sub-empty">ベンチに選手がいません</div>
               )}
             </div>
-            <div className="substitution-actions">
-              <button className="btn btn-secondary btn-large" onClick={() => setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' })}>
-                戻る
-              </button>
+            {/* 交代モーダルと同じ substitution-modal を使うため、ボタンも
+                同じ footer に入れる。入れないと下端の余白が無いまま
+                （.substitution-modal の padding-bottom: 0）ボタンが縁に貼り付く */}
+            <div className="substitution-footer">
+              <div className="substitution-actions">
+                <button className="btn btn-secondary btn-large" onClick={() => setCoachFoulState({ teamId: coachFoulState.teamId, step: 'type' })}>
+                  戻る
+                </button>
+              </div>
             </div>
           </Modal>
         );

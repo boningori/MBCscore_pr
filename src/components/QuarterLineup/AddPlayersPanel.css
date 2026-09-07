@@ -1,0 +1,132 @@
+/* スタメン選択画面の選手追加パネル */
+/* 番号グリッドの見た目は styles/number-grid.css と共有する */
+
+.add-players-modal {
+    max-width: 560px;
+    width: 100%;
+    /* 下の余白は貼り付くフッター自身が持つ。ここに padding を残すと、
+       貼り付いたフッターの下にその分の帯ができ、グリッドのセルがそこを
+       流れて覗く（実測: 375px幅で5マス）。
+       calc(-1 * var(--spacing-lg)) で相殺する手もあるが、clamp のため
+       同じトークンが文脈によって違う値に解決され、ずれが残った */
+    padding-bottom: 0;
+}
+
+.add-players-modal .add-players-team {
+    font-weight: 700;
+}
+
+/* 白・青を見分けられるようにする。タイムアウト入力（TimeoutInputModal）と
+   同じチーム色トークンを使う。--secondary-light は成功アクションの緑で、
+   チームの色ではない */
+.add-players-modal .add-players-team.white {
+    color: var(--team-white);
+}
+
+.add-players-modal .add-players-team.blue {
+    color: var(--team-blue-light);
+}
+
+/* 登録済みの番号は押せない。試合中は選手を削除する手段が無いため、
+   対戦チーム管理のように「タップで外せる」見た目にすると嘘になる。
+   opacity で薄くすると地に溶けて 2.52:1 まで落ちた（AAは4.5:1）。
+   薄さではなく「破線の枠」で登録済みを示し、文字は読める濃さを保つ。
+   実測は lineupContrast.test.ts で縛る */
+.add-players-modal .number-grid-item:disabled {
+    background: var(--bg-primary);
+    border-color: var(--text-muted);
+    border-style: dashed;
+    color: var(--text-secondary);
+    font-weight: 400;
+    cursor: default;
+}
+
+.add-players-modal .add-players-draft {
+    margin-top: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    max-height: 34vh;
+    overflow-y: auto;
+}
+
+.add-players-modal .add-players-draft-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.add-players-modal .add-players-draft-number {
+    flex: 0 0 auto;
+    min-width: 3.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.add-players-modal .add-players-draft-name {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+}
+
+.add-players-modal .add-players-draft-remove {
+    flex: 0 0 auto;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.add-players-modal .add-players-empty {
+    margin-top: var(--spacing-md);
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+/* 案内と確定ボタンをパネルの下端に貼り付ける。
+   101マスのグリッドは 375px 幅で1200px を超え、確定ボタンが折り返しの
+   約790px下に沈んでいた（実測）。番号を選ぶたびに画面2つ分スクロールしないと
+   確定できず、試合が止まっている短い時間に間に合わない。
+   あふれの案内も同じ枠に入れて一緒に貼る。ボタンだけ貼ると、案内を一度も
+   見ないまま確定できてしまう。
+   地はモーダル本体（.modal-content の --bg-secondary）と同じにして、
+   裏を流れるグリッドが透けないようにする */
+.add-players-modal .add-players-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    /* 左右は .modal-content の padding を打ち消して端まで届かせる */
+    margin: var(--spacing-md) calc(-1 * var(--spacing-lg)) 0;
+    padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    /* 案内の有無で余白が変わらないよう、間隔は gap に集約する */
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.add-players-modal .add-players-notice {
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.add-players-modal .add-players-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.add-players-modal .add-players-actions .btn {
+    flex: 1;
+}

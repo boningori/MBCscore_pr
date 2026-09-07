@@ -32,7 +32,11 @@ function openAddForm(players: Player[]) {
     return screen.getByPlaceholderText('No.') as HTMLInputElement;
 }
 
-const notice = () => screen.queryByRole('status');
+// screen.queryByRole('status') では絞れない。F4で交代の案内枠
+// （.substitution-note）も常時マウントの role="status" にしたため、
+// この画面には status が2つ在る。ここで見たいのは様式あふれの案内だけなので
+// クラスで名指しする
+const notice = () => document.querySelector('.add-player-notice');
 
 describe('SubstitutionModal: 様式からあふれる選手の案内', () => {
     it('14人なら案内を出さない', () => {

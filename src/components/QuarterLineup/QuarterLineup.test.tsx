@@ -345,3 +345,192 @@ describe('QuarterLineup 開始ボタンのラベル', () => {
         expect(screen.getByRole('button', { name: 'OT 開始' })).toBeTruthy();
     });
 });
+
+describe('QuarterLineup 選手の追加', () => {
+    it('onAddPlayers が無ければ追加ボタンを出さない', () => {
+        render(<QuarterLineup quarter={1} teamA={whiteTeam()} teamB={blueTeam()} onStart={vi.fn()} />);
+        expect(screen.queryByRole('button', { name: '+ 選手を追加' })).toBeNull();
+    });
+
+    it('開いているタブのチームが追加先になる', () => {
+        const onAddPlayers = vi.fn();
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam()}
+                teamB={blueTeam()}
+                onStart={vi.fn()}
+                onAddPlayers={onAddPlayers}
+            />,
+        );
+
+        // 青タブに切り替えてから追加する
+        fireEvent.click(screen.getByRole('tab', { name: /青/ }));
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        // タブにも「青チーム」の文字があるので、見出しを名指しで確かめる
+        expect(screen.getByRole('heading', { name: '選手を追加 - 青チーム' })).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+
+        expect(onAddPlayers).toHaveBeenCalledTimes(1);
+        expect(onAddPlayers.mock.calls[0][0]).toBe('teamB');
+        expect(onAddPlayers.mock.calls[0][1]).toEqual([{ number: 9, name: '選手9' }]);
+    });
+
+    it('追加しても選択中の5人は解除されない', () => {
+        const onAddPlayers = vi.fn();
+        const { rerender } = render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam()}
+                teamB={blueTeam()}
+                onStart={vi.fn()}
+                onAddPlayers={onAddPlayers}
+            />,
+        );
+
+        selectFive('白');
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+
+        // App 側の dispatch を模して、選手が増えた名簿で再描画する
+        const added = player('白9', 9, '白9', [false, false, false, false]);
+        rerender(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam([...fivePlayers('白'), added])}
+                teamB={blueTeam()}
+                onStart={vi.fn()}
+                onAddPlayers={onAddPlayers}
+            />,
+        );
+
+        // 5人の選択は残っている（＝開始できる状態のまま）
+        expect(screen.getByText('5 / 5 名選択')).toBeTruthy();
+        // 追加した選手は自動選択されない
+        expect(screen.getByRole('button', { name: /白9/ }).getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('追加した背番号を状況表示で知らせる', () => {
+        const onAddPlayers = vi.fn();
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam()}
+                teamB={blueTeam()}
+                onStart={vi.fn()}
+                onAddPlayers={onAddPlayers}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号12' }));
+        fireEvent.click(screen.getByRole('button', { name: '2人を追加' }));
+
+        expect(screen.getByText('白チーム に #9 #12 を追加しました')).toBeTruthy();
+    });
+
+    it('キャンセルすると onAddPlayers は呼ばれない', () => {
+        const onAddPlayers = vi.fn();
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam()}
+                teamB={blueTeam()}
+                onStart={vi.fn()}
+                onAddPlayers={onAddPlayers}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }));
+
+        expect(onAddPlayers).not.toHaveBeenCalled();
+        expect(screen.queryByRole('button', { name: '背番号9' })).toBeNull();
+    });
+
+    it('タブを切り替えると状況表示は消える（別チームの話だと誤読させない）', () => {
+        const onAddPlayers = vi.fn();
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam()}
+                teamB={blueTeam()}
+                onStart={vi.fn()}
+                onAddPlayers={onAddPlayers}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+        expect(screen.getByText('白チーム に #9 を追加しました')).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('tab', { name: /青/ }));
+        expect(screen.queryByText('白チーム に #9 を追加しました')).toBeNull();
+    });
+
+    it('クォーターが変わると状況表示は消える', () => {
+        const onAddPlayers = vi.fn();
+        const shared = { teamA: whiteTeam(), teamB: blueTeam(), onStart: vi.fn(), onAddPlayers };
+        const { rerender } = render(<QuarterLineup quarter={1} {...shared} />);
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+        expect(screen.getByText('白チーム に #9 を追加しました')).toBeTruthy();
+
+        rerender(<QuarterLineup quarter={2} {...shared} />);
+        expect(screen.queryByText('白チーム に #9 を追加しました')).toBeNull();
+    });
+});
+
+describe('QuarterLineup 15人超過の常設注意', () => {
+    /** 背番号 1〜16 の16人（様式の15枠を1人超える） */
+    const sixteenPlayers = Array.from({ length: 16 }, (_, i) =>
+        player(`w${i + 1}`, i + 1, `白${i + 1}`, [false, false, false, false]),
+    );
+
+    it('16人いるチームでは常設の注意が出る', () => {
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam(sixteenPlayers)}
+                teamB={blueTeam()}
+                onStart={() => {}}
+            />,
+        );
+
+        expect(screen.getByText(/このチームは15人を超えています（16名）/)).toBeTruthy();
+    });
+
+    it('15人以下では注意を出さない', () => {
+        render(
+            <QuarterLineup quarter={1} teamA={whiteTeam()} teamB={blueTeam()} onStart={() => {}} />,
+        );
+
+        expect(screen.queryByText(/人を超えています/)).toBeNull();
+    });
+
+    it('ちょうど15人（様式の上限）では注意を出さない', () => {
+        // > と >= の取り違えを検知する境界値。15人は様式にちょうど収まる、
+        // このアプリで最も一般的なフル編成なので、誤警告は特に避けたい。
+        const fifteenPlayers = Array.from({ length: 15 }, (_, i) =>
+            player(`w${i + 1}`, i + 1, `白${i + 1}`, [false, false, false, false]),
+        );
+        render(
+            <QuarterLineup
+                quarter={1}
+                teamA={whiteTeam(fifteenPlayers)}
+                teamB={blueTeam()}
+                onStart={() => {}}
+            />,
+        );
+
+        expect(screen.queryByText(/人を超えています/)).toBeNull();
+    });
+});

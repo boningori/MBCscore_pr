@@ -7,9 +7,37 @@ import {
     formatPlayerNumber,
     parsePlayerNumber,
     isValidPlayerNumber,
+    comparePlayerNumbers,
 } from '../../utils/playerNumber';
 import { findOverflowPlayer } from '../TeamShared/playerLimit';
 import './SubstitutionModal.css';
+
+/**
+ * 画面に出す名前。コートネームがあればそれを使う。
+ *
+ * 交代は背番号で認識するので、要るのはフルネームではなく呼び名。
+ * `courtName || name` はアプリ全体の既定（Scoreboard / TeamPanel /
+ * ActionHistory / FoulInputFlow ほか）で、素の name を出していたのは
+ * このモーダルだけだった。
+ * courtName はマイチーム管理でしか設定できず、対戦相手の選手には無い。
+ * タブレット・PCは幅に余裕があるのでフォールバックを出す。スマホだけは
+ * 出さない（nameClass を参照）。
+ */
+const displayName = (player: Player) => player.courtName || player.name;
+
+/**
+ * 名前の span に付けるクラス。
+ *
+ * スマホ（〜600px）では氏名のフォールバックを出さず、空いた幅を得点・出場Qに回す。
+ * 切り詰められた `佐々木健…` は誰のことか分からず、情報として働かないまま幅だけ
+ * 占めていた（実機で確認）。交代は背番号で認識するので、番号だけでも人は特定できる。
+ *
+ * CSS からは「いま出ている文字列がコートネームなのかフォールバックなのか」を
+ * 判別できないため、描画側で目印を付ける。実際に隠すのは CSS 側
+ * （タブレット・PCでは幅に余裕があるので氏名を出したままにする）。
+ */
+const nameClass = (player: Player) =>
+    `sub-player-name${player.courtName ? '' : ' fallback'}`;
 
 interface SubstitutionModalProps {
     teamName: string;
@@ -27,8 +55,12 @@ export function SubstitutionModal({
     onAddPlayer,
     onClose,
 }: SubstitutionModalProps) {
-    const [playerOut, setPlayerOut] = useState<string | null>(null);
-    const [playerIn, setPlayerIn] = useState<string | null>(null);
+    // 交代は複数人まとめて行う。単数だと「4番と5番を下げて9番と10番」という
+    // コーチの指示を1組ずつに分解してタップし直すことになる
+    const [playersOut, setPlayersOut] = useState<string[]>([]);
+    const [playersIn, setPlayersIn] = useState<string[]>([]);
+    // 直前の実行で何人替えたか（案内の文言に使う）
+    const [lastCount, setLastCount] = useState(0);
     // この画面で実行済みの交代。連続交代の手応えを返すために保持する
     const [doneCount, setDoneCount] = useState(0);
     const [lastDone, setLastDone] = useState<string | null>(null);
@@ -46,26 +78,65 @@ export function SubstitutionModal({
     // 判断は記録者に任せ、カード上に「退場」と併記して見落としを防ぐ
     const benchPlayers = players.filter(p => !p.isOnCourt);
 
+    const toggleOut = (id: string) =>
+        setPlayersOut(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+    const toggleIn = (id: string) =>
+        setPlayersIn(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+
+    // コート上は5人固定なので、IN と OUT の数が違う交代は成立しない
+    const countsMatch = playersOut.length === playersIn.length;
+    const canSubstitute = playersOut.length > 0 && countsMatch;
+
+    /** 選択中のIDを背番号順の Player 配列にする */
+    const orderedBySelection = (ids: string[]) =>
+        ids
+            .map(id => players.find(p => p.id === id))
+            .filter((p): p is Player => p !== undefined)
+            .sort((a, b) => comparePlayerNumbers(a.number, b.number));
+
     // 交代は1組ずつ確定するが、モーダルは閉じない。
     // バスケではタイムアウト明けなどに複数人まとめて替えるのが普通で、
     // 1組ごとに閉じると「交代ボタン→選択→実行」を人数分やり直すことになり、
     // 試合が止まっている短い時間に間に合わない
     const handleConfirm = () => {
-        if (!playerOut || !playerIn) return;
+        if (!canSubstitute) return;
 
-        const out = players.find(p => p.id === playerOut);
-        const into = players.find(p => p.id === playerIn);
+        const outs = orderedBySelection(playersOut);
+        const ins = orderedBySelection(playersIn);
 
-        onSubstitute(playerIn, playerOut);
+        // canSubstitute は選択 state の生の長さを見ているが、orderedBySelection は
+        // players に無いIDを落とす。いまは落ちる経路が無いが、ずれたら黙って
+        // 1人取りこぼすより止める
+        if (outs.length !== ins.length) return;
 
-        if (out && into) {
-            setLastDone(
-                `#${formatPlayerNumber(out.number)} ${out.name} → #${formatPlayerNumber(into.number)} ${into.name}`,
-            );
-        }
+        // 組み合わせはどこにも保存されない（handleSubstitutePlayer が書くのは
+        // isOnCourt と quartersPlayed だけ）ので、どう組んでも結果は同じ。
+        // 背番号順で組むのは表示を安定させるため。1組ずつ送ることで
+        // コート上の人数が途中でも5人に保たれる
+        outs.forEach((out, i) => onSubstitute(ins[i].id, out.id));
+
+        setLastDone(
+            outs.length === 1
+                ? `#${formatPlayerNumber(outs[0].number)} ${displayName(outs[0])} → #${formatPlayerNumber(ins[0].number)} ${displayName(ins[0])}`
+                // 複数は背番号だけ。氏名まで並べると375px幅の枠に収まらない
+                : `${outs.map(p => `#${formatPlayerNumber(p.number)}`).join(' ')} ⇄ ${ins.map(p => `#${formatPlayerNumber(p.number)}`).join(' ')}`,
+        );
+        setLastCount(outs.length);
         setDoneCount(count => count + 1);
-        setPlayerOut(null);
-        setPlayerIn(null);
+        setPlayersOut([]);
+        setPlayersIn([]);
+    };
+
+    /**
+     * 実行できない理由。まだ何も選んでいないときは出さない
+     * （間違いではないので、既存の連続交代の案内をそのまま見せる）
+     */
+    const mismatchMessage = (): string | null => {
+        if (playersOut.length === 0 && playersIn.length === 0) return null;
+        if (countsMatch) return null;
+        if (playersIn.length === 0) return `ベンチから${playersOut.length}人選んでください`;
+        if (playersOut.length === 0) return `コートから${playersIn.length}人選んでください`;
+        return `コート${playersOut.length}人・ベンチ${playersIn.length}人を選んでいます。同じ人数にしてください`;
     };
 
     // 追加すると公式様式（15人分）から外れる選手。
@@ -128,19 +199,28 @@ export function SubstitutionModal({
                 </div>
 
                 <div className="substitution-grid">
-                    <div className="substitution-column">
-                        <h3 className="sub-column-title">コート (OUT)</h3>
+                    {/* コート側は必ず5人。スマホでは2列に折り返して全員を出すため、
+                        ベンチ側と区別できるクラスを付ける */}
+                    <div className="substitution-column court">
+                        <h3 className="sub-column-title">
+                            <span className="sub-column-label">コート (OUT)</span>
+                            {playersOut.length > 0 && (
+                                <span className={`sub-column-count ${countsMatch ? 'match' : 'mismatch'}`}>
+                                    {playersOut.length}人選択
+                                </span>
+                            )}
+                        </h3>
                         <div className="sub-player-list">
                             {onCourtPlayers.map(player => (
                                 <button
                                     type="button"
                                     key={player.id}
-                                    className={`sub-player-card ${playerOut === player.id ? 'selected out' : ''}`}
-                                    onClick={() => setPlayerOut(player.id)}
-                                    aria-pressed={playerOut === player.id}
+                                    className={`sub-player-card ${playersOut.includes(player.id) ? 'selected out' : ''}`}
+                                    onClick={() => toggleOut(player.id)}
+                                    aria-pressed={playersOut.includes(player.id)}
                                 >
                                     <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
-                                    <span className="sub-player-name">{player.name}</span>
+                                    <span className={nameClass(player)}>{displayName(player)}</span>
                                     <span className="sub-player-stats">{player.stats.points}pts</span>
                                 </button>
                             ))}
@@ -148,11 +228,18 @@ export function SubstitutionModal({
                     </div>
 
                     <div className="substitution-arrow">
-                        {playerOut && playerIn ? '⇄' : '→'}
+                        {playersOut.length > 0 && playersIn.length > 0 ? '⇄' : '→'}
                     </div>
 
-                    <div className="substitution-column">
-                        <h3 className="sub-column-title">ベンチ (IN)</h3>
+                    <div className="substitution-column bench">
+                        <h3 className="sub-column-title">
+                            <span className="sub-column-label">ベンチ (IN)</span>
+                            {playersIn.length > 0 && (
+                                <span className={`sub-column-count ${countsMatch ? 'match' : 'mismatch'}`}>
+                                    {playersIn.length}人選択
+                                </span>
+                            )}
+                        </h3>
                         <div className="sub-player-list">
                             {benchPlayers.map(player => {
                                 // 退場は5ファウルだけではない（D 1つ / U・T 2つ）。
@@ -165,12 +252,12 @@ export function SubstitutionModal({
                                     <button
                                         type="button"
                                         key={player.id}
-                                        className={`sub-player-card ${playerIn === player.id ? 'selected in' : ''} ${fouledOut ? 'fouled-out' : ''}`}
-                                        onClick={() => setPlayerIn(player.id)}
-                                        aria-pressed={playerIn === player.id}
+                                        className={`sub-player-card ${playersIn.includes(player.id) ? 'selected in' : ''} ${fouledOut ? 'fouled-out' : ''}`}
+                                        onClick={() => toggleIn(player.id)}
+                                        aria-pressed={playersIn.includes(player.id)}
                                     >
                                         <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
-                                        <span className="sub-player-name">{player.name}</span>
+                                        <span className={nameClass(player)}>{displayName(player)}</span>
                                         {disqualification && (
                                             <span className="sub-player-fouled-out">
                                                 {shortDisqualificationLabel(disqualification)}
@@ -233,6 +320,8 @@ export function SubstitutionModal({
                                         */}
                                         {players.length >= MAX_PLAYERS_PER_TEAM && (
                                             <div className="add-player-notice" role="status">
+                                                {/* ここだけ displayName を使わない。公式様式は本名を印字するため、
+                                                    コートネームで書くと様式に無い名前で「載らなくなります」と言うことになる */}
                                                 {overflowTarget === null
                                                     ? `すでに${players.length}人います。スコアシートの選手欄は${MAX_PLAYERS_PER_TEAM}人分のため、追加すると1人が載らなくなります。`
                                                     : overflowTarget.number === pendingNumber
@@ -267,38 +356,64 @@ export function SubstitutionModal({
                 </div>
 
                 {/*
-                  実行前の案内と実行後の結果を同じ高さの枠で入れ替える。
-                  結果を後から差し込むとボタンが下にずれ、直前に「交代実行」が
-                  あった位置に「完了」が来る。連続でタップした指がモーダルを
-                  閉じてしまうため、枠は最初から場所を取っておく
+                  案内とボタンはモーダルの下端に貼り付ける。15人編成では
+                  名簿だけで枠を超え、既定の位置ではボタンが画面外にあった
+                  （実測: 375px幅でボタン上端781px・モーダル下端771px、
+                  172pxスクロールしないと押せない）。交代は試合が止まっている
+                  短い間に何度も行うので、探しに行かせない。
+                  案内を外に残すと、上の方を見ているあいだ「交代しました」が
+                  画面外になり、実行できたのか分からなくなる
                 */}
-                {doneCount > 0 ? (
-                    <div className="substitution-note done" role="status">
-                        <span className="substitution-note-pair">{lastDone}</span>
-                        <span className="substitution-note-sub">
-                            交代しました{doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
-                        </span>
-                    </div>
-                ) : (
-                    <div className="substitution-note">
-                        <span className="substitution-note-sub">
-                            交代実行してもこの画面は閉じません。続けて何人でも交代できます
-                        </span>
-                    </div>
-                )}
-
-                <div className="substitution-actions">
-                    {/* 交代はその場で確定するため、実行後に「キャンセル」を残すと取り消せると誤解される */}
-                    <button className="btn btn-secondary btn-large" onClick={onClose}>
-                        {doneCount > 0 ? '完了' : 'キャンセル'}
-                    </button>
-                    <button
-                        className="btn btn-success btn-large"
-                        onClick={handleConfirm}
-                        disabled={!playerOut || !playerIn}
+                <div className="substitution-footer">
+                    {/*
+                      実行前の案内と実行後の結果を同じ高さの枠で入れ替える。
+                      結果を後から差し込むとボタンが下にずれ、直前に「交代実行」が
+                      あった位置に「完了」が来る。連続でタップした指がモーダルを
+                      閉じてしまうため、枠は最初から場所を取っておく
+                    */}
+                    {/*
+                      role="status" は枠そのものに最初から付けておき、中身（テキスト）
+                      だけを差し替える。以前は3分岐で <div> ごと出し入れしており、
+                      role が付くのと文言が入るのが同じコミットになっていた。
+                      多くのスクリーンリーダーは、ライブリージョンが生成された（role を
+                      得た）その瞬間の内容は読み上げないため、実行できない理由が
+                      一度も読まれない可能性が高かった。枠を固定してテキストの変化に
+                      すれば、既存のライブリージョンへの更新として読み上げられる
+                    */}
+                    <div
+                        className={`substitution-note ${mismatchMessage() === null && doneCount > 0 ? 'done' : ''}`}
+                        role="status"
                     >
-                        交代実行
-                    </button>
+                        {mismatchMessage() !== null ? (
+                            <span className="substitution-note-sub">{mismatchMessage()}</span>
+                        ) : doneCount > 0 ? (
+                            <>
+                                <span className="substitution-note-pair">{lastDone}</span>
+                                <span className="substitution-note-sub">
+                                    {lastCount > 1 ? `${lastCount}人交代しました` : '交代しました'}
+                                    {doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="substitution-note-sub">
+                                交代実行してもこの画面は閉じません。続けて何人でも交代できます
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="substitution-actions">
+                        {/* 交代はその場で確定するため、実行後に「キャンセル」を残すと取り消せると誤解される */}
+                        <button className="btn btn-secondary btn-large" onClick={onClose}>
+                            {doneCount > 0 ? '完了' : 'キャンセル'}
+                        </button>
+                        <button
+                            className="btn btn-success btn-large"
+                            onClick={handleConfirm}
+                            disabled={!canSubstitute}
+                        >
+                            交代実行
+                        </button>
+                    </div>
                 </div>
         </Modal>
     );

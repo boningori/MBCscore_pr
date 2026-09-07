@@ -133,3 +133,84 @@ describe('App: Q終了後にスタメン選択画面から戻ったときの復�
         expect(screen.getByRole('button', { name: 'Q2 開始' })).toBeTruthy();
     });
 });
+
+describe('App: スタメン選択画面からの選手追加', () => {
+    it('追加した選手が対象チームだけに入り、未出場・ベンチのまま並ぶ', async () => {
+        render(<App />);
+
+        await proceedToLineup();
+        // 白のスタメン5人を先に確定しておく（Q1は誰もコート上にいない状態で始まるため）
+        selectFive('ホーム');
+
+        // 白（マイチーム）は背番号 4〜8 の5人。9番は空いている
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.change(screen.getByLabelText('背番号9の氏名'), { target: { value: '遅刻' } });
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+
+        // 白のカード一覧に増え、自動選択はされない
+        const addedCard = await screen.findByRole('button', { name: /遅刻/ });
+        expect(addedCard.getAttribute('aria-pressed')).toBe('false');
+        // 未出場のまま入る（出場クォーターの印がどれも点いていない）
+        expect(addedCard.querySelectorAll('.quarter-dot.played').length).toBe(0);
+        // 既に5人選ばれているので、選択数は変わらない
+        expect(screen.getByText('5 / 5 名選択')).toBeTruthy();
+
+        // 青チームには入っていない
+        fireEvent.click(screen.getByRole('tab', { name: /青/ }));
+        expect(screen.queryByRole('button', { name: /遅刻/ })).toBeNull();
+    });
+
+    it('追加した選手を選び直してスタメンに入れられる', async () => {
+        const { container } = render(<App />);
+
+        await proceedToLineup();
+        // 白のスタメン5人を先に確定しておく（Q1は誰もコート上にいない状態で始まるため）
+        selectFive('ホーム');
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.change(screen.getByLabelText('背番号9の氏名'), { target: { value: '遅刻' } });
+        fireEvent.click(screen.getByRole('button', { name: '1人を追加' }));
+
+        // ホーム1 を外して、追加した選手を入れる
+        fireEvent.click(await screen.findByRole('button', { name: /ホーム1/ }));
+        fireEvent.click(screen.getByRole('button', { name: /遅刻/ }));
+        expect(screen.getByText('5 / 5 名選択')).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('tab', { name: /青/ }));
+        selectFive('アウェイ');
+        fireEvent.click(screen.getByRole('button', { name: '試合開始' }));
+
+        await waitFor(() => {
+            expect(container.querySelectorAll('.team-panel.team-a .mini-player-card').length).toBe(5);
+        });
+        expect(screen.getByRole('button', { name: /遅刻/ })).toBeTruthy();
+        // 外した選手が本当にコートから降りている（人数と遅刻だけでは別人が落ちても通る）
+        expect(container.querySelector('.team-panel.team-a')!.textContent).not.toContain('ホーム1');
+    });
+
+    it('複数人をまとめて追加できる（00を含む・氏名は任意）', async () => {
+        render(<App />);
+
+        await proceedToLineup();
+        selectFive('ホーム');
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 選手を追加' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号9' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号12' }));
+        fireEvent.click(screen.getByRole('button', { name: '背番号00' }));
+        fireEvent.change(screen.getByLabelText('背番号9の氏名'), { target: { value: '遅刻' } });
+        fireEvent.click(screen.getByRole('button', { name: '3人を追加' }));
+
+        // 3人とも入る。氏名を空けた分は自動命名になる
+        expect(await screen.findByRole('button', { name: /遅刻/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /選手12/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /選手00/ })).toBeTruthy();
+
+        // まとめて足してもスタメンの5人は動かず、追加分は誰も選択されていない
+        expect(screen.getByText('5 / 5 名選択')).toBeTruthy();
+        expect(screen.getByRole('button', { name: /遅刻/ }).getAttribute('aria-pressed')).toBe('false');
+        expect(screen.getByRole('button', { name: /選手00/ }).getAttribute('aria-pressed')).toBe('false');
+    });
+});

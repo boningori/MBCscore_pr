@@ -1,5 +1,5 @@
 import type { Player } from '../../types/game';
-import { PLAYERS_ON_COURT } from '../../types/game';
+import { MAX_PLAYERS_PER_TEAM, PLAYERS_ON_COURT } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
 
@@ -8,10 +8,14 @@ interface LineupTeamPanelProps {
     players: Player[];
     selectedIds: string[];
     onToggle: (playerId: string) => void;
+    /** 名簿から漏れた選手を足す入口。省略時はボタンを出さない */
+    onRequestAddPlayer?: () => void;
+    /** 直前に追加した選手の状況表示。「+ 選手を追加」ボタンのすぐ下に出す */
+    addedNotice?: string;
 }
 
 /** 1チーム分のスタメン選択パネル。状態を持たない表示専用コンポーネント */
-export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: LineupTeamPanelProps) {
+export function LineupTeamPanel({ quarter, players, selectedIds, onToggle, onRequestAddPlayer, addedNotice }: LineupTeamPanelProps) {
     // 5ファウルの選手も一覧に残し、選択も妨げない。
     // 練習試合では相手チームの同意のうえで退場者が出続けることがあり、除外すると
     // コートに戻す手段がなくなる。人数の少ない編成では残り5名を割って
@@ -118,7 +122,35 @@ export function LineupTeamPanel({ quarter, players, selectedIds, onToggle }: Lin
                 })}
             </div>
 
+            {/* 「あの子のカードが無い」と気づく場所の直下に置く。
+                試合設定まで戻らず、交代モーダルまで回り道せずに足せるようにする */}
+            {onRequestAddPlayer && (
+                <div className="lineup-add-player">
+                    <button type="button" className="btn btn-secondary" onClick={onRequestAddPlayer}>
+                        + 選手を追加
+                    </button>
+                    {/* 以前はこの下に注意書き2段落を挟んでさらに下へ出しており、
+                        スマホでは折り返しの下に隠れうる位置だった。
+                        ボタンの直下に置き、取り違えたタブへ追加していないか
+                        あとから気づけるようチーム名も文言に含める */}
+                    {addedNotice && (
+                        <p className="lineup-added-notice" role="status">{addedNotice}</p>
+                    )}
+                </div>
+            )}
+
             <div className="quarter-rule-hint">
+                {/* あふれの案内はAddPlayersPanelの中にしかなく、確定して閉じると
+                    「#9を追加しました」しか残らない。得点済みの選手が様式に
+                    載らないことに、チーム合計と個人欄の合計を突き合わせるまで
+                    誰も気づけないため、超過している間は常設の注意を出す。
+                    文言はGameSetup（試合設定）の同種の注意と揃える */}
+                {players.length > MAX_PLAYERS_PER_TEAM && (
+                    <p className="lineup-oversized-warn">
+                        ⚠ このチームは{MAX_PLAYERS_PER_TEAM}人を超えています（{players.length}名）。
+                        スコアシートには背番号順で先頭{MAX_PLAYERS_PER_TEAM}人までしか印字されません。
+                    </p>
+                )}
                 {isRegularQuarter && quarter >= 2 && unplayedNumbers.length > 0 && (
                     <p className="rule-warn">
                         ⚠ 未出場（全員出場の目安）: {unplayedNumbers.map(n => `#${formatPlayerNumber(n)}`).join(', ')}
