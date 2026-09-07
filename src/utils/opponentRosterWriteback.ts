@@ -59,8 +59,11 @@ export function planOpponentWriteback(
     if (registryHit === 'ambiguous' || recentHit === 'ambiguous') return null;
     if (!registryHit && !recentHit) return null;
 
-    // 差分の基準はどちらか一方でよい。通常は同じレコードが両方に入っている。
-    // ずれている場合に備え、実際に足すときは保存先ごとに持っていない番号だけを足す
+    // 差分は基準となる保存先を1つ選んで計算する。基準より遅れている側の保存先は
+    // 埋め戻されない。ただし到達経路が狭く（対戦チーム管理で編集し、その直後に
+    // 古い履歴を選ぶ必要がある）、試合開始のたびに直近履歴が選択したチームで
+    // 再保存されるため自然に解消する。保存先ごとの skip は、基準より先んじている
+    // 側への重複追加を防ぐ
     const reference = registryHit ?? recentHit!;
     const known = new Set(reference.players.map(p => p.number));
 
@@ -93,6 +96,9 @@ export function planOpponentWriteback(
         added,
         updatedRegistry,
         updatedRecent,
+        // 保存先が乖離している場合、登録後の人数は異なる可能性がある。
+        // より多い側の人数を報告する。15人超過の警告は最も混雑した結果に対して
+        // 出すべきだから
         resultCount: Math.max(
             updatedRegistry?.players.length ?? 0,
             updatedRecent?.players.length ?? 0,
