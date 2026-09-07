@@ -2089,11 +2089,18 @@ function AppContent({ screen, setScreen }: AppContentProps) {
       {rosterWriteback && (
         <ConfirmModal
           title="相手チームの名簿に登録しますか？"
-          message={`この試合で追加した ${rosterWriteback.added.map(p => `#${formatPlayerNumber(p.number)} ${p.name}`).join('、')} を「${rosterWriteback.teamName}」の名簿に登録します。次の試合から選べるようになります。`}
+          // 「この試合で追加した」ではない。added は「試合の名簿にあって登録一覧に
+          // 無い選手」であり、対戦チーム管理で背番号を直した（#10→#12）後に
+          // 直近履歴の古い方（まだ#10）を選んで試合をすると、直した前の番号が
+          // ここに出る。承諾を止めはしないが（利用者が一覧を見て判断できる）、
+          // 「よく見なくてよい」と誘導しないよう、常に正しい言い方にする
+          message={`この試合の名簿にあって「${rosterWriteback.teamName}」の登録に無い選手です: ${rosterWriteback.added.map(p => `#${formatPlayerNumber(p.number)} ${p.name}`).join('、')}。登録すると次の試合から選べるようになります。`}
           // 上限は超えても止めない。退場者やスコアシートあふれと同じで、
-          // 事実だけ伝えて判断は利用者に任せる
+          // 事実だけ伝えて判断は利用者に任せる。
+          // 「登録できない」ではなく「印字されない」が結果。対戦チーム管理は
+          // 人数の上限を掛けていないので、保存自体は通る
           note={rosterWriteback.resultCount > MAX_PLAYERS_PER_TEAM
-            ? `登録すると${rosterWriteback.resultCount}人になります。対戦チーム管理の上限は${MAX_PLAYERS_PER_TEAM}人です。`
+            ? `登録すると${rosterWriteback.resultCount}人になります。スコアシートの選手欄は${MAX_PLAYERS_PER_TEAM}人分で、背番号順に先頭${MAX_PLAYERS_PER_TEAM}人までしか印字されません。`
             : undefined}
           confirmLabel="登録する"
           cancelLabel="登録しない"

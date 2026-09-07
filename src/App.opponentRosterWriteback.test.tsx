@@ -10,6 +10,7 @@ import App from './App';
 import { createInitialGame, createTeam, createPlayer } from './types/game';
 import { loadOpponents, loadRecentOpponents } from './utils/teamStorage';
 import type { SavedTeam } from './utils/teamStorage';
+import { MAX_PLAYERS_PER_TEAM } from './types/game';
 
 // 保存先のキーは定数名と交差している。直に触らず、この2つのキーを使う
 // （minibasket-saved-opponents = 登録一覧、minibasket-opponent-teams = 直近履歴）
@@ -169,6 +170,22 @@ describe('App: 追加した相手選手を名簿へ取り込む', () => {
         const dialog = await screen.findByRole('dialog');
         expect(dialog.textContent).toContain('#99 相手99');
         expect(dialog.textContent).toContain('相手チーム');
+    });
+
+    it('登録後に15人を超えると、印字されない旨の案内が出る', async () => {
+        // 登録一覧に MAX_PLAYERS_PER_TEAM 人（背番号1〜15）を仕込み、試合の名簿は
+        // それに16人目（#99）を足した状態にする。登録後は16人になり、
+        // スコアシートの選手欄（15人分）に印字されない選手が出る
+        const registryNumbers = Array.from({ length: MAX_PLAYERS_PER_TEAM }, (_, i) => i + 1);
+        localStorage.setItem(REGISTRY_KEY, JSON.stringify([savedOpponent('o1', '相手チーム', registryNumbers)]));
+        seedFinishedSession([...registryNumbers, 99]);
+
+        await finishGame();
+
+        const dialog = await screen.findByRole('dialog');
+        expect(dialog.textContent).toContain(
+            `登録すると${MAX_PLAYERS_PER_TEAM + 1}人になります。スコアシートの選手欄は${MAX_PLAYERS_PER_TEAM}人分で、背番号順に先頭${MAX_PLAYERS_PER_TEAM}人までしか印字されません。`
+        );
     });
 
     // バックアップ督促は画面ごと差し替える早期return。取り込みダイアログと
