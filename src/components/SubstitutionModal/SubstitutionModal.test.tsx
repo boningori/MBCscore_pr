@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { SubstitutionModal } from './SubstitutionModal';
@@ -479,5 +481,62 @@ describe('SubstitutionModal 一括交代', () => {
         const note = document.querySelector('.substitution-note')?.textContent ?? '';
         expect(note).toContain('続けて');
         expect(note).not.toContain('選んでください');
+    });
+});
+
+// 見出しの <h3> が選手カードの <button> と同じ背景色・同じ角丸で、
+// 押せるように見えて押せなかった（スマホのメディアクエリの上書きが原因）
+describe('SubstitutionModal 見出し', () => {
+    const roster = () => [
+        player('a', 4, 'コートA', true),
+        player('b', 5, 'コートB', true),
+        player('x', 10, 'ベンチX', false),
+    ];
+
+    const counts = () => [...document.querySelectorAll('.sub-column-count')].map(e => ({
+        text: e.textContent,
+        match: e.classList.contains('match'),
+        mismatch: e.classList.contains('mismatch'),
+    }));
+
+    it('何も選んでいないときは選択数を出さない', () => {
+        renderModal(roster());
+        expect(counts()).toEqual([]);
+    });
+
+    it('人数が食い違うあいだは「足りない」側の色になる', () => {
+        renderModal(roster());
+
+        fireEvent.click(screen.getByRole('button', { name: /コートA/ }));
+
+        expect(counts()).toEqual([
+            { text: '1人選択', match: false, mismatch: true },
+        ]);
+    });
+
+    it('同数になると「揃った」側の色になる', () => {
+        renderModal(roster());
+
+        fireEvent.click(screen.getByRole('button', { name: /コートA/ }));
+        fireEvent.click(screen.getByRole('button', { name: /ベンチX/ }));
+
+        expect(counts()).toEqual([
+            { text: '1人選択', match: true, mismatch: false },
+            { text: '1人選択', match: true, mismatch: false },
+        ]);
+    });
+
+    it('見出しに選手カードと同じ背景色を敷かない（押せる要素と見分けられる）', () => {
+        const css = readFileSync(
+            resolve(process.cwd(), 'src/components/SubstitutionModal/SubstitutionModal.css'),
+            'utf-8',
+        );
+        // スマホの上書きで .sub-column-title に --bg-tertiary（選手カードの地）を
+        // 敷いていた。同じ地を敷き直したらこのテストで気づける
+        const titleRules = [...css.matchAll(/\.sub-column-title\s*\{([^}]*)\}/g)].map(m => m[1]);
+        expect(titleRules.length).toBeGreaterThan(0);
+        for (const body of titleRules) {
+            expect(body).not.toMatch(/background\s*:\s*var\(--bg-tertiary\)/);
+        }
     });
 });

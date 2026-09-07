@@ -19,13 +19,34 @@
     gap: var(--spacing-sm);
 }
 
+/* 見出しはラベル。選手カード（button）と同じ地・同じ角丸にすると
+   押せるように見えて押せない要素になる。左にラベル・右に選択数の1行にする */
 .substitution-modal .sub-column-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
     font-size: var(--font-size-md);
     font-weight: 600;
     color: var(--text-secondary);
-    text-align: center;
     padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--border);
+}
+
+/* 選択数の色で実行できるかを示す。スタメン選択（QuarterLineup の
+   .lineup-status）が使っている「揃った=緑 / 足りない=橙」に揃える。
+   モーダル地(--bg-secondary)の上で緑5.77:1・橙6.81:1、どちらもAA */
+.substitution-modal .sub-column-count {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.substitution-modal .sub-column-count.match {
+    color: var(--secondary-light);
+}
+
+.substitution-modal .sub-column-count.mismatch {
+    color: var(--warning);
 }
 
 .substitution-modal .sub-player-list {
@@ -286,13 +307,6 @@
         flex: 1;
         min-height: 0;
         max-height: none;
-    }
-
-    .substitution-modal .sub-column-title {
-        font-size: var(--font-size-lg);
-        padding: var(--spacing-sm);
-        background: var(--bg-tertiary);
-        border-radius: var(--radius-sm);
     }
 
     .substitution-modal .sub-player-list {

@@ -182,7 +182,14 @@ export function SubstitutionModal({
                     {/* コート側は必ず5人。スマホでは2列に折り返して全員を出すため、
                         ベンチ側と区別できるクラスを付ける */}
                     <div className="substitution-column court">
-                        <h3 className="sub-column-title">コート (OUT)</h3>
+                        <h3 className="sub-column-title">
+                            <span className="sub-column-label">コート (OUT)</span>
+                            {playersOut.length > 0 && (
+                                <span className={`sub-column-count ${countsMatch ? 'match' : 'mismatch'}`}>
+                                    {playersOut.length}人選択
+                                </span>
+                            )}
+                        </h3>
                         <div className="sub-player-list">
                             {onCourtPlayers.map(player => (
                                 <button
@@ -205,7 +212,14 @@ export function SubstitutionModal({
                     </div>
 
                     <div className="substitution-column bench">
-                        <h3 className="sub-column-title">ベンチ (IN)</h3>
+                        <h3 className="sub-column-title">
+                            <span className="sub-column-label">ベンチ (IN)</span>
+                            {playersIn.length > 0 && (
+                                <span className={`sub-column-count ${countsMatch ? 'match' : 'mismatch'}`}>
+                                    {playersIn.length}人選択
+                                </span>
+                            )}
+                        </h3>
                         <div className="sub-player-list">
                             {benchPlayers.map(player => {
                                 // 退場は5ファウルだけではない（D 1つ / U・T 2つ）。
