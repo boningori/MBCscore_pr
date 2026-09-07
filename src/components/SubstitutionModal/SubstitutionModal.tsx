@@ -7,6 +7,7 @@ import {
     formatPlayerNumber,
     parsePlayerNumber,
     isValidPlayerNumber,
+    comparePlayerNumbers,
 } from '../../utils/playerNumber';
 import { findOverflowPlayer } from '../TeamShared/playerLimit';
 import './SubstitutionModal.css';
@@ -39,8 +40,12 @@ export function SubstitutionModal({
     onAddPlayer,
     onClose,
 }: SubstitutionModalProps) {
-    const [playerOut, setPlayerOut] = useState<string | null>(null);
-    const [playerIn, setPlayerIn] = useState<string | null>(null);
+    // 交代は複数人まとめて行う。単数だと「4番と5番を下げて9番と10番」という
+    // コーチの指示を1組ずつに分解してタップし直すことになる
+    const [playersOut, setPlayersOut] = useState<string[]>([]);
+    const [playersIn, setPlayersIn] = useState<string[]>([]);
+    // 直前の実行で何人替えたか（案内の文言に使う）
+    const [lastCount, setLastCount] = useState(0);
     // この画面で実行済みの交代。連続交代の手応えを返すために保持する
     const [doneCount, setDoneCount] = useState(0);
     const [lastDone, setLastDone] = useState<string | null>(null);
@@ -58,26 +63,60 @@ export function SubstitutionModal({
     // 判断は記録者に任せ、カード上に「退場」と併記して見落としを防ぐ
     const benchPlayers = players.filter(p => !p.isOnCourt);
 
+    const toggleOut = (id: string) =>
+        setPlayersOut(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+    const toggleIn = (id: string) =>
+        setPlayersIn(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+
+    // コート上は5人固定なので、IN と OUT の数が違う交代は成立しない
+    const countsMatch = playersOut.length === playersIn.length;
+    const canSubstitute = playersOut.length > 0 && countsMatch;
+
+    /** 選択中のIDを背番号順の Player 配列にする */
+    const orderedBySelection = (ids: string[]) =>
+        ids
+            .map(id => players.find(p => p.id === id))
+            .filter((p): p is Player => p !== undefined)
+            .sort((a, b) => comparePlayerNumbers(a.number, b.number));
+
     // 交代は1組ずつ確定するが、モーダルは閉じない。
     // バスケではタイムアウト明けなどに複数人まとめて替えるのが普通で、
     // 1組ごとに閉じると「交代ボタン→選択→実行」を人数分やり直すことになり、
     // 試合が止まっている短い時間に間に合わない
     const handleConfirm = () => {
-        if (!playerOut || !playerIn) return;
+        if (!canSubstitute) return;
 
-        const out = players.find(p => p.id === playerOut);
-        const into = players.find(p => p.id === playerIn);
+        const outs = orderedBySelection(playersOut);
+        const ins = orderedBySelection(playersIn);
 
-        onSubstitute(playerIn, playerOut);
+        // 組み合わせはどこにも保存されない（handleSubstitutePlayer が書くのは
+        // isOnCourt と quartersPlayed だけ）ので、どう組んでも結果は同じ。
+        // 背番号順で組むのは表示を安定させるため。1組ずつ送ることで
+        // コート上の人数が途中でも5人に保たれる
+        outs.forEach((out, i) => onSubstitute(ins[i].id, out.id));
 
-        if (out && into) {
-            setLastDone(
-                `#${formatPlayerNumber(out.number)} ${displayName(out)} → #${formatPlayerNumber(into.number)} ${displayName(into)}`,
-            );
-        }
+        setLastDone(
+            outs.length === 1
+                ? `#${formatPlayerNumber(outs[0].number)} ${displayName(outs[0])} → #${formatPlayerNumber(ins[0].number)} ${displayName(ins[0])}`
+                // 複数は背番号だけ。氏名まで並べると375px幅の枠に収まらない
+                : `${outs.map(p => `#${formatPlayerNumber(p.number)}`).join(' ')} ⇄ ${ins.map(p => `#${formatPlayerNumber(p.number)}`).join(' ')}`,
+        );
+        setLastCount(outs.length);
         setDoneCount(count => count + 1);
-        setPlayerOut(null);
-        setPlayerIn(null);
+        setPlayersOut([]);
+        setPlayersIn([]);
+    };
+
+    /**
+     * 実行できない理由。まだ何も選んでいないときは出さない
+     * （間違いではないので、既存の連続交代の案内をそのまま見せる）
+     */
+    const mismatchMessage = (): string | null => {
+        if (playersOut.length === 0 && playersIn.length === 0) return null;
+        if (countsMatch) return null;
+        if (playersIn.length === 0) return `ベンチから${playersOut.length}人選んでください`;
+        if (playersOut.length === 0) return `コートから${playersIn.length}人選んでください`;
+        return `コート${playersOut.length}人・ベンチ${playersIn.length}人を選んでいます。同じ人数にしてください`;
     };
 
     // 追加すると公式様式（15人分）から外れる選手。
@@ -149,9 +188,9 @@ export function SubstitutionModal({
                                 <button
                                     type="button"
                                     key={player.id}
-                                    className={`sub-player-card ${playerOut === player.id ? 'selected out' : ''}`}
-                                    onClick={() => setPlayerOut(player.id)}
-                                    aria-pressed={playerOut === player.id}
+                                    className={`sub-player-card ${playersOut.includes(player.id) ? 'selected out' : ''}`}
+                                    onClick={() => toggleOut(player.id)}
+                                    aria-pressed={playersOut.includes(player.id)}
                                 >
                                     <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
                                     <span className="sub-player-name">{displayName(player)}</span>
@@ -162,7 +201,7 @@ export function SubstitutionModal({
                     </div>
 
                     <div className="substitution-arrow">
-                        {playerOut && playerIn ? '⇄' : '→'}
+                        {playersOut.length > 0 && playersIn.length > 0 ? '⇄' : '→'}
                     </div>
 
                     <div className="substitution-column bench">
@@ -179,9 +218,9 @@ export function SubstitutionModal({
                                     <button
                                         type="button"
                                         key={player.id}
-                                        className={`sub-player-card ${playerIn === player.id ? 'selected in' : ''} ${fouledOut ? 'fouled-out' : ''}`}
-                                        onClick={() => setPlayerIn(player.id)}
-                                        aria-pressed={playerIn === player.id}
+                                        className={`sub-player-card ${playersIn.includes(player.id) ? 'selected in' : ''} ${fouledOut ? 'fouled-out' : ''}`}
+                                        onClick={() => toggleIn(player.id)}
+                                        aria-pressed={playersIn.includes(player.id)}
                                     >
                                         <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
                                         <span className="sub-player-name">{displayName(player)}</span>
@@ -296,11 +335,16 @@ export function SubstitutionModal({
                       あった位置に「完了」が来る。連続でタップした指がモーダルを
                       閉じてしまうため、枠は最初から場所を取っておく
                     */}
-                    {doneCount > 0 ? (
+                    {mismatchMessage() !== null ? (
+                        <div className="substitution-note" role="status">
+                            <span className="substitution-note-sub">{mismatchMessage()}</span>
+                        </div>
+                    ) : doneCount > 0 ? (
                         <div className="substitution-note done" role="status">
                             <span className="substitution-note-pair">{lastDone}</span>
                             <span className="substitution-note-sub">
-                                交代しました{doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
+                                {lastCount > 1 ? `${lastCount}人交代しました` : '交代しました'}
+                                {doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
                             </span>
                         </div>
                     ) : (
@@ -319,7 +363,7 @@ export function SubstitutionModal({
                         <button
                             className="btn btn-success btn-large"
                             onClick={handleConfirm}
-                            disabled={!playerOut || !playerIn}
+                            disabled={!canSubstitute}
                         >
                             交代実行
                         </button>

@@ -340,3 +340,144 @@ describe('SubstitutionModal 表示名', () => {
             .toBe('#4 タロウ → #10 イチ');
     });
 });
+
+// バスケではタイムアウト明けに複数人まとめて替えるのが普通で、コーチの指示も
+// 「4番と5番を下げて9番と10番を入れて」とまとめて来る。1組ずつに分解させない
+describe('SubstitutionModal 一括交代', () => {
+    const roster5 = () => [
+        player('a', 4, 'コートA', true),
+        player('b', 5, 'コートB', true),
+        player('c', 6, 'コートC', true),
+        player('x', 10, 'ベンチX', false),
+        player('y', 11, 'ベンチY', false),
+        player('z', 12, 'ベンチZ', false),
+    ];
+
+    const confirmBtn = () => screen.getByRole('button', { name: '交代実行' }) as HTMLButtonElement;
+    const card = (name: string) => screen.getByRole('button', { name: new RegExp(name) });
+
+    it('コート・ベンチとも複数選べ、もう一度タップで外れる', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        expect(card('コートA').getAttribute('aria-pressed')).toBe('true');
+        expect(card('コートB').getAttribute('aria-pressed')).toBe('true');
+
+        fireEvent.click(card('コートA'));
+        expect(card('コートA').getAttribute('aria-pressed')).toBe('false');
+        expect(card('コートB').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('人数が違うあいだは実行できない（コートが多い場合）', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチX'));
+
+        expect(confirmBtn().disabled).toBe(true);
+    });
+
+    it('人数が違うあいだは実行できない（ベンチが多い場合）', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(card('ベンチY'));
+
+        expect(confirmBtn().disabled).toBe(true);
+    });
+
+    it('同数にすると実行できるようになる', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチX'));
+        expect(confirmBtn().disabled).toBe(true);
+
+        fireEvent.click(card('ベンチY'));
+        expect(confirmBtn().disabled).toBe(false);
+    });
+
+    it('3人まとめて実行すると onSubstitute が背番号順に3回呼ばれる', () => {
+        const onSubstitute = renderModal(roster5());
+
+        // わざとばらばらの順にタップする
+        fireEvent.click(card('コートC'));
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチZ'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(card('ベンチY'));
+
+        fireEvent.click(confirmBtn());
+
+        expect(onSubstitute.mock.calls).toEqual([
+            ['x', 'a'],
+            ['y', 'b'],
+            ['z', 'c'],
+        ]);
+    });
+
+    it('実行後は選択が解除され、モーダルは閉じない', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(confirmBtn());
+
+        expect(screen.queryAllByRole('button', { pressed: true }).length).toBe(0);
+        expect(confirmBtn().disabled).toBe(true);
+    });
+
+    it('複数のときの案内は背番号だけを並べる', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(card('ベンチY'));
+        fireEvent.click(confirmBtn());
+
+        expect(document.querySelector('.substitution-note-pair')?.textContent)
+            .toBe('#4 #5 ⇄ #10 #11');
+        expect(document.querySelector('.substitution-note-sub')?.textContent)
+            .toContain('2人交代しました');
+    });
+
+    it('1組のときの案内は今までどおり氏名まで出す', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('ベンチX'));
+        fireEvent.click(confirmBtn());
+
+        expect(document.querySelector('.substitution-note-pair')?.textContent)
+            .toBe('#4 コートA → #10 ベンチX');
+        expect(document.querySelector('.substitution-note-sub')?.textContent)
+            .toContain('交代しました');
+    });
+
+    it('人数が食い違うと、その理由を出す', () => {
+        renderModal(roster5());
+
+        fireEvent.click(card('コートA'));
+        fireEvent.click(card('コートB'));
+        expect(document.querySelector('.substitution-note')?.textContent)
+            .toContain('ベンチから2人選んでください');
+
+        fireEvent.click(card('ベンチX'));
+        expect(document.querySelector('.substitution-note')?.textContent)
+            .toContain('コート2人・ベンチ1人を選んでいます');
+    });
+
+    it('何も選んでいないときは理由ではなく既存の案内を出す', () => {
+        renderModal(roster5());
+
+        const note = document.querySelector('.substitution-note')?.textContent ?? '';
+        expect(note).toContain('続けて');
+        expect(note).not.toContain('選んでください');
+    });
+});
