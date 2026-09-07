@@ -54,10 +54,7 @@
 
 /* チームファウル情報 */
 .foul-input-flow .team-foul-info {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 0 var(--spacing-md);
     margin-bottom: var(--spacing-md);
     text-align: center;
     color: var(--text-secondary);
@@ -254,17 +251,23 @@
 .foul-input-flow .ft-result-list {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    /* 行の中（ラベル-ボタン間 = spacing-sm）より外を広く取る。
+       逆にすると「2本目:」が自分のボタンより1本目のボタンに近づき、
+       どの行のボタンか目で追えなくなる */
+    gap: var(--spacing-md);
 }
 
 .foul-input-flow .ft-result-row {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 .foul-input-flow .ft-result-label {
-    min-width: 60px;
+    /* 折り返させない。折り返すと行の高さが変わり、行同士の対応が崩れる */
+    flex: 0 0 auto;
+    min-width: 52px;
+    white-space: nowrap;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
 }
@@ -277,7 +280,10 @@
 
 .foul-input-flow .ft-result-btn {
     flex: 1;
-    padding: var(--spacing-sm) var(--spacing-md);
+    /* 最小幅を0にしないと、狭い画面で文字の幅が下限になって行からはみ出す */
+    min-width: 0;
+    min-height: 48px;
+    padding: var(--spacing-sm) var(--spacing-xs);
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--bg-tertiary);
@@ -323,9 +329,7 @@
     color: var(--text-primary);
     font-size: var(--font-size-md);
     font-weight: 600;
-    padding: var(--spacing-sm);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) 0;
 }
 
 .foul-input-flow .ft-result-next {
@@ -337,11 +341,8 @@
     text-align: center;
     color: var(--primary-text);
     font-size: var(--font-size-md);
-    font-weight: 600;
-    padding: var(--spacing-sm);
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-md);
+    font-weight: 700;
+    padding: 0;
     margin-bottom: var(--spacing-sm);
 }
 
@@ -547,10 +548,7 @@
 
 /* ファウル数情報 */
 .foul-input-flow .foul-count-info {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 0 var(--spacing-md);
     margin-bottom: var(--spacing-md);
     text-align: center;
     color: var(--text-secondary);
@@ -567,8 +565,9 @@
     gap: var(--spacing-xs) var(--spacing-sm);
 }
 
-/* 地が --bg-tertiary より明るいので --text-muted は使えない
-   （index.css の運用。実測 3.41:1） */
+/* 地はモーダルの --bg-secondary。ここは --text-muted でもAAに届くが（実測 4.82:1）、
+   同じ行の氏名（--text-primary）との差を付けすぎるとラベルが沈むので
+   --text-secondary で止める */
 .foul-input-flow .foul-target-label {
     color: var(--text-secondary);
     font-size: var(--font-size-xs);
@@ -629,14 +628,10 @@
         height: 70px;
     }
 
-    .foul-input-flow .ft-result-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .foul-input-flow .ft-result-label {
-        text-align: center;
-        min-width: auto;
+    /* 「1本目」とそのボタンは同じ1行に収める。
+       縦積みにすると、ラベルが上の行のボタンの続きに見える */
+    .foul-input-flow .ft-result-btn {
+        font-size: var(--font-size-md);
     }
 
     .foul-input-flow .shooter-list {
