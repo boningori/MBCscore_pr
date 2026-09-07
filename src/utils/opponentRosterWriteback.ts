@@ -14,7 +14,7 @@ export interface OpponentWriteback {
     /** 取り込む選手（背番号順） */
     added: SavedPlayer[];
     /** saveOpponent へそのまま渡す。計画が返る時点で必ず一致しているので null にはならない */
-    updatedRegistry: SavedTeam | null;
+    updatedRegistry: SavedTeam;
     /** saveRecentOpponent へそのまま渡す。直近履歴に名前が一致しなければ null */
     updatedRecent: SavedTeam | null;
     /** 登録後の人数。15人超過の案内に使う */

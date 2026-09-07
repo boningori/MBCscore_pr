@@ -810,6 +810,8 @@ import { saveRecentOpponent, saveOpponent, loadOpponents, loadRecentOpponents } 
   );
 ```
 
+> **注:** この節の文言は最終レビューで誤りと分かり、実装では差し替えた。現行の文言は設計書を参照。
+
 - [ ] **Step 4: テストが通ることを確認する**
 
 ```bash

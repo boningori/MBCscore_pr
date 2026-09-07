@@ -7,10 +7,9 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
-import { createInitialGame, createTeam, createPlayer } from './types/game';
+import { createInitialGame, createTeam, createPlayer, MAX_PLAYERS_PER_TEAM } from './types/game';
 import { loadOpponents, loadRecentOpponents } from './utils/teamStorage';
 import type { SavedTeam } from './utils/teamStorage';
-import { MAX_PLAYERS_PER_TEAM } from './types/game';
 
 // 保存先のキーは定数名と交差している。直に触らず、この2つのキーを使う
 // （minibasket-saved-opponents = 登録一覧、minibasket-opponent-teams = 直近履歴）
@@ -98,6 +97,9 @@ describe('App: 追加した相手選手を名簿へ取り込む', () => {
         expect(await screen.findByText('相手チームの名簿に登録しますか？')).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: '登録する' }));
 
+        // 登録成功のトーストが出ること（消えても誰も気づかないため表明する）
+        expect(await screen.findByText('「相手チーム」の名簿に1人を登録しました')).toBeTruthy();
+
         await waitFor(() => {
             expect(loadOpponents()[0].players.map(p => p.number)).toEqual([10, 99]);
         });
@@ -149,8 +151,12 @@ describe('App: 追加した相手選手を名簿へ取り込む', () => {
         expect(loadOpponents().every(t => t.players.length === 1)).toBe(true);
     });
 
-    it('登録一覧に見つからなければ尋ねない（改名・未登録）', async () => {
+    it('登録一覧に無ければ、直近履歴に一致があっても尋ねない', async () => {
+        // 本番で実際に起きる形。直近履歴は試合開始のたびに書かれる
+        // （App.tsx の handleGameSetupComplete）ので、そこに一致することは
+        // 「登録されている」証拠にならない
         localStorage.setItem(REGISTRY_KEY, JSON.stringify([savedOpponent('o1', '旧チーム名', [10])]));
+        localStorage.setItem(RECENT_KEY, JSON.stringify([savedOpponent('r1', '相手チーム', [10])]));
         seedFinishedSession();
 
         await finishGame();
@@ -170,6 +176,8 @@ describe('App: 追加した相手選手を名簿へ取り込む', () => {
         const dialog = await screen.findByRole('dialog');
         expect(dialog.textContent).toContain('#99 相手99');
         expect(dialog.textContent).toContain('相手チーム');
+        // 15人を超えないときは、あふれ案内を出さない
+        expect(dialog.textContent).not.toContain('印字されません');
     });
 
     it('登録後に15人を超えると、印字されない旨の案内が出る', async () => {

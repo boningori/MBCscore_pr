@@ -2111,7 +2111,10 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           // 名簿への登録は取り返しのつかない操作ではないので赤にしない
           confirmVariant="primary"
           onConfirm={() => {
-            if (rosterWriteback.updatedRegistry) saveOpponent(rosterWriteback.updatedRegistry);
+            // updatedRegistry は登録一覧に一意に一致したときだけ計画が返るため
+            // 型で null にならないと保証されている（if で分岐すると、将来 null に
+            // なり得る変更が入ったときに登録を黙って飛ばしてしまう）
+            saveOpponent(rosterWriteback.updatedRegistry);
             if (rosterWriteback.updatedRecent) saveRecentOpponent(rosterWriteback.updatedRecent);
             // 保存失敗は意図的に検出しない（saveOpponent/saveRecentOpponent は
             // void を返す作り）ので、成功の手がかりが無いと利用者は何も分から
