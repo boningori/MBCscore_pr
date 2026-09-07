@@ -11,6 +11,18 @@ import {
 import { findOverflowPlayer } from '../TeamShared/playerLimit';
 import './SubstitutionModal.css';
 
+/**
+ * 画面に出す名前。コートネームがあればそれを使う。
+ *
+ * 交代は背番号で認識するので、要るのはフルネームではなく呼び名。
+ * `courtName || name` はアプリ全体の既定（Scoreboard / TeamPanel /
+ * ActionHistory / FoulInputFlow ほか）で、素の name を出していたのは
+ * このモーダルだけだった。
+ * フォールバックは外さない。courtName はマイチーム管理でしか設定できず、
+ * 対戦相手の選手には無いため、消すと番号だけのカードが並ぶ。
+ */
+const displayName = (player: Player) => player.courtName || player.name;
+
 interface SubstitutionModalProps {
     teamName: string;
     teamId: string;
@@ -60,7 +72,7 @@ export function SubstitutionModal({
 
         if (out && into) {
             setLastDone(
-                `#${formatPlayerNumber(out.number)} ${out.name} → #${formatPlayerNumber(into.number)} ${into.name}`,
+                `#${formatPlayerNumber(out.number)} ${displayName(out)} → #${formatPlayerNumber(into.number)} ${displayName(into)}`,
             );
         }
         setDoneCount(count => count + 1);
@@ -142,7 +154,7 @@ export function SubstitutionModal({
                                     aria-pressed={playerOut === player.id}
                                 >
                                     <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
-                                    <span className="sub-player-name">{player.name}</span>
+                                    <span className="sub-player-name">{displayName(player)}</span>
                                     <span className="sub-player-stats">{player.stats.points}pts</span>
                                 </button>
                             ))}
@@ -172,7 +184,7 @@ export function SubstitutionModal({
                                         aria-pressed={playerIn === player.id}
                                     >
                                         <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
-                                        <span className="sub-player-name">{player.name}</span>
+                                        <span className="sub-player-name">{displayName(player)}</span>
                                         {disqualification && (
                                             <span className="sub-player-fouled-out">
                                                 {shortDisqualificationLabel(disqualification)}

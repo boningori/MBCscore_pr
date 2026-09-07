@@ -294,3 +294,49 @@ describe('SubstitutionModal 連続交代', () => {
         expect(screen.getByRole('button', { name: '完了' })).toBeTruthy();
     });
 });
+
+// 交代は背番号で認識する。氏名（フルネーム）ではなくコートネームを出す。
+// courtName || name はアプリ全体の既定（Scoreboard / TeamPanel / ActionHistory ほか）で、
+// 素の name を出していたのはこのモーダルだけだった
+describe('SubstitutionModal 表示名', () => {
+    const named = (id: string, number: number, name: string, courtName: string | undefined, isOnCourt: boolean): Player => ({
+        ...player(id, number, name, isOnCourt),
+        courtName,
+    });
+
+    it('コートネームがあればコートネームを出す（コート・ベンチとも）', () => {
+        renderModal([
+            named('a', 4, '山田太郎', 'タロウ', true),
+            named('x', 10, '鈴木一郎', 'イチ', false),
+        ]);
+
+        expect(screen.getByRole('button', { name: /タロウ/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /イチ/ })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: /山田太郎/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: /鈴木一郎/ })).toBeNull();
+    });
+
+    it('コートネームが無ければ氏名に落ちる（対戦相手には courtName が無い）', () => {
+        renderModal([
+            named('a', 4, '山田太郎', undefined, true),
+            named('x', 10, '鈴木一郎', undefined, false),
+        ]);
+
+        expect(screen.getByRole('button', { name: /山田太郎/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /鈴木一郎/ })).toBeTruthy();
+    });
+
+    it('実行結果の表示もコートネームを使う', () => {
+        renderModal([
+            named('a', 4, '山田太郎', 'タロウ', true),
+            named('x', 10, '鈴木一郎', 'イチ', false),
+        ]);
+
+        fireEvent.click(screen.getByRole('button', { name: /タロウ/ }));
+        fireEvent.click(screen.getByRole('button', { name: /イチ/ }));
+        fireEvent.click(screen.getByRole('button', { name: '交代実行' }));
+
+        expect(document.querySelector('.substitution-note-pair')?.textContent)
+            .toBe('#4 タロウ → #10 イチ');
+    });
+});
