@@ -13,9 +13,9 @@ export interface OpponentWriteback {
     teamName: string;
     /** 取り込む選手（背番号順） */
     added: SavedPlayer[];
-    /** saveOpponent へそのまま渡す。名前が一致しなければ null */
+    /** saveOpponent へそのまま渡す。計画が返る時点で必ず一致しているので null にはならない */
     updatedRegistry: SavedTeam | null;
-    /** saveRecentOpponent へそのまま渡す。名前が一致しなければ null */
+    /** saveRecentOpponent へそのまま渡す。直近履歴に名前が一致しなければ null */
     updatedRecent: SavedTeam | null;
     /** 登録後の人数。15人超過の案内に使う */
     resultCount: number;
@@ -35,8 +35,8 @@ function uniqueByName(teams: SavedTeam[], name: string): SavedTeam | null | 'amb
  * null を返すのは次のいずれか。
  * - 相手チームを判別できない（isMyTeam が偽の側がちょうど1つに決まらない）
  * - 追加された選手がいない
- * - どちらかの保存先で同名が2件以上見つかった（どちらに入れるべきか決められない）
- * - どちらの保存先にも見つからなかった（改名・未登録）
+ * - 登録一覧・直近履歴のどちらかで同名が2件以上見つかった（どちらに入れるべきか決められない）
+ * - 対戦チーム管理の登録一覧に見つからない（直近履歴にしか無い＝登録されていない、も含む）
  *
  * 相手チームは名前でしか登録レコードと結び付けられない。Team.savedTeamId は
  * マイチームにしか入らず、相手側に入れると「自分の別チームを相手として登録した
@@ -57,15 +57,22 @@ export function planOpponentWriteback(
     const registryHit = uniqueByName(registry, opponent.name);
     const recentHit = uniqueByName(recent, opponent.name);
     if (registryHit === 'ambiguous' || recentHit === 'ambiguous') return null;
-    if (!registryHit && !recentHit) return null;
 
-    // 差分は基準となる保存先を1つ選んで計算する。基準より遅れている側の保存先は
-    // 埋め戻されない。ただし到達経路が狭く（対戦チーム管理で編集し、その直後に
-    // 古い履歴を選ぶ必要がある）、試合開始のたびに直近履歴が選択したチームで
-    // 再保存されるため自然に解消する。保存先ごとの skip は、基準より先んじている
-    // 側への重複追加を防ぐ
-    const reference = registryHit ?? recentHit!;
-    const known = new Set(reference.players.map(p => p.number));
+    // 直近履歴は試合開始のたびに書かれる（App.tsx の handleGameSetupComplete が
+    // saveRecentOpponent を呼ぶ）ので、そこに一致することは「登録されている」
+    // 証拠にならない。その場で手入力しただけの相手も必ず直近履歴には載る。
+    // 取り込み対象にしてよいのは、対戦チーム管理の登録一覧に一意に一致した
+    // ときだけにする
+    if (!registryHit) return null;
+
+    // 差分は登録一覧の一致レコードを基準に計算する。直近履歴は試合開始時に
+    // 「その試合で実際に使った名簿」で上書きされるため、現在の試合より
+    // 遅れることはない。古いまま残るとしたら、その試合が使わなかった
+    // 別レコードだけであり、それはこの機能が走る前からある古さであって、
+    // この機能が新たに古くするわけではない。withAdded 内の have チェックは、
+    // 直近履歴の中身が登録一覧と食い違っている（既に一部を持っている）場合の
+    // 重複追加を防ぐためのもの
+    const known = new Set(registryHit.players.map(p => p.number));
 
     // 取り込むのは背番号と名前だけ。コートネームもライセンスNo.も試合中の
     // 追加では入力手段が無く、キャプテンは名簿側で決めること
@@ -88,7 +95,10 @@ export function planOpponentWriteback(
         };
     };
 
-    const updatedRegistry = registryHit ? withAdded(registryHit) : null;
+    const updatedRegistry = withAdded(registryHit);
+    // 直近履歴の更新は、登録一覧に一致したうえで直近履歴にも一致したときだけ。
+    // 両方を揃えるのは「片方だけだと、もう片方から選んだ次の試合で反映されて
+    // 見えない」ため
     const updatedRecent = recentHit ? withAdded(recentHit) : null;
 
     return {
@@ -100,7 +110,7 @@ export function planOpponentWriteback(
         // より多い側の人数を報告する。15人超過の警告は最も混雑した結果に対して
         // 出すべきだから
         resultCount: Math.max(
-            updatedRegistry?.players.length ?? 0,
+            updatedRegistry.players.length,
             updatedRecent?.players.length ?? 0,
         ),
     };

@@ -148,7 +148,7 @@ describe('App: 追加した相手選手を名簿へ取り込む', () => {
         expect(loadOpponents().every(t => t.players.length === 1)).toBe(true);
     });
 
-    it('名簿に見つからなければ尋ねない（改名・未登録）', async () => {
+    it('登録一覧に見つからなければ尋ねない（改名・未登録）', async () => {
         localStorage.setItem(REGISTRY_KEY, JSON.stringify([savedOpponent('o1', '旧チーム名', [10])]));
         seedFinishedSession();
 

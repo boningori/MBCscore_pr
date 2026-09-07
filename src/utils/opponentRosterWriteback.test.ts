@@ -68,6 +68,11 @@ describe('planOpponentWriteback: 尋ねない場合', () => {
         const opponent = gameTeam('新チーム名', [10, 99], false);
         expect(planOpponentWriteback(myTeam(), opponent, [saved('o1', '旧チーム名', [10])], [])).toBeNull();
     });
+
+    it('直近履歴だけに一致したら尋ねない（直近履歴は試合開始のたびに書かれるので、登録済みの証拠にならない）', () => {
+        const opponent = gameTeam('相手', [10, 99], false);
+        expect(planOpponentWriteback(myTeam(), opponent, [], [saved('r1', '相手', [10])])).toBeNull();
+    });
 });
 
 describe('planOpponentWriteback: 取り込む内容', () => {
@@ -137,13 +142,8 @@ describe('planOpponentWriteback: どの保存先を更新するか', () => {
         expect(plan!.updatedRecent).toBeNull();
     });
 
-    it('直近履歴だけに一致したら、そちらだけ埋まる', () => {
-        const opponent = gameTeam('相手', [10, 99], false);
-        const plan = planOpponentWriteback(myTeam(), opponent, [], [saved('r1', '相手', [10])]);
-
-        expect(plan!.updatedRegistry).toBeNull();
-        expect(plan!.updatedRecent!.players.map(p => p.number)).toEqual([10, 99]);
-    });
+    // 「直近履歴だけに一致」は F1 により尋ねない場合に変わったため、
+    // 上の describe（尋ねない場合）のテストへ移した。ここに重複しては置かない
 
     it('両方に一致したら両方が埋まる（片方だけだと次の試合で反映されて見えない）', () => {
         const opponent = gameTeam('相手', [10, 99], false);
