@@ -130,6 +130,8 @@ export function AddPlayersPanel({
     const newlyOff = overflow.filter(o => !alreadyOverflowNumbers.has(o.number));
     const newlyOffNew = newlyOff.filter(o => draftNumbers.has(o.number));
     const newlyOffExisting = newlyOff.filter(o => !draftNumbers.has(o.number));
+    /* 本名を出す。公式様式は本名を印字するので、ここをコートネームにすると
+       様式に載っていない名前で「載りません」と案内することになる */
     const listNames = (list: NumberedPlayer[]) =>
         list.map(o => `#${formatPlayerNumber(o.number)} ${o.name}`).join('、');
 

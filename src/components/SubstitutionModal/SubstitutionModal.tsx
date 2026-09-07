@@ -300,6 +300,8 @@ export function SubstitutionModal({
                                         */}
                                         {players.length >= MAX_PLAYERS_PER_TEAM && (
                                             <div className="add-player-notice" role="status">
+                                                {/* ここだけ displayName を使わない。公式様式は本名を印字するため、
+                                                    コートネームで書くと様式に無い名前で「載らなくなります」と言うことになる */}
                                                 {overflowTarget === null
                                                     ? `すでに${players.length}人います。スコアシートの選手欄は${MAX_PLAYERS_PER_TEAM}人分のため、追加すると1人が載らなくなります。`
                                                     : overflowTarget.number === pendingNumber

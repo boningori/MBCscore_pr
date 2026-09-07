@@ -114,4 +114,62 @@ describe('App: 複数人の一括交代', () => {
             expect(courtText).not.toContain(out);
         }
     });
+
+    // 設計書は「入った選手の quartersPlayed[今のQ] が sub（同じQに一度出ていた
+    // 選手が戻る場合は both）になること」も約束していたが、上のテストは
+    // isOnCourt の入れ替わりしか見ていない。quartersPlayed は公式様式の
+    // 出場欄（RunningScoresheet の cell-quarter）に ／＼× として印字されるが、
+    // isOnCourt には出ないため、ここが崩れても既存テストは気づけない。
+    // 1回の一括交代の中に sub の選手（初めての途中出場）と both の選手
+    // （同じQに二度目の出場）が混ざる組み合わせは、リポジトリのどこにも無かった
+    it('一括交代でも quartersPlayed が正しく更新される（sub と both が混ざる組み合わせ）', async () => {
+        const { container } = render(<App />);
+        await startGame();
+
+        fireEvent.click(screen.getAllByRole('button', { name: /交代/ })[0]);
+        await screen.findByText(/選手交代/);
+        const modal = screen.getByRole('dialog');
+
+        // 1組だけ実行: ホーム1を下げてホーム6を入れる → ホーム6は初めての
+        // 途中出場なので「sub」になる
+        fireEvent.click(within(modal).getByRole('button', { name: /ホーム1/ }));
+        fireEvent.click(within(modal).getByRole('button', { name: /ホーム6/ }));
+        fireEvent.click(within(modal).getByRole('button', { name: '交代実行' }));
+
+        // 続けて2組を一括で実行する。
+        // ・ホーム6を下げてホーム1を戻す → ホーム1はこのQにスタメンで出て、
+        //   退いて、また入ったので「both」になる
+        // ・同時にホーム2を下げてホーム7を入れる → ホーム7は初めての
+        //   途中出場なので「sub」になる
+        fireEvent.click(within(modal).getByRole('button', { name: /ホーム6/ }));
+        fireEvent.click(within(modal).getByRole('button', { name: /ホーム1/ }));
+        fireEvent.click(within(modal).getByRole('button', { name: /ホーム2/ }));
+        fireEvent.click(within(modal).getByRole('button', { name: /ホーム7/ }));
+        fireEvent.click(within(modal).getByRole('button', { name: '交代実行' }));
+
+        fireEvent.click(within(modal).getByRole('button', { name: '完了' }));
+
+        // スコアシート画面の出場欄（1Q列）で確かめる。RunningScoresheet.tsx の
+        // renderPlayerRow を読んで確認済み: quartersPlayed[q-1] の値に応じて
+        // 該当する .cell-quarter に slash-starter / slash-sub / slash-both が付く
+        fireEvent.click(screen.getByRole('button', { name: 'スコアシート' }));
+        await screen.findAllByText(/出場時限/);
+
+        const quarterMarks = (name: string) => {
+            const nameCell = [...container.querySelectorAll('.cell-name')]
+                .find(td => td.textContent === name);
+            if (!nameCell) throw new Error(`row not found: ${name}`);
+            return [...nameCell.closest('tr')!.querySelectorAll('.cell-quarter')]
+                .map(td => td.className);
+        };
+
+        // ホーム1: スタメンで出て、退いて、また入った → both（×表示）
+        expect(quarterMarks('ホーム1')[0]).toContain('slash-both');
+        // ホーム7: 初めての途中出場 → sub（＼表示）
+        expect(quarterMarks('ホーム7')[0]).toContain('slash-sub');
+        // ホーム6: 途中出場のまま退いた（退出そのものでは印は変わらない）→ sub のまま
+        expect(quarterMarks('ホーム6')[0]).toContain('slash-sub');
+        // ホーム2: スタメンで出て退いただけ（再出場していない）→ starter のまま
+        expect(quarterMarks('ホーム2')[0]).toContain('slash-starter');
+    });
 });
