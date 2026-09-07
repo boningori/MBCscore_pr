@@ -19,10 +19,25 @@ import './SubstitutionModal.css';
  * `courtName || name` はアプリ全体の既定（Scoreboard / TeamPanel /
  * ActionHistory / FoulInputFlow ほか）で、素の name を出していたのは
  * このモーダルだけだった。
- * フォールバックは外さない。courtName はマイチーム管理でしか設定できず、
- * 対戦相手の選手には無いため、消すと番号だけのカードが並ぶ。
+ * courtName はマイチーム管理でしか設定できず、対戦相手の選手には無い。
+ * タブレット・PCは幅に余裕があるのでフォールバックを出す。スマホだけは
+ * 出さない（nameClass を参照）。
  */
 const displayName = (player: Player) => player.courtName || player.name;
+
+/**
+ * 名前の span に付けるクラス。
+ *
+ * スマホ（〜600px）では氏名のフォールバックを出さず、空いた幅を得点・出場Qに回す。
+ * 切り詰められた `佐々木健…` は誰のことか分からず、情報として働かないまま幅だけ
+ * 占めていた（実機で確認）。交代は背番号で認識するので、番号だけでも人は特定できる。
+ *
+ * CSS からは「いま出ている文字列がコートネームなのかフォールバックなのか」を
+ * 判別できないため、描画側で目印を付ける。実際に隠すのは CSS 側
+ * （タブレット・PCでは幅に余裕があるので氏名を出したままにする）。
+ */
+const nameClass = (player: Player) =>
+    `sub-player-name${player.courtName ? '' : ' fallback'}`;
 
 interface SubstitutionModalProps {
     teamName: string;
@@ -205,7 +220,7 @@ export function SubstitutionModal({
                                     aria-pressed={playersOut.includes(player.id)}
                                 >
                                     <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
-                                    <span className="sub-player-name">{displayName(player)}</span>
+                                    <span className={nameClass(player)}>{displayName(player)}</span>
                                     <span className="sub-player-stats">{player.stats.points}pts</span>
                                 </button>
                             ))}
@@ -242,7 +257,7 @@ export function SubstitutionModal({
                                         aria-pressed={playersIn.includes(player.id)}
                                     >
                                         <span className="sub-player-number">#{formatPlayerNumber(player.number)}</span>
-                                        <span className="sub-player-name">{displayName(player)}</span>
+                                        <span className={nameClass(player)}>{displayName(player)}</span>
                                         {disqualification && (
                                             <span className="sub-player-fouled-out">
                                                 {shortDisqualificationLabel(disqualification)}

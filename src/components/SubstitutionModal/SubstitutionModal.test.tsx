@@ -561,3 +561,52 @@ describe('SubstitutionModal 見出し', () => {
         }
     });
 });
+
+// スマホ（〜600px）では、切り詰められた氏名より出場Q・得点のほうが交代の判断に効く。
+// コートネームが無い選手は名前を出さず番号だけにする。jsdom はメディアクエリを
+// 評価しないので、描画側は「どちらか判別できる目印」を出すところまでを見て、
+// 実際に隠すのは CSS 側のテスト（substitutionGrid.test.ts）で縛る
+describe('SubstitutionModal スマホで隠すための目印', () => {
+    const named = (id: string, number: number, name: string, courtName: string | undefined, isOnCourt: boolean): Player => ({
+        ...player(id, number, name, isOnCourt),
+        courtName,
+    });
+
+    const nameSpanOf = (label: string) =>
+        screen.getByRole('button', { name: new RegExp(label) }).querySelector('.sub-player-name');
+
+    it('コートネームが無い選手の名前には fallback が付く（スマホで隠す目印）', () => {
+        renderModal([
+            named('a', 4, '山田太郎', undefined, true),
+            named('x', 10, '鈴木一郎', undefined, false),
+        ]);
+
+        // コート側・ベンチ側の両方
+        expect(nameSpanOf('山田太郎')!.classList.contains('fallback')).toBe(true);
+        expect(nameSpanOf('鈴木一郎')!.classList.contains('fallback')).toBe(true);
+    });
+
+    it('コートネームがある選手の名前には fallback が付かない', () => {
+        renderModal([
+            named('a', 4, '山田太郎', 'タロウ', true),
+            named('x', 10, '鈴木一郎', 'イチ', false),
+        ]);
+
+        expect(nameSpanOf('タロウ')!.classList.contains('fallback')).toBe(false);
+        expect(nameSpanOf('イチ')!.classList.contains('fallback')).toBe(false);
+    });
+
+    it('失格した選手のカードには fouled-out が付く（スマホで出場Qを隠す目印）', () => {
+        // 失格バッジのうち最長の「失格(2回)」がコートネームと並ぶと3行目が要り、
+        // カード高を超えて下の行に重なる。失格者は出場Qを出さないことで揃える
+        renderModal([
+            player('a', 4, 'コートA', true),
+            { ...player('x', 10, 'ベンチX', false), fouls: ['P', 'P', 'P', 'P', 'P'] },
+        ]);
+
+        const card = screen.getByRole('button', { name: /ベンチX/ });
+        expect(card.classList.contains('fouled-out')).toBe(true);
+        // 出場Qの要素自体はDOMに残す（隠すのはCSS。タブレットでは出す）
+        expect(card.querySelector('.sub-player-quarters')).not.toBeNull();
+    });
+});

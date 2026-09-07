@@ -288,12 +288,6 @@
         overflow-y: visible;
     }
 
-    /* 2列だと幅が約160px。得点まで入れると名前が潰れるので、
-       コート側だけ落とす。誰を下げるかは背番号と名前で決まる */
-    .substitution-modal .substitution-column.court .sub-player-stats {
-        display: none;
-    }
-
     /* ベンチ(IN)だけが残りの高さでスクロールする。
        min-height: 0 が無いと flex の既定（auto）で縮まず、列が行から溢れる */
     .substitution-modal .substitution-column.bench {
@@ -313,20 +307,19 @@
         max-height: none;
     }
 
-    /* 出場Qは2列に入らない。出場ルールの目安はスタメン選択画面も担っている。
-       タブレット・PCでは残す。退場バッジは消さない */
-    .substitution-modal .substitution-column.bench .sub-player-quarters {
-        display: none;
-    }
-
     /* .substitution-grid の中だけに効かせる。ベンチファウルの「交代要員を選択」
        （App.tsx）が同じ substitution-modal クラスを使っていて、あちらは1列のまま。
        2列前提の詰め（とくに桁揃えを外す min-width: 0）が当たると番号が揃わなくなる */
     /* 2列なのでカード幅は約160px。縦横とも余白を詰める。
        min-height 50px は残すので、指で押す的の大きさは変えていない */
+    /* 1行目に「背番号＋コートネーム＋退場バッジ」、2行目に得点／出場Q。
+       row-gap: 0 で2行目を詰めておかないと min-height: 50px に収まらない */
     .substitution-modal .substitution-grid .sub-player-card {
         padding: var(--spacing-xs) var(--spacing-sm);
-        gap: var(--spacing-xs);
+        column-gap: var(--spacing-xs);
+        row-gap: 0;
+        flex-wrap: wrap;
+        align-content: center;
         min-height: 50px;
     }
 
@@ -339,14 +332,46 @@
     }
 
     /* 名前は折り返させず1行で切り詰める。折り返すと番号の位置が行ごとに動き、
-       番号で拾う読み方が成立しない。コートネームは短いので、実際に切れるのは
-       コートネーム未設定でフルネームに落ちた選手だけ */
+       番号で拾う読み方が成立しない。ここに出るのはコートネームだけなので
+       （フォールバックは下で隠す）通常は短く、切り詰めはめったに起きない */
     .substitution-modal .substitution-grid .sub-player-name {
         font-size: var(--font-size-sm);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         min-width: 0;
+    }
+
+    /* コートネームが無いときの氏名（フォールバック）は出さない。
+       2列だと約160pxしかなく、切り詰められた「佐々木健…」は誰のことか
+       分からないまま幅だけ占めていた（実機で確認）。その幅は下の得点・出場Qに回す。
+       交代は背番号で認識するので、番号だけでも人は特定できる。
+       タブレット・PCでは幅に余裕があるので出したまま（この規則はスマホ限定） */
+    .substitution-modal .substitution-grid .sub-player-name.fallback {
+        display: none;
+    }
+
+    /* 得点（コート側）と出場Q（ベンチ側）はスマホでも出す。
+       交代の判断に効くのはこちら——出場Qは「最低2Q・最大3Q・全員出場」の目安、
+       得点は誰を下げるかの手がかりになる。
+       flex-basis: 100% でカードの2行目に落とす。カード高は min-height: 50px に
+       収まり、実測で一度に見えるベンチの人数は 5.6人 → 5.8人と落ちない */
+    .substitution-modal .substitution-grid .sub-player-stats,
+    .substitution-modal .substitution-grid .sub-player-quarters {
+        flex-basis: 100%;
+        font-size: var(--font-size-xs);
+        color: var(--text-secondary);
+        white-space: nowrap;
+        line-height: 1.1;
+    }
+
+    /* 失格者にだけ出場Qを出さない。
+       退場バッジのうち最長の「失格(2回)」がコートネームと並ぶと1行目で幅を
+       使い切り、3行目が要る。実測でカード高50pxを7px超え、下の行に重なった。
+       そもそも入れない前提の選手なので出場時間の目安は判断に要らず、
+       バッジのほうが要る。タブレット・PCでは出る */
+    .substitution-modal .substitution-grid .sub-player-card.fouled-out .sub-player-quarters {
+        display: none;
     }
 
     /* ボタンは横並びのまま。縦に積むとフッターだけで211pxを取り、

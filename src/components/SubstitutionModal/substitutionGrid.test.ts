@@ -26,7 +26,11 @@ const css = readFileSync(
  */
 function ruleBody(selector: string): string {
     const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
-    const matched = rules.filter(m => m[1].replace(/\s+/g, ' ').trim() === selector);
+    // カンマ区切りのグループセレクタも拾う。宣言が同じルールを
+    // セレクタごとに書き分けると、CSS側が重複して食い違う元になる
+    const matched = rules.filter(m =>
+        m[1].split(',').some(s => s.replace(/\s+/g, ' ').trim() === selector),
+    );
     const rule = matched.at(-1);
     if (!rule) throw new Error(`ルールが無い: ${selector}`);
     return rule[2];
@@ -52,5 +56,36 @@ describe('交代モーダルの2列表示', () => {
     it('退場バッジはどの幅でも消さない', () => {
         // 失格者をIN候補から外さない代わりに併記する既存方針の要
         expect(css).not.toMatch(/\.sub-player-fouled-out\s*\{[^}]*display:\s*none/);
+    });
+});
+
+// スマホでは氏名のフォールバックを捨てて、得点・出場Qを出す。
+// 切り詰められた「佐々木健…」は誰か分からず幅だけ占めていた一方、
+// 出場Q（最低2Q・最大3Q・全員出場の目安）と得点は交代の判断に効く。
+// jsdom はメディアクエリを評価しないので、CSSの記述そのものを縛る。
+describe('スマホのカードに載せる情報', () => {
+    it('コートネームが無いときの氏名は出さない', () => {
+        const body = ruleBody('.substitution-modal .substitution-grid .sub-player-name.fallback');
+        expect(body).toMatch(/display:\s*none/);
+    });
+
+    it('得点と出場Qを出す（2行目に置く）', () => {
+        for (const selector of [
+            '.substitution-modal .substitution-grid .sub-player-stats',
+            '.substitution-modal .substitution-grid .sub-player-quarters',
+        ]) {
+            const body = ruleBody(selector);
+            // 既定のCSSでは消していない。ここで消さないことを明示的に固定する
+            expect(body).not.toMatch(/display:\s*none/);
+            // 2行目に落とすため行いっぱいを占める
+            expect(body).toMatch(/flex-basis:\s*100%/);
+        }
+    });
+
+    it('失格者にだけ出場Qを出さない', () => {
+        // 最長の「失格(2回)」がコートネームと並ぶと3行目が要り、カード高を超える。
+        // 入れない前提の選手なので出場時間の目安は要らず、バッジのほうが要る
+        const body = ruleBody('.substitution-modal .substitution-grid .sub-player-card.fouled-out .sub-player-quarters');
+        expect(body).toMatch(/display:\s*none/);
     });
 });
