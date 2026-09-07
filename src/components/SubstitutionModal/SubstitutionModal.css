@@ -105,6 +105,9 @@
     padding: 0 6px;
     border-radius: var(--radius-full);
     white-space: nowrap;
+    /* 2列で幅が狭いときに潰れないようにする。この表示が
+       失格者を誤って入れるのを止める唯一の手がかりなので */
+    flex-shrink: 0;
 }
 
 .substitution-modal .sub-player-number {
@@ -238,13 +241,6 @@
 
 /* スマホ向けレスポンシブ対応 */
 @media (max-width: 600px) {
-    .substitution-modal {
-        max-width: 100%;
-        margin: var(--spacing-sm);
-        max-height: calc(var(--app-vh, 100vh) * 0.9);
-        overflow-y: auto;
-    }
-
     /* スクロールする場所をベンチ(IN)の1か所だけにする。
        元は OUT・IN それぞれの内側スクロールとモーダル全体で計3か所あり、
        コート側は5人しかいないのに200px上限で必ず溢れていた
@@ -252,6 +248,10 @@
        タブレット幅（601px以上）では元から OUT は溢れず外側も流れないので、
        スマホをその状態に揃える */
     .substitution-modal {
+        max-width: 100%;
+        margin: var(--spacing-sm);
+        max-height: calc(var(--app-vh, 100vh) * 0.9);
+        overflow-y: auto;
         display: flex;
         flex-direction: column;
     }
@@ -319,9 +319,12 @@
         display: none;
     }
 
+    /* .substitution-grid の中だけに効かせる。ベンチファウルの「交代要員を選択」
+       （App.tsx）が同じ substitution-modal クラスを使っていて、あちらは1列のまま。
+       2列前提の詰め（とくに桁揃えを外す min-width: 0）が当たると番号が揃わなくなる */
     /* 2列なのでカード幅は約160px。縦横とも余白を詰める。
        min-height 50px は残すので、指で押す的の大きさは変えていない */
-    .substitution-modal .sub-player-card {
+    .substitution-modal .substitution-grid .sub-player-card {
         padding: var(--spacing-xs) var(--spacing-sm);
         gap: var(--spacing-xs);
         min-height: 50px;
@@ -330,7 +333,7 @@
     /* 背番号は識別子なので文字は大きいまま。ただし min-width は外す。
        1列で桁を揃えるための指定で、2列では23pxの無駄になる
        （実測: 名前に使える幅が 61px → 84px に増える） */
-    .substitution-modal .sub-player-number {
+    .substitution-modal .substitution-grid .sub-player-number {
         font-size: var(--font-size-xl);
         min-width: 0;
     }
@@ -338,7 +341,7 @@
     /* 名前は折り返させず1行で切り詰める。折り返すと番号の位置が行ごとに動き、
        番号で拾う読み方が成立しない。コートネームは短いので、実際に切れるのは
        コートネーム未設定でフルネームに落ちた選手だけ */
-    .substitution-modal .sub-player-name {
+    .substitution-modal .substitution-grid .sub-player-name {
         font-size: var(--font-size-sm);
         white-space: nowrap;
         overflow: hidden;

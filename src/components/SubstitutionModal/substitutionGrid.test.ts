@@ -41,7 +41,10 @@ describe('交代モーダルの2列表示', () => {
     }
 
     it('名前は折り返さず1行で切り詰める（番号の位置が行ごとに動かないように）', () => {
-        const body = ruleBody('.substitution-modal .sub-player-name');
+        // F3でセレクタを .substitution-grid の中に限定した。ベンチファウル側の
+        // 「交代要員を選択」モーダルは同じ substitution-modal クラスを使うが
+        // substitution-grid を持たないため、この上書きが誤って当たらない
+        const body = ruleBody('.substitution-modal .substitution-grid .sub-player-name');
         expect(body).toMatch(/white-space:\s*nowrap/);
         expect(body).toMatch(/text-overflow:\s*ellipsis/);
     });

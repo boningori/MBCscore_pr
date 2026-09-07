@@ -262,13 +262,22 @@ describe('SubstitutionModal 連続交代', () => {
         ]);
     });
 
-    // 実行前後で枠の高さを揃えるため、案内の枠は最初から置いてある。
-    // 実行済みの表示（status）だけが後から入る
-    it('実行前は連続交代できることを案内し、まだ status は出さない', () => {
+    // 案内の枠は role="status" を最初から持つ固定のライブリージョンにしてある（F4）。
+    // 以前は3分岐で <div> ごと出し入れしており、最初のタップで role="status" が
+    // 付くのと文言が入るのが同じコミットになっていた。多くのスクリーンリーダーは
+    // ライブリージョンが生成された（role を得た）その瞬間の内容は読み上げないため、
+    // 実行できない理由や結果が一度も読まれない可能性が高かった。
+    // このテストが守りたいのは「何もしていないのに読み上げが走らないこと」で、
+    // 枠が最初から在ること・空でない案内を最初から持つこと自体は問題ない
+    // （枠の出現そのものは読み上げの起点にならず、あとから中身が変わったときだけ
+    // 読み上げの対象になる）
+    it('実行前は連続交代できることを案内する。ライブリージョンは最初から在り、結果でも理由でもない', () => {
         renderWithParent(roster());
 
-        expect(screen.queryByRole('status')).toBeNull();
-        expect(document.querySelector('.substitution-note')?.textContent).toContain('続けて');
+        const status = screen.getByRole('status');
+        expect(status.textContent).toContain('続けて');
+        expect(status.textContent).not.toContain('選んでください');
+        expect(status.classList.contains('done')).toBe(false);
     });
 
     it('実行済みの交代を件数つきで知らせる', () => {
@@ -481,6 +490,18 @@ describe('SubstitutionModal 一括交代', () => {
         const note = document.querySelector('.substitution-note')?.textContent ?? '';
         expect(note).toContain('続けて');
         expect(note).not.toContain('選んでください');
+    });
+
+    // AddPlayersPanel の .add-players-footer と同じ固定。誰かが .substitution-note を
+    // .substitution-footer の外に戻すと、案内だけがスクロールで流れて見えなくなる
+    // （63c252c で直した不具合が戻る）
+    it('案内と確定ボタンは同じ枠に入る（案内だけ流れて見えなくならないように）', () => {
+        renderModal(roster5());
+
+        const footer = document.querySelector('.substitution-footer');
+        expect(footer).not.toBeNull();
+        expect(footer!.querySelector('.substitution-note')).not.toBeNull();
+        expect(footer!.contains(screen.getByRole('button', { name: '交代実行' }))).toBe(true);
     });
 });
 

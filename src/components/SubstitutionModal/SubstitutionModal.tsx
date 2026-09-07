@@ -89,6 +89,11 @@ export function SubstitutionModal({
         const outs = orderedBySelection(playersOut);
         const ins = orderedBySelection(playersIn);
 
+        // canSubstitute は選択 state の生の長さを見ているが、orderedBySelection は
+        // players に無いIDを落とす。いまは落ちる経路が無いが、ずれたら黙って
+        // 1人取りこぼすより止める
+        if (outs.length !== ins.length) return;
+
         // 組み合わせはどこにも保存されない（handleSubstitutePlayer が書くのは
         // isOnCourt と quartersPlayed だけ）ので、どう組んでも結果は同じ。
         // 背番号順で組むのは表示を安定させるため。1組ずつ送ることで
@@ -351,25 +356,35 @@ export function SubstitutionModal({
                       あった位置に「完了」が来る。連続でタップした指がモーダルを
                       閉じてしまうため、枠は最初から場所を取っておく
                     */}
-                    {mismatchMessage() !== null ? (
-                        <div className="substitution-note" role="status">
+                    {/*
+                      role="status" は枠そのものに最初から付けておき、中身（テキスト）
+                      だけを差し替える。以前は3分岐で <div> ごと出し入れしており、
+                      role が付くのと文言が入るのが同じコミットになっていた。
+                      多くのスクリーンリーダーは、ライブリージョンが生成された（role を
+                      得た）その瞬間の内容は読み上げないため、実行できない理由が
+                      一度も読まれない可能性が高かった。枠を固定してテキストの変化に
+                      すれば、既存のライブリージョンへの更新として読み上げられる
+                    */}
+                    <div
+                        className={`substitution-note ${mismatchMessage() === null && doneCount > 0 ? 'done' : ''}`}
+                        role="status"
+                    >
+                        {mismatchMessage() !== null ? (
                             <span className="substitution-note-sub">{mismatchMessage()}</span>
-                        </div>
-                    ) : doneCount > 0 ? (
-                        <div className="substitution-note done" role="status">
-                            <span className="substitution-note-pair">{lastDone}</span>
-                            <span className="substitution-note-sub">
-                                {lastCount > 1 ? `${lastCount}人交代しました` : '交代しました'}
-                                {doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="substitution-note">
+                        ) : doneCount > 0 ? (
+                            <>
+                                <span className="substitution-note-pair">{lastDone}</span>
+                                <span className="substitution-note-sub">
+                                    {lastCount > 1 ? `${lastCount}人交代しました` : '交代しました'}
+                                    {doneCount > 1 ? `（この画面で${doneCount}件）` : ''}
+                                </span>
+                            </>
+                        ) : (
                             <span className="substitution-note-sub">
                                 交代実行してもこの画面は閉じません。続けて何人でも交代できます
                             </span>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
                     <div className="substitution-actions">
                         {/* 交代はその場で確定するため、実行後に「キャンセル」を残すと取り消せると誤解される */}
