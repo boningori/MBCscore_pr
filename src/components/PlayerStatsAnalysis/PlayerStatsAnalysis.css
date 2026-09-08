@@ -1273,11 +1273,20 @@
     font-weight: 500;
 }
 
+/* 勝敗の印。色だけで分けると、緑と赤はいちばん多い色覚特性で見分けにくい。
+   形も変えて、色に依らず読めるようにする（読み上げ名は DetailView の
+   RESULT_LABEL）。試合履歴の一覧が勝った側に★を付けているのと同じ考え方。
+      勝ち … 塗りつぶしの円
+      負け … 中空の円
+      引分 … 横棒
+   幅は8pxのまま（列は12px）なのでレイアウトは変わらない */
 .player-stats-container .result-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--stats-text-dim);
+    /* 中空・横棒に切り替えても中心がずれないよう、箱の大きさを枠込みで固定する */
+    box-sizing: border-box;
 }
 
 .player-stats-container .result-dot.win {
@@ -1285,10 +1294,13 @@
 }
 
 .player-stats-container .result-dot.loss {
-    background: var(--stats-danger);
+    background: transparent;
+    border: 2px solid var(--stats-danger);
 }
 
 .player-stats-container .result-dot.draw {
+    border-radius: 0;
+    height: 3px;
     background: var(--stats-warning);
 }
 

@@ -23,6 +23,16 @@ import { type DetailViewProps } from './types';
  */
 const MIN_GAMES_FOR_STD_DEV = 3;
 
+/**
+ * 勝敗の印の読み上げ名。
+ *
+ * 印は8pxの図形で、以前は空の <span> だったため読み上げには何も出ず、
+ * 見分けも色（緑・赤・黄）だけに頼っていた。同じ行にスコアはあるが、
+ * どちらが自分のチームかを知らないと勝敗には直せない。
+ * 形（塗り／中空／横棒）と合わせて、色に依らず読めるようにする。
+ */
+const RESULT_LABEL = { win: '勝ち', loss: '負け', draw: '引分' } as const;
+
 export function DetailView({ player, isHidden, onToggleHidden, isMerged = false, onUnmerge }: DetailViewProps) {
     const showStdDev = player.gamesPlayed >= MIN_GAMES_FOR_STD_DEV;
     const detailRef = useRef<HTMLDivElement>(null);
@@ -290,7 +300,11 @@ export function DetailView({ player, isHidden, onToggleHidden, isMerged = false,
                         {player.gameHistory.map((game, index) => (
                             <div key={game.gameId} className={`game-row ${game.result}`}>
                                 <span className="game-date">{gameDateLabels[index]}</span>
-                                <span className={`result-dot ${game.result}`}></span>
+                                <span
+                                    className={`result-dot ${game.result}`}
+                                    role="img"
+                                    aria-label={RESULT_LABEL[game.result]}
+                                ></span>
                                 <span className="game-opponent">{game.opponent}</span>
                                 <span className="game-score">{game.teamScore}-{game.opponentScore}</span>
                                 {/* 退場・失格した試合は数字だけでは分からないので印を付ける */}
