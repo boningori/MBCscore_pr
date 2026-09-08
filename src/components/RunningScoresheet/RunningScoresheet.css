@@ -6,10 +6,62 @@
     background: var(--bg-primary);
     min-height: 100vh;
     min-height: var(--app-vh, 100vh);
-    /* スコアシート本体はA4固定幅(210mm)で、画面幅より広くなることがある。
-       bodyがoverflow-x:hiddenのため、ここで横スクロールを受け持たないと
-       右半分(ランニングスコア・ファウル欄)へ到達する手段がなくなる */
+}
+
+/* スコアシート本体はA4固定幅(210mm=794px)で、画面幅より広くなることがある。
+   bodyがoverflow-x:hiddenのため、どこかで横スクロールを受け持たないと
+   右半分(ランニングスコア・ファウル欄)へ到達する手段がなくなる。
+
+   受け持つのはこの内側の要素で、影を出す枠(.scoresheet-scroll-frame)は
+   その外側に置く。影を中に置くと内容と一緒に流れて端に留まらない。
+   ツールバーも枠の外なので、横に送っても「閉じる」が流れていかない。 */
+.running-scoresheet-container .scoresheet-scroll-frame {
+    position: relative;
+}
+
+.running-scoresheet-container .scoresheet-scroller {
     overflow-x: auto;
+}
+
+/* 端の影。白い紙が画面の端まで続いているだけだと、切れていること自体が
+   分からない（実測375px: 枠343pxに対して本体794pxで、見えているのは43%）。
+   続きがある側にだけ出す（位置の判定は scrollEdges.ts）。
+   本体の高さいっぱいに伸ばすので、縦に送っても端に沿って付いてくる。
+   出力(PDF/JPEG)が写すのは本体だけなので、この影は出力物に入らない */
+.running-scoresheet-container .scoresheet-scroll-frame::before,
+.running-scoresheet-container .scoresheet-scroll-frame::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    /* 影の上を触っても紙を送れるようにする */
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.running-scoresheet-container .scoresheet-scroll-frame::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0));
+}
+
+.running-scoresheet-container .scoresheet-scroll-frame::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0));
+}
+
+.running-scoresheet-container .scoresheet-scroll-frame[data-edge-left="true"]::before,
+.running-scoresheet-container .scoresheet-scroll-frame[data-edge-right="true"]::after {
+    opacity: 1;
+}
+
+/* 動きを抑える設定のときは、出入りのアニメーションだけをやめる（影は出す） */
+@media (prefers-reduced-motion: reduce) {
+    .running-scoresheet-container .scoresheet-scroll-frame::before,
+    .running-scoresheet-container .scoresheet-scroll-frame::after {
+        transition: none;
+    }
 }
 
 .running-scoresheet-container .scoresheet-toolbar {
@@ -25,9 +77,6 @@
     padding: var(--spacing-md);
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
-    /* 横スクロール中もツールバー（閉じる・出力）を画面内に留める */
-    position: sticky;
-    left: 0;
     align-items: center;
 }
 

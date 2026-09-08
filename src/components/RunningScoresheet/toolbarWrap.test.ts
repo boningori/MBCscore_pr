@@ -44,11 +44,10 @@ describe('スコアシートのツールバー', () => {
         expect(/white-space:\s*nowrap/.test(body)).toBe(true);
     });
 
-    it('横スクロールしてもツールバーは画面内に留まる', () => {
-        // 本体はA4幅固定で横スクロールするので、これが外れると
-        // 「閉じる」がスクロールの向こうへ流れて戻れなくなる
-        const body = ruleBody(TOOLBAR);
-        expect(/position:\s*sticky/.test(body)).toBe(true);
-        expect(/left:\s*0/.test(body)).toBe(true);
-    });
+    // 「横スクロールしてもツールバーが画面内に留まる」ことは、以前は
+    // position:sticky で保っていた。横スクロールを内側の要素
+    // （.scoresheet-scroller）へ移したあとはツールバーがその外側にあり、
+    // そもそも横へ流れない。保証はCSSではなく構造が持っているので、
+    // 検査も構造側（scrollAffordance.test.tsx の
+    // 「ツールバーはスクロールする要素の外にある」）へ移した。
 });
