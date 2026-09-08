@@ -58,8 +58,8 @@
 
 /* 検索欄の✕。選手スタッツ分析の期間リセットと同じ見た目に揃える */
 .history-container .btn-reset {
-    width: 24px;
-    height: 24px;
+    width: var(--touch-target);
+    height: var(--touch-target);
     display: flex;
     align-items: center;
     justify-content: center;

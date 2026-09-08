@@ -229,10 +229,12 @@
     min-height: 100px;
 }
 
+/* 右側のpaddingは「×」ボタンのタップ領域が受け持つ。
+   ここにも padding を置くと、チップの高さが44pxのボタン＋余白ぶん膨らむ */
 :is(.opponent-select, .opponent-editor) .player-chip {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    padding: 4px 10px;
+    padding: 0 0 0 10px;
     border-radius: var(--radius-lg);
     font-size: var(--font-size-sm);
     display: flex;
@@ -240,6 +242,9 @@
     gap: 6px;
 }
 
+/* 取り消しは確認を挟まない破壊的な操作で、チップは gap:8px で密に並ぶ。
+   実測では字の大きさがそのまま当たり判定（9.3x16px）で、隣の選手を消しやすかった。
+   見た目の字は変えず、アプリ共通のタップ領域（下限44px / WCAG 2.5.8）まで広げる */
 :is(.opponent-select, .opponent-editor) .remove-btn {
     background: none;
     border: none;
@@ -248,6 +253,12 @@
     cursor: pointer;
     padding: 0;
     line-height: 1;
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 @media (hover: hover) and (pointer: fine) {

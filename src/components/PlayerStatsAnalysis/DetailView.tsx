@@ -265,6 +265,9 @@ export function DetailView({ player, isHidden, onToggleHidden, isMerged = false,
                         <span>対戦相手</span>
                         <span>スコア</span>
                         <span className="foul-header">F</span>
+                        {/* スマホ幅の2行レイアウトで、見出しと各行の改行位置をそろえる。
+                            理由は gameHistoryColumns.test.tsx。広い画面では display:none */}
+                        <span className="game-row-break" aria-hidden="true" />
                         {/* BLKだけ列が無く、「パフォーマンス」「累計記録」「推移グラフ」に
                             出るのに試合別へ遡れなかった。STLと対になる守備の記録なので
                             片方だけ落とす理由がない */}
@@ -294,6 +297,8 @@ export function DetailView({ player, isHidden, onToggleHidden, isMerged = false,
                                 <span className={`game-fouls ${game.fouledOut ? 'fouled-out' : ''}`}>
                                     {game.fouls}{game.fouledOut ? '!' : ''}
                                 </span>
+                                {/* 見出しと同じ位置で折り返す（gameHistoryColumns.test.tsx） */}
+                                <span className="game-row-break" aria-hidden="true" />
                                 <div className="game-stats-compact">
                                     <span className="stat-pts">{game.stats.points}</span>
                                     <span className="stat-reb">{game.stats.offensiveRebounds + game.stats.defensiveRebounds}</span>

@@ -203,11 +203,23 @@
     border: 1px solid var(--team-white);
     box-shadow: var(--stats-card-shadow);}
 
+/* 同じ行に並ぶ <select> は44pxなのに、ここだけ実測30pxだった。
+   アプリ共通のタップ領域（下限44px / WCAG 2.5.8）にそろえる。
+
+   高さを揃えたぶん ✕ も44pxになり、日付2つ＋✕ の合計が画面幅を超える
+   （実測375px: ページの scrollWidth が380pxになり横スクロールが出た）。
+   入力欄が縮んで吸収するが、下限は「日付が全部読める幅」で止める。
+   Chromeの日付入力は幅が足りないと日の欄を落とす
+   （実測: 106pxで「2026/07/0」、110pxから「2026/07/01」が全部出る）。
+   下限を割るほど狭い画面では .date-range 側が折り返して逃がす */
 .player-stats-container .date-range input[type="date"] {
     padding: 6px 8px;
     font-size: 0.85rem;
     border: none;
-    background: transparent;}
+    background: transparent;
+    min-height: var(--touch-target);
+    flex: 1 1 auto;
+    min-width: 112px;}
 
 /* 開始と終了が逆さま。案内は一覧側の EmptyState が出すが、
    直す対象がどれかは入力欄そのものを縁取って示す */
@@ -219,9 +231,13 @@
     color: var(--text-secondary);
 }
 
+/* 集計が0件になったときの案内が「✕ で絞り込みを解除してください」と名指しする
+   脱出口（EmptyState）。押せないとその絞り込みから抜け出せないので、
+   アプリ共通のタップ領域（下限44px / WCAG 2.5.8）を確保する */
 .player-stats-container .btn-reset {
-    width: 24px;
-    height: 24px;
+    width: var(--touch-target);
+    height: var(--touch-target);
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1222,6 +1238,12 @@
     font-size: 0.8rem;
 }
 
+/* スマホ幅の2行レイアウト専用の改行要素（DetailView が見出しと各行に1つずつ置く）。
+   広い画面は6列グリッドなので、列を1つ増やさないよう在って無いものにする */
+.player-stats-container .game-row-break {
+    display: none;
+}
+
 .player-stats-container .game-row:nth-child(odd) {
     background: var(--bg-tertiary);
 }
@@ -1666,13 +1688,28 @@
         gap: 4px;
     }
 
+    /* controls-bar は column + wrap + stretch なので、flex line の幅が
+       いちばん広い項目の max-content で決まり、その幅に全項目が引き伸ばされる。
+       日付の行（入力2つ＋44pxの✕）の max-content が画面幅を超えると、
+       マイチーム選択も並び順も一緒に広がってページごと横に溢れた（実測 380px）。
+       項目の側を画面幅で頭打ちにして、はみ出しは行の中（入力欄）で吸収させる */
+    .player-stats-container .controls-bar > .field-group {
+        max-width: 100%;
+        min-width: 0;
+    }
+
     .player-stats-container .team-select {
         width: 100%;
     }
 
+    /* 入力欄の下限（日付が全部読める幅）を割るほど狭い画面では、
+       縮めるのではなく折り返して✕を次の行へ落とす。
+       折り返しを許さないと行が画面をはみ出し、controls-bar の flex line ごと
+       広がってページが横スクロールする（実測(320px): scrollWidth 346px） */
     .player-stats-container .date-range {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
     }
 
     .player-stats-container .team-record {
@@ -2278,9 +2315,21 @@
    （実測 390px幅で36px・320px幅で72px、ページ自体も横スクロールしていた）。
 
    幅600px以下では flex-wrap に切り替え、
-     1行目: 日付 | 勝敗ドット | 対戦相手 | スコア
-     2行目: PTS/REB/AST/STL | TO/DD/TR/PM/CM
+     1行目: 日付 | 勝敗ドット | 対戦相手 | スコア | F
+     2行目: PTS/REB/AST/STL/BLK | TO/DD/TR/PM/CM
    の2行に分ける。列を削らないので情報量は変わらない。
+
+   改行は .game-row-break（基準サイズ100%の空要素）で明示的に入れる。
+   flex-wrap の自然な折り返しに任せてはいけない —— 改行位置は各アイテムの
+   基準サイズを順に詰めて決まるので、1行目の合計幅、つまり対戦相手名の文字数・
+   スコアの桁・ファウル数の桁で数px動く。実測(375px)では「西浜」の行だけ
+   PTS〜BLK が1行目の右半分へ残り、見出しの PTS の真下にターンオーバー数が
+   並んでいた（詳細は gameHistoryColumns.test.tsx）。この折り返しを書いた
+   あとに F 列が増えて閾値をまたいだのが直接の原因だが、内容次第で動く作り
+   そのものが原因なので、位置を内容から切り離す。
+
+   row-gap を0にして、行間は改行要素の高さで作る。改行要素は自分の行を
+   1つ占めるため、row-gap を残すと行間が2回入って4px広がる。
 
    PDF/JPEG出力は html2canvas を windowWidth:827 で描画する（DetailView.tsx）ため、
    このメディアクエリは出力物には適用されず、A4向けの6列レイアウトのまま出る。 */
@@ -2292,7 +2341,13 @@
         flex-wrap: wrap;
         align-items: center;
         column-gap: 6px;
-        row-gap: 4px;
+        row-gap: 0;
+    }
+
+    .player-stats-container .game-row-break {
+        display: block;
+        flex: 0 0 100%;
+        height: 4px;
     }
 
     /* 1行目 */

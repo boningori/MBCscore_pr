@@ -525,7 +525,13 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                         {players.map((player, index) => (
                             <span key={index} className="player-chip">
                                 #{formatPlayerNumber(player.number)} {player.name}{player.licenseNo ? ` [${player.licenseNo}]` : ''}
-                                <button className="remove-btn" onClick={() => handleRemovePlayer(index)}>×</button>
+                                {/* 「×」だけでは、どの選手を消すボタンなのか読み上げから分からない。
+                                    取り消しは確認を挟まないので、押す前に分かる必要がある */}
+                                <button
+                                    className="remove-btn"
+                                    aria-label={`#${formatPlayerNumber(player.number)}${player.name ? ` ${player.name}` : ''} を削除`}
+                                    onClick={() => handleRemovePlayer(index)}
+                                >×</button>
                             </span>
                         ))}
                     </div>
