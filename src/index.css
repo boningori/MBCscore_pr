@@ -118,7 +118,13 @@
 
   /* フォント - 画面サイズに応じてスケール */
   --font-score: 'Inter', system-ui, sans-serif;
-  --font-size-xs: clamp(10px, 1.2vh, 12px);
+  /* 最小段だけは画面高で伸縮させない。
+     clamp(10px, 1.2vh, 12px) だと 1.2vh が12pxに届くのは画面高1000px以上
+     （タブレット）なので、スマホでは事実上どの機種でも下限10pxに張り付く。
+     実測(375x812): チーム比較のQ別スコア表が10px。表の幅は318pxの枠に201pxしか
+     使っておらず、詰まっているから小さいのではなくトークンを継いでいるだけだった。
+     伸縮をやめても記録画面の収まりは変わらない（詳細は index.fontScale.test.ts） */
+  --font-size-xs: 12px;
   --font-size-sm: clamp(12px, 1.5vh, 14px);
   --font-size-md: clamp(13px, 1.8vh, 16px);
   --font-size-lg: clamp(16px, 2.2vh, 20px);
