@@ -15,9 +15,12 @@
 // 経路は手で編集した／途中で切れたバックアップの取り込み。repairGameRecords が
 // date を矯正対象に含めていなかったため、読み側まで素通りしていた。
 
-import { describe, it, expect } from 'vitest';
-import { aggregateByPeriod, type PlayerGameRecord } from './playerStatsAnalysis';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { aggregateByPeriod, aggregatePlayerStats, type PlayerGameRecord } from './playerStatsAnalysis';
+import { saveGameHistory, type GameRecord } from './gameHistoryStorage';
+import { createPlayer, createTeam } from '../types/game';
 import type { PlayerStats } from '../types/game';
+import type { SavedTeam } from './teamStorage';
 
 function stats(points: number): PlayerStats {
     return {
@@ -33,6 +36,37 @@ function game(gameId: string, date: string, points: number): PlayerGameRecord {
         gameId, date, opponent: '相手', stats: stats(points),
         result: 'win', teamScore: 40, opponentScore: 20,
         quartersPlayed: 2, fouls: 0, fouledOut: false,
+    };
+}
+
+const myTeam: SavedTeam = {
+    id: 'team-1',
+    name: 'マイチーム',
+    coachName: 'コーチ',
+    assistantCoachName: '',
+    players: [{ number: 7, name: '選手A', isCaptain: false }],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+};
+
+/** 同じ選手が1人だけ出場した試合。背番号だけを試合ごとに変える */
+function gameRecord(id: string, date: string, number: number): GameRecord {
+    const teamA = createTeam('teamA', myTeam.name, 'コーチ');
+    teamA.isMyTeam = true;
+    teamA.savedTeamId = myTeam.id;
+    const player = createPlayer('teamA-player-0', number, '選手A');
+    player.stats.points = 4;
+    player.quartersPlayed = ['starter', false, false, false];
+    teamA.players = [player];
+
+    const teamB = createTeam('teamB', '相手チーム', '相手コーチ');
+    teamB.players = [createPlayer('teamB-player-0', 9, '相手選手')];
+
+    return {
+        id, date, gameName: id, teamA, teamB,
+        finalScore: { teamA: 4, teamB: 0 },
+        scoreHistory: [], statHistory: [], foulHistory: [],
+        createdAt: date,
     };
 }
 
@@ -78,5 +112,33 @@ describe('aggregateByPeriod: 日付が読めない記録', () => {
         );
 
         expect(periods.map(p => p.periodLabel)).toEqual(['2026年8月', '2026年6月', '日付なし']);
+    });
+});
+
+// 一覧のカードに出る氏名・背番号・ライセンスNo.は「いちばん新しい試合のもの」を採る。
+//
+// その比較が new Date(date).getTime() を素で使っていたため、読めない日付の記録を
+// 先に走査すると基準に NaN が入り、以後 `gameTime > latest` が常に false になって
+// 二度と更新されなくなっていた（実測: not-a-date の #4 → 正常日付の #7 の2試合で、
+// gamesPlayed は 2 なのにカードは #4 のまま）。集計値は正しく、氏名・背番号だけが
+// 壊れた記録に張り付く。
+//
+// このファイルの他の経路（getPeriodKey / 並び順）は periodSortTime で
+// 「読めない日付はいちばん古い側」に寄せているので、ここも同じ扱いにそろえる。
+describe('aggregatePlayerStats: 日付が読めない記録が混ざったときの氏名・背番号', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('読めない日付の記録を先に走査しても、いちばん新しい試合の背番号を使う', () => {
+        saveGameHistory([
+            gameRecord('g1', 'not-a-date', 4),
+            gameRecord('g2', '2026-06-01T00:00:00.000Z', 7),
+        ]);
+
+        const [player] = aggregatePlayerStats(myTeam);
+
+        expect(player.gamesPlayed).toBe(2);
+        expect(player.number).toBe(7);
     });
 });

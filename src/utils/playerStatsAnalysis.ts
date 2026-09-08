@@ -731,7 +731,10 @@ export function aggregatePlayerStats(
             // （全角スペース混じりの氏名やコートネーム）がカードに出ると、
             // どちらへ寄せたのか分からなくなる。代表キーの記録が1件も無い場合
             // （対応表だけが残っている）は、従来どおり組の中で新しいものを使う。
-            const gameTime = new Date(record.date).getTime();
+            // 読めない日付はいちばん古い側へ寄せる（periodSortTime）。素の getTime() は
+            // NaN を返し、それが基準に入ると以後の `gameTime > latest` が常に false に
+            // なって、氏名・背番号が壊れた記録のまま二度と更新されなくなる
+            const gameTime = periodSortTime(record.date);
             const isCanonicalRecord = builtKey === key;
             const applyIdentity = () => {
                 aggregated.number = player.number;
