@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortPlayers, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSort';
+import { sortPlayers, sortNote, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSort';
 import { makeAggregatedPlayer, makeStats } from '../../test/statsFactories';
 
 // 一覧は背番号順に固定されていて、誰が伸びているかを一覧で掴めなかった。
@@ -151,5 +151,53 @@ describe('並べ替えラベルが基準を示す', () => {
     it('背番号順とFG%には基準の但し書きを付けない', () => {
         expect(labelOf('number')).toBe('背番号順');
         expect(labelOf('fgPercent')).not.toContain('平均');
+    });
+});
+// FG%順は規定試投（qualifyingAttempts）に満たない選手を末尾へ落とすが、
+// その規則は画面のどこにも書かれていなかった。100%(1/1)の選手が理由の説明なく
+// 最下位に並ぶ。他の指標（PTS・REB・ASTは平均、FGは通算）には一覧の頭に
+// 注記があるのに、ここだけ無言だった。
+//
+// 注記は「実際に下へ落ちた選手がいるとき」だけ出す。誰も落ちていないのに出すと、
+// 並び順に現れていない規則を説明することになる（EmptyState の理由選びと同じ判断）。
+describe('sortNote', () => {
+    it('FG%順でなければ出さない', () => {
+        const players = [p(4, { games: 3, made: 1, attempts: 1 })];
+
+        expect(sortNote(players, 'points')).toBeNull();
+        expect(sortNote(players, 'number')).toBeNull();
+    });
+
+    it('規定試投に満たない選手がいるときだけ、本数を添えて出す', () => {
+        // 規定試投＝いちばん多く出場した選手の試合数（ここでは3本）
+        const players = [
+            p(4, { games: 3, made: 9, attempts: 20 }),
+            p(5, { games: 1, made: 1, attempts: 1 }),
+        ];
+
+        expect(sortNote(players, 'fgPercent')).toContain('3');
+    });
+
+    it('全員が規定試投に届いていれば出さない', () => {
+        const players = [
+            p(4, { games: 2, made: 9, attempts: 20 }),
+            p(5, { games: 2, made: 3, attempts: 8 }),
+        ];
+
+        expect(sortNote(players, 'fgPercent')).toBeNull();
+    });
+
+    // 規定試投は「いちばん多く出場した選手の試合数」なので、1試合しか記録が
+    // 無ければ下限は1本になる。「試投1本に満たない」と書くより、実態どおり
+    // 「まだ打っていない」と書いたほうが読める
+    it('下限が1本のときは本数ではなく「打っていない」と書く', () => {
+        const players = [
+            p(4, { games: 1, made: 2, attempts: 4 }),
+            p(5, { games: 1, made: 0, attempts: 0 }),
+        ];
+
+        const note = sortNote(players, 'fgPercent');
+        expect(note).not.toBeNull();
+        expect(note).not.toContain('1本');
     });
 });

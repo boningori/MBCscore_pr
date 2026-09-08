@@ -11,6 +11,7 @@ export function PlayerCardList({
     selectedKeys,
     onToggleSelect,
     mergedKeys,
+    sortNote,
 }: PlayerCardListProps) {
     // 「（n試合分）」が付く選手が1人でもいるか。
     //
@@ -31,6 +32,12 @@ export function PlayerCardList({
                 PTS・REB・ASTは1試合あたりの平均、FGは通算の成功率です
                 {hasPartialQuarters && '／「平均◯Q」の（n試合分）は、出場クォーターが記録されている試合だけの平均です'}
             </p>
+            {/*
+              並び順から読み取れない規則の説明。指標の但し書き（上の凡例）とは
+              性質が違う——並び順を変えれば消える一時的な断り書きなので、
+              同じ段落に混ぜず別の行に出す
+            */}
+            {sortNote && <p className="player-card-legend player-sort-note">{sortNote}</p>}
             {players.map(player => {
                 // 非表示にしている選手。全員表示に切り替えたときだけ一覧に現れる。
                 // 印が無いと、どれを非表示にしたのか一覧からは分からず、

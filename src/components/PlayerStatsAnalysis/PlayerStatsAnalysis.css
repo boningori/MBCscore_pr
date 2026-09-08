@@ -353,6 +353,13 @@
     color: var(--text-secondary);
 }
 
+/* 並び順の断り書き。指標の但し書き（上の凡例）と違って並び順を変えれば消える
+   一時的なものなので、少し離して別の行だと分かるようにする */
+.player-stats-container .player-sort-note {
+    margin-top: 6px;
+    color: var(--text-muted);
+}
+
 .player-stats-container .player-card {
     border-radius: 14px;
     padding: 16px 20px;

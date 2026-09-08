@@ -58,6 +58,37 @@ function fgPercent(p: AggregatedPlayerStats, minAttempts: number): number | null
     return (p.totalStats.twoPointMade + p.totalStats.threePointMade) / attempts;
 }
 
+/**
+ * いま効いている並べ替えの規則のうち、画面に書いておかないと読み取れないもの。
+ *
+ * FG%順は規定試投に満たない選手を末尾へ落とす（qualifyingAttempts）。この規則が
+ * どこにも書かれていなかったため、100%(1/1)の選手が理由の説明なく最下位に並んで
+ * いた。一覧の頭には他の指標の但し書き（PTS・REB・ASTは平均、FGは通算）が出て
+ * いるのに、ここだけ無言だった。
+ *
+ * 出すのは実際に下へ落ちた選手がいるときだけ。誰も落ちていないのに出すと、
+ * 並び順に現れていない規則を説明することになる（EmptyState の理由選びと同じ判断）。
+ *
+ * @returns 注記の文。出す必要がなければ null
+ */
+export function sortNote(
+    players: AggregatedPlayerStats[],
+    key: PlayerSortKey,
+): string | null {
+    if (key !== 'fgPercent') return null;
+
+    const minAttempts = qualifyingAttempts(players);
+    const belowCount = players.filter(p => fgPercent(p, minAttempts) === null).length;
+    if (belowCount === 0) return null;
+
+    // 記録が1試合しか無いと下限は1本になる。「試投1本に満たない」と書くより、
+    // 実態どおり「まだ打っていない」と書いたほうが読める
+    if (minAttempts <= 1) {
+        return 'FG%順では、まだシュートを打っていない選手を下にまとめています';
+    }
+    return `FG%順では、試投が${minAttempts}本に満たない選手を下にまとめています（率が定まらないため）`;
+}
+
 /** 大きいほど上に来る値。null は「値なし」として最後に回す */
 function sortValue(p: AggregatedPlayerStats, key: PlayerSortKey, minAttempts: number): number | null {
     switch (key) {

@@ -18,7 +18,7 @@ import { startOfInputDateUtc, endOfInputDateUtc } from '../../utils/localDate';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import { formatWinRate } from './winRate';
-import { sortPlayers, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSort';
+import { sortPlayers, sortNote, PLAYER_SORT_OPTIONS, type PlayerSortKey } from './playerSort';
 import { PlayerCardList } from './PlayerCardList';
 import { DetailView } from './DetailView';
 import type { ViewMode } from './types';
@@ -189,6 +189,9 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
 
     // 並べ替えは表示順だけを変える。集計（playerStats）には影響しないので分けて持つ
     const sortedPlayers = useMemo(() => sortPlayers(playerStats, sortKey), [playerStats, sortKey]);
+    // 並び順から読み取れない規則（FG%順の規定試投）の断り書き。
+    // 出す条件と文面は playerSort が持つ
+    const currentSortNote = useMemo(() => sortNote(playerStats, sortKey), [playerStats, sortKey]);
 
     // 統合済みの代表キー（カードの印に使う）。
     // 対応表をそのまま読まないのは、集計側が適用を拒む項目があるため
@@ -541,6 +544,7 @@ export function PlayerStatsAnalysis({ onBack }: PlayerStatsAnalysisProps) {
                             selectedKeys={selectedKeys}
                             onToggleSelect={handleToggleSelect}
                             mergedKeys={mergedKeys}
+                            sortNote={currentSortNote}
                         />
                         : <EmptyState reason={emptyReason} hiddenPlayerCount={hiddenPlayerCount} />}
 

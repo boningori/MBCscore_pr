@@ -74,6 +74,11 @@ export interface PlayerCardListProps {
     onToggleSelect?: (playerKey: string) => void;
     /** 統合済みの代表キー。まとめたことが一覧から分かるように印を出す */
     mergedKeys?: ReadonlySet<string>;
+    /**
+     * いま効いている並べ替えの規則の説明（playerSort の sortNote）。
+     * 並び順から読み取れない規則があるときだけ入る
+     */
+    sortNote?: string | null;
 }
 
 export interface DetailViewProps {
