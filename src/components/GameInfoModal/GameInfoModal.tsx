@@ -26,11 +26,20 @@ export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onCl
 
     const handleSave = () => {
         onSave(formData);
-        if (onEndTimeChange && endTimeStr) {
-            const [hours, minutes] = endTimeStr.split(':').map(Number);
-            const base = endTime ? new Date(endTime) : new Date();
-            base.setHours(hours, minutes, 0, 0);
-            onEndTimeChange(base);
+        if (onEndTimeChange) {
+            if (endTimeStr) {
+                const [hours, minutes] = endTimeStr.split(':').map(Number);
+                const base = endTime ? new Date(endTime) : new Date();
+                base.setHours(hours, minutes, 0, 0);
+                onEndTimeChange(base);
+            } else if (endTime) {
+                // 空欄にして保存＝「消す」。falsy をまとめて弾いていたため、
+                // 受け手（SET_END_TIME / updateGameRecordEndTime）は null を
+                // 消去として扱えるのに、そこへ届く経路が無かった。
+                // 打ち間違えた終了時間が公式様式に残り続け、訂正手段が無い。
+                // もともと空欄（endTime が無い）なら消す指示も要らない
+                onEndTimeChange(null);
+            }
         }
         onClose();
     };

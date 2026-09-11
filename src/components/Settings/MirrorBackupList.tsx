@@ -22,6 +22,10 @@ interface MirrorBackupListProps {
 export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
     const [snapshots, setSnapshots] = useState<MirrorSnapshot[] | null>(null);
     const [pending, setPending] = useState<MirrorSnapshot | null>(null);
+    // 書き戻しに失敗した（restoreSnapshot が false を返した）。
+    // 握って onRestored を呼ぶと、データは元のままなのにリロードだけが走り、
+    // 利用者は「戻せた」と思い込む。RestorePrompt と同じ扱いにそろえる
+    const [failed, setFailed] = useState(false);
 
     useEffect(() => {
         let alive = true;
@@ -46,6 +50,12 @@ export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
 
     return (
         <>
+            {failed && (
+                <p className="status-message error" role="alert">
+                    この時点に戻せませんでした。端末の空き容量が足りない可能性があります。
+                    空きを作ってからもう一度お試しください（データは元のままです）。
+                </p>
+            )}
             <ul className="mirror-backup-list">
                 {snapshots.map(snap => (
                     <li key={snap.timestamp} className="mirror-backup-item">
@@ -58,7 +68,7 @@ export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
                         <button
                             type="button"
                             className="btn btn-secondary btn-small"
-                            onClick={() => setPending(snap)}
+                            onClick={() => { setFailed(false); setPending(snap); }}
                         >
                             この時点に戻す
                         </button>
@@ -77,8 +87,12 @@ export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
                     confirmLabel="戻す"
                     cancelLabel="キャンセル"
                     onConfirm={() => {
-                        restoreSnapshot(pending);
+                        const restored = restoreSnapshot(pending);
                         setPending(null);
+                        if (!restored) {
+                            setFailed(true);
+                            return;
+                        }
                         onRestored();
                     }}
                     onCancel={() => setPending(null)}
