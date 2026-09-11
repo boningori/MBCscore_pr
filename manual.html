@@ -403,7 +403,7 @@
   <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">v1.9 対応</div>
+  <div class="cover-version">v1.10 対応</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -1159,6 +1159,15 @@
 </ol>
 
 <div class="tip-box">
+  <div class="box-title">キーボードで操作する場合</div>
+  🎤 ボタンは<strong>押している間だけ録音する</strong>作りですが、キーボード（Space / Enter）や
+  スイッチ機器では「押しっぱなし」が伝わりません。そのため<strong>キーボードで押したときだけ、
+  1回目で録音開始・2回目で停止</strong>に切り替わります。
+  指やマウスでの操作はこれまでどおり押しっぱなしです。
+  なお、止め忘れても<strong>60秒で自動的に打ち切られます</strong>。
+</div>
+
+<div class="tip-box">
   <div class="box-title">「済にする」と「たたむ」の違い</div>
   <ul>
     <li><strong>済にする</strong> … 入力し終えたメモを消して次へ進みます。数秒のあいだ「元に戻す」が出るので、
@@ -1235,6 +1244,15 @@
   <strong>得点とファウルは「不明」にできません</strong>。選手を特定して確定するか、削除してください。
 </div>
 
+<div class="info-box">
+  <div class="box-title">保留中のファウルもチームファウルに数えます</div>
+  ファウルを保留にしている間も、<strong>チームファウル（TF）の数には含まれます</strong>。
+  誰が犯したかに関わらず、チームのファウルとして起きた事実は変わらないためです。
+  チームパネルの <strong>TF</strong> バッジと、ファウル入力画面の「チームファウル: ◯個」は
+  どちらも保留を含んだ同じ数を表示します。
+  これにより、ペナルティ（5個目以降のフリースロー2本）の案内が実際とずれません。
+</div>
+
 <div class="page-break"></div>
 
 <!-- =========================================================== -->
@@ -1304,6 +1322,20 @@
   <li><strong>審判</strong>: クルーチーフ、アンパイア</li>
   <li><strong>TO（テーブルオフィシャルズ）</strong>: スコアラー、A・スコアラー、タイマー、ショットクロックオペレーター</li>
 </ul>
+
+<div class="warn-box">
+  <div class="box-title">入力は「保存」を押すまで反映されません</div>
+  この画面の入力は<strong>「保存」を押したときにだけ</strong>記録されます。
+  書きかけがある状態で暗い部分をタップしたり端末の戻る操作をすると、
+  <strong>「破棄して閉じますか？」</strong>と確認が出ます。
+  <span class="btn-sample btn-gray">編集に戻る</span> を選べば入力はそのまま残ります。
+</div>
+
+<div class="tip-box">
+  <div class="box-title">終了時間は空欄に戻せます</div>
+  終了時間を打ち間違えたときは、<strong>欄を空にして「保存」</strong>すると記録から消えます。
+  スコアシートの「試合終了時間」も空欄になります。
+</div>
 
 <h3>出力</h3>
 <div class="flow">
@@ -1416,6 +1448,19 @@
 <h2>12. 試合終了と保存</h2>
 
 <p>第4クォーター終了時、またはスコアボードの操作で試合が終了すると、以下の画面が表示されます:</p>
+
+<div class="warn-box">
+  <div class="box-title">未割り当ての得点があると、先に確認が出ます</div>
+  保留のままの<strong>得点</strong>はどの選手にも入っていないため、画面のスコアには現れません。
+  第4クォーター以降を終えようとしたときに残っていると、
+  <strong>「未割り当ての得点があります」</strong>と先に知らせます。
+  <ul>
+    <li>同点かどうか（＝<strong>延長戦を行うか</strong>）はスコアで決まるので、割り当て前に進むと結論が変わることがあります</li>
+    <li><span class="btn-sample btn-blue">戻って割り当てる</span> を選べば記録画面に戻り、保留パネルからその場で割り当てられます</li>
+    <li>承知のうえで <span class="btn-sample btn-red">このまま進む</span> を選ぶこともできます</li>
+  </ul>
+  保留が<strong>ファウルや統計だけ</strong>のときは、勝敗を動かさないのでこの確認は出ません。
+</div>
 
 <div class="diagram">┌─────────────────────────────────────────────┐
 │                                             │
@@ -1556,13 +1601,48 @@
 <table>
   <tr><th>設定項目</th><th>説明</th></tr>
   <tr><td>デフォルトゲームモード</td><td>試合開始時の初期モード（フル / シンプル）を設定</td></tr>
-  <tr><td>AI機能（Gemini API）</td><td>写真読み取りの精度を上げるGemini APIキーの設定（任意）。未設定でも標準のオフラインOCRで動作します</td></tr>
+  <tr><td>AI機能（Gemini API）</td><td>Gemini APIキーの設定（任意）と、<strong>「写真をAIで読み取る」</strong>のON/OFF（既定はOFF・要同意）。OFFのままでも標準のオフラインOCRで動作します</td></tr>
   <tr><td>音声メモ</td><td>フルモードの記録画面で使える音声メモ機能のON/OFF（既定はOFF・要同意）。Gemini APIキーとオンライン接続が必要です</td></tr>
   <tr><td>データ管理</td><td>全データのバックアップ / 復元、試合履歴CSV（サマリー / 選手スタッツ詳細）の出力</td></tr>
   <tr><td>ヘルプ</td><td>使い方（README）へのリンク、問い合わせ先の表示</td></tr>
   <tr><td>エラーログ</td><td>アプリ内で発生したエラーの記録の表示・コピー・削除（端末内のみ保存）</td></tr>
   <tr><td>アプリについて</td><td>バージョン表示、利用規約・プライバシーポリシー・OSSライセンスの確認</td></tr>
 </table>
+
+<h3>写真をAIで読み取る（v1.10 から）</h3>
+<p>
+  チームの名簿は写真から読み取れます。読み取りには2つの方法があり、
+  <strong>設定の「写真をAIで読み取る」</strong>で選びます。
+</p>
+<table>
+  <tr><th></th><th>標準OCR（既定）</th><th>AI読み取り</th></tr>
+  <tr><td>スイッチ</td><td>OFF</td><td>ON（初回に同意が必要）</td></tr>
+  <tr><td>処理する場所</td><td><strong>端末の中だけ</strong></td><td>Googleのサーバー</td></tr>
+  <tr><td>Gemini APIキー</td><td>不要</td><td>必要</td></tr>
+  <tr><td>オフライン</td><td>使える</td><td>使えない</td></tr>
+  <tr><td>読み取り精度</td><td>標準</td><td>高い（ライセンスNo.も読めます）</td></tr>
+</table>
+
+<div class="warn-box">
+  <div class="box-title">ONにすると名簿の写真が端末の外に出ます</div>
+  AI読み取りをONにすると、<strong>撮影した名簿の画像がGoogleのサーバーへ送信されます</strong>。
+  写真には選手（子ども）の氏名やJBA登録番号が写ります。<strong>関係者の同意を得たうえで</strong>ご利用ください。
+  <ul>
+    <li>無料枠のAPIキーでは、送信したデータがモデルの改善に使われる可能性があります。有料プランのキーを推奨します</li>
+    <li>OFFのままなら画像は端末の外に出ません。読み取り精度は下がりますが、写真からの登録自体は使えます</li>
+  </ul>
+</div>
+
+<div class="info-box">
+  <div class="box-title">APIキーとスイッチは別物です</div>
+  Gemini APIキーは<strong>音声メモとAI読み取りで共通</strong>です。
+  v1.9 まではキーを入れるだけでAI読み取りも有効になっていましたが、
+  v1.10 からは<strong>スイッチをONにするまでAIへ画像を送りません</strong>。
+  音声メモだけを使いたい場合は、キーを設定したうえでこのスイッチをOFFのままにしてください。
+  <br>
+  なお、<strong>v1.9 以前からAPIキーを設定していた場合は、更新後もAI読み取りが有効なまま引き継がれます</strong>
+  （これまで使えていた機能が黙って止まらないようにするためです）。不要なときはOFFにしてください。
+</div>
 
 <div class="page-break"></div>
 
@@ -1661,7 +1741,7 @@
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
   <!-- アプリ本体のマイナーバージョンと揃える（ずれたら manualVersion.test.ts が落ちる） -->
-  <p>使用説明書 v1.9 対応</p>
+  <p>使用説明書 v1.10 対応</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
