@@ -26,9 +26,9 @@ describe('mirrorBackup', () => {
     it('saveSnapshot→getLatestSnapshotで最新世代が取得できる', async () => {
         const m = await freshModule();
         localStorage.setItem('minibasket-my-teams', '["v1"]');
-        await m.saveSnapshot(1000);
+        await m.saveSnapshot('periodic', 1000);
         localStorage.setItem('minibasket-my-teams', '["v2"]');
-        await m.saveSnapshot(2000);
+        await m.saveSnapshot('periodic', 2000);
 
         const latest = await m.getLatestSnapshot();
         expect(latest).not.toBeNull();
@@ -36,26 +36,104 @@ describe('mirrorBackup', () => {
         expect(latest!.entries['minibasket-my-teams']).toBe('["v2"]');
     });
 
-    it('10世代を超えた古いスナップショットは削除される', async () => {
+    it('定期スナップショットは枠(3)を超えると古いものから消える', async () => {
         const m = await freshModule();
         localStorage.setItem('minibasket-my-teams', '[]');
-        for (let i = 1; i <= 12; i++) {
-            await m.saveSnapshot(i * 1000);
+        for (let i = 1; i <= 6; i++) {
+            await m.saveSnapshot('periodic', i * 1000);
         }
-        const latest = await m.getLatestSnapshot();
-        expect(latest!.timestamp).toBe(12000);
-        // 1000, 2000 の世代は削除されているはず（3000が最古）
-        const all = await m.getAllSnapshots();
-        expect(all).toHaveLength(10);
-        expect(Math.min(...all.map(s => s.timestamp))).toBe(3000);
+
+        const metas = await m.getSnapshotMetas();
+        expect(metas.map(s => s.timestamp)).toEqual([6000, 5000, 4000]);
+    });
+
+    // この作り替えの主眼。試合中の自動保存が「試合を保存した直後」を押し出さない
+    it('試合中の定期スナップショットを積んでも、区切りの世代は残る', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '[]');
+        await m.saveSnapshot('gameEnd', 1000);
+        for (let i = 2; i <= 21; i++) {
+            await m.saveSnapshot('periodic', i * 1000);
+        }
+
+        const metas = await m.getSnapshotMetas();
+        expect(metas.some(s => s.timestamp === 1000 && s.reason === 'gameEnd')).toBe(true);
+    });
+
+    it('起動世代は同じ暦日に1つしか作らない', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '[]');
+        const morning = new Date(2026, 8, 11, 8, 30).getTime();
+        const evening = new Date(2026, 8, 11, 20, 0).getTime();
+        await m.saveSnapshot('startup', morning);
+        await m.saveSnapshot('startup', evening);
+
+        const metas = await m.getSnapshotMetas();
+        expect(metas.filter(s => s.reason === 'startup')).toHaveLength(1);
+    });
+
+    it('翌日の起動世代は作る', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '[]');
+        await m.saveSnapshot('startup', new Date(2026, 8, 11, 9).getTime());
+        await m.saveSnapshot('startup', new Date(2026, 8, 12, 9).getTime());
+
+        const metas = await m.getSnapshotMetas();
+        expect(metas.filter(s => s.reason === 'startup')).toHaveLength(2);
+    });
+
+    // v1 が書いた世代は reason を持たない。読めること、定期として数えられることを見る
+    it('reason を持たない旧世代も読めて、定期の枠で数える', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '[]');
+
+        // まず本体にDBを作らせる（スキーマ生成をテスト側で書き写さないため。
+        // 書き写すと、本物の openDb を変えてもここが古いまま通ってしまう）
+        await m.saveSnapshot('periodic', 1000);
+
+        // その上に、reason を持たない旧スキーマの世代を1件流し込む
+        await new Promise<void>((resolve, reject) => {
+            const open = indexedDB.open('mbc-mirror-backup');
+            open.onsuccess = () => {
+                const db = open.result;
+                const tx = db.transaction('snapshots', 'readwrite');
+                tx.objectStore('snapshots').put({ timestamp: 500, entries: { 'minibasket-my-teams': '["old"]' } });
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => reject(tx.error);
+            };
+            open.onerror = () => reject(open.error);
+        });
+
+        const metas = await m.getSnapshotMetas();
+        expect(metas.find(s => s.timestamp === 500)?.reason).toBeUndefined();
+
+        const old = await m.getSnapshot(500);
+        expect(old?.entries['minibasket-my-teams']).toBe('["old"]');
+    });
+
+    it('一覧の読み出しは、世代の中身を載せない（getAll を使わない）', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '[]');
+        await m.saveSnapshot('periodic', 1000);
+
+        // fake-indexeddb の IDBObjectStore は global にある。
+        // getAll はレコード本体を返すので、一覧の経路で呼ばれてはいけない
+        const getAll = vi.spyOn(IDBObjectStore.prototype, 'getAll');
+        try {
+            const metas = await m.getSnapshotMetas();
+            expect(metas).toHaveLength(1);
+            expect(getAll).not.toHaveBeenCalled();
+        } finally {
+            getAll.mockRestore();
+        }
     });
 
     it('空のlocalStorageではスナップショットを作らない（既存世代を守る）', async () => {
         const m = await freshModule();
         localStorage.setItem('minibasket-my-teams', '["v1"]');
-        await m.saveSnapshot(1000);
+        await m.saveSnapshot('periodic', 1000);
         localStorage.clear();
-        await m.saveSnapshot(2000);
+        await m.saveSnapshot('periodic', 2000);
         const latest = await m.getLatestSnapshot();
         expect(latest!.timestamp).toBe(1000);
     });

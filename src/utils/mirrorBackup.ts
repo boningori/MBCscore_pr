@@ -4,11 +4,24 @@
 // IndexedDBが使えない環境（プライベートブラウズ等）では静かに無効化され、
 // アプリ本体の動作には影響しない。
 
+import {
+    hasStartupSnapshotToday,
+    selectExpiredSnapshots,
+} from './mirrorBackupRetention';
+import type { SnapshotMeta, SnapshotReason } from './mirrorBackupRetention';
+
+export type { SnapshotMeta, SnapshotReason } from './mirrorBackupRetention';
+
 const DB_NAME = 'mbc-mirror-backup';
-const DB_VERSION = 1;
+// v2 で reason のインデックスを足した。一覧が entries を読まずに
+// 日時と理由を引くために要る
+const DB_VERSION = 2;
 const STORE_NAME = 'snapshots';
-const MAX_GENERATIONS = 10;
+const REASON_INDEX = 'reason';
 const MIN_SNAPSHOT_INTERVAL_MS = 30_000;
+
+/** reason ごとに主キーを引くための一覧。値が増えたらここにも足す */
+const REASONS: readonly SnapshotReason[] = ['periodic', 'gameEnd', 'startup', 'beforeRestore'];
 
 // バックアップ対象のlocalStorageキーのプレフィックス。
 // storageUsage.ts の同名定数と必ず揃えること。片方にしか無いプレフィックスが
@@ -16,8 +29,7 @@ const MIN_SNAPSHOT_INTERVAL_MS = 30_000;
 // （'mbc-' が実際にそうなっていた）。
 const APP_KEY_PREFIXES = ['minibasket-', 'mbc_', 'mbc-'];
 
-export interface MirrorSnapshot {
-    timestamp: number;
+export interface MirrorSnapshot extends SnapshotMeta {
     entries: Record<string, string>;
 }
 
@@ -28,13 +40,52 @@ function openDb(): Promise<IDBDatabase> {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         request.onupgradeneeded = () => {
             const db = request.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'timestamp' });
+            const store = db.objectStoreNames.contains(STORE_NAME)
+                ? request.transaction!.objectStore(STORE_NAME)
+                : db.createObjectStore(STORE_NAME, { keyPath: 'timestamp' });
+            // reason ごとの主キーを、レコード本体を読まずに引くためのインデックス。
+            // v1 が書いた世代は reason を持たず、IndexedDB は値が undefined の
+            // レコードをインデックスに載せない。それがそのまま「旧世代」の判別になる
+            if (!store.indexNames.contains(REASON_INDEX)) {
+                store.createIndex(REASON_INDEX, REASON_INDEX);
             }
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
+}
+
+/** IDBRequest を Promise にする小道具 */
+function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+/**
+ * 主キーと reason だけを読む（entries は読まない）。
+ *
+ * リクエストは全部同じタスクで出してから await する。await を挟んでから
+ * 次のリクエストを出すと、トランザクションが先に閉じて InvalidStateError になる。
+ */
+async function readMetas(db: IDBDatabase): Promise<SnapshotMeta[]> {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const index = store.index(REASON_INDEX);
+
+    const allKeysRequest = store.getAllKeys();
+    const byReasonRequests = REASONS.map(reason => [reason, index.getAllKeys(reason)] as const);
+
+    const allKeys = (await requestResult(allKeysRequest)) as number[];
+    const byReason = new Map<number, SnapshotReason>();
+    for (const [reason, request] of byReasonRequests) {
+        for (const key of (await requestResult(request)) as number[]) {
+            byReason.set(key, reason);
+        }
+    }
+
+    return allKeys.map(timestamp => ({ timestamp, reason: byReason.get(timestamp) }));
 }
 
 // アプリのlocalStorageデータを収集
@@ -55,24 +106,38 @@ export function hasAppData(): boolean {
     return Object.keys(collectAppData()).length > 0;
 }
 
-// スナップショットを保存し、古い世代を削除
-export async function saveSnapshot(now: number = Date.now()): Promise<void> {
+/**
+ * スナップショットを保存し、枠を超えた世代を削除する。
+ *
+ * reason で枠が分かれる（mirrorBackupRetention）。試合中の定期スナップショットが
+ * 「試合を保存した直後」「日々の起動時」を押し出さないための区別である。
+ *
+ * @param now テストのための引数。省略すると現在時刻
+ */
+export async function saveSnapshot(reason: SnapshotReason, now: number = Date.now()): Promise<void> {
     try {
         const entries = collectAppData();
         // 空データで既存世代を潰さない
         if (Object.keys(entries).length === 0) return;
 
         const db = await openDb();
+        const metas = await readMetas(db);
+
+        // 起動世代は1日1つまで。1日に何度も開く人の起動世代で保護枠が埋まると、
+        // 古い区切りが押し出される
+        if (reason === 'startup' && hasStartupSnapshotToday(metas, now)) {
+            db.close();
+            return;
+        }
+
         await new Promise<void>((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
-            const snapshot: MirrorSnapshot = { timestamp: now, entries };
+            const snapshot: MirrorSnapshot = { timestamp: now, entries, reason };
             store.put(snapshot);
-            const keysReq = store.getAllKeys();
-            keysReq.onsuccess = () => {
-                const keys = (keysReq.result as number[]).sort((a, b) => b - a);
-                keys.slice(MAX_GENERATIONS).forEach(key => store.delete(key));
-            };
+            for (const expired of selectExpiredSnapshots([...metas, { timestamp: now, reason }])) {
+                store.delete(expired);
+            }
             tx.oncomplete = () => resolve();
             tx.onerror = () => reject(tx.error);
         });
@@ -85,39 +150,52 @@ export async function saveSnapshot(now: number = Date.now()): Promise<void> {
     }
 }
 
-// 最短間隔(30秒)を空けてスナップショット保存（連続保存のI/O負荷対策）
+// 最短間隔(30秒)を空けてスナップショット保存（連続保存のI/O負荷対策）。
+// 試合中の自動保存から呼ばれるので、必ず定期枠に入れる
 export async function maybeSnapshot(): Promise<void> {
     const now = Date.now();
     if (now - lastSnapshotAt < MIN_SNAPSHOT_INTERVAL_MS) return;
-    await saveSnapshot(now);
+    await saveSnapshot('periodic', now);
 }
 
-// 全スナップショットを取得（新しい順）
-export async function getAllSnapshots(): Promise<MirrorSnapshot[]> {
+/**
+ * 世代の一覧を新しい順に返す（entries は読まない）。
+ *
+ * 旧実装は store.getAll() で全世代の entries をメモリへ載せていた。一覧が使うのは
+ * 日時と理由だけで、履歴が 3MB ある利用者なら 10世代で 30MB を読むことになる。
+ */
+export async function getSnapshotMetas(): Promise<SnapshotMeta[]> {
     try {
         const db = await openDb();
-        const snapshots = await new Promise<MirrorSnapshot[]>((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, 'readonly');
-            const req = tx.objectStore(STORE_NAME).getAll();
-            req.onsuccess = () => {
-                const all = req.result as MirrorSnapshot[];
-                all.sort((a, b) => b.timestamp - a.timestamp);
-                resolve(all);
-            };
-            req.onerror = () => reject(req.error);
-        });
+        const metas = await readMetas(db);
         db.close();
-        return snapshots;
+        return metas.sort((a, b) => b.timestamp - a.timestamp);
     } catch (error) {
-        console.warn('mirrorBackup: getAllSnapshots failed:', error);
+        console.warn('mirrorBackup: getSnapshotMetas failed:', error);
         return [];
     }
 }
 
-// 最新スナップショットを取得
+/** 1件だけ読む（復元するときに使う） */
+export async function getSnapshot(timestamp: number): Promise<MirrorSnapshot | null> {
+    try {
+        const db = await openDb();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const snapshot = await requestResult(tx.objectStore(STORE_NAME).get(timestamp));
+        db.close();
+        return (snapshot as MirrorSnapshot | undefined) ?? null;
+    } catch (error) {
+        console.warn('mirrorBackup: getSnapshot failed:', error);
+        return null;
+    }
+}
+
+// 最新スナップショットを取得（RestorePrompt が項目数を出し restoreSnapshot へ渡すので、
+// ここは entries を含む完全な世代を返す）
 export async function getLatestSnapshot(): Promise<MirrorSnapshot | null> {
-    const all = await getAllSnapshots();
-    return all[0] ?? null;
+    const metas = await getSnapshotMetas();
+    const newest = metas[0];
+    return newest ? await getSnapshot(newest.timestamp) : null;
 }
 
 /**
