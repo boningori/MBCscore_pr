@@ -51,7 +51,7 @@ describe('selectExpiredSnapshots', () => {
 
     it('定期が枠を超えたら、古い定期だけが落ちる', () => {
         const metas = [1, 2, 3, 4, 5].map(t => meta(t * 1000, 'periodic'));
-        expect(selectExpiredSnapshots(metas).sort()).toEqual([1000, 2000]);
+        expect(selectExpiredSnapshots(metas).sort((a, b) => a - b)).toEqual([1000, 2000]);
     });
 
     // この設計の主眼。試合中の自動保存が区切りを押し出さないこと
@@ -76,7 +76,7 @@ describe('selectExpiredSnapshots', () => {
 
     it('未設定の旧世代は定期の枠で数える', () => {
         const metas = [1, 2, 3, 4, 5].map(t => meta(t * 1000));
-        expect(selectExpiredSnapshots(metas).sort()).toEqual([1000, 2000]);
+        expect(selectExpiredSnapshots(metas).sort((a, b) => a - b)).toEqual([1000, 2000]);
     });
 
     it('渡した配列の順序に関係なく、新しいものから残す', () => {
@@ -116,7 +116,19 @@ describe('hasStartupSnapshotToday', () => {
     });
 
     // 暦日は現地時刻で切る。UTC で切ると日本では朝9時前が前日になり、
-    // 9時開始・8時台受付のミニバスでは日常的に起きる（localDate.ts の既出の理由）
+    // 9時開始・8時台受付のミニバスでは日常的に起きる（localDate.ts の既出の理由）。
+    //
+    // このテストが実際に検査できるのは「現地時刻がJST（UTC+9）のとき」だけ。
+    // JSTの朝8:30はUTCでは前日23:30なので、formatInputDateがUTCゲッター
+    // （getUTCDate等）を誤って使っていれば、この2つのtimestampは別の暦日と
+    // 判定されhasStartupSnapshotTodayがfalseを返す——それを検出するのが
+    // このテストの役目である。だが現地時刻がUTC（オフセット0）だと、
+    // 現地とUTCの暦日は常に一致し、朝8:30と9:00はどちらのゲッターで読んでも
+    // 同じ11日になるため、実装がUTCゲッターに壊れていてもこのテストは
+    // 常に真のまま——検査したい性質を一切踏まない。
+    // vitest.config.ts で test.env.TZ を 'Asia/Tokyo' に固定しているのは、
+    // このテストを含む日付まわりのテストがCI（既定UTC）でも意味を持つように
+    // するため
     it('現地時刻の朝8時は、同じ日の朝9時と同じ暦日として扱う', () => {
         const metas = [meta(at(2026, 9, 11, 8, 30), 'startup')];
         expect(hasStartupSnapshotToday(metas, at(2026, 9, 11, 9, 0))).toBe(true);

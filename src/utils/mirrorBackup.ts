@@ -52,6 +52,12 @@ function openDb(): Promise<IDBDatabase> {
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
+        // 別タブが古いversionでDBを開いたままだと 'blocked' になる。onupgradeneeded
+        // が呼ばれないため onsuccess も onerror も発火せず、何もしなければ Promise が
+        // 永遠に確定しない（呼び出し元が一覧表示なら「読み込み中…」のまま固まる）。
+        // 今回 v1→v2 に上げたことで初めて踏みうる経路になった。呼び出し元は例外を
+        // 握って console.warn を出し機能を無効化する作りなので、reject してそれに乗る
+        request.onblocked = () => reject(new Error('mirrorBackup: openDb blocked by another tab with an older DB version open'));
     });
 }
 
@@ -74,13 +80,17 @@ async function readMetas(db: IDBDatabase): Promise<SnapshotMeta[]> {
     const store = tx.objectStore(STORE_NAME);
     const index = store.index(REASON_INDEX);
 
-    const allKeysRequest = store.getAllKeys();
-    const byReasonRequests = REASONS.map(reason => [reason, index.getAllKeys(reason)] as const);
+    // requestResult（onsuccess/onerrorの装着）までを同期的に済ませてから await する。
+    // 1本目を await した後のマイクロタスクで2本目以降の request を作ると、
+    // ハンドラが付く前にIDBがイベントを配送してしまう余地がある。「IDBは1タスクに
+    // つきsuccessイベントを1件しか配送しない」という前提に頼らずに済む書き方にする
+    const allKeysPromise = requestResult(store.getAllKeys());
+    const byReasonPromises = REASONS.map(reason => [reason, requestResult(index.getAllKeys(reason))] as const);
 
-    const allKeys = (await requestResult(allKeysRequest)) as number[];
+    const allKeys = (await allKeysPromise) as number[];
     const byReason = new Map<number, SnapshotReason>();
-    for (const [reason, request] of byReasonRequests) {
-        for (const key of (await requestResult(request)) as number[]) {
+    for (const [reason, promise] of byReasonPromises) {
+        for (const key of (await promise) as number[]) {
             byReason.set(key, reason);
         }
     }
@@ -123,6 +133,8 @@ export function hasAppData(): boolean {
  * @param now テストのための引数。省略すると現在時刻
  */
 export async function saveSnapshot(reason: SnapshotReason, now: number = Date.now()): Promise<boolean> {
+    // catch で確実に閉じるため、tryの外から見えるローカル変数に持つ
+    let db: IDBDatabase | undefined;
     try {
         const entries = collectAppData();
         // 空データで既存世代を潰さない。何も書かなかっただけで失敗ではないので true。
@@ -130,7 +142,7 @@ export async function saveSnapshot(reason: SnapshotReason, now: number = Date.no
         // 元々無かったので何もしていない」を区別できなくなる
         if (Object.keys(entries).length === 0) return true;
 
-        const db = await openDb();
+        db = await openDb();
         const metas = await readMetas(db);
 
         // 起動世代は1日1つまで。1日に何度も開く人の起動世代で保護枠が埋まると、
@@ -141,12 +153,24 @@ export async function saveSnapshot(reason: SnapshotReason, now: number = Date.no
             return true;
         }
 
+        // letで宣言したdbをクロージャ内で使うと、TypeScriptの型が
+        // `IDBDatabase | undefined` のまま絞り込まれない（クロージャが将来
+        // 実行される時点でdbが再代入されている可能性を考慮するため）。
+        // constに退避して絞り込みを効かせる
+        const openedDb = db;
         await new Promise<void>((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const tx = openedDb.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
             const snapshot: MirrorSnapshot = { timestamp: now, entries, reason };
             store.put(snapshot);
+            // いま put した世代（now）は消去対象から必ず除く。同一ミリ秒で既存レコードと
+            // 衝突した場合や、端末の時計が未来へずれてから戻った場合（未来timestampの
+            // 定期世代が3件あるだけで、以後の枠が常に満杯になる）、selectExpiredSnapshots
+            // が now 自身を expired に含めうる。それを消すと put→delete が同一
+            // トランザクションで成立し、戻り値は true なのに世代が1件も残らない
+            // （定期バックアップが恒久的に沈黙する）
             for (const expired of selectExpiredSnapshots([...metas, { timestamp: now, reason }])) {
+                if (expired === now) continue;
                 store.delete(expired);
             }
             tx.oncomplete = () => resolve();
@@ -156,6 +180,10 @@ export async function saveSnapshot(reason: SnapshotReason, now: number = Date.no
         lastSnapshotAt = now;
         return true;
     } catch (error) {
+        // versionが固定の間は開けっぱなしでも実害は無いが、次にDB_VERSIONを
+        // 上げたとき、閉じ忘れたタブが残っていると openDb の onblocked を
+        // 自分で踏むことになる。開けていたら例外経路でも必ず閉じる
+        db?.close();
         // IndexedDB不可の環境（プライベートブラウズ等）では機能を無効化。
         // 想定外のバグと区別できるようconsole.warnには残す（本番ビルドでもwarnは除去されない）
         console.warn('mirrorBackup: saveSnapshot failed:', error);
@@ -179,12 +207,15 @@ export async function maybeSnapshot(): Promise<void> {
  * 日時と理由だけで、履歴が 3MB ある利用者なら 10世代で 30MB を読むことになる。
  */
 export async function getSnapshotMetas(): Promise<SnapshotMeta[]> {
+    let db: IDBDatabase | undefined;
     try {
-        const db = await openDb();
+        db = await openDb();
         const metas = await readMetas(db);
         db.close();
         return metas.sort((a, b) => b.timestamp - a.timestamp);
     } catch (error) {
+        // 開けていたら例外経路でも必ず閉じる（saveSnapshotのcatchと同じ理由）
+        db?.close();
         console.warn('mirrorBackup: getSnapshotMetas failed:', error);
         return [];
     }
@@ -192,13 +223,16 @@ export async function getSnapshotMetas(): Promise<SnapshotMeta[]> {
 
 /** 1件だけ読む（復元するときに使う） */
 export async function getSnapshot(timestamp: number): Promise<MirrorSnapshot | null> {
+    let db: IDBDatabase | undefined;
     try {
-        const db = await openDb();
+        db = await openDb();
         const tx = db.transaction(STORE_NAME, 'readonly');
         const snapshot = await requestResult(tx.objectStore(STORE_NAME).get(timestamp));
         db.close();
         return (snapshot as MirrorSnapshot | undefined) ?? null;
     } catch (error) {
+        // 開けていたら例外経路でも必ず閉じる（saveSnapshotのcatchと同じ理由）
+        db?.close();
         console.warn('mirrorBackup: getSnapshot failed:', error);
         return null;
     }

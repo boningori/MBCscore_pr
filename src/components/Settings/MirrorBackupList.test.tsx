@@ -132,13 +132,15 @@ describe('MirrorBackupList', () => {
         expect(screen.queryByRole('alert')).toBeNull();
     });
 
-    it('IndexedDBが読めなくても落ちない', async () => {
-        getSnapshotMetas.mockResolvedValue([]);
-
-        render(<MirrorBackupList onRestored={RELOAD} />);
-
-        expect(await screen.findByText(/自動バックアップはまだありません/)).toBeTruthy();
-    });
+    // レビュー指摘(Minor)。以前ここにあった「IndexedDBが読めなくても落ちない」は
+    // このファイルの getSnapshotMetas がモックに差し替わっているため、実際には
+    // 上の「世代が無ければその旨を出す」と全く同じ入力（空配列）しか与えられて
+    // おらず、失敗経路について何も検査していなかった（このブランチ以前からの
+    // 持ち越し）。getSnapshotMetas は本体側で例外を握って[]を返す作りなので、
+    // このファイルの水準で失敗を模すには全体モック（vi.mock）を崩す必要があり、
+    // 重複コストに見合わないため削除した。実際に例外を握って[]を返す経路は
+    // mirrorBackup.test.ts の 'getSnapshotMetas: IndexedDBが使えない環境では
+    // 空配列を返す' でカバーされている
 });
 
 describe('MirrorBackupList: 世代の理由', () => {
