@@ -40,10 +40,12 @@ function reasonLabel(reason?: SnapshotReason): string {
 export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
     const [metas, setMetas] = useState<SnapshotMeta[] | null>(null);
     const [pending, setPending] = useState<SnapshotMeta | null>(null);
-    // 書き戻しに失敗した（restoreSnapshot が false を返した、または世代を読めなかった）。
+    // 失敗の種類を区別する。'snapshot' は退避（beforeRestore）が書けなかった
+    // ケースで、このときは restoreSnapshot 自体を呼んでいない。'restore' は
+    // 世代を読めなかった・書き戻し（restoreSnapshot）が失敗したケース。
     // 握って onRestored を呼ぶと、データは元のままなのにリロードだけが走り、
     // 利用者は「戻せた」と思い込む。RestorePrompt と同じ扱いにそろえる
-    const [failed, setFailed] = useState(false);
+    const [failed, setFailed] = useState<'snapshot' | 'restore' | null>(null);
 
     useEffect(() => {
         let alive = true;
@@ -71,15 +73,27 @@ export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
 
         const snapshot = await getSnapshot(target.timestamp);
         if (!snapshot) {
-            setFailed(true);
+            setFailed('restore');
             return;
         }
 
-        // 退避が先。あとだと上書き後のデータを写すことになり、戻る道にならない
-        await saveSnapshot('beforeRestore');
+        // 退避が先。あとだと上書き後のデータを写すことになり、戻る道にならない。
+        // saveSnapshot は書けたら true を返す。ここを見ずに進むと、退避が
+        // 取れていない（＝選び間違えたときに戻る道が無い）まま restoreSnapshot が
+        // 現在のデータを上書きしてしまう。IndexedDB の書き込みは容量不足で
+        // 失敗しやすく、退避はまさにその状況でこそ必要になる
+        if (!(await saveSnapshot('beforeRestore'))) {
+            setFailed('snapshot');
+            return;
+        }
 
         if (!restoreSnapshot(snapshot)) {
-            setFailed(true);
+            setFailed('restore');
+            // 退避（beforeRestore）は書けているのに一覧を取り直さないと、
+            // 新しく増えた世代が画面に出ない。成功経路は onRestored() で
+            // 全体リロードされるので問題にならないが、失敗経路はリロードしない
+            // ので、ここで明示的に取り直す（entries は読まない getSnapshotMetas）
+            setMetas(await getSnapshotMetas());
             return;
         }
         onRestored();
@@ -87,7 +101,14 @@ export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
 
     return (
         <>
-            {failed && (
+            {failed === 'snapshot' && (
+                <p className="status-message error" role="alert">
+                    退避を取れなかったので、書き戻しは行っていません。
+                    端末の空き容量が足りない可能性があります。
+                    空きを作ってからもう一度お試しください（データは元のままです）。
+                </p>
+            )}
+            {failed === 'restore' && (
                 <p className="status-message error" role="alert">
                     この時点に戻せませんでした。端末の空き容量が足りない可能性があります。
                     空きを作ってからもう一度お試しください（データは元のままです）。
@@ -105,7 +126,7 @@ export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
                         <button
                             type="button"
                             className="btn btn-secondary btn-small"
-                            onClick={() => { setFailed(false); setPending(meta); }}
+                            onClick={() => { setFailed(null); setPending(meta); }}
                         >
                             この時点に戻す
                         </button>

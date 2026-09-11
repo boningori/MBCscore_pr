@@ -109,25 +109,36 @@ export function hasAppData(): boolean {
 /**
  * スナップショットを保存し、枠を超えた世代を削除する。
  *
+ * 戻り値を返すのは、呼び出し側が「書けたか」で分岐できないと、退避が
+ * 取れていないのに書き戻しへ進む、という取り返しのつかない順序を書けて
+ * しまうため（MirrorBackupList の handleRestore が実際にそうだった。
+ * beforeRestore の退避に失敗しても Promise<void> は例外なく解決するので、
+ * IndexedDB が書けない＝端末の空き容量が乏しい、まさにその状況で
+ * restoreSnapshot が現在のデータを無言で上書きしていた）。createStorage.save
+ * と同じ理由・同じ形。
+ *
  * reason で枠が分かれる（mirrorBackupRetention）。試合中の定期スナップショットが
  * 「試合を保存した直後」「日々の起動時」を押し出さないための区別である。
  *
  * @param now テストのための引数。省略すると現在時刻
  */
-export async function saveSnapshot(reason: SnapshotReason, now: number = Date.now()): Promise<void> {
+export async function saveSnapshot(reason: SnapshotReason, now: number = Date.now()): Promise<boolean> {
     try {
         const entries = collectAppData();
-        // 空データで既存世代を潰さない
-        if (Object.keys(entries).length === 0) return;
+        // 空データで既存世代を潰さない。何も書かなかっただけで失敗ではないので true。
+        // ここを false にすると、呼び出し側は「書き込みに失敗した」と「データが
+        // 元々無かったので何もしていない」を区別できなくなる
+        if (Object.keys(entries).length === 0) return true;
 
         const db = await openDb();
         const metas = await readMetas(db);
 
         // 起動世代は1日1つまで。1日に何度も開く人の起動世代で保護枠が埋まると、
-        // 古い区切りが押し出される
+        // 古い区切りが押し出される。これも意図どおりのスキップであって失敗では
+        // ないので true（理由は上と同じ）
         if (reason === 'startup' && hasStartupSnapshotToday(metas, now)) {
             db.close();
-            return;
+            return true;
         }
 
         await new Promise<void>((resolve, reject) => {
@@ -143,15 +154,18 @@ export async function saveSnapshot(reason: SnapshotReason, now: number = Date.no
         });
         db.close();
         lastSnapshotAt = now;
+        return true;
     } catch (error) {
         // IndexedDB不可の環境（プライベートブラウズ等）では機能を無効化。
         // 想定外のバグと区別できるようconsole.warnには残す（本番ビルドでもwarnは除去されない）
         console.warn('mirrorBackup: saveSnapshot failed:', error);
+        return false;
     }
 }
 
 // 最短間隔(30秒)を空けてスナップショット保存（連続保存のI/O負荷対策）。
-// 試合中の自動保存から呼ばれるので、必ず定期枠に入れる
+// 試合中の自動保存から呼ばれるので、必ず定期枠に入れる。
+// 呼び出し側（useGameAutoSave）は成否を見ないので、戻り値は返さずvoidのままにする
 export async function maybeSnapshot(): Promise<void> {
     const now = Date.now();
     if (now - lastSnapshotAt < MIN_SNAPSHOT_INTERVAL_MS) return;

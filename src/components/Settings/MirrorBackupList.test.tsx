@@ -32,7 +32,8 @@ beforeEach(() => {
     saveSnapshot.mockReset();
     // 本物は「全部書けたら true」を返す（mirrorBackup.restoreSnapshot）
     restoreSnapshot.mockReturnValue(true);
-    saveSnapshot.mockResolvedValue(undefined);
+    // saveSnapshot も「書けたら true」（mirrorBackup.saveSnapshot）
+    saveSnapshot.mockResolvedValue(true);
     RELOAD.mockReset();
 });
 
@@ -210,5 +211,49 @@ describe('MirrorBackupList: 復元の前に退避する', () => {
         await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
         expect(restoreSnapshot).not.toHaveBeenCalled();
         expect(RELOAD).not.toHaveBeenCalled();
+    });
+
+    // レビュー指摘（Important）: saveSnapshotがPromise<void>だった頃は、退避の
+    // 書き込みが失敗してもawaitは成功扱いで通過し、restoreSnapshotがそのまま
+    // 現在のデータを上書きしていた。saveSnapshotの戻り値を見て、退避が取れて
+    // いなければ書き戻しに進まないことを固定する
+    it('退避（beforeRestore）の保存に失敗したら、書き戻さず失敗を伝える', async () => {
+        saveSnapshot.mockResolvedValue(false);
+
+        render(<MirrorBackupList onRestored={RELOAD} />);
+        fireEvent.click(await screen.findByRole('button', { name: 'この時点に戻す' }));
+        fireEvent.click(await screen.findByRole('button', { name: '戻す' }));
+
+        await waitFor(() => expect(saveSnapshot).toHaveBeenCalledWith('beforeRestore'));
+        expect(restoreSnapshot).not.toHaveBeenCalled();
+        expect(RELOAD).not.toHaveBeenCalled();
+        // 書き戻し失敗（restoreSnapshotがfalse）と文面を出し分ける。
+        // 「退避が取れなかったので書き戻していない」ことが伝わる内容にする
+        expect(screen.getByRole('alert').textContent).toContain('退避を取れなかった');
+    });
+
+    // レビュー指摘（Minor）: restoreSnapshotが失敗する経路では、直前の
+    // saveSnapshot('beforeRestore')は成功してIndexedDBに新しい世代が増えている
+    // のに、一覧のmetas stateを取り直さないと画面に出ない。成功経路は
+    // onRestored()で全体リロードされるので問題にならないが、失敗経路だけ
+    // 一覧が実態とずれる
+    it('書き戻し（restoreSnapshot）に失敗したら、一覧を取り直す', async () => {
+        const snap = snapshotOf(new Date('2026-08-06T10:00:00').getTime(), ['minibasket-game-history'], 'gameEnd');
+        const beforeRestoreMeta = metaOf(new Date('2026-08-06T10:05:00').getTime(), 'beforeRestore');
+        getSnapshotMetas
+            .mockResolvedValueOnce([metaOf(snap.timestamp, snap.reason)])
+            .mockResolvedValueOnce([beforeRestoreMeta, metaOf(snap.timestamp, snap.reason)]);
+        getSnapshot.mockResolvedValue(snap);
+        restoreSnapshot.mockReturnValue(false);
+
+        render(<MirrorBackupList onRestored={RELOAD} />);
+        fireEvent.click(await screen.findByRole('button', { name: 'この時点に戻す' }));
+        fireEvent.click(await screen.findByRole('button', { name: '戻す' }));
+
+        await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+        // 退避で増えた世代（復元を実行する直前）が一覧に出る＝取り直されている
+        const items = await screen.findAllByRole('listitem');
+        expect(items.some(item => item.textContent?.includes('復元を実行する直前'))).toBe(true);
+        expect(getSnapshotMetas).toHaveBeenCalledTimes(2);
     });
 });

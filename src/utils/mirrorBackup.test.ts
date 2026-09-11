@@ -144,6 +144,48 @@ describe('mirrorBackup', () => {
         expect(localStorage.getItem('minibasket-my-teams')).toBe('["restored"]');
     });
 
+    // レビュー指摘: saveSnapshot は Promise<void> だったため、IndexedDB書き込みが
+    // 失敗してもawaitは成功扱いで通過していた（beforeRestoreの退避がまさにこれで、
+    // 退避が取れていないのに書き戻しが走ってしまう）。戻り値で書けたかを判別できる
+    // ようにする
+    it('saveSnapshot: 書き込めたら true を返す', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '["v1"]');
+        await expect(m.saveSnapshot('periodic', 1000)).resolves.toBe(true);
+    });
+
+    it('saveSnapshot: IndexedDBが使えない環境では false を返す', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '["v1"]');
+        // openDb内部のindexedDB.openが例外を投げる状況（プライベートブラウズ等）を再現
+        const openSpy = vi.spyOn(indexedDB, 'open').mockImplementation(() => {
+            throw new Error('IndexedDB unavailable');
+        });
+        try {
+            await expect(m.saveSnapshot('periodic', 1000)).resolves.toBe(false);
+        } finally {
+            openSpy.mockRestore();
+        }
+    });
+
+    // 「空データなので何もしない」「起動世代は今日すでにある」の2つの早期returnは、
+    // 書き込みの失敗ではなく意図どおりの不実行なので true を返す。ここを false に
+    // すると、呼び出し側（handleRestore）が正常な不実行を書き込み失敗と誤認する
+    it('saveSnapshot: 空データによる早期returnは true を返す（失敗ではない）', async () => {
+        const m = await freshModule();
+        // localStorageは空のまま
+        await expect(m.saveSnapshot('periodic', 1000)).resolves.toBe(true);
+    });
+
+    it('saveSnapshot: 起動世代が今日すでにある早期returnは true を返す（失敗ではない）', async () => {
+        const m = await freshModule();
+        localStorage.setItem('minibasket-my-teams', '["v1"]');
+        const morning = new Date(2026, 8, 11, 8, 30).getTime();
+        const evening = new Date(2026, 8, 11, 20, 0).getTime();
+        await expect(m.saveSnapshot('startup', morning)).resolves.toBe(true);
+        await expect(m.saveSnapshot('startup', evening)).resolves.toBe(true);
+    });
+
     it('maybeSnapshot: 30秒以内の連続呼び出しはスキップされる', async () => {
         const m = await freshModule();
         // Dateのみ偽装する（setTimeoutまで偽装するとfake-indexeddbの内部処理が止まる）
