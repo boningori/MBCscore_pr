@@ -10,13 +10,18 @@
 // 型は src と共有しているので、Team/Player に項目が増えればここが型エラーになる。
 
 import type { Page } from '@playwright/test';
-import type { FoulEntry, FoulType, Player, ScoreEntry, ScoreType, Team } from '../../src/types/game';
-import { createInitialGameInfo, createPlayer, createTeam } from '../../src/types/game';
+import type { FoulEntry, FoulType, Game, Player, ScoreEntry, ScoreType, Team } from '../../src/types/game';
+import { createInitialGame, createInitialGameInfo, createPlayer, createTeam } from '../../src/types/game';
 import type { GameRecord } from '../../src/utils/gameHistoryStorage';
 import type { SavedTeam } from '../../src/utils/teamStorage';
 
 const HISTORY_KEY = 'minibasket-game-history';
 const MY_TEAMS_KEY = 'minibasket-my-teams';
+const SESSION_KEY = 'minibasket-game-session';
+
+/** 初回読み込みのときだけ注入するための目印。
+ *  アプリが使う 'mbc-restore-dismissed' / 'voicememo-session' と衝突しない名前にする */
+const SEEDED_FLAG = 'e2e-seeded';
 
 /** マイチームのid。記録側の teamA と結び付けて、選手スタッツ分析からも辿れる形にする */
 const MY_TEAM_ID = 'my-team-e2e';
@@ -210,19 +215,83 @@ function toSavedTeam(team: Team): SavedTeam {
 }
 
 /**
+ * localStorage へ注入する。
+ *
+ * addInitScript は「毎回のページ読み込み前」に走る。リロードを挟む検証
+ * （自動保存・ミラー復元）では、記録した内容や消したはずのデータが元の
+ * フィクスチャで上書きされてしまう。once を立てると sessionStorage の目印で
+ * 初回だけに絞る。sessionStorage はタブ内のリロードをまたいで残る。
+ */
+async function inject(page: Page, entries: [string, string][], once: boolean): Promise<void> {
+    await page.addInitScript(
+        (payload: { entries: [string, string][]; once: boolean; flag: string }) => {
+            if (payload.once) {
+                if (window.sessionStorage.getItem(payload.flag)) return;
+                window.sessionStorage.setItem(payload.flag, '1');
+            }
+            for (const [key, value] of payload.entries) window.localStorage.setItem(key, value);
+        },
+        { entries, once, flag: SEEDED_FLAG },
+    );
+}
+
+/** 進行中セッションのフィクスチャで使う teamA の選手名（テストが選手カードを引くのに使う） */
+export const IN_PROGRESS_PLAYER_NAME = '田中 陽翔';
+
+/**
+ * 第1Q進行中・両チーム5人がコート上の中断セッションを仕込む（page.goto の前に呼ぶ）。
+ *
+ * マイチームも同時に入れる。ホームは登録マイチームが1件も無いとメニューを出さず
+ * 登録案内だけを表示するため（Home.tsx の hasMyTeams）、セッションだけでは
+ * 「試合を再開」に辿り着けない。
+ *
+ * 注入は初回だけ。記録したあとリロードする検証で使うので、毎回入れ直すと
+ * 記録が消えて必ず落ちる。
+ */
+export async function seedInProgressGame(page: Page): Promise<void> {
+    const teamA = buildTeam('teamA', TEAM_A_NAME, '佐藤 太郎', buildPlayers('a', [
+        [4, IN_PROGRESS_PLAYER_NAME], [5, '佐藤 蓮'], [6, '鈴木 大和'], [7, '高橋 湊'], [8, '伊藤 陽菜'],
+    ]), 'white');
+    const teamB = buildTeam('teamB', TEAM_B_NAME, '鈴木 花子', buildPlayers('b', [
+        [4, '渡辺 悠真'], [5, '山本 結愛'], [6, '中村 律'], [7, '小林 芽依'], [8, '加藤 樹'],
+    ]), 'blue');
+
+    // 第1Qだけ進行中にする（buildPlayers は全Qを 'starter' にするので上書きする）
+    for (const team of [teamA, teamB]) {
+        for (const player of team.players) {
+            player.isOnCourt = true;
+            player.quartersPlayed = ['starter', false, false, false];
+        }
+    }
+
+    const game: Game = {
+        ...createInitialGame(),
+        teamA,
+        teamB,
+        phase: 'playing',
+        currentQuarter: 1,
+    };
+
+    await inject(page, [
+        [SESSION_KEY, JSON.stringify({
+            game,
+            gameName: GAME_NAME,
+            date: '2026-08-15',
+            savedAt: GAME_DATE,
+        })],
+        [MY_TEAMS_KEY, JSON.stringify([toSavedTeam(teamA)])],
+    ], true);
+}
+
+/**
  * 履歴に試合を1件持つ利用者の状態でアプリを開けるようにする（page.goto の前に呼ぶ）。
  *
  * localStorage は addInitScript で毎回のページ読み込み前に入れる。goto の後に
  * 書くと、Reactが既に空の状態で描き終えている
  */
 export async function seedRecordedGame(page: Page, record: GameRecord = FINISHED_GAME): Promise<void> {
-    await page.addInitScript(
-        (entries: [string, string][]) => {
-            for (const [key, value] of entries) window.localStorage.setItem(key, value);
-        },
-        [
-            [HISTORY_KEY, JSON.stringify([record])],
-            [MY_TEAMS_KEY, JSON.stringify([toSavedTeam(record.teamA)])],
-        ] as [string, string][],
-    );
+    await inject(page, [
+        [HISTORY_KEY, JSON.stringify([record])],
+        [MY_TEAMS_KEY, JSON.stringify([toSavedTeam(record.teamA)])],
+    ], false);
 }
