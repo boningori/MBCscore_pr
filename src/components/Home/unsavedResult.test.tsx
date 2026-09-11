@@ -36,6 +36,7 @@ function renderHome(onResumeGame = vi.fn()) {
             onOpenSettings={vi.fn()}
             isFullScreen={false}
             onToggleFullScreen={vi.fn()}
+            isFullScreenSupported
         />,
     );
     return onResumeGame;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { GameInfo } from '../../types/game';
-import { Modal } from '../Modal';
+import { ConfirmModal, Modal } from '../Modal';
 import { formatClockTime } from '../../utils/localDate';
 import './GameInfoModal.css';
 
@@ -19,25 +19,58 @@ export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onCl
     // 本モーダルはopenのたびに条件付きマウントされるため、マウント時の遅延初期化で初回同期を行う
     const [formData, setFormData] = useState<GameInfo>(() => ({ ...gameInfo }));
     const [endTimeStr, setEndTimeStr] = useState(() => formatEndTimeStr(endTime));
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
     const handleChange = (field: keyof GameInfo, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
+    /**
+     * まだ保存していない書きかけがあるか。
+     *
+     * 入力は10項目すべてローカルstateに溜まり、「保存」でしか外へ出ない。
+     * それなのに閉じる側は素通しで、オーバーレイのタップ・Escape・端末の戻る
+     * 操作のどれでも、打ち込んだ全部が無確認で消えていた。指で10項目打つ画面で
+     * これは重い。アプリ設定（handleRequestClose）と同じ扱いにそろえる。
+     *
+     * 元の値へ戻したときは書きかけ扱いしない。触っただけで確認が出ると、
+     * 閉じる操作が毎回1手増えるだけになる。
+     */
+    const isDirty =
+        (Object.keys(formData) as (keyof GameInfo)[]).some(key => formData[key] !== gameInfo[key]) ||
+        endTimeStr !== formatEndTimeStr(endTime);
+
+    const handleRequestClose = () => {
+        if (isDirty) {
+            setShowDiscardConfirm(true);
+            return;
+        }
+        onClose();
+    };
+
     const handleSave = () => {
         onSave(formData);
-        if (onEndTimeChange && endTimeStr) {
-            const [hours, minutes] = endTimeStr.split(':').map(Number);
-            const base = endTime ? new Date(endTime) : new Date();
-            base.setHours(hours, minutes, 0, 0);
-            onEndTimeChange(base);
+        if (onEndTimeChange) {
+            if (endTimeStr) {
+                const [hours, minutes] = endTimeStr.split(':').map(Number);
+                const base = endTime ? new Date(endTime) : new Date();
+                base.setHours(hours, minutes, 0, 0);
+                onEndTimeChange(base);
+            } else if (endTime) {
+                // 空欄にして保存＝「消す」。falsy をまとめて弾いていたため、
+                // 受け手（SET_END_TIME / updateGameRecordEndTime）は null を
+                // 消去として扱えるのに、そこへ届く経路が無かった。
+                // 打ち間違えた終了時間が公式様式に残り続け、訂正手段が無い。
+                // もともと空欄（endTime が無い）なら消す指示も要らない
+                onEndTimeChange(null);
+            }
         }
         onClose();
     };
 
     return (
         <Modal
-            onClose={onClose}
+            onClose={handleRequestClose}
             overlayClassName="game-info-modal-overlay"
             contentClassName="game-info-modal"
             labelledBy="game-info-modal-title"
@@ -177,13 +210,26 @@ export function GameInfoModal({ gameInfo, endTime, onSave, onEndTimeChange, onCl
                 </div>
 
                 <div className="modal-actions">
-                    <button className="btn btn-secondary" onClick={onClose}>
+                    <button className="btn btn-secondary" onClick={handleRequestClose}>
                         キャンセル
                     </button>
                     <button className="btn btn-primary" onClick={handleSave}>
                         保存
                     </button>
                 </div>
+
+                {/* 確認はこのモーダルの中に描く。スタックの上に載るので、
+                    端末の戻る操作ではこちらが先に閉じる（modalStack のLIFO） */}
+                {showDiscardConfirm && (
+                    <ConfirmModal
+                        title="確認"
+                        message="入力した試合情報はまだ保存されていません。破棄して閉じますか？"
+                        confirmLabel="破棄して閉じる"
+                        cancelLabel="編集に戻る"
+                        onConfirm={() => { setShowDiscardConfirm(false); onClose(); }}
+                        onCancel={() => setShowDiscardConfirm(false)}
+                    />
+                )}
         </Modal>
     );
 }

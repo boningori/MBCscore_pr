@@ -18,10 +18,10 @@ export function VoiceMemoButton({ isRecording, isOffline, onStart, onStop }: Voi
     // 録音中は「録音中」を最優先で伝える。オフライン文言に差し替わると、
     // 実際にはまだ録音中なのに「使えません」と読み上げてしまう
     const label = isRecording
-        ? '音声メモを録音中。指を離すと文字起こしされます'
+        ? '音声メモを録音中。指を離す、またはキーボードでもう一度押すと文字起こしされます'
         : isOffline
             ? '音声メモ（オンラインのときに使えます）'
-            : '音声メモ。押している間だけ録音します';
+            : '音声メモ。押している間だけ録音します。キーボードでは押すたびに開始と停止が切り替わります';
 
     // 待機中でオフラインのときだけ「使えない」。録音中はネットワーク状態に
     // 関わらず操作可能にしておく（disabledにすると指を離すイベントごと
@@ -51,6 +51,22 @@ export function VoiceMemoButton({ isRecording, isOffline, onStart, onStop }: Voi
         onStop();
     };
 
+    // キーボード・スイッチ操作の受け口。
+    //
+    // 押しっぱなしは pointerdown/up でしか成立しないので、<button> に Space/Enter を
+    // 送る利用者はこの機能を一切使えなかった（得点ボタンにはタップで開く
+    // セレクターという代替があるのに、ここはゼロだった）。
+    // キーボードのときだけトグルにして、ポインタの手触りは変えない。
+    // 止め忘れても useVoiceMemo の MAX_DURATION_MS が60秒で打ち切る。
+    //
+    // キーボード由来の click は detail === 0。ポインタ由来は 1 以上で、そちらは
+    // 上の押しっぱなし経路が処理済みなので、拾うと指を離した直後に録音が再開する
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (e.detail !== 0) return;
+        if (isRecording) onStop();
+        else onStart();
+    };
+
     return (
         <button
             type="button"
@@ -58,6 +74,7 @@ export function VoiceMemoButton({ isRecording, isOffline, onStart, onStop }: Voi
             aria-label={label}
             aria-pressed={isRecording}
             disabled={idleOffline}
+            onClick={handleClick}
             onPointerDown={handleDown}
             onPointerUp={handleUp}
             onPointerLeave={handleUp}

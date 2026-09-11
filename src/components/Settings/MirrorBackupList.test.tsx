@@ -23,6 +23,10 @@ const RELOAD = vi.fn();
 beforeEach(() => {
     getAllSnapshots.mockReset();
     restoreSnapshot.mockReset();
+    // 本物は「全部書けたら true」を返す（mirrorBackup.restoreSnapshot）。
+    // 既定を true にしておかないと、戻り値を見るようになった実装に対して
+    // 全テストが「失敗した」経路を通ってしまう
+    restoreSnapshot.mockReturnValue(true);
     RELOAD.mockReset();
 });
 
@@ -80,6 +84,42 @@ describe('MirrorBackupList', () => {
 
         expect(restoreSnapshot).not.toHaveBeenCalled();
         expect(RELOAD).not.toHaveBeenCalled();
+    });
+
+    // restoreSnapshot は「全部書けたら true」を返し、失敗したら書けた分を巻き戻す。
+    // 戻り値を捨てると、データが元のままなのに「戻した」としてリロードまで走り、
+    // 利用者は復元できたと思い込む。復元プロンプト（RestorePrompt）は同じ契約を
+    // 守っているので、こちらも揃える
+    it('書き戻しに失敗したら、リロードせずに失敗を伝える', async () => {
+        const snap = snapshot(new Date('2026-08-06T10:00:00').getTime(), ['minibasket-game-history']);
+        getAllSnapshots.mockResolvedValue([snap]);
+        restoreSnapshot.mockReturnValue(false);
+
+        render(<MirrorBackupList onRestored={RELOAD} />);
+        fireEvent.click(await screen.findByRole('button', { name: 'この時点に戻す' }));
+        fireEvent.click(screen.getByRole('button', { name: '戻す' }));
+
+        await waitFor(() => expect(restoreSnapshot).toHaveBeenCalledWith(snap));
+        expect(RELOAD).not.toHaveBeenCalled();
+        expect(screen.getByRole('alert').textContent).toContain('戻せませんでした');
+    });
+
+    it('失敗の案内は、次の書き戻しを始めたら消える', async () => {
+        const snap = snapshot(new Date('2026-08-06T10:00:00').getTime(), ['minibasket-game-history']);
+        getAllSnapshots.mockResolvedValue([snap]);
+        restoreSnapshot.mockReturnValue(false);
+
+        render(<MirrorBackupList onRestored={RELOAD} />);
+        fireEvent.click(await screen.findByRole('button', { name: 'この時点に戻す' }));
+        fireEvent.click(screen.getByRole('button', { name: '戻す' }));
+        await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+
+        restoreSnapshot.mockReturnValue(true);
+        fireEvent.click(screen.getByRole('button', { name: 'この時点に戻す' }));
+        fireEvent.click(screen.getByRole('button', { name: '戻す' }));
+
+        await waitFor(() => expect(RELOAD).toHaveBeenCalledTimes(1));
+        expect(screen.queryByRole('alert')).toBeNull();
     });
 
     it('IndexedDBが読めなくても落ちない', async () => {

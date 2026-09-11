@@ -15,6 +15,7 @@ function renderHome() {
             onOpenSettings={vi.fn()}
             isFullScreen={false}
             onToggleFullScreen={vi.fn()}
+            isFullScreenSupported
         />,
     );
 }

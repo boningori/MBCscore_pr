@@ -11,6 +11,7 @@ import { parsePlayerNumber, isValidPlayerNumber } from './playerNumber';
 import type { createWorker } from 'tesseract.js';
 import { TESSERACT_PATHS } from './tesseractAssets';
 import { GEMINI_API_BASE, FALLBACK_MODELS, getStoredApiKey } from './geminiClient';
+import { isAiOcrEnabled } from './appSettings';
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -178,6 +179,17 @@ function normalizeGeminiNumber(value: unknown): number | null {
 }
 
 /**
+ * モデルを変えても結果が変わらない失敗。
+ *
+ * FALLBACK_MODELS を順に試すのは「そのモデルが無い(404)」場合に意味がある。
+ * キー不正・権限・課金・レート制限、そしてエラー本文がJSONですらない
+ * インフラ層の障害は、どのモデルへ送っても同じ結果になる。素の Error で
+ * 投げるとループ自身の catch が拾い直してしまうため、区別できる型にする。
+ * 同じ扱いは audioTranscribe.ts が先に入れている。
+ */
+class GeminiFatalError extends Error { }
+
+/**
  * Gemini APIによるOCR処理
  */
 async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
@@ -235,8 +247,17 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData.error?.message || response.statusText;
+                // エラー本文がJSONとは限らない（プロキシの502やキャプティブポータルは
+                // HTMLを返す）。ここで素のまま投げると下の catch に落ちて「通信そのものが
+                // 失敗した」ときと区別が付かず、残りのモデルへ画像を送り直してしまう
+                let errorMessage: string = response.statusText || `HTTPエラー ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData?.error?.message || errorMessage;
+                } catch {
+                    // 本文がJSONでない＝インフラ層の障害。モデルを変えても結果は同じ
+                    throw new GeminiFatalError(errorMessage);
+                }
 
                 // 404なら次のモデルへ
                 if (response.status === 404 || errorMessage.includes('not found')) {
@@ -245,7 +266,10 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                     continue;
                 }
 
-                throw new Error(errorMessage);
+                // キー不正・権限・課金・レート制限は全モデルで同じ結果になる。
+                // 素の Error だと下の catch が拾い直して、最大8MBの画像を
+                // base64 のまま5回アップロードしてから諦めることになる
+                throw new GeminiFatalError(errorMessage);
             }
 
             const data = await response.json();
@@ -298,6 +322,10 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
         } catch (error) {
             console.error(`Gemini API Error (${model}):`, error);
+            // モデルを変えても結果が変わらない失敗は、ここで打ち切る。
+            // recognizePlayerList の catch が受けて Tesseract へ回すので、
+            // 写真読込そのものが使えなくなるわけではない（着くまでが速くなるだけ）
+            if (error instanceof GeminiFatalError) throw error;
             lastError = error instanceof Error ? error : new Error('Unknown error');
         }
     }
@@ -309,11 +337,14 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
  * 画像から選手リストを認識（ハイブリッド版）
  */
 export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResult> {
-    const apiKey = getStoredApiKey();
+    // 送ってよいかは設定で決める。APIキーは音声メモと共用なので、キーがあることを
+    // 「名簿の写真を外へ出してよい」と読み替えてはいけない（appSettings の aiOcrEnabled）。
+    // OFFのときは Tesseract（端末内）だけで読むので、写真読込そのものは使える
+    const apiKey = isAiOcrEnabled() ? getStoredApiKey() : '';
 
     let fallbackReason = '';
 
-    // APIキーがあればGeminiを優先試行。
+    // AI経路が有効ならGeminiを優先試行。
     // 大きすぎる写真は送らずTesseractへ回す（GEMINI_MAX_IMAGE_BYTES）
     if (apiKey && imageFile.size > GEMINI_MAX_IMAGE_BYTES) {
         fallbackReason = `画像が大きいため（${Math.round(imageFile.size / 1024 / 1024)}MB）AIへは送らず標準OCRで読み取りました`;

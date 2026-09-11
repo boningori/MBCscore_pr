@@ -13,6 +13,32 @@ interface VendorPrefixedDocument extends Document {
   webkitExitFullscreen?: () => Promise<void>;
   msExitFullscreen?: () => Promise<void>;
   mozCancelFullScreen?: () => Promise<void>;
+  webkitFullscreenEnabled?: boolean;
+  mozFullScreenEnabled?: boolean;
+  msFullscreenEnabled?: boolean;
+}
+
+/**
+ * この端末・この文脈で全画面表示が使えるか。
+ *
+ * 使えない場合、toggleFullScreen は分岐をどれも満たさず、例外も出さずに
+ * 素通りする——押しても無反応・無通知のボタンになる。iOS / iPadOS の Safari は
+ * 任意要素の Fullscreen API を持たないので、このアプリの主対象でそれが起きる。
+ * 呼び出し側がボタンを出すかどうか決められるように返す。
+ *
+ * `*Enabled` は「APIがある」だけでなく「いま許可されている」まで見る。
+ * 埋め込み（allow-fullscreen の無い iframe）では API があっても拒否されるので、
+ * どちらも出さない側に倒す。
+ */
+function detectFullscreenSupport(): boolean {
+  if (typeof document === 'undefined') return false;
+  const doc = document as VendorPrefixedDocument;
+  return Boolean(
+    doc.fullscreenEnabled
+    || doc.webkitFullscreenEnabled
+    || doc.mozFullScreenEnabled
+    || doc.msFullscreenEnabled,
+  );
 }
 
 interface VendorPrefixedElement extends HTMLElement {
@@ -23,11 +49,15 @@ interface VendorPrefixedElement extends HTMLElement {
 
 export interface UseFullscreenResult {
   isFullScreen: boolean;
+  /** 全画面が使える端末か。false のとき呼び出し側はボタンを出さないこと */
+  isSupported: boolean;
   toggleFullScreen: () => Promise<void>;
 }
 
 export function useFullscreen(): UseFullscreenResult {
   const [isFullScreen, setIsFullScreen] = useState(false);
+  // 判定は端末の性質で、セッション中に変わらない。マウント時に一度だけ見る
+  const [isSupported] = useState(detectFullscreenSupport);
 
   const toggleFullScreen = async () => {
     try {
@@ -84,5 +114,5 @@ export function useFullscreen(): UseFullscreenResult {
     };
   }, []);
 
-  return { isFullScreen, toggleFullScreen };
+  return { isFullScreen, isSupported, toggleFullScreen };
 }

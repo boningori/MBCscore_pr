@@ -509,6 +509,17 @@ export function downloadCSV(csvContent: string, filename: string): void {
 }
 
 /**
+ * ObjectURLを解放するまでの待ち。
+ *
+ * revoke されたURLはその場で無効になるので、click() と同じ同期区間で解放すると、
+ * ブラウザが実際にBlobを読み始める前に取り上げることになる。全体バックアップは
+ * 数MBになることがあり、そこが一番効くのに、a[download] は成否を返さないので
+ * 失敗しても誰も気づけない（shareBackup がダウンロード経路で無条件に true を
+ * 返しているのと同じ穴）。次のタスクまで待てば、クリックの処理は始まっている。
+ */
+const OBJECT_URL_RELEASE_DELAY_MS = 1000;
+
+/**
  * Blobをファイルとしてダウンロード
  */
 function downloadBlob(blob: Blob, filename: string): void {
@@ -518,8 +529,10 @@ function downloadBlob(blob: Blob, filename: string): void {
     a.download = filename;
     document.body.appendChild(a);
     a.click();
+    // アンカーはその場で片付けてよい（クリックはもう配送済み）。
+    // 解放だけ遅らせる（OBJECT_URL_RELEASE_DELAY_MS）
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), OBJECT_URL_RELEASE_DELAY_MS);
 }
 
 /**
