@@ -11,6 +11,7 @@ import { parsePlayerNumber, isValidPlayerNumber } from './playerNumber';
 import type { createWorker } from 'tesseract.js';
 import { TESSERACT_PATHS } from './tesseractAssets';
 import { GEMINI_API_BASE, FALLBACK_MODELS, getStoredApiKey } from './geminiClient';
+import { isAiOcrEnabled } from './appSettings';
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -336,11 +337,14 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
  * 画像から選手リストを認識（ハイブリッド版）
  */
 export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResult> {
-    const apiKey = getStoredApiKey();
+    // 送ってよいかは設定で決める。APIキーは音声メモと共用なので、キーがあることを
+    // 「名簿の写真を外へ出してよい」と読み替えてはいけない（appSettings の aiOcrEnabled）。
+    // OFFのときは Tesseract（端末内）だけで読むので、写真読込そのものは使える
+    const apiKey = isAiOcrEnabled() ? getStoredApiKey() : '';
 
     let fallbackReason = '';
 
-    // APIキーがあればGeminiを優先試行。
+    // AI経路が有効ならGeminiを優先試行。
     // 大きすぎる写真は送らずTesseractへ回す（GEMINI_MAX_IMAGE_BYTES）
     if (apiKey && imageFile.size > GEMINI_MAX_IMAGE_BYTES) {
         fallbackReason = `画像が大きいため（${Math.round(imageFile.size / 1024 / 1024)}MB）AIへは送らず標準OCRで読み取りました`;

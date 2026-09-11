@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
     getDefaultGameMode,
+    grantAiOcrConsent,
     grantVoiceMemoConsent,
+    hasAiOcrConsent,
+    hasStoredAiOcr,
+    isAiOcrEnabled,
+    setAiOcrEnabled,
     hasStoredGameMode,
     hasVoiceMemoConsent,
     isVoiceMemoEnabled,
@@ -191,6 +196,77 @@ describe('appSettings: 音声メモ', () => {
     });
 });
 
+// 写真読込のAI経路（Gemini）は、名簿の撮影画像——子どもの氏名とJBA登録番号が
+// 写ったもの——をGoogleへ送る。音声メモより機微が高いのに、これまでは
+// 「APIキーがあるかどうか」だけで有効になり、同意を尋ねる場所が無かった。
+// そのため音声メモのためにキーを入れた利用者は、写真読込まで黙ってクラウド経路に
+// 切り替わっていた。音声メモと同じ形（ON/OFF＋初回の同意）にそろえる。
+describe('appSettings: AI写真読込', () => {
+    it('既定はOFF（画像の外部送信は明示的な選択の上でのみ行う）', () => {
+        expect(isAiOcrEnabled()).toBe(false);
+    });
+
+    it('既定では同意していない', () => {
+        expect(hasAiOcrConsent()).toBe(false);
+    });
+
+    it('ONにすると有効になる', () => {
+        setAiOcrEnabled(true);
+        expect(isAiOcrEnabled()).toBe(true);
+    });
+
+    it('OFFに戻せる', () => {
+        setAiOcrEnabled(true);
+        setAiOcrEnabled(false);
+        expect(isAiOcrEnabled()).toBe(false);
+    });
+
+    it('同意は一度与えると残る', () => {
+        grantAiOcrConsent();
+        expect(hasAiOcrConsent()).toBe(true);
+    });
+
+    it('OFFに戻しても同意は取り消されない', () => {
+        grantAiOcrConsent();
+        setAiOcrEnabled(true);
+        setAiOcrEnabled(false);
+        expect(hasAiOcrConsent()).toBe(true);
+    });
+
+    // 「一度も選んでいない」と「OFFを選んだ」の区別が要る。
+    // この版より前からAPIキーを使っていた利用者は、キー設定の説明を読んだうえで
+    // AI経路を使っていたので、更新で黙って標準OCRへ落とすのは機能の後退になる。
+    // 移行（aiOcrMigration）がその判別にここを使う
+    it('一度も選んでいなければ「未保存」', () => {
+        expect(hasStoredAiOcr()).toBe(false);
+    });
+
+    it('OFFを明示的に選んだら「保存済み」', () => {
+        setAiOcrEnabled(false);
+        expect(hasStoredAiOcr()).toBe(true);
+    });
+
+    it('既定モードの設定を壊さない', () => {
+        saveDefaultGameMode('simple');
+        setAiOcrEnabled(true);
+        expect(getDefaultGameMode()).toBe('simple');
+    });
+
+    it('AI写真読込をONにしても既定モードは「未保存」のままか', () => {
+        expect(hasStoredGameMode()).toBe(false);
+        setAiOcrEnabled(true);
+        expect(hasStoredGameMode()).toBe(false);
+    });
+
+    it('音声メモの設定とは独立している', () => {
+        setAiOcrEnabled(true);
+        expect(isVoiceMemoEnabled()).toBe(false);
+        setVoiceMemoEnabled(true);
+        setAiOcrEnabled(false);
+        expect(isVoiceMemoEnabled()).toBe(true);
+    });
+});
+
 // AppContentは得点・スタッツ・ファウルのたびに再描画されるため、useVoiceMemoが
 // isVoiceMemoEnabled()を毎回呼ぶとその都度localStorageを読んでしまう。
 // 変更があったときだけ購読者へ知らせることで、hooks側は変更時にだけ読み直せばよくなる
@@ -247,6 +323,8 @@ describe('アプリ設定: 壊れた保存データ', () => {
             defaultGameMode: 'full',
             voiceMemoEnabled: false,
             voiceMemoConsented: false,
+            aiOcrEnabled: false,
+            aiOcrConsented: false,
         });
     });
 

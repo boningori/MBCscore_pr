@@ -12,12 +12,25 @@ export interface AppSettings {
     voiceMemoEnabled: boolean;
     /** 音声の外部送信について一度でも同意したか。OFFに戻しても取り消さない */
     voiceMemoConsented: boolean;
+    /**
+     * 写真読込でAI（Gemini）を使うか。撮影画像を端末外へ送るため既定はOFF。
+     *
+     * 以前は「APIキーがあるかどうか」だけで決まっていた。キーは音声メモと共用なので、
+     * 音声メモのためにキーを入れた利用者は、名簿の撮影画像——子どもの氏名と
+     * JBA登録番号が写ったもの——まで黙ってGoogleへ送る状態になっていた。
+     * 音声メモと同じく、送る先が増える設定は明示的な選択の上でだけ有効にする。
+     */
+    aiOcrEnabled: boolean;
+    /** 画像の外部送信について一度でも同意したか。OFFに戻しても取り消さない */
+    aiOcrConsented: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
     defaultGameMode: 'full',
     voiceMemoEnabled: false,
     voiceMemoConsented: false,
+    aiOcrEnabled: false,
+    aiOcrConsented: false,
 };
 
 // 配列やnull・文字列が入っていると、スプレッドで {"0":"a",…} のような
@@ -51,6 +64,8 @@ function readStoredSettings(): Partial<AppSettings> {
     }
     if (typeof raw.voiceMemoEnabled === 'boolean') clean.voiceMemoEnabled = raw.voiceMemoEnabled;
     if (typeof raw.voiceMemoConsented === 'boolean') clean.voiceMemoConsented = raw.voiceMemoConsented;
+    if (typeof raw.aiOcrEnabled === 'boolean') clean.aiOcrEnabled = raw.aiOcrEnabled;
+    if (typeof raw.aiOcrConsented === 'boolean') clean.aiOcrConsented = raw.aiOcrConsented;
     return clean;
 }
 
@@ -152,4 +167,36 @@ export function hasVoiceMemoConsent(): boolean {
 
 export function grantVoiceMemoConsent(): void {
     saveAppSettings({ voiceMemoConsented: true });
+}
+
+// 写真読込のAI経路（Gemini）。
+// 既定OFFなのは、名簿の撮影画像——子どもの氏名とJBA登録番号が写る——を
+// 端末外（Googleのサーバー）へ送るため。APIキーの有無だけで決めていた頃は、
+// 音声メモのためにキーを入れただけで写真読込まで黙ってクラウド経路になっていた。
+export function isAiOcrEnabled(): boolean {
+    return loadAppSettings().aiOcrEnabled;
+}
+
+export function setAiOcrEnabled(enabled: boolean): void {
+    saveAppSettings({ aiOcrEnabled: enabled });
+}
+
+/**
+ * AI写真読込のON/OFFを一度でも明示的に保存したか。
+ *
+ * 「まだ選んでいない」と「OFFを選んだ」を区別するために要る。この版より前から
+ * APIキーを使っていた利用者は、キー設定の説明（画像がGoogleへ送られる旨）を
+ * 読んだうえでAI経路を使っていたので、更新で黙って標準OCRへ落とすのは機能の
+ * 後退になる。移行（aiOcrMigration.ts）がここを見て判断する。
+ */
+export function hasStoredAiOcr(): boolean {
+    return readStoredSettings().aiOcrEnabled !== undefined;
+}
+
+export function hasAiOcrConsent(): boolean {
+    return loadAppSettings().aiOcrConsented;
+}
+
+export function grantAiOcrConsent(): void {
+    saveAppSettings({ aiOcrConsented: true });
 }

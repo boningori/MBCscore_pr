@@ -25,6 +25,7 @@ vi.mock('tesseract.js', () => ({
 }));
 
 import { recognizePlayerList } from './imageOCR';
+import { setAiOcrEnabled } from './appSettings';
 import { FALLBACK_MODELS } from './geminiClient';
 
 function imageFile(bytes = 10): File {
@@ -54,6 +55,9 @@ function htmlError(status: number) {
 beforeEach(() => {
     localStorage.clear();
     localStorage.setItem('mbc_gemini_api_key', 'test-key');
+    // AI経路はキーの有無ではなく設定で決まる（imageOCR.aiGate.test.ts）。
+    // ここはGemini側の挙動を見るテストなので、明示的にONにする
+    setAiOcrEnabled(true);
     recognizeMock.mockReset();
     recognizeMock.mockResolvedValue({ data: { text: '4 田中太郎\n5 佐藤花子' } });
     vi.stubGlobal('FileReader', class {

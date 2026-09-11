@@ -13,6 +13,7 @@ import { createPendingAction } from './types/pendingAction';
 import { saveRecentOpponent, saveOpponent, loadOpponents, loadRecentOpponents } from './utils/teamStorage';
 import { buildMatchTeams } from './utils/matchTeams';
 import { migrateSavedTeamIds } from './utils/savedTeamIdMigration';
+import { migrateAiOcrSetting } from './utils/aiOcrMigration';
 import { saveGameResult } from './utils/gameHistoryStorage';
 import { loadGameSession, clearGameSession, hasGameSession } from './utils/gameSessionStorage';
 import { Home } from './components/Home';
@@ -239,6 +240,11 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   // 起動スナップショットより先に置き、書き戻し後のデータが控えに載るようにする。
   useEffect(() => {
     migrateSavedTeamIds();
+    // 起動時: AI写真読込を独立スイッチにしたときの引き継ぎ。
+    // 以前はAPIキーの有無だけでAI経路が決まっていたので、この版より前から
+    // キーを使っていた利用者を、更新の瞬間に黙って標準OCRへ落とさない。
+    // 逆にこれ以降キーを入れる利用者は、スイッチで明示的に選ぶ（aiOcrMigration.ts）
+    migrateAiOcrSetting();
   }, []);
 
   // 起動後: OCRアセットを裏で取っておく。

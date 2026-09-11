@@ -4,8 +4,12 @@ import { getStoredApiKey, saveApiKey, testGeminiConnection } from '../../utils/g
 import {
     getDefaultGameMode,
     saveDefaultGameMode,
+    grantAiOcrConsent,
     grantVoiceMemoConsent,
+    hasAiOcrConsent,
     hasVoiceMemoConsent,
+    isAiOcrEnabled,
+    setAiOcrEnabled,
     isVoiceMemoEnabled,
     setVoiceMemoEnabled,
     type GameMode,
@@ -49,6 +53,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     const [defaultMode, setDefaultMode] = useState<GameMode>('full');
     const [voiceMemoOn, setVoiceMemoOn] = useState(false);
     const [showVoiceMemoConsent, setShowVoiceMemoConsent] = useState(false);
+    // AI写真読込のON/OFF。APIキーとは別立てにする（キーは音声メモと共用のため、
+    // キーの存在を「名簿の写真を外へ出してよい」と読み替えられない）
+    const [aiOcrOn, setAiOcrOn] = useState(isAiOcrEnabled);
+    const [showAiOcrConsent, setShowAiOcrConsent] = useState(false);
 
     const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
     const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -238,6 +246,29 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
         setVoiceMemoOn(true);
     };
 
+    // 音声メモと同じ作法。初回ONのときだけ外部送信の確認を出し、
+    // 同意はOFFに戻しても取り消さない
+    const handleAiOcrToggle = () => {
+        if (aiOcrOn) {
+            setAiOcrEnabled(false);
+            setAiOcrOn(false);
+            return;
+        }
+        if (!hasAiOcrConsent()) {
+            setShowAiOcrConsent(true);
+            return;
+        }
+        setAiOcrEnabled(true);
+        setAiOcrOn(true);
+    };
+
+    const handleAiOcrConsent = () => {
+        grantAiOcrConsent();
+        setAiOcrEnabled(true);
+        setAiOcrOn(true);
+        setShowAiOcrConsent(false);
+    };
+
     const handleVoiceMemoConsent = () => {
         grantVoiceMemoConsent();
         setVoiceMemoEnabled(true);
@@ -392,7 +423,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                     </SettingsSection>
 
                     {/* AI設定セクション */}
-                    <SettingsSection id="ai" title="AI機能 (Google Gemini API)" hint={hasApiKey ? 'AI有効' : '標準モード'} isOpen={openSection === 'ai'} onToggle={() => toggleSection('ai')}>
+                    {/* AI経路が実際に使われるのは「キーがある」かつ「スイッチがON」のとき。
+                        キーの有無だけを見出しに出していた頃は、キーを入れただけで
+                        「AI有効」と名乗っていた */}
+                    <SettingsSection id="ai" title="AI機能 (Google Gemini API)" hint={hasApiKey && aiOcrOn ? 'AI有効' : '標準モード'} isOpen={openSection === 'ai'} onToggle={() => toggleSection('ai')}>
                         <p className="section-description">
                             Gemini APIキーを設定すると、写真読み込みの精度が向上します。
                         </p>
@@ -404,17 +438,40 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         */}
                         <p className="security-notice">
                             🔒 APIキーはこのデバイス内にのみ保存され、外部には送信されません。
-                            AI機能を有効にすると、<strong>撮影した画像がGoogleのサーバーへ送信されます</strong>。
+                            下の「写真をAIで読み取る」をONにすると、<strong>撮影した画像がGoogleのサーバーへ送信されます</strong>。
                             名簿の写真には氏名やライセンスNo.が写るため、必要な同意を得たうえでご利用ください。
                             当アプリの運営者や第三者のサーバーには送信されません。
-                            APIキーを設定しない標準モード（オフラインOCR）では、画像は端末外に出ません。
+                            OFFのままなら標準モード（オフラインOCR）で読み取り、画像は端末外に出ません。
                         </p>
 
+                        {/*
+                          写真をAIへ送るかどうかのスイッチ。APIキーとは別立てにする。
+                          キーは音声メモと共用なので、キーがあることを「名簿の写真を
+                          外へ出してよい」と読み替えることはできない。実際、音声メモの
+                          ためにキーを入れた利用者は、子どもの氏名とJBA登録番号が写った
+                          画像まで黙って送る状態になっていた。音声メモ側が設定ON＋同意を
+                          要求しているのに、より機微の高い画像のほうが素通しだった。
+                        */}
+                        <label className="settings-toggle">
+                            <input
+                                type="checkbox"
+                                checked={aiOcrOn}
+                                onChange={handleAiOcrToggle}
+                            />
+                            <span>写真をAIで読み取る</span>
+                        </label>
+
                         <div className="api-status">
-                            <span className={`status-badge ${hasApiKey ? 'active' : 'inactive'}`}>
-                                {hasApiKey ? '✓ AI有効' : '○ 標準モード'}
+                            <span className={`status-badge ${hasApiKey && aiOcrOn ? 'active' : 'inactive'}`}>
+                                {hasApiKey && aiOcrOn ? '✓ AI有効' : '○ 標準モード'}
                             </span>
                         </div>
+
+                        {aiOcrOn && !hasApiKey && (
+                            <p className="section-description">
+                                ⚠️ AI読み取りにはGemini APIキーの設定が必要です。キーを入れるまでは標準OCR（端末内）で読み取ります。
+                            </p>
+                        )}
 
                         <div className="input-group">
                             <label htmlFor="gemini-api-key">Gemini API Key</label>
@@ -855,6 +912,23 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                         cancelLabel="編集に戻る"
                         onConfirm={() => { setShowDiscardConfirm(false); onClose(); }}
                         onCancel={() => setShowDiscardConfirm(false)}
+                    />
+                )}
+
+                {showAiOcrConsent && (
+                    <ConfirmModal
+                        title="写真をAIで読み取りますか？"
+                        message={
+                            '名簿の写真をGoogleのサーバーへ送信します。\n' +
+                            '写真には選手（子ども）の氏名やJBA登録番号が写ります。関係者の同意を得たうえでご利用ください。\n' +
+                            '無料枠のAPIキーでは、送信したデータがモデルの改善に利用される可能性があるため、' +
+                            '有料プランのキーを推奨します。\n\n' +
+                            'OFFのままでも、標準OCR（端末内・画像は外に出ない）で読み取れます。'
+                        }
+                        confirmLabel="同意して有効にする"
+                        cancelLabel="有効にしない"
+                        onConfirm={handleAiOcrConsent}
+                        onCancel={() => setShowAiOcrConsent(false)}
                     />
                 )}
 
