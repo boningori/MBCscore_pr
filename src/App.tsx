@@ -57,6 +57,7 @@ import { isBackupDue } from './utils/lastBackupStorage';
 import { planOpponentWriteback, type OpponentWriteback } from './utils/opponentRosterWriteback';
 import { shareBackup } from './utils/dataBackup';
 import { wouldOverflowFoulColumns } from './utils/foulColumns';
+import { hasPendingScores, pendingTeamFouls } from './utils/pendingTotals';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameMode } from './hooks/useGameMode';
@@ -130,6 +131,9 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false); // 保存せず破棄の確認
   const [showSaveFailed, setShowSaveFailed] = useState(false); // 試合結果の保存に失敗
   const [showPendingWarning, setShowPendingWarning] = useState(false); // 未割り当ての記録が残ったまま終了しようとした
+  // 未割り当ての得点が残ったまま第4Q以降を終えようとした。
+  // 保存前の showPendingWarning より手前の確認で、止める理由が違う（handleQuarterEnd）
+  const [showPendingScoreWarning, setShowPendingScoreWarning] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false); // 保存失敗時のバックアップ実行中
   // 進行中セッションがある状態での新規開始警告。
   // 新規試合ショートカットから起動した場合も、ホームのボタンと同じ警告を通す
@@ -733,6 +737,34 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   const timeoutQuarterLabel = timeoutQuarter !== currentQuarter ? quarterLabel(timeoutQuarter) : undefined;
   const timeoutUsedFor = (team: Team) => team.timeouts.some(t => t.quarter === timeoutQuarter);
 
+  /**
+   * そのチーム・そのピリオドのチームファウル数（保留ファウルを含む）。
+   *
+   * 保留は解決されるまで teamFouls に入らない（handleAddPendingAction は積むだけ）。
+   * だがファウルが起きた事実はチームに帰属していて、誰が犯したかとは関係ない。
+   * 含めずに出すと、FoulInputFlow が teamFouls >= 4 で決めるフリースローの本数が
+   * 1つ手前にずれ、「本当はペナルティなのにFT0本」を提案する。記録者がそれを
+   * 信じれば、FTの本数——つまり得点——を取り違える。
+   *
+   * TFバッジとファウル入力の案内は必ず同じ数を出すこと。別の数が並ぶと、
+   * どちらを信じればよいのか記録者には判断できない。
+   *
+   * @param excludePendingId いま解決しようとしている保留のid。その保留は
+   *   「これから記録するファウル」そのものなので、自分自身を数に入れない
+   */
+  const effectiveTeamFouls = (
+    teamId: 'teamA' | 'teamB',
+    quarter: number,
+    excludePendingId?: string,
+  ): number => {
+    const team = teamId === 'teamA' ? state.teamA : state.teamB;
+    const recorded = team.teamFouls[quarter - 1] || 0;
+    const others = excludePendingId
+      ? pendingActions.filter(p => p.id !== excludePendingId)
+      : pendingActions;
+    return recorded + pendingTeamFouls(others, teamId, quarter);
+  };
+
   // 記録済みタイムアウトの取り消し確認。
   // 経過分を打ち間違えても直せず、そのまま公式様式に印字されていたため、
   // 記録済みチップから取り消せるようにする（誤タップで消えないよう確認を挟む）
@@ -820,8 +852,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     }
   };
 
-  // クォーター終了時にスタメン選択へ
-  const handleQuarterEnd = useCallback(() => {
+  // クォーター終了。第4Q以降は勝敗の分岐（同点＝延長戦 / それ以外＝試合終了）になる
+  const proceedQuarterEnd = useCallback(() => {
     if (currentQuarter >= 4) {
       const scoreA = state.teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
       const scoreB = state.teamB.players.reduce((sum, p) => sum + p.stats.points, 0);
@@ -831,6 +863,28 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     dispatch({ type: 'END_QUARTER' });
     setScreen('quarterLineup');
   }, [currentQuarter, dispatch, setScreen, state.teamA, state.teamB]);
+
+  /**
+   * クォーター終了時にスタメン選択へ（第4Q以降は試合終了の確認へ）。
+   *
+   * 第4Q以降の分岐は選手スタッツの総和で決まるが、保留の得点はそこに入って
+   * いない。残したまま進むと、同点でないのに延長戦を勧める／同点なのに試合を
+   * 終わらせる、が起きる。延長戦の有無は試合の結論そのものなので黙って通さない。
+   *
+   * 保留の点数を判定に足し込む手もあるが、それだとスコアボードの数字と
+   * ダイアログの言い分が食い違う（画面は40-38なのに「同点で終了しました」）。
+   * 決めるのは記録者で、材料は数秒で揃う——割り当ててから進んでもらう。
+   *
+   * 止めるのは得点の保留だけ。ファウルとスタッツは勝敗を動かさないので、
+   * そこで手を止めさせる理由がない。
+   */
+  const handleQuarterEnd = useCallback(() => {
+    if (currentQuarter >= 4 && hasPendingScores(pendingActions)) {
+      setShowPendingScoreWarning(true);
+      return;
+    }
+    proceedQuarterEnd();
+  }, [currentQuarter, pendingActions, proceedQuarterEnd]);
 
   const handleEndGameConfirm = useCallback(() => {
     setEndGameConfirmType(null);
@@ -1383,7 +1437,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 onSubstitute={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamA')}
                 actionHistoryHandlers={actionHistoryHandlers}
-                teamFouls={state.teamA.teamFouls[currentQuarter - 1] || 0}
+                teamFouls={effectiveTeamFouls('teamA', currentQuarter)}
                 timeoutUsed={timeoutUsedFor(state.teamA)}
                 timeoutQuarterLabel={timeoutQuarterLabel}
                 pendingSlot={renderPendingSlot('teamA')}
@@ -1467,7 +1521,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 onSubstitute={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
                 onCoachFoul={() => handleCoachFoul('teamB')}
                 actionHistoryHandlers={actionHistoryHandlers}
-                teamFouls={state.teamB.teamFouls[currentQuarter - 1] || 0}
+                teamFouls={effectiveTeamFouls('teamB', currentQuarter)}
                 timeoutUsed={timeoutUsedFor(state.teamB)}
                 timeoutQuarterLabel={timeoutQuarterLabel}
                 pendingSlot={renderPendingSlot('teamB')}
@@ -1493,7 +1547,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           const opponentTeamIdForPending = foulingTeamId === 'teamA' ? 'teamB' : 'teamA';
           const foulingPlayer = foulingTeam.players.find(p => p.id === resolvingFoulPending.playerId);
           const pendingAction = pendingActions.find(p => p.id === resolvingFoulPending.pendingActionId);
-          const teamFoulsForPending = foulingTeam.teamFouls[(pendingAction?.quarter || currentQuarter) - 1] || 0;
+          // 解決中の保留は「これから記録するファウル」そのものなので数から外す
+          const teamFoulsForPending = effectiveTeamFouls(
+            foulingTeamId,
+            pendingAction?.quarter || currentQuarter,
+            resolvingFoulPending.pendingActionId,
+          );
 
           return (
             <FoulInputFlow
@@ -1517,10 +1576,10 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         }
 
         // 通常時はFoulInputFlow（FT入力付き）を使用
-        const foulingTeam = selectedTeamId === 'teamA' ? state.teamA : state.teamB;
+        const foulingTeamId = selectedTeamId === 'teamA' ? 'teamA' : 'teamB';
         const opponentTeam = selectedTeamId === 'teamA' ? state.teamB : state.teamA;
         const opponentTeamId = selectedTeamId === 'teamA' ? 'teamB' : 'teamA';
-        const teamFouls = foulingTeam.teamFouls[currentQuarter - 1] || 0;
+        const teamFouls = effectiveTeamFouls(foulingTeamId, currentQuarter);
 
         return (
           <FoulInputFlow
@@ -1706,6 +1765,47 @@ function AppContent({ screen, setScreen }: AppContentProps) {
               onClick={() => { setShowPendingWarning(false); handleGameFinished({ skipPendingCheck: true }); }}
             >
               このまま保存
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/*
+        未割り当ての得点を残したまま、第4Q以降を終えようとしたときの確認。
+        保留の得点は選手スタッツに入らない＝スコアボードにも出ないため、
+        同点かどうか（＝延長戦をするか）をこのまま判断すると結論が変わりうる。
+        保存前の確認（showPendingWarning）より手前で、止める理由が違う。
+        保留パネルは記録画面に出たままなので、閉じればその場で割り当てられる。
+      */}
+      {showPendingScoreWarning && (
+        <Modal
+          onClose={() => setShowPendingScoreWarning(false)}
+          contentClassName="modal-content end-game-confirm-modal"
+          closeOnOverlayClick={false}
+          labelledBy="pending-score-warning-title"
+        >
+          <h3 id="pending-score-warning-title">未割り当ての得点があります</h3>
+          <p className="end-game-confirm-message">
+            選手が決まっていない得点が
+            <strong>{pendingActions.filter(p => p.actionType === 'SCORE').length}件</strong>
+            残っています。<br />
+            この得点は最終スコアに入っていないため、<br />
+            このまま進むと同点かどうかを正しく判断できません。<br />
+            画面の保留パネルから割り当ててください。
+          </p>
+          <div className="modal-actions-column">
+            <button
+              className="btn btn-primary btn-large"
+              data-autofocus
+              onClick={() => setShowPendingScoreWarning(false)}
+            >
+              戻って割り当てる
+            </button>
+            <button
+              className="btn btn-danger btn-large"
+              onClick={() => { setShowPendingScoreWarning(false); proceedQuarterEnd(); }}
+            >
+              このまま進む
             </button>
           </div>
         </Modal>
