@@ -17,7 +17,7 @@
 import { describe, it, expect } from 'vitest';
 import { createPendingAction } from '../types/pendingAction';
 import type { PendingAction } from '../types/pendingAction';
-import { pendingTeamFouls, pendingTeamPoints, hasPendingScores } from './pendingTotals';
+import { pendingTeamFouls, hasPendingScores } from './pendingTotals';
 
 const foul = (teamId: 'teamA' | 'teamB', quarter: number): PendingAction =>
     createPendingAction('FOUL', '', teamId, quarter, []);
@@ -64,35 +64,6 @@ describe('pendingTeamFouls', () => {
     it('第4Qでは第3Q以前の保留を含めない', () => {
         const pendings = [foul('teamA', 3), foul('teamA', 4)];
         expect(pendingTeamFouls(pendings, 'teamA', 4)).toBe(1);
-    });
-});
-
-describe('pendingTeamPoints', () => {
-    it('得点の保留を点数に直して足す', () => {
-        const pendings = [score('teamA', 1, '3P'), score('teamA', 2, '2P'), score('teamA', 3, 'FT')];
-        expect(pendingTeamPoints(pendings, 'teamA')).toBe(6);
-    });
-
-    it('ピリオドをまたいで通算する（最終スコアに効くため）', () => {
-        const pendings = [score('teamB', 1, '2P'), score('teamB', 4, '2P')];
-        expect(pendingTeamPoints(pendings, 'teamB')).toBe(4);
-    });
-
-    it('相手チームの保留は数えない', () => {
-        const pendings = [score('teamA', 1, '2P'), score('teamB', 1, '3P')];
-        expect(pendingTeamPoints(pendings, 'teamA')).toBe(2);
-    });
-
-    it('得点以外は数えない', () => {
-        const pendings = [foul('teamA', 1), stat('teamA', 1)];
-        expect(pendingTeamPoints(pendings, 'teamA')).toBe(0);
-    });
-
-    // 手で編集したバックアップから復元した保留には、知らない value が入りうる。
-    // 0点として扱い、合計を壊さない（NaN にすると最終スコアの表示ごと崩れる）
-    it('読めない種別は0点として扱う', () => {
-        const pendings = [score('teamA', 1, 'XX'), score('teamA', 1, '2P')];
-        expect(pendingTeamPoints(pendings, 'teamA')).toBe(2);
     });
 });
 

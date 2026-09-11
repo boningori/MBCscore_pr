@@ -5,22 +5,20 @@
 // （handleAddPendingAction は配列へ積むだけ）。
 //
 // 最終的に解決すれば辻褄は合う。問題は、解決するまでの間に記録者が見て判断する
-// 数字が実態より小さいままになることで、その数字は記録の中身を左右する:
-//   - チームファウル … ペナルティ（5個目以降はFT2本）の判定
-//   - 得点           … 第4Q終了時の同点＝延長戦の判定
+// 数字が実態より小さいままになることで、その数字は記録の中身を左右する。
 //
-// 数え方をここに1つ置き、表示側と判定側が同じ数を見るようにする。
-// 状態そのものは変えない（解決時に incrementTeamFoul が走るので、
+// チームファウルは数を足して見せる。ペナルティ（5個目以降はFT2本）の判定に
+// 直接効き、しかもその判定はファウルが起きた瞬間に要るためである。
+//
+// 得点は足さない。保留は「番号を取り逃した」ときの一時置き場で、次のデッドボールで
+// ベンチに聞けば解決する。いっぽう暫定の点をスコアに出すと、確定した点との区別が
+// 常時つきまとう。効くのは第4Q終了時の同点＝延長戦の判定なので、そこで
+// 「残っているか」だけを見て知らせれば足りる（hasPendingScores）。
+//
+// どちらも状態そのものは変えない（解決時に incrementTeamFoul が走るので、
 // 積む時点でも足すと二重になる）。
 
 import type { PendingAction } from '../types/pendingAction';
-
-/** 得点種別1件あたりの点数。読めない種別は0にして合計を壊さない */
-const POINTS_BY_VALUE: Record<string, number> = {
-    '2P': 2,
-    '3P': 3,
-    'FT': 1,
-};
 
 /**
  * そのピリオドのチームファウルに、まだ入っていない保留ファウルの数。
@@ -41,19 +39,6 @@ export function pendingTeamFouls(
         if (quarter > 4) return p.quarter >= 4 && p.quarter <= quarter;
         return p.quarter === quarter;
     }).length;
-}
-
-/**
- * そのチームの得点のうち、保留のまま合計に入っていない点数。
- *
- * ピリオドはまたいで通算する。効くのは最終スコア（＝同点判定）なので、
- * チームファウルのようにピリオドで区切る意味がない。
- */
-export function pendingTeamPoints(pendingActions: PendingAction[], teamId: string): number {
-    return pendingActions.reduce((sum, p) => {
-        if (p.actionType !== 'SCORE' || p.teamId !== teamId) return sum;
-        return sum + (POINTS_BY_VALUE[p.value] ?? 0);
-    }, 0);
 }
 
 /**
