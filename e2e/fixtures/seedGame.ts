@@ -1,18 +1,20 @@
-// 履歴に「終わった試合」を1件流し込むフィクスチャ。
+// 履歴の「終わった試合」1件、または進行中セッションを流し込むフィクスチャ。
 //
 // E2E の費用のほとんどは「検査したい画面まで操作で辿り着くこと」に消える。
 // このアプリは GameSetup の5ステップ → ラインナップ → 記録 → 試合終了を
 // 通らないと履歴が1件も無い状態から抜けられない。そこを毎回操作でなぞると、
 // スコアシートの検査のはずが実質セットアップウィザードの検査になってしまう。
 //
-// 履歴は localStorage の 1キーに素のJSONで載っているので（gameHistoryStorage.ts）、
-// 読み込み前に注入して開始位置をスコアシートの手前まで進める。
+// 履歴・セッションは localStorage の1キーに素のJSONで載っているので
+// （gameHistoryStorage.ts / gameSessionStorage.ts）、読み込み前に注入して
+// 開始位置をスコアシートの手前まで進める。
 // 型は src と共有しているので、Team/Player に項目が増えればここが型エラーになる。
 
 import type { Page } from '@playwright/test';
 import type { FoulEntry, FoulType, Game, Player, ScoreEntry, ScoreType, Team } from '../../src/types/game';
 import { createInitialGame, createInitialGameInfo, createPlayer, createTeam } from '../../src/types/game';
 import type { GameRecord } from '../../src/utils/gameHistoryStorage';
+import type { GameSession } from '../../src/utils/gameSessionStorage';
 import type { SavedTeam } from '../../src/utils/teamStorage';
 
 const HISTORY_KEY = 'minibasket-game-history';
@@ -20,7 +22,12 @@ const MY_TEAMS_KEY = 'minibasket-my-teams';
 const SESSION_KEY = 'minibasket-game-session';
 
 /** 初回読み込みのときだけ注入するための目印。
- *  アプリが使う 'mbc-restore-dismissed' / 'voicememo-session' と衝突しない名前にする */
+ *  アプリが使う 'mbc-restore-dismissed' / 'voicememo-session' と衝突しない名前にする。
+ *
+ *  seedInProgressGame と seedRecordedGame(..., { once: true }) の両方がこの1つの
+ *  旗を共有している。将来1つのテストがこの2つを両方 once で呼ぶと、先に走った
+ *  initScript が旗を立て、後の initScript が early return して丸ごと注入されない
+ *  （今のところ両方を同時に使うテストは無いので、旗を分ける作り込みはしていない） */
 const SEEDED_FLAG = 'e2e-seeded';
 
 /** マイチームのid。記録側の teamA と結び付けて、選手スタッツ分析からも辿れる形にする */
@@ -278,9 +285,15 @@ export async function seedInProgressGame(page: Page): Promise<void> {
             gameName: GAME_NAME,
             date: '2026-08-15',
             savedAt: GAME_DATE,
-        })],
+        } satisfies GameSession)],
         [MY_TEAMS_KEY, JSON.stringify([toSavedTeam(teamA)])],
     ], true);
+}
+
+/** seedRecordedGame の注入オプション */
+export interface SeedOptions {
+    /** true なら初回読み込みのときだけ注入する（既定 false ＝ 毎回） */
+    once?: boolean;
 }
 
 /**
@@ -289,11 +302,6 @@ export async function seedInProgressGame(page: Page): Promise<void> {
  * localStorage は addInitScript で毎回のページ読み込み前に入れる。goto の後に
  * 書くと、Reactが既に空の状態で描き終えている
  */
-export interface SeedOptions {
-    /** true なら初回読み込みのときだけ注入する（既定 false ＝ 毎回） */
-    once?: boolean;
-}
-
 export async function seedRecordedGame(
     page: Page,
     record: GameRecord = FINISHED_GAME,

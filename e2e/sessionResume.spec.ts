@@ -29,6 +29,17 @@ test('記録した直後に読み込み直しても、その1点が残ってい�
 
     await expect(teamAScore(page)).toHaveText('2');
 
+    // デバウンス(500ms)が満了する前であることを、ここで明示的に確かめる。
+    // 満了後にリロードすると通常の保存で通ってしまい、検証したい pagehide の
+    // フラッシュ経路を一度も踏まないまま緑になる（落ちないので気付けない）
+    const savedPoints = await page.evaluate(() => {
+        const raw = window.localStorage.getItem('minibasket-game-session');
+        if (!raw) return null;
+        const session = JSON.parse(raw) as { game: { teamA: { players: { stats: { points: number } }[] } } };
+        return session.game.teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
+    });
+    expect(savedPoints).toBe(0);
+
     // デバウンス(500ms)の満了を待たずに読み込み直す。待ってしまうと通常の保存で
     // 通ってしまい、検証したい pagehide のフラッシュ経路を踏まない
     await page.reload();

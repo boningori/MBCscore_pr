@@ -26,6 +26,9 @@ test('localStorage を消しても、復元プロンプトから試合履歴が�
             const request = indexedDB.open('mbc-mirror-backup');
             request.onsuccess = () => {
                 const db = request.result;
+                // アプリより先に開くと、ストアの無い DB を作ってしまうことがある。
+                // その場合は「まだ無い」として 0 を返し、poll のリトライに任せる
+                if (!db.objectStoreNames.contains('snapshots')) { resolve(0); db.close(); return; }
                 const countRequest = db.transaction('snapshots', 'readonly')
                     .objectStore('snapshots')
                     .count();
