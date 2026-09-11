@@ -920,7 +920,7 @@ v1.10 で入れた「書き戻しに失敗したら、リロードせずに失�
 
 ```tsx
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor, within } from '@testing-library/react';
 import { MirrorBackupList } from './MirrorBackupList';
 import type { MirrorSnapshot, SnapshotMeta, SnapshotReason } from '../../utils/mirrorBackup';
 
@@ -1019,7 +1019,10 @@ describe('MirrorBackupList: 復元の前に退避する', () => {
         render(<MirrorBackupList onRestored={RELOAD} />);
         fireEvent.click(await screen.findByRole('button', { name: 'この時点に戻す' }));
 
-        expect(await screen.findByText(/試合を保存した直後/)).toBeTruthy();
+        // 一覧の行にも同じ理由が出ているので、ダイアログの中に絞って探す。
+        // 素の findByText だと2件見つかって Found multiple elements になる
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText(/試合を保存した直後/)).toBeTruthy();
     });
 
     it('読み込めなかった世代は書き戻さず、失敗を伝える', async () => {
