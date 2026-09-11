@@ -668,9 +668,11 @@ Expected: 無出力（追加・削除された行がすべてコメント行か�
 
 Run:
 ```bash
-node -e "const s=require('fs').readFileSync('.github/workflows/ci.yml','utf8');const jobs=[...s.matchAll(/^  ([a-z-]+):$/gm)].map(m=>m[1]);console.log(jobs.join(','));if(!/deploy:\s*\n\s*needs: test-and-build/.test(s))throw new Error('deploy の needs が変わっている');"
+node -e "const s=require('fs').readFileSync('.github/workflows/ci.yml','utf8');const body=s.slice(s.indexOf('\njobs:'));const jobs=[...body.matchAll(/^  ([A-Za-z0-9_-]+):$/gm)].map(m=>m[1]);console.log(jobs.join(','));if(!/deploy:\s*\n\s*needs: test-and-build/.test(s))throw new Error('deploy の needs が変わっている');"
 ```
 Expected: `test-and-build,e2e,deploy` と出力され、例外が出ない
+
+ジョブ名の文字種は `[A-Za-z0-9_-]` にすること。`[a-z-]` だと **数字を含む `e2e` が拾えない**。また `jobs:` 以降に絞ること。絞らないと `on:` 配下の `push:` が同じ2スペース字下げで引っかかる。（初版はどちらも外していて、期待値 `test-and-build,e2e,deploy` が原理的に出ない命令になっていた）
 
 - [ ] **Step 4: コミット**
 
