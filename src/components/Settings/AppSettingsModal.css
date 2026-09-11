@@ -749,7 +749,7 @@
     flex: 1 1 auto;
 }
 
-.app-settings-modal .mirror-backup-count {
+.app-settings-modal .mirror-backup-reason {
     color: var(--text-secondary);
     white-space: nowrap;
 }

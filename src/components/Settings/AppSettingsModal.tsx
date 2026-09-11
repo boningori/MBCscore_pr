@@ -771,15 +771,18 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
                             {/*
                               端末内の自動バックアップ（IndexedDBの世代）。
-                              10世代を保持しているのに、これまで辿れるのは
-                              「localStorageが空のときに最新1件を復元するか聞く」
-                              プロンプトだけだった。誤削除・不正なインポートでの
-                              上書き・保存失敗はどれも救えないままだった
+                              かつては「新しい順に10世代」だけで、試合中の自動保存
+                              （最短30秒間隔）が1試合ぶんで全枠を埋めてしまい、
+                              誤削除・不正なインポートでの上書き——気づくのが数時間〜
+                              数日後になる場面——を救えなかった。いまは枠を2つに分け、
+                              区切りの世代を保護している（mirrorBackupRetention）
                             */}
                             <div className="data-section-card">
                                 <h4 className="subsection-title">🕒 端末内の自動バックアップ</h4>
                                 <p className="section-description">
-                                    記録中に自動で作られる控えです（最大10世代）。
+                                    記録中に自動で作られる控えです（最大15世代）。
+                                    試合を保存した直後やアプリを開いたときの控えは、
+                                    記録中の自動保存に押し出されずに残ります。
                                     誤って消した・取り込みで上書きしたときに戻せます。
                                 </p>
                                 <MirrorBackupList onRestored={() => window.location.reload()} />
