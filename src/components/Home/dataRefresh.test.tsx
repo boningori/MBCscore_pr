@@ -16,6 +16,7 @@ const props = {
     onStartGame: vi.fn(), onManageTeams: vi.fn(), onViewHistory: vi.fn(),
     onManageOpponents: vi.fn(), onViewPlayerStats: vi.fn(), onResumeGame: vi.fn(),
     onOpenSettings: vi.fn(), isFullScreen: false, onToggleFullScreen: vi.fn(),
+    isFullScreenSupported: true,
 };
 
 const setTeams = (n: number) => localStorage.setItem(

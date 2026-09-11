@@ -1092,7 +1092,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   };
 
   // フルスクリーン制御
-  const { isFullScreen, toggleFullScreen } = useFullscreen();
+  const { isFullScreen, isSupported: isFullScreenSupported, toggleFullScreen } = useFullscreen();
 
   // ゲームモード（フル/シンプル） - アプリ設定の既定値・画面幅・手動切り替えを束ねて管理
   const { gameMode, toggleGameMode } = useGameMode();
@@ -1178,6 +1178,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           onOpenSettings={() => setShowAppSettings(true)}
           isFullScreen={isFullScreen}
           onToggleFullScreen={toggleFullScreen}
+          isFullScreenSupported={isFullScreenSupported}
         />
         {/* 進行中セッションがある状態での新規開始警告 */}
         {showNewGameWarning && (
@@ -1304,14 +1305,18 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           <button className="btn btn-secondary btn-small" onClick={handleBackToHome} aria-label="ホームへ戻る">
             🏠
           </button>
-          <button
-            className="btn btn-secondary btn-small"
-            onClick={toggleFullScreen}
-            style={{ marginLeft: '8px' }}
-            aria-label={isFullScreen ? '全画面を解除' : '全画面表示'}
-          >
-            {isFullScreen ? '⊟' : '⊞'}<span className="btn-label">{isFullScreen ? '縮小' : '全画面'}</span>
-          </button>
+          {/* 非対応端末（iOS Safari 等）では押しても無反応・無通知になるので出さない
+              （useFullscreen の detectFullscreenSupport） */}
+          {isFullScreenSupported && (
+            <button
+              className="btn btn-secondary btn-small"
+              onClick={toggleFullScreen}
+              style={{ marginLeft: '8px' }}
+              aria-label={isFullScreen ? '全画面を解除' : '全画面表示'}
+            >
+              {isFullScreen ? '⊟' : '⊞'}<span className="btn-label">{isFullScreen ? '縮小' : '全画面'}</span>
+            </button>
+          )}
           <button
             className={`btn btn-small ${gameMode === 'simple' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={toggleGameMode}

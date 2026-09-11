@@ -16,9 +16,12 @@ interface HomeProps {
     onOpenSettings: () => void;
     isFullScreen: boolean;
     onToggleFullScreen: () => void;
+    /** 全画面が使える端末か。false なら切り替えボタン自体を出さない。
+     *  非対応端末（iOS Safari 等）では押しても無反応・無通知になるため（useFullscreen） */
+    isFullScreenSupported: boolean;
 }
 
-export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onViewPlayerStats, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen }: HomeProps) {
+export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOpponents, onViewPlayerStats, onResumeGame, onOpenSettings, isFullScreen, onToggleFullScreen, isFullScreenSupported }: HomeProps) {
     // 描画のたびに読み直す。
     //
     // アプリ設定はホームの上にモーダルで開くため、バックアップを取り込んでも
@@ -45,14 +48,16 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                 <div className="header-left">
                     {/* 絵文字だけだとアクセシブル名が絵文字自体になり「四角」等と読まれる。
                         試合画面の同種ボタンに合わせて aria-label を付ける */}
-                    <button
-                        className="btn btn-secondary btn-icon"
-                        onClick={onToggleFullScreen}
-                        title={isFullScreen ? '画面縮小' : '全画面'}
-                        aria-label={isFullScreen ? '画面縮小' : '全画面表示'}
-                    >
-                        {isFullScreen ? '⊟' : '⊞'}
-                    </button>
+                    {isFullScreenSupported && (
+                        <button
+                            className="btn btn-secondary btn-icon"
+                            onClick={onToggleFullScreen}
+                            title={isFullScreen ? '画面縮小' : '全画面'}
+                            aria-label={isFullScreen ? '画面縮小' : '全画面表示'}
+                        >
+                            {isFullScreen ? '⊟' : '⊞'}
+                        </button>
+                    )}
                 </div>
                 <div className="home-brand">
                     <h1 className="home-title">MBC<span className="title-accent">score</span></h1>
