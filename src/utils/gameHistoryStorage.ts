@@ -317,10 +317,16 @@ export function updateGameRecordEndTime(id: string, endTime: Date | null): boole
     return recordStorage.save(history);
 }
 
-// 履歴削除
-export function deleteGameRecord(id: string): void {
+/**
+ * 履歴から1件消す。消せたら true。
+ *
+ * 戻り値を返す理由は同モジュールの更新系と同じ（createStorage.ts の約束）。
+ * 書き込みに失敗しても呼び出し側が気づけないと、消えなかったカードが
+ * 理由の説明なしに戻ってくるだけになる。
+ */
+export function deleteGameRecord(id: string): boolean {
     const history = loadGameHistory().filter(r => r.id !== id);
-    historyStorage.save(history);
+    return historyStorage.save(history);
 }
 
 // 試合名の候補を取得（同日優先、最近の試合名も含む）
