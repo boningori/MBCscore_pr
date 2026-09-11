@@ -265,7 +265,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           return;
         }
       }
-      saveSnapshot();
+      saveSnapshot('startup');
     })();
   }, []);
 
@@ -278,10 +278,13 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     return () => window.removeEventListener(STORAGE_ERROR_EVENT, handler);
   }, []);
 
-  // 試合終了時は即座にミラーバックアップ
+  // 試合終了の画面が出た時点で即座にミラーバックアップ。
+  // ここで写るのは「まだ履歴に保存していない試合」なので、区切りではなく
+  // 進行中データの保護＝定期枠に入れる。「試合単位で戻る」ための世代は
+  // 保存できた直後に別途取る（handleGameFinished）
   useEffect(() => {
     if (phase === 'finished') {
-      saveSnapshot();
+      saveSnapshot('periodic');
     }
   }, [phase]);
 
@@ -965,6 +968,10 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     }
 
     clearGameSession();
+    // 「あの試合を保存した直後」へ戻れるようにする。ここが区切りの世代で、
+    // 試合中の自動保存には押し出されない（mirrorBackupRetention）。
+    // phase === 'finished' の世代はまだ保存前の状態なので別物
+    saveSnapshot('gameEnd');
     // 音声メモは手入力のための下書きなので、試合が終われば役目は終わり
     voiceMemo.clearAll();
     setScreen('home');
@@ -1141,7 +1148,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         onDismiss={() => {
           sessionStorage.setItem('mbc-restore-dismissed', '1');
           setRestoreCandidate(null);
-          saveSnapshot();
+          saveSnapshot('startup');
         }}
       />
     );
