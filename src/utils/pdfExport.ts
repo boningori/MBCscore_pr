@@ -391,8 +391,20 @@ export async function exportElement(
     if (newCtx) {
         newCtx.drawImage(canvas, 0, 0);
         drawSlashLinesOnCanvas(newCanvas, slashPositions, scale);
+        canvas = newCanvas;
     }
-    canvas = newCanvas;
+    // コンテキストを取れなかったら、元の canvas のまま進む。
+    //
+    // 以前はここで無条件に差し替えていたため、一度も描いていない空の canvas で
+    // 中身のある canvas を上書きしていた。assertRenderedImage は捕まえられない
+    // ——あれが見張るのは toDataURL が 'data:,' を返すケース（上限を超えた canvas）で、
+    // 空の canvas は正当な data:image/jpeg を返す。実測では drawImage が一度も
+    // 呼ばれないまま 'saved' が返り、白紙のファイルを保存して「出力しました」と
+    // 報告していた。
+    //
+    // 退避先は元の canvas でよい。斜線が重ならないぶん見た目は落ちるが、記録として
+    // 読める画像が残る。このファイルの他の getContext も同じ考え方で逃げている
+    // （斜線は描かない・元の canvas を返す）。ここだけ逃げ道が無かった。
 
     // タイトル付きcanvasを生成
     const finalCanvas = options.title ? addTitleToCanvas(canvas, options.title) : canvas;
