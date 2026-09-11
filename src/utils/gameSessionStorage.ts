@@ -109,8 +109,14 @@ export type GameSessionState = 'none' | 'inProgress' | 'finished';
  * 保存し忘れている試合があることが、ホームからは読み取れない。
  *
  * 判定のためだけに毎回パースするのは無駄なので、鍵の有無で先に打ち切る。
+ * ただし鍵があることと読めることは別で、読めなければ「なし」として扱う——
+ * 壊れた値は読み込みで捨てられても localStorage には残るため、そうしないと
+ * 「押しても何も起きない『試合を再開』」と「失われるものが無い引き止め」が
+ * 起動のたびに出続ける。鍵は次に試合を始めれば上書きされる。
  */
 export function getGameSessionState(): GameSessionState {
     if (!hasGameSession()) return 'none';
-    return loadGameSession()?.game?.phase === 'finished' ? 'finished' : 'inProgress';
+    const session = loadGameSession();
+    if (!session) return 'none';
+    return session.game?.phase === 'finished' ? 'finished' : 'inProgress';
 }
