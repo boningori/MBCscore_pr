@@ -2,6 +2,7 @@ import type { SavedTeam } from '../../utils/teamStorage';
 import { loadMyTeams } from '../../utils/teamStorage';
 import { getGameSessionState } from '../../utils/gameSessionStorage';
 import { InstallPrompt, useInstallPrompt } from '../InstallPrompt';
+import { StorageWarning } from './StorageWarning';
 import './Home.css';
 
 
@@ -129,6 +130,9 @@ export function Home({ onStartGame, onManageTeams, onViewHistory, onManageOppone
                         </button>
                     </div>
                 )}
+
+                {/* 保存できなくなる話のほうが、ホーム画面への追加案内より先に読まれるべき */}
+                <StorageWarning />
 
                 {install.mode !== 'none' && (
                     <InstallPrompt

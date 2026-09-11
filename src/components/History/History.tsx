@@ -88,7 +88,13 @@ export function History({ onBack }: HistoryProps) {
 
     const confirmDelete = () => {
         if (deleteTargetId) {
-            deleteGameRecord(deleteTargetId);
+            // 消せなかったら、その場で知らせる。直後の読み直しでカードは
+            // 戻ってくるが、理由が伝わらなければ「押しても消えない」だけになる
+            if (!deleteGameRecord(deleteTargetId)) {
+                showToast('試合記録を削除できませんでした（端末の空き容量をご確認ください）', 'error');
+                setDeleteTargetId(null);
+                return;
+            }
             setRecords(loadGameHistory());
             if (selectedRecord?.id === deleteTargetId) {
                 setSelectedRecord(null);

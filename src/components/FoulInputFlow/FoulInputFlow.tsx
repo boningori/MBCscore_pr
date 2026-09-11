@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import type { FoulType, FoulRecord, FreeThrowResult, ShotSituation, Player } from '../../types/game';
-import { MAX_PERSONAL_FOULS, suggestFreeThrowCount } from '../../types/game';
+import { MAX_PERSONAL_FOULS, TEAM_FOUL_LIMIT, suggestFreeThrowCount } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, disqualificationMessage } from '../../utils/disqualification';
 import { Modal, ConfirmModal } from '../Modal';
@@ -219,8 +219,11 @@ export function FoulInputFlow({
     const disqualification = currentFouls ? getDisqualification(currentFouls) : null;
     const isFouledOut = disqualification !== null || currentFoulCount >= MAX_PERSONAL_FOULS;
 
-    // ペナルティ状態（チームファウル5個目以降）
-    const isPenalty = teamFouls >= 4;
+    // ペナルティ状態（チームファウル5個目以降）。
+    // 境目は types/game の TEAM_FOUL_LIMIT ひとつから来る。ここに 4 と直に
+    // 書くと、規則が変わったときに suggestFreeThrowCount だけが新しい境目へ
+    // 移り、この画面の断り書きだけが取り残される
+    const isPenalty = teamFouls >= TEAM_FOUL_LIMIT;
 
     // ステップタイトル
     const stepTitles: Record<Step, string> = {

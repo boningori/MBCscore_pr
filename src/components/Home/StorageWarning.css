@@ -1,0 +1,25 @@
+/* ホーム下部の案内カード。InstallPrompt と同じ作りだが、閉じられないので
+   閉じるボタン用の余白は要らない。縁だけ警告色にし、中に操作は置かない
+   （角丸の箱はボタン専用という方針の例外を作らないため） */
+.storage-warning {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius-md);
+    text-align: left;
+}
+
+.storage-warning-title {
+    margin: 0 0 var(--spacing-xs) 0;
+    color: var(--warning-light);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+}
+
+.storage-warning-body {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
