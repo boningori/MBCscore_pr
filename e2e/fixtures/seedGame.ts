@@ -289,9 +289,18 @@ export async function seedInProgressGame(page: Page): Promise<void> {
  * localStorage は addInitScript で毎回のページ読み込み前に入れる。goto の後に
  * 書くと、Reactが既に空の状態で描き終えている
  */
-export async function seedRecordedGame(page: Page, record: GameRecord = FINISHED_GAME): Promise<void> {
+export interface SeedOptions {
+    /** true なら初回読み込みのときだけ注入する（既定 false ＝ 毎回） */
+    once?: boolean;
+}
+
+export async function seedRecordedGame(
+    page: Page,
+    record: GameRecord = FINISHED_GAME,
+    options: SeedOptions = {},
+): Promise<void> {
     await inject(page, [
         [HISTORY_KEY, JSON.stringify([record])],
         [MY_TEAMS_KEY, JSON.stringify([toSavedTeam(record.teamA)])],
-    ], false);
+    ], options.once ?? false);
 }
