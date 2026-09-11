@@ -598,16 +598,14 @@ export async function getLatestSnapshot(): Promise<MirrorSnapshot | null> {
     it('reason を持たない旧世代も読めて、定期の枠で数える', async () => {
         const m = await freshModule();
         localStorage.setItem('minibasket-my-teams', '[]');
-        // 旧スキーマの世代を直接書き込む
+
+        // まず本体にDBを作らせる（スキーマ生成をテスト側で書き写さないため。
+        // 書き写すと、本物の openDb を変えてもここが古いまま通ってしまう）
+        await m.saveSnapshot('periodic', 1000);
+
+        // その上に、reason を持たない旧スキーマの世代を1件流し込む
         await new Promise<void>((resolve, reject) => {
-            const open = indexedDB.open('mbc-mirror-backup', 2);
-            open.onupgradeneeded = () => {
-                const db = open.result;
-                const store = db.objectStoreNames.contains('snapshots')
-                    ? open.transaction!.objectStore('snapshots')
-                    : db.createObjectStore('snapshots', { keyPath: 'timestamp' });
-                if (!store.indexNames.contains('reason')) store.createIndex('reason', 'reason');
-            };
+            const open = indexedDB.open('mbc-mirror-backup');
             open.onsuccess = () => {
                 const db = open.result;
                 const tx = db.transaction('snapshots', 'readwrite');
