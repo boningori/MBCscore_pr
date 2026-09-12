@@ -37,6 +37,7 @@ import { useBackHandler } from '../../hooks/useBackHandler';
 import { SettingsSection } from './SettingsSection';
 import { MirrorBackupList } from './MirrorBackupList';
 import { estimateStorageUsage, formatBytes } from '../../utils/storageUsage';
+import { shouldReloadAfterRestore } from './restoreReload';
 import './AppSettingsModal.css';
 
 type SectionId = 'mode' | 'ai' | 'voicememo' | 'data' | 'help' | 'errors' | 'about';
@@ -785,7 +786,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                     記録中の自動保存に押し出されずに残ります。
                                     誤って消した・取り込みで上書きしたときに戻せます。
                                 </p>
-                                <MirrorBackupList onRestored={() => window.location.reload()} />
+                                <MirrorBackupList onRestored={() => { if (shouldReloadAfterRestore()) window.location.reload(); }} />
                             </div>
                         </div>
 

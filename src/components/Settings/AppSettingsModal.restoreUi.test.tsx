@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { AppSettingsModal } from './AppSettingsModal';
+import { shouldReloadAfterRestore } from './restoreReload';
 
 // 復元パネルがトリガーボタンより「前」に描画されていると、スマホ幅では
 // パネルが画面外（上）に挿入され、しかもスクロールアンカリングでボタンが
@@ -158,5 +159,24 @@ describe('AppSettingsModal フッターの「保存」', () => {
         // 出し方そのものは AppSettingsModal.discardConfirm.test.tsx が見ている
         expect(screen.getByText(/破棄して閉じますか/)).toBeTruthy();
         expect(onClose).not.toHaveBeenCalled();
+    });
+});
+
+// 記録中はリロードしない。
+//
+// リロードすると記録者は試合画面から弾き出され、ホームの「試合を再開」を
+// 押し直すことになる。体育館でそれをさせる理由が無い。履歴もチームも
+// 開いた時点で読み直されるので、表示が古いまま残ることもない。
+describe('復元後のリロード', () => {
+    it('記録中は呼ばない', () => {
+        localStorage.setItem(
+            'minibasket-game-session',
+            '{"game":{"phase":"playing"},"gameName":"いまの試合","date":"2026-04-10","savedAt":"2026-04-10T00:00:00.000Z"}',
+        );
+        expect(shouldReloadAfterRestore()).toBe(false);
+    });
+
+    it('記録中でなければ呼ぶ', () => {
+        expect(shouldReloadAfterRestore()).toBe(true);
     });
 });

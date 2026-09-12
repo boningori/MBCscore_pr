@@ -259,3 +259,48 @@ describe('MirrorBackupList: 復元の前に退避する', () => {
         expect(getSnapshotMetas).toHaveBeenCalledTimes(2);
     });
 });
+
+// 記録中は、確認ダイアログの言うことが変わる。
+//
+// 「現在のチーム・試合履歴・設定は上書きされます」「戻したあと再読み込みします」は
+// どちらも記録中には当てはまらない。進行中の試合は書き換えず、リロードもしない。
+// 当てはまらないことを言うと、戻せなかったのだと読まれる。
+describe('記録中の確認ダイアログ', () => {
+    /** 一覧に1件だけ出す（このファイルは mirrorBackup を丸ごとモックしている） */
+    function oneSnapshot() {
+        getSnapshotMetas.mockResolvedValue([metaOf(new Date('2026-08-06T10:00:00').getTime(), 'startup')]);
+    }
+
+    /** 記録中の試合を置く */
+    function liveGame() {
+        localStorage.setItem(
+            'minibasket-game-session',
+            '{"game":{"phase":"playing"},"gameName":"いまの試合","date":"2026-04-10","savedAt":"2026-04-10T00:00:00.000Z"}',
+        );
+    }
+
+    afterEach(() => localStorage.clear());
+
+    async function openConfirm() {
+        render(<MirrorBackupList onRestored={RELOAD} />);
+        fireEvent.click(await screen.findByRole('button', { name: 'この時点に戻す' }));
+        return screen.findByRole('dialog');
+    }
+
+    it('進行中の試合はそのまま続くと伝え、再読み込みとは言わない', async () => {
+        oneSnapshot();
+        liveGame();
+
+        const dialog = await openConfirm();
+        expect(within(dialog).getByText(/進行中の試合はそのまま続きます/)).toBeTruthy();
+        expect(within(dialog).queryByText(/再読み込みします/)).toBeNull();
+    });
+
+    it('記録中でなければ、従来どおり再読み込みすると伝える', async () => {
+        oneSnapshot();
+
+        const dialog = await openConfirm();
+        expect(within(dialog).getByText(/再読み込みします/)).toBeTruthy();
+        expect(within(dialog).queryByText(/進行中の試合はそのまま続きます/)).toBeNull();
+    });
+});
