@@ -62,3 +62,53 @@ describe('restoreSnapshot', () => {
         expect(localStorage.getItem('minibasket-my-teams')).toBeNull();
     });
 });
+
+// 記録中の復元が、進行中の試合を消さないこと。
+//
+// 実測（Playwright・本番ビルド）: 記録中に控えから戻すと、復元した
+// セッションがリロードの pagehide で書き戻され、無言で元へ戻っていた。
+// 試合履歴やチームは戻るので、利用者には区別が付かない。
+//
+// dataBackup の取り込みは「端末に進行中セッションが無い場合のみ復元」と
+// 書いて既に守っている。こちらにだけ同じ判断が無かった。
+describe('restoreSnapshot と進行中の試合', () => {
+    const withSession: MirrorSnapshot = {
+        timestamp: 2,
+        entries: {
+            'minibasket-my-teams': '[{"id":"t1"}]',
+            'minibasket-game-session': '{"game":{"phase":"playing"},"gameName":"控えの試合","date":"2026-04-01","savedAt":"2026-04-01T00:00:00.000Z"}',
+        },
+    };
+
+    /** いま記録中の試合を localStorage に置く */
+    function liveGame() {
+        localStorage.setItem(
+            'minibasket-game-session',
+            '{"game":{"phase":"playing"},"gameName":"いまの試合","date":"2026-04-10","savedAt":"2026-04-10T00:00:00.000Z"}',
+        );
+    }
+
+    it('守るべき試合があるとき、セッションだけ書き換えない', () => {
+        liveGame();
+
+        expect(restoreSnapshot(withSession)).toBe(true);
+        // 他のキーは戻る
+        expect(localStorage.getItem('minibasket-my-teams')).toBe('[{"id":"t1"}]');
+        // 進行中の試合はそのまま
+        expect(localStorage.getItem('minibasket-game-session')).toContain('いまの試合');
+    });
+
+    it('守るべき試合が無ければ、セッションも控えのとおりに戻す', () => {
+        expect(restoreSnapshot(withSession)).toBe(true);
+        expect(localStorage.getItem('minibasket-game-session')).toContain('控えの試合');
+    });
+
+    it('読めないセッションは守らない（正しい控えから戻せる）', () => {
+        localStorage.setItem('minibasket-game-session', '{壊れた');
+        vi.spyOn(console, 'warn').mockImplementation(() => { });
+        vi.spyOn(console, 'error').mockImplementation(() => { });
+
+        expect(restoreSnapshot(withSession)).toBe(true);
+        expect(localStorage.getItem('minibasket-game-session')).toContain('控えの試合');
+    });
+});

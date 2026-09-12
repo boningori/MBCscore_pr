@@ -9,6 +9,7 @@ import {
     selectExpiredSnapshots,
 } from './mirrorBackupRetention';
 import type { SnapshotMeta, SnapshotReason } from './mirrorBackupRetention';
+import { GAME_SESSION_KEY, isLiveSessionProtected } from './gameSessionStorage';
 
 export type { SnapshotMeta, SnapshotReason } from './mirrorBackupRetention';
 
@@ -257,7 +258,17 @@ export async function getLatestSnapshot(): Promise<MirrorSnapshot | null> {
  * いることは十分あり得る。呼び出し側は戻り値を見て、失敗を利用者に伝えること。
  */
 export function restoreSnapshot(snapshot: MirrorSnapshot): boolean {
-    const entries = Object.entries(snapshot.entries);
+    // 記録中の試合と、終了したが未保存の試合は書き換えない。
+    //
+    // 実測: 記録中に戻すと、復元したセッションがリロードの pagehide で
+    // useGameAutoSave に書き戻され、無言で元へ返っていた。履歴やチームは
+    // 戻るので利用者には区別が付かない。結果が正しく見えることもあったが、
+    // それは控えを取った時刻（セッションを含むか）で決まる事故だった。
+    //
+    // dataBackup の取り込みは同じ判断を既に持っている。片方だけが解いて
+    // いる状態を残さない。
+    const entries = Object.entries(snapshot.entries)
+        .filter(([key]) => !(key === GAME_SESSION_KEY && isLiveSessionProtected()));
     const previous = entries.map(([key]) => [key, localStorage.getItem(key)] as const);
     const applied: string[] = [];
 
