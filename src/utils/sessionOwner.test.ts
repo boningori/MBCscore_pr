@@ -69,3 +69,29 @@ describe('別のタブが記録中か', () => {
         expect(myTabId()).toBe(myTabId());
     });
 });
+
+// リロードしても同じタブなら同じ id でなければならない。
+//
+// メモリだけに置いていたころ、リロードのたびに別の id になり、同じタブが
+// 「別のタブ」に見えて30秒間再開できなかった（既存の sessionResume の e2e が
+// これを捕まえた）。sessionStorage はタブ単位でリロードをまたいで残る。
+describe('タブのid', () => {
+    it('sessionStorage に残っていればそれを使う（リロード後も同じタブ）', async () => {
+        sessionStorage.clear();
+        sessionStorage.setItem('minibasket-tab-id', 'tab-from-before-reload');
+        vi.resetModules();
+        const fresh = await import('./sessionOwner');
+
+        expect(fresh.myTabId()).toBe('tab-from-before-reload');
+    });
+
+    it('自分が前の読み込みで打った印は、別のタブとみなさない', async () => {
+        sessionStorage.clear();
+        sessionStorage.setItem('minibasket-tab-id', 'same-tab');
+        localStorage.setItem('minibasket-session-owner', JSON.stringify({ id: 'same-tab', at: Date.now() }));
+        vi.resetModules();
+        const fresh = await import('./sessionOwner');
+
+        expect(fresh.isOwnedByOtherTab()).toBe(false);
+    });
+});

@@ -36,12 +36,40 @@ interface Owner {
     at: number;
 }
 
+/**
+ * タブのidの置き場。
+ *
+ * sessionStorage はタブ単位で、リロードをまたいで残り、別のタブとは共有され
+ * ない——ここで欲しい性質そのものである。メモリに置くとリロードのたびに別の
+ * idになり、同じタブが「別のタブ」に見えて30秒間再開できなくなる
+ * （既存の sessionResume の e2e がこれを捕まえた）。
+ *
+ * 既知の穴: Chrome の「タブを複製」は sessionStorage ごと複製するため、
+ * その2つは同じidを持ち、互いを別のタブと見なせない。塞げていないのは
+ * この経路だけで、通常の「新しいタブで開く」は別のidになる。
+ */
+const TAB_ID_KEY = 'minibasket-tab-id';
+
 let tabId: string | null = null;
 
-/** このタブのid（読み込みごとに1つ） */
+/** このタブのid（タブが閉じるまで変わらない） */
 export function myTabId(): string {
-    tabId ??= crypto.randomUUID();
-    return tabId;
+    if (tabId) return tabId;
+    try {
+        const stored = sessionStorage.getItem(TAB_ID_KEY);
+        if (stored) {
+            tabId = stored;
+            return tabId;
+        }
+        tabId = crypto.randomUUID();
+        sessionStorage.setItem(TAB_ID_KEY, tabId);
+        return tabId;
+    } catch {
+        // sessionStorage が使えない環境では、この読み込みのあいだだけ持つ。
+        // リロードで別のidになるが、所有権が30秒残るだけで記録は失われない
+        tabId ??= crypto.randomUUID();
+        return tabId;
+    }
 }
 
 function readOwner(): Owner | null {
