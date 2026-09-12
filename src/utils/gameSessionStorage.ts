@@ -6,7 +6,8 @@ import { createJsonStorage } from './createStorage';
 import { coerceTeam } from './migrateTeam';
 import { coerceEntries } from './coerceStored';
 
-const GAME_SESSION_KEY = 'minibasket-game-session';
+/** 中断セッションのキー。復元・取り込み側が「書き換えてはいけないもの」として参照する */
+export const GAME_SESSION_KEY = 'minibasket-game-session';
 
 export interface GameSession {
     game: Game;
@@ -119,4 +120,22 @@ export function getGameSessionState(): GameSessionState {
     const session = loadGameSession();
     if (!session) return 'none';
     return session.game?.phase === 'finished' ? 'finished' : 'inProgress';
+}
+
+/**
+ * 復元・取り込みが中断セッションを書き換えてはいけないか。
+ *
+ * 記録中の試合と、終了したが未保存の試合を守る。どちらもまだ履歴に入って
+ * いない＝この世に1つしかない記録で、復元が上書きすると作りかけの記録が消える。
+ *
+ * 読めないセッションは守らない。中身が壊れていて復元で上書きできるなら、
+ * そのほうがよい。鍵の有無だけを見る hasGameSession では、壊れたものまで
+ * 守ってしまい、正しい控えから戻す道を塞ぐ。
+ *
+ * 判定をここに置くのは、このキーを所有しているのがこのモジュールだからである。
+ * 呼び出し側に委ねると、復元経路が増えたときに忘れられる（実際 mirrorBackup が
+ * dataBackup と同じ判断を持たないまま出荷されていた）。
+ */
+export function isLiveSessionProtected(): boolean {
+    return getGameSessionState() !== 'none';
 }
