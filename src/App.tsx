@@ -41,6 +41,8 @@ import { RunningScoresheet } from './components/RunningScoresheet';
 import { AppSettingsModal } from './components/Settings/AppSettingsModal';
 import { ToastContainer } from './components/Toast/Toast';
 import { showToast } from './components/Toast/toastApi';
+import { useSessionOwnership } from './hooks/useSessionOwnership';
+import { isOwnedByOtherTab, OTHER_TAB_MESSAGE } from './utils/sessionOwner';
 import { Modal, ConfirmModal } from './components/Modal';
 import { UndoSnackbar } from './components/UndoSnackbar/UndoSnackbar';
 import { RestorePrompt } from './components/RestorePrompt';
@@ -290,6 +292,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
   // 試合状態が変更されたらセッション保存（デバウンス付き）
   useGameAutoSave(state, screen, gameName, date, phase);
+  useSessionOwnership(screen, phase);
 
   // 記録中は画面を消させない。入力の間隔が数十秒あくため、自動ロックが効くと
   // 得点のたびに復帰操作が要る。全画面表示はスリープを止めないので別立てで押さえる。
@@ -1020,6 +1023,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
   // 試合を再開
   const handleResumeGame = () => {
+    // 別のタブが記録中なら入らない。入ると、あとから書いたほうが勝って
+    // もう片方の記録が黙って消える
+    if (isOwnedByOtherTab()) {
+      showToast(OTHER_TAB_MESSAGE, 'error');
+      return;
+    }
     const session = loadGameSession();
     if (session) {
       dispatch({ type: 'RESTORE_GAME', payload: { game: session.game } });
@@ -1031,6 +1040,14 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
   // 新規試合開始（進行中セッションがあれば上書き警告を挟む）
   const handleStartNewGame = () => {
+    // 別のタブが記録中なら入らない。新規試合も同じセッションのキーを
+    // 上書きするので、再開だけ塞いでも穴が残る。
+    // clearSetupDraft より前に置くこと——後ろだと、断るだけなのに
+    // 設定の下書きを消してしまう
+    if (isOwnedByOtherTab()) {
+      showToast(OTHER_TAB_MESSAGE, 'error');
+      return;
+    }
     // 新規はいつでも最初から。前の試合の設定の残りを引きずらせない
     clearSetupDraft();
     if (hasGameSession()) {

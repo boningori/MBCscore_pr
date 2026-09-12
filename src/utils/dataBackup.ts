@@ -799,6 +799,24 @@ function classifyImportData(data: Partial<GameExportData> & Partial<TeamExportDa
         };
     }
 
+    // メジャーが自分より新しいファイルは受け付けない。
+    //
+    // 知らないフィールドは検査で黙って捨てられるので、読めたことにして
+    // 取り込むと、利用者は「戻せた」と思ったまま一部を失う。
+    //
+    // 断るのは「はっきり新しいと読み取れたとき」だけにする。読めない版まで
+    // 弾くと、想定外の形で既存の取り込みを壊しかねない。1.x / 2.x は
+    // いままでどおり読む（2.0 への変更はフィールドの追加だけだった）。
+    const fileMajor = Number(String(data.version).split('.')[0]);
+    const currentMajor = Number(BACKUP_VERSION.split('.')[0]);
+    if (Number.isFinite(fileMajor) && fileMajor > currentMajor) {
+        return {
+            type: 'unknown',
+            data: null,
+            summary: `このバックアップは新しいバージョンのアプリで作られています（v${String(data.version)}）。アプリを更新してから取り込んでください。`,
+        };
+    }
+
     if (data.type === 'game' && data.game) {
         const game = data.game as GameRecord;
         const existing = loadGameHistory();
