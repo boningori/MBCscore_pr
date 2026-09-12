@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import type { FoulType, FoulRecord, FreeThrowResult, ShotSituation, Player } from '../../types/game';
-import { MAX_PERSONAL_FOULS, TEAM_FOUL_LIMIT, suggestFreeThrowCount } from '../../types/game';
+import type { FoulType, FoulRecord, FreeThrowEntry, FreeThrowResult, ShotSituation, Player } from '../../types/game';
+import { MAX_PERSONAL_FOULS, TEAM_FOUL_LIMIT, areFreeThrowsEntered, suggestFreeThrowCount } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, disqualificationMessage } from '../../utils/disqualification';
 import { Modal, ConfirmModal } from '../Modal';
@@ -118,7 +118,8 @@ export function FoulInputFlow({
     const [foulType, setFoulType] = useState<FoulType | null>(benchFoulMode && benchFoulType ? benchFoulType : null);
     const [shotSituation, setShotSituation] = useState<ShotSituation>('none');
     const [freeThrows, setFreeThrows] = useState<number>(benchFoulMode ? 1 : 0);
-    const [freeThrowResults, setFreeThrowResults] = useState<FreeThrowResult[]>(benchFoulMode ? [null as unknown as FreeThrowResult] : []);
+    // 入力途中を null で表すので、型もそう宣言する（FreeThrowEntry）
+    const [freeThrowResults, setFreeThrowResults] = useState<FreeThrowEntry[]>(benchFoulMode ? [null] : []);
     const [shooterPlayerId, setShooterPlayerId] = useState<string | null>(null);
     const [shotMade, setShotMade] = useState<boolean>(false);
 
@@ -250,7 +251,7 @@ export function FoulInputFlow({
         if (isPenalty) {
             const suggested = 2; // ペナルティは2本
             setFreeThrows(suggested);
-            setFreeThrowResults(new Array(suggested).fill(null));
+            setFreeThrowResults(Array<FreeThrowEntry>(suggested).fill(null));
             goToStep('shooter');
         } else {
             // ペナルティでなければ即記録完了
@@ -284,7 +285,7 @@ export function FoulInputFlow({
         // 推奨FT本数を設定
         const suggested = suggestFreeThrowCount(type, teamFouls, 'none');
         setFreeThrows(suggested);
-        setFreeThrowResults(new Array(suggested).fill(null));
+        setFreeThrowResults(Array<FreeThrowEntry>(suggested).fill(null));
         goToStep('ftCount');
     }, [teamFouls, goToStep]);
 
@@ -381,7 +382,7 @@ export function FoulInputFlow({
         setShotMade(made);
         const suggested = suggestFreeThrowCount('P', teamFouls, shotSituation, made);
         setFreeThrows(suggested);
-        setFreeThrowResults(new Array(suggested).fill(null));
+        setFreeThrowResults(Array<FreeThrowEntry>(suggested).fill(null));
         goToStep('shooter');
     }, [teamFouls, shotSituation, goToStep]);
 
@@ -399,7 +400,7 @@ export function FoulInputFlow({
                 shooterPlayerId: null,
             });
         } else {
-            setFreeThrowResults(new Array(count).fill(null));
+            setFreeThrowResults(Array<FreeThrowEntry>(count).fill(null));
             goToStep('shooter');  // シューター選択へ
         }
     }, [foulType, shotSituation, shotMade, onComplete, goToStep]);
@@ -413,17 +414,17 @@ export function FoulInputFlow({
 
     // FT結果入力完了 → 記録完了
     const handleFtResultComplete = useCallback(() => {
-        // すべてのFT結果が入力されているか確認
-        if (freeThrowResults.some(r => r === null)) {
-            return;
-        }
+        // すべてのFT結果が入力されているか確認。
+        // 型ガードなので、ここを外すと下の freeThrowResults が
+        // FreeThrowEntry[] のままになり tsc が落ちる
+        if (!areFreeThrowsEntered(freeThrowResults)) return;
         if (!foulType || !shooterPlayerId) return;
         onComplete({
             foulType,
             shotSituation,
             shotMade,
             freeThrows,
-            freeThrowResults: freeThrowResults as FreeThrowResult[],
+            freeThrowResults,
             shooterPlayerId,
         });
     }, [freeThrowResults, foulType, shotSituation, shotMade, freeThrows, shooterPlayerId, onComplete]);
@@ -551,7 +552,7 @@ export function FoulInputFlow({
                 break;
             case 'ftResult':
                 goToStep('shooter');
-                setFreeThrowResults(new Array(freeThrows).fill(null));
+                setFreeThrowResults(Array<FreeThrowEntry>(freeThrows).fill(null));
                 // 入力済みのFTを捨てるので、差し替えの食い違いも無くなる
                 setPriorShooterId(null);
                 break;

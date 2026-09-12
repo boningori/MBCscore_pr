@@ -30,6 +30,32 @@ export type FoulType = 'P' | 'T' | 'BT' | 'U' | 'D' | 'F';
 // フリースロー結果
 export type FreeThrowResult = 'made' | 'missed';
 
+/**
+ * 入力途中を含むFT結果。null は「まだ入れていない」。
+ *
+ * 記録として残るのは FreeThrowResult[] だけで、null が混じったまま外へ
+ * 出ることはない（areFreeThrowsEntered が止める）。入力中の画面だけが
+ * この型を持つ。
+ */
+export type FreeThrowEntry = FreeThrowResult | null;
+
+/**
+ * FT結果が全部入力されたか。型ガードにしてあるのが要点である。
+ *
+ * FoulInputFlow は入力途中を null で表しているのに、状態の型は
+ * FreeThrowResult[] と宣言し、null は `new Array(n).fill(null)`
+ * （Array(n) が any[] になる）と `null as unknown as FreeThrowResult` の
+ * 2経路で押し込んでいた。完了時の `some(r => r === null)` が外へ出すのを
+ * 止めていたので実害は無かったが、型が実態を表していないため、その番人を
+ * 外してもコンパイラは黙る。
+ *
+ * 型ガードにすると、番人を通った値だけが FreeThrowResult[] として扱える。
+ * 呼び出し側の `as FreeThrowResult[]` が要らなくなり、番人を外せば
+ * その場で tsc が落ちる。
+ */
+export const areFreeThrowsEntered = (results: readonly FreeThrowEntry[]): results is FreeThrowResult[] =>
+    results.every(result => result !== null);
+
 // シュート状況（ファウル発生時）
 export type ShotSituation = 'none' | '2P' | '3P';
 
