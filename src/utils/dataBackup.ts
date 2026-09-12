@@ -10,7 +10,7 @@ import { loadMyTeams, loadOpponents, loadRecentOpponents, saveMyTeams, saveOppon
 import type { AppSettings } from './appSettings';
 import { loadAppSettings, notifyAppSettingsChanged } from './appSettings';
 import type { GameSession } from './gameSessionStorage';
-import { loadGameSession, hasGameSession } from './gameSessionStorage';
+import { loadGameSession, isLiveSessionProtected } from './gameSessionStorage';
 import { recordBackup } from './lastBackupStorage';
 import { formatInputDate, formatRecordDate, recordInputDate } from './localDate';
 import { loadAllMergedPlayers } from './mergedPlayers';
@@ -1194,9 +1194,15 @@ function importFullBackup(data: BackupData): ImportResult {
             importedRecent = teams.length;
         }
 
-        // 進行中の試合セッションのインポート（端末に進行中セッションが無い場合のみ復元）
+        // 進行中の試合セッションのインポート。
+        //
+        // 守るべき試合（記録中・終了して未保存）があるときは復元しない。
+        // 判定を mirrorBackup と共有して、2つの復元経路が別々の条件を持つ
+        // 状態にしない。以前は hasGameSession（鍵の有無）で見ていたため、
+        // 壊れて読めないセッションが残っている端末では、正しい控えから
+        // 戻すこともできなかった
         let sessionRestored = false;
-        if (data.data.gameSession && !hasGameSession()) {
+        if (data.data.gameSession && !isLiveSessionProtected()) {
             const cleanSession = sanitizeImportedGameSession(data.data.gameSession);
             if (cleanSession) {
                 writes.push(['minibasket-game-session', JSON.stringify(cleanSession)]);

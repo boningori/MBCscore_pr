@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getSnapshot, getSnapshotMetas, restoreSnapshot, saveSnapshot } from '../../utils/mirrorBackup';
 import type { SnapshotMeta, SnapshotReason } from '../../utils/mirrorBackup';
 import { ConfirmModal } from '../Modal';
+import { isLiveSessionProtected } from '../../utils/gameSessionStorage';
 
 interface MirrorBackupListProps {
     /** 書き戻しが完了したときに呼ばれる（呼び出し側でリロードする） */
@@ -140,7 +141,12 @@ export function MirrorBackupList({ onRestored }: MirrorBackupListProps) {
                     message={
                         `${new Date(pending.timestamp).toLocaleString('ja-JP')}（${reasonLabel(pending.reason)}）の状態に戻します。\n` +
                         '現在のチーム・試合履歴・設定は、この時点の内容で上書きされます。\n' +
-                        '戻したあとアプリを再読み込みします。'
+                        // 記録中は言うことが変わる。進行中の試合は書き換えず、
+                        // リロードもしない。当てはまらないことを言うと、
+                        // 戻せなかったのだと読まれる。戻るものを並べて伝える
+                        (isLiveSessionProtected()
+                            ? '進行中の試合はそのまま続きます。戻るのは試合履歴・チーム・設定です。'
+                            : '戻したあとアプリを再読み込みします。')
                     }
                     note="いまの状態は、戻す直前に自動で控えを取ります。選び間違えたときはその世代から戻せます。"
                     confirmLabel="戻す"
