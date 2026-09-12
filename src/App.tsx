@@ -53,7 +53,7 @@ import type { ShortcutTarget } from './utils/launchShortcut';
 import { useOfflineToast } from './hooks/useOfflineToast';
 import { useFoulOutNotice } from './hooks/useFoulOutNotice';
 import type { MirrorSnapshot } from './utils/mirrorBackup';
-import { hasAppData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
+import { hasRestorableUserData, getLatestSnapshot, saveSnapshot, requestPersistentStorage } from './utils/mirrorBackup';
 import { startOcrAssetWarmup } from './utils/ocrAssetCache';
 import { STORAGE_ERROR_EVENT } from './utils/storageError';
 import { isBackupDue } from './utils/lastBackupStorage';
@@ -260,7 +260,10 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   useEffect(() => {
     requestPersistentStorage();
     (async () => {
-      if (!hasAppData() && !sessionStorage.getItem('mbc-restore-dismissed')) {
+      // 「アプリのキーがあるか」では駄目だった。自動保存のセッション・心拍の印・
+      // エラーログはアプリが自分で書き戻すので、データが全部消えていても
+      // それらが残り、プロンプトが二度と出なくなる（実測で確認）
+      if (!hasRestorableUserData() && !sessionStorage.getItem('mbc-restore-dismissed')) {
         const snapshot = await getLatestSnapshot();
         if (snapshot && Object.keys(snapshot.entries).length > 0) {
           setRestoreCandidate(snapshot);
