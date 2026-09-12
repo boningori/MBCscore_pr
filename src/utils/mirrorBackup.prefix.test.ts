@@ -8,7 +8,7 @@
 // 消えて困るのは利用者の記録なので、収集漏れは静かに起きてはいけない。
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { collectAppData, hasAppData } from './mirrorBackup';
+import { collectAppData, hasRestorableUserData } from './mirrorBackup';
 
 beforeEach(() => localStorage.clear());
 
@@ -33,8 +33,8 @@ describe('collectAppData: 収集対象のプレフィックス', () => {
         expect(Object.keys(collectAppData())).not.toContain('unrelated-key');
     });
 
-    it('アプリのキーが1つも無ければデータ無しと判定する', () => {
+    it('守るべきデータが1つも無ければデータ無しと判定する', () => {
         localStorage.setItem('unrelated-key', 'x');
-        expect(hasAppData()).toBe(false);
+        expect(hasRestorableUserData()).toBe(false);
     });
 });

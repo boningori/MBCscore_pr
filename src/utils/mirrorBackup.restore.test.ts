@@ -3,7 +3,7 @@
 // restoreSnapshot は try/catch を持たず、RestorePrompt は戻り値も見ずに
 // window.location.reload() を呼んでいた。書き込みが途中で失敗すると例外で
 // リロードに届かず、画面上は「復元する」を押しても何も起きない。
-// しかも一部だけ書けた状態が残るため、次回起動では hasAppData() が真になり
+// しかも一部だけ書けた状態が残るため、次回起動では hasRestorableUserData() が真になり
 // 復元プロンプト自体が二度と出ない（やり直せなくなる）。
 //
 // 復元プロンプトが出るのは「データが消えた」場面で、端末の容量が逼迫して
@@ -58,7 +58,7 @@ describe('restoreSnapshot', () => {
         restoreSnapshot(snapshot);
         vi.restoreAllMocks();
 
-        // 1件だけ書けた状態が残ると hasAppData() が真になり復元プロンプトが出なくなる
+        // 1件だけ書けた状態が残ると hasRestorableUserData() が真になり復元プロンプトが出なくなる
         expect(localStorage.getItem('minibasket-my-teams')).toBeNull();
     });
 });

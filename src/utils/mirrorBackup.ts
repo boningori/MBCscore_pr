@@ -112,9 +112,56 @@ export function collectAppData(): Record<string, string> {
     return entries;
 }
 
-// アプリデータがlocalStorageに存在するか
-export function hasAppData(): boolean {
-    return Object.keys(collectAppData()).length > 0;
+/**
+ * 失ったら困るデータ。復元プロンプトを出すかどうかはこれだけで決める。
+ *
+ * 「アプリのキーが1つでもあるか」では駄目だった。アプリ自身が利用者の操作
+ * なしに書き戻すキーが3つある——自動保存のセッション（pagehide のフラッシュ
+ * を含む）、所有権の心拍、エラーログ。どれか1つでも復活すると、データが
+ * 全部消えていてもプロンプトが出なくなる。実測で確認済み。
+ *
+ * 除外を並べる形（ブラックリスト）は採らない。今回の事故は「新しいキーを
+ * 黙って数えてしまう規則」から起きたので、除外側に並べると4つ目の自動キーが
+ * 増えたときに同じ見落としが起きる。
+ *
+ * 新しいキーを足したら、ここで「失ったら困るか」を決めること。迷ったら
+ * 入れない——入れ忘れてもプロンプトが余計に出るだけで、失う側へは倒れない。
+ */
+const RESTORABLE_KEYS = [
+    'minibasket-game-history',
+    'minibasket-my-teams',
+    'minibasket-opponent-teams',
+    'minibasket-saved-opponents',
+    'minibasket-hidden-players',
+    'minibasket-merged-players',
+    'minibasket-app-settings',
+    'mbc_gemini_api_key',
+] as const;
+
+/**
+ * 中身が空か。
+ *
+ * 取り込みの巻き戻しなどで空の配列・オブジェクトが書かれることがある。
+ * それを「データあり」と数えるとプロンプトが塞がれ、元の木阿弥になる。
+ */
+function isEmptyStoredValue(raw: string): boolean {
+    const trimmed = raw.trim();
+    return trimmed === '' || trimmed === '[]' || trimmed === '{}' || trimmed === 'null';
+}
+
+/** 失ったら困るデータが localStorage に残っているか */
+export function hasRestorableUserData(): boolean {
+    try {
+        return RESTORABLE_KEYS.some(key => {
+            const raw = localStorage.getItem(key);
+            return raw !== null && !isEmptyStoredValue(raw);
+        });
+    } catch {
+        // 読めない環境では「ある」に倒す。読めないだけで消えたとは限らず、
+        // ここでプロンプトを出すと、無事なデータへ上書きを勧めることになる。
+        // 列挙の入れ忘れ（＝余計に出る側へ倒す）とは事情が違う
+        return true;
+    }
 }
 
 /**
@@ -251,7 +298,7 @@ export async function getLatestSnapshot(): Promise<MirrorSnapshot | null> {
  * スナップショットをlocalStorageへ書き戻す（すべて書けたら true）。
  *
  * 途中で失敗したら、書けた分を巻き戻してから false を返す。部分的に書けた
- * 状態を残すと、次回起動で hasAppData() が真になり復元プロンプト自体が
+ * 状態を残すと、次回起動で hasRestorableUserData() が真になり復元プロンプト自体が
  * 二度と出ない（やり直せない）。
  *
  * このプロンプトが出るのは「データが消えた」場面で、端末の容量が逼迫して

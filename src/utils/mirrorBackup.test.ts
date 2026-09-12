@@ -20,7 +20,8 @@ describe('mirrorBackup', () => {
         localStorage.setItem('unrelated-key', 'x');
         const data = m.collectAppData();
         expect(Object.keys(data).sort()).toEqual(['mbc_gemini_api_key', 'minibasket-my-teams']);
-        expect(m.hasAppData()).toBe(true);
+        // my-teams は '[]' なので空として数えない。APIキーのほうで真になる
+        expect(m.hasRestorableUserData()).toBe(true);
     });
 
     it('saveSnapshot→getLatestSnapshotで最新世代が取得できる', async () => {
