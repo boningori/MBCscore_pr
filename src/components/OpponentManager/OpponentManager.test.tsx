@@ -158,3 +158,166 @@ describe('OpponentManager: 画面構造', () => {
         expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
     });
 });
+
+describe('OpponentManager: 名前で探す', () => {
+    const seedThree = () => seed([
+        team({ id: 'opp-1', name: '西陵ミニバス' }),
+        team({ id: 'opp-2', name: '東陵ミニバスケットボールクラブ' }),
+        team({ id: 'opp-3', name: 'MBC Jr' }),
+    ]);
+
+    const searchBox = () => screen.getByLabelText('検索：');
+
+    it('入力すると名前で絞られる', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+
+        expect(screen.getByText('西陵ミニバス')).toBeTruthy();
+        expect(screen.queryByText('東陵ミニバスケットボールクラブ')).toBeNull();
+        expect(screen.queryByText('MBC Jr')).toBeNull();
+    });
+
+    it('✕ を押すと全件に戻る', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+
+        fireEvent.click(screen.getByRole('button', { name: '検索条件を消す' }));
+
+        expect(screen.getByText('東陵ミニバスケットボールクラブ')).toBeTruthy();
+        expect(screen.getByText('MBC Jr')).toBeTruthy();
+    });
+
+    it('件数を「n / m件」で示す', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+        expect(screen.getByText('3 / 3件')).toBeTruthy();
+
+        fireEvent.change(searchBox(), { target: { value: 'ミニバス' } });
+
+        expect(screen.getByText('2 / 3件')).toBeTruthy();
+    });
+
+    it('検索で0件になったときは、登録が無いときと違う文面を出す', () => {
+        // 「そもそも登録が無い」と「検索で消えた」を同じ文面にすると、
+        // 事実と違う案内になる
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '該当なし' } });
+
+        expect(screen.getByText('「該当なし」に一致するチームはありません')).toBeTruthy();
+        expect(screen.queryByText('登録された対戦チームはありません')).toBeNull();
+    });
+
+    it('0件になっても検索窓と ✕ は消えない', () => {
+        // 条件を変える手段が消えると、その条件から抜け出せなくなる
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '該当なし' } });
+
+        expect(searchBox()).toBeTruthy();
+        expect(screen.getByRole('button', { name: '検索条件を消す' })).toBeTruthy();
+    });
+
+    it('登録が1件も無いときは検索窓を出さない', () => {
+        seed([]);
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        expect(screen.queryByLabelText('検索：')).toBeNull();
+        expect(screen.getByText('登録された対戦チームはありません')).toBeTruthy();
+    });
+
+    it('検索窓にもラベルが結び付いている', () => {
+        // 読み上げで何の入力欄か分かり、ラベルのタップでフォーカスが移る
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        expect(findUnlabeledFields()).toEqual([]);
+    });
+});
+
+describe('OpponentManager: 増える経路では絞り込みを解く', () => {
+    // 絞り込んだまま新規登録・インポートをすると、足したチームの名前が
+    // 検索語に合わない場合に一覧へ現れず、登録できたのか分からなくなる。
+    // 一方、編集・削除は「絞り込んだ一覧の中で続ける」操作なので解いてはいけない
+    // （query 宣言の上のコメントと同じ理由）。
+
+    const seedThree = () => seed([
+        team({ id: 'opp-1', name: '西陵ミニバス' }),
+        team({ id: 'opp-2', name: '東陵ミニバスケットボールクラブ' }),
+        team({ id: 'opp-3', name: 'MBC Jr' }),
+    ]);
+
+    const searchBox = () => screen.getByLabelText('検索：') as HTMLInputElement;
+
+    it('新規登録すると検索語が消え、絞り込みに埋もれず新しいチームが見える', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 新規チーム登録' }));
+        fireEvent.change(screen.getByLabelText('チーム名 *'), { target: { value: 'ジュニアクラブ' } });
+
+        // 対戦チームの保存には最低5人の選手登録が必要
+        for (const n of [1, 2, 3, 4, 5]) {
+            fireEvent.change(screen.getByLabelText('背番号'), { target: { value: String(n) } });
+            fireEvent.click(screen.getByRole('button', { name: '追加' }));
+        }
+
+        fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
+        expect(searchBox().value).toBe('');
+        expect(screen.getByText('ジュニアクラブ')).toBeTruthy();
+    });
+
+    it('インポートすると検索語が消える', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+
+        fireEvent.click(screen.getByRole('button', { name: '📝 データを貼り付け' }));
+        const importedTeam = team({ id: 'opp-imported', name: 'インポート太郎クラブ' });
+        const json = JSON.stringify({
+            type: 'team',
+            version: '2.0',
+            exportDate: '2026-01-01T00:00:00.000Z',
+            team: importedTeam,
+        });
+        fireEvent.change(screen.getByPlaceholderText('ここにコピーしたデータを貼り付けてください'), { target: { value: json } });
+        fireEvent.click(screen.getByRole('button', { name: '読み込む' }));
+        fireEvent.click(screen.getByRole('button', { name: 'インポート実行' }));
+
+        expect(searchBox().value).toBe('');
+        expect(screen.getByText('インポート太郎クラブ')).toBeTruthy();
+    });
+
+    it('編集しても検索語は残る（絞り込んだまま続けて直せるように）', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+        // 「西陵」に絞られているので編集ボタンは1件だけ
+        fireEvent.click(screen.getByRole('button', { name: '編集' }));
+        fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
+        expect(searchBox().value).toBe('西陵');
+    });
+
+    it('削除しても検索語は残る（絞り込んだまま続けて消せるように）', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+        fireEvent.click(screen.getByRole('button', { name: '削除' }));
+        const dialog = screen.getByRole('dialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: '削除する' }));
+
+        expect(searchBox().value).toBe('西陵');
+    });
+});

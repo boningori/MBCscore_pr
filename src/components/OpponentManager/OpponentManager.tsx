@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { showToast } from '../Toast/toastApi';
 import type { SavedTeam, SavedPlayer } from '../../utils/teamStorage';
 import {
@@ -30,6 +30,7 @@ import {
 } from '../TeamShared';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
+import { filterTeamsByName } from './teamFilter';
 import '../../styles/number-grid.css';
 import './OpponentManager.css';
 
@@ -43,6 +44,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const [isCreating, setIsCreating] = useState(false);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
+    // 一覧をチーム名で絞る。画面を離れたら消えてよいので保存はしない。
+    // 削除や再読み込みで teams が変わっても query は保つ（絞り込んだまま
+    // 続けて消せるように）
+    const [query, setQuery] = useState('');
+    const visibleTeams = useMemo(() => filterTeamsByName(teams, query), [teams, query]);
+
     // OCR related state
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
@@ -54,12 +61,22 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         setTeams(loadOpponents());
     };
 
+    // 新規登録・インポートは、絞り込んだ一覧に無かったチームを増やす経路。
+    // 検索語に合わない名前だと足したチームが一覧に出ず、他に一致が残っていれば
+    // 「一致しません」も出ないので、登録できたのか分からなくなる。そこでこの
+    // 2経路だけは絞り込みを解く。編集・削除は今ある一覧の中で続ける操作なので
+    // 解かない（query 宣言の上のコメントと同じ理由）
+    const refreshTeamsAndClearFilter = () => {
+        refreshTeams();
+        setQuery('');
+    };
+
     const {
         pendingImport, importTarget, setImportTarget,
         showTextImport, setShowTextImport,
         importText, updateImportText, textValidation,
         handleJsonImport, handleConfirmImport, handleCancelImport, handleImportTextSubmit,
-    } = useTeamImportExport({ onImported: refreshTeams, defaultImportTarget: 'opponent' });
+    } = useTeamImportExport({ onImported: refreshTeamsAndClearFilter, defaultImportTarget: 'opponent' });
 
     const handleCreateNew = () => {
         setEditingTeam(createEmptySavedTeam());
@@ -109,7 +126,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         }
 
         saveOpponent(editingTeam);
-        refreshTeams();
+        // isCreating を見るのはここが最後。直後の setIsCreating(false) で消える
+        if (isCreating) {
+            refreshTeamsAndClearFilter();
+        } else {
+            refreshTeams();
+        }
         setEditingTeam(null);
         setIsCreating(false);
     };
@@ -808,13 +830,49 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                 </div>
             )}
 
+            {/*
+              絞り込みの操作子は結果が0件でも描画する。
+              条件を変える手段が消えると、その条件から抜け出せなくなる
+              （試合履歴の検索と同じ理由・同じ形）
+            */}
+            {teams.length > 0 && (
+                <div className="opponent-controls">
+                    <div className="opponent-search">
+                        <label className="opponent-field-label" htmlFor="opponent-search-input">検索：</label>
+                        <input
+                            id="opponent-search-input"
+                            type="search"
+                            className="input"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            placeholder="チーム名"
+                        />
+                        {query && (
+                            <button
+                                className="btn-reset"
+                                onClick={() => setQuery('')}
+                                aria-label="検索条件を消す"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                    <span className="opponent-count">{visibleTeams.length} / {teams.length}件</span>
+                </div>
+            )}
+
             {teams.length === 0 ? (
                 <div className="empty-state">
                     <p>登録された対戦チームはありません</p>
                 </div>
+            ) : visibleTeams.length === 0 ? (
+                // 「登録がない」と「検索で消えた」を混同しない
+                <div className="empty-state">
+                    <p>「{query}」に一致するチームはありません</p>
+                </div>
             ) : (
                 <div className="teams-list">
-                    {teams.map(team => (
+                    {visibleTeams.map(team => (
                         <div key={team.id} className="team-card">
                             <div className="team-card-info">
                                 <h3 className="team-card-name">{team.name || '(未設定)'}</h3>
