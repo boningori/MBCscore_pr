@@ -112,6 +112,40 @@ export function parseOcrText(text: string): SavedPlayer[] {
 }
 
 /**
+ * tesseract.js 本体（動的importのチャンク）を読み込めなかったことを表す例外。
+ *
+ * OCRアセット（worker/wasm/言語データ）が無い場合と区別が要る。あちらは
+ * 「一度オンラインでアプリを開けば以後オフラインでも使える」が、こちらは
+ * 手元のページが参照しているチャンクがキャッシュにもサーバにも無い状態で、
+ * 再読み込みしないと直らない（pdfExport.loadExportModule と同じ筋）。
+ */
+class OcrModuleError extends Error {
+    constructor(message: string, options?: { cause?: unknown }) {
+        super(message);
+        this.name = 'OcrModuleError';
+        if (options && 'cause' in options) this.cause = options.cause;
+    }
+}
+
+/**
+ * tesseract.js 本体を読み込む。読めなければ、打てる手を添えて投げ直す。
+ *
+ * 文面をここで決め切ってよいのは、オフラインのときは
+ * tesseractFailureMessage が先に別の案内（アセット未取得）を返すため。
+ * つまりこの文面が画面に出るのはオンラインのときだけになる。
+ */
+async function loadTesseract(): Promise<typeof import('tesseract.js')> {
+    try {
+        return await import('tesseract.js');
+    } catch (error) {
+        throw new OcrModuleError(
+            '写真読込に必要なデータを読み込めませんでした。画面を再読み込みしてから、もう一度お試しください',
+            { cause: error },
+        );
+    }
+}
+
+/**
  * Tesseract.jsによるOCR処理
  */
 async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> {
@@ -119,7 +153,7 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
     try {
         if (import.meta.env.DEV) console.log('Using OCR Engine: Tesseract.js (self-hosted)');
         // 本体の読み込みもここで初めて発生する（写真読込を使う人だけが払う）
-        const { createWorker } = await import('tesseract.js');
+        const { createWorker } = await loadTesseract();
         // worker・wasmコア・言語データすべてを同梱物から読み込む（第三者CDN依存なし＝完全オフライン対応）
         // corePathはディレクトリではなくファイルを直指定する。詳細は tesseractAssets.ts。
         worker = await createWorker('jpn', 1, {
@@ -394,6 +428,10 @@ function tesseractFailureMessage(error: unknown): string {
             + '一度オンラインでアプリを開くと、以降はオフラインでも使えます。'
             + '（今は選手を手入力で追加できます）';
     }
+    // 本体のチャンクが読めていない（別のタブで更新した後など）。
+    // OCRそのものの失敗ではないので、生の英語メッセージ
+    // （"Failed to fetch dynamically imported module"）を画面へ出さない
+    if (error instanceof OcrModuleError) return error.message;
     return error instanceof Error ? error.message : '画像認識に失敗しました';
 }
 
