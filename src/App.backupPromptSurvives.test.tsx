@@ -19,7 +19,7 @@ import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-libra
 import App from './App';
 import { createInitialGame, createTeam, createPlayer } from './types/game';
 
-const shareBackup = vi.hoisted(() => vi.fn(async () => true));
+const shareBackup = vi.hoisted(() => vi.fn(async () => 'saved' as const));
 vi.mock('./utils/dataBackup', async (importOriginal) => ({
     ...(await importOriginal<typeof import('./utils/dataBackup')>()),
     shareBackup,

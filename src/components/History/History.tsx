@@ -7,8 +7,7 @@ import type { Game, GameInfo } from '../../types/game';
 import { createInitialGameInfo, DEFAULT_QUARTER_MINUTES } from '../../types/game';
 import {
     exportGame,
-    downloadJSON,
-    shareFile,
+    shareOrDownloadFile,
     generateGameFilename,
 } from '../../utils/dataBackup';
 import { showToast } from '../Toast/toastApi';
@@ -116,16 +115,9 @@ export function History({ onBack }: HistoryProps) {
 
         const filename = generateGameFilename(record.gameName, record.date);
 
-        // モバイルデバイスの場合はWeb Share APIを試す
-        if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
-            const shared = await shareFile(data, filename);
-            if (shared) {
-                return;
-            }
-        }
-
-        // ダウンロード
-        downloadJSON(data, filename);
+        // 共有シート（モバイル）→ ダウンロードの順は shareOrDownloadFile が持つ。
+        // やめたときは追い打ちのダウンロードをしない
+        await shareOrDownloadFile(data, filename);
     };
 
     /** 読める日時だけ Date にする（読めなければ null。Invalid Date を作らない） */

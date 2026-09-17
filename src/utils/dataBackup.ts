@@ -495,6 +495,20 @@ function serializeForFile(data: unknown): string {
     return JSON.stringify(data);
 }
 
+/**
+ * 共有シートに渡した結果。
+ * 'cancelled'（利用者が閉じた）と 'unsupported'（共有が使えない）を
+ * 区別するためにある。前者でダウンロードへ進んではいけない。
+ */
+export type ShareOutcome = 'shared' | 'cancelled' | 'unsupported';
+
+/**
+ * バックアップの結果。
+ * 'cancelled' は失敗ではないので責めない。ただし成功とも言わない
+ * （控えはどこにも無い。shareBackup のコメント）。
+ */
+export type BackupOutcome = 'saved' | 'cancelled' | 'failed';
+
 export function downloadJSON(data: unknown, filename: string): void {
     const blob = new Blob([serializeForFile(data)], { type: 'application/json' });
     downloadBlob(blob, filename);
@@ -549,63 +563,111 @@ function downloadBlob(blob: Blob, filename: string): void {
  * あるため、`title` には日付入りの共有ファイル名（.txt）を渡す。これにより保存先でも
  * 日付付きの一意な名前になり、複数バックアップの区別・上書き事故を防ぐ。
  */
-export async function shareFile(data: unknown, filename: string): Promise<boolean> {
+export async function shareFileOutcome(data: unknown, filename: string): Promise<ShareOutcome> {
     if (!navigator.share) {
-        return false;
+        return 'unsupported';
+    }
+
+    const json = serializeForFile(data);
+    // .json は共有許可リスト外のため .txt として共有する
+    const shareName = filename.replace(/\.json$/i, '') + '.txt';
+    const file = new File([json], shareName, { type: 'text/plain' });
+
+    // canShareが使える場合はファイル共有可否を事前確認（不可ならダウンロードへフォールバック）
+    if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) {
+        return 'unsupported';
     }
 
     try {
-        const json = serializeForFile(data);
-        // .json は共有許可リスト外のため .txt として共有する
-        const shareName = filename.replace(/\.json$/i, '') + '.txt';
-        const file = new File([json], shareName, { type: 'text/plain' });
-
-        // canShareが使える場合はファイル共有可否を事前確認（不可ならダウンロードへフォールバック）
-        if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) {
-            return false;
-        }
-
         // filesと同時にtextを渡すと一部iOSで共有が失敗するため渡さない。
         // titleには共有ファイル名を渡し、保存先で日付付きの名前になるようにする。
         await navigator.share({
             files: [file],
             title: shareName,
         });
-
-        return true;
+        return 'shared';
     } catch (error) {
-        // ユーザーがキャンセルした場合もここに来る
-        if (import.meta.env.DEV) console.log('Share cancelled or failed:', error);
-        return false;
+        // 利用者が共有シートを閉じただけ。ダウンロードで追い打ちをかけない
+        if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+        // 共有そのものが通らなかった。取りこぼすよりはダウンロードを試す
+        if (import.meta.env.DEV) console.log('Share failed:', error);
+        return 'unsupported';
     }
 }
 
 /**
- * 全データバックアップを共有シート（対応時）またはダウンロードで保存する。
- * どちらかでファイルを生成できたら最終バックアップとして記録し true を返す。
- * データ保全のため、共有がキャンセル/失敗してもダウンロードにフォールバックする。
+ * 共有できたかどうかだけを見る呼び出し向けの薄い包み。
+ * false は「共有していない」であって、やめたのか使えないのかは区別しない。
  */
-export async function shareBackup(): Promise<boolean> {
+export async function shareFile(data: unknown, filename: string): Promise<boolean> {
+    return (await shareFileOutcome(data, filename)) === 'shared';
+}
+
+/** チーム1件・試合1件の書き出し結果 */
+export type FileExportOutcome = 'shared' | 'downloaded' | 'cancelled';
+
+/**
+ * チーム1件・試合1件をファイルとして取り出す（モバイルは共有シート、
+ * それ以外はダウンロード）。
+ *
+ * 履歴・マイチーム管理・対戦チーム管理の3画面が、同じ手順をそれぞれ書いていた。
+ * 3か所に分かれていたせいで「やめたのにダウンロードへ進み、✓ダウンロード
+ * しました と報告する」が3つとも残っていた。判断はここ1か所に置く。
+ *
+ * モバイルでだけ共有シートを試すのは従来どおり（PC では a[download] が
+ * 期待どおり動き、共有シートを挟むほうが手数が増える）。全端末で共有を試す
+ * 全体バックアップ（shareBackup）とは目的が違う。
+ */
+export async function shareOrDownloadFile(data: unknown, filename: string): Promise<FileExportOutcome> {
+    if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
+        const shared = await shareFileOutcome(data, filename);
+        if (shared === 'shared') return 'shared';
+        // やめたなら追い打ちのダウンロードはしない（shareBackup と同じ判断）
+        if (shared === 'cancelled') return 'cancelled';
+    }
+
+    downloadJSON(data, filename);
+    return 'downloaded';
+}
+
+/**
+ * 全データバックアップを共有シート（対応時）またはダウンロードで保存する。
+ *
+ * 3値で返すのが要点である。以前は boolean で、共有シートを**閉じただけ**でも
+ * ダウンロードへ進み、recordBackup() を呼んで true を返していた。呼び出し側は
+ * 「バックアップを保存しました」と報告し、督促（isBackupDue）は次の試合を
+ * 記録するまで二度と出ない。控えが1つも無いまま「控えは取れている」と
+ * 思わせる状態を作っていたことになる。しかもこのバックアップは、端末から
+ * 記録を逃がす最後の手段である。
+ *
+ * やめた操作の後でダウンロードを起こさないのは pdfExport と同じ判断
+ * （iOSのダウンロードは画面遷移を伴いうる。shareExportFile のコメント）。
+ * 共有そのものが使えない端末は「やめた」とは事情が違うので、従来どおり
+ * ダウンロードへ落とす。
+ */
+export async function shareBackup(): Promise<BackupOutcome> {
     try {
         const data = exportAllData();
         const filename = generateBackupFilename();
 
         // モバイル等でWeb Shareが使えるならまず共有シートを試す
         if ('share' in navigator) {
-            const shared = await shareFile(data, filename);
-            if (shared) {
+            const shared = await shareFileOutcome(data, filename);
+            if (shared === 'shared') {
                 recordBackup();
-                return true;
+                return 'saved';
             }
+            // やめたなら追い打ちのダウンロードはしない。成功とも言わない
+            if (shared === 'cancelled') return 'cancelled';
         }
 
-        // 非対応・共有キャンセル時はダウンロードにフォールバック
+        // 共有非対応・共有が通らなかった場合はダウンロードにフォールバック
         downloadJSON(data, filename);
         recordBackup();
-        return true;
+        return 'saved';
     } catch (error) {
         console.error('shareBackup failed:', error);
-        return false;
+        return 'failed';
     }
 }
 

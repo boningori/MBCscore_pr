@@ -279,8 +279,11 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
     // データ管理ハンドラー
     const handleExportAll = async () => {
-        const ok = await shareBackup();
-        if (ok) {
+        const outcome = await shareBackup();
+        // 共有シートを閉じただけなら何も保存されていない。成功とも失敗とも言わない
+        // （利用者が自分でやめた操作。shareBackup の BackupOutcome）
+        if (outcome === 'cancelled') return;
+        if (outcome === 'saved') {
             const lb = loadLastBackup();
             setLastBackupText(lb ? new Date(lb.timestamp).toLocaleString('ja-JP') : '未バックアップ');
             showStatus('✓ バックアップを保存しました', 'success');

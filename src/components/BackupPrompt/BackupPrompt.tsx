@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Modal } from '../Modal';
+import type { BackupOutcome } from '../../utils/dataBackup';
 import './BackupPrompt.css';
 
 interface BackupPromptProps {
     /**
-     * バックアップを実行する。保存できたら true。
+     * バックアップを実行し、結果を返す。
      *
      * 以前は `() => void` で、呼び出し側（App）が `await shareBackup()` の
      * 戻り値を捨てていた。失敗しても案内が黙って閉じるため、利用者からは
      * 「保存された」ようにしか見えない。督促の画面でそれをやると、
      * バックアップが無いまま安心させることになる。
+     *
+     * boolean ではなく3値なのは、共有シートを閉じただけの 'cancelled' を
+     * 失敗として赤字で咎めないため（BackupOutcome）。
      */
-    onBackup: () => Promise<boolean> | boolean;
+    onBackup: () => Promise<BackupOutcome> | BackupOutcome;
     onDismiss: () => void;
 }
 
@@ -26,10 +30,12 @@ export const BackupPrompt: React.FC<BackupPromptProps> = ({ onBackup, onDismiss 
         setBusy(true);
         setFailed(false);
         try {
-            const saved = await onBackup();
+            const outcome = await onBackup();
             // 失敗したら閉じない。ここで閉じると、やり直す導線が
-            // 設定画面の奥にしか無くなる
-            if (!saved) setFailed(true);
+            // 設定画面の奥にしか無くなる。
+            // やめただけ（'cancelled'）は咎めない。何が起きたかは利用者が
+            // 分かっていて、閉じないことだけが要る
+            if (outcome === 'failed') setFailed(true);
         } finally {
             setBusy(false);
         }

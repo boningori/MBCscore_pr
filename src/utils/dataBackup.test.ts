@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup, shareFile, generateBackupFilename } from './dataBackup';
+import { exportAllData, parseImportJSON, executeImport, escapeCsvCell, shareBackup, shareFile, shareOrDownloadFile, generateBackupFilename } from './dataBackup';
 import { saveMyTeam, loadMyTeams } from './teamStorage';
 import type { SavedTeam } from './teamStorage';
 import { saveGameResult, loadGameHistory } from './gameHistoryStorage';
@@ -558,8 +558,8 @@ describe('shareBackup', () => {
         URL.createObjectURL = () => 'blob:mock';
         URL.revokeObjectURL = () => {};
 
-        const ok = await shareBackup();
-        expect(ok).toBe(true);
+        const outcome = await shareBackup();
+        expect(outcome).toBe('saved');
         expect(loadLastBackup()?.gameCount).toBe(1);
     });
 
@@ -572,10 +572,130 @@ describe('shareBackup', () => {
         navigator.share = vi.fn().mockResolvedValue(undefined);
         const downloadSpy = vi.spyOn(URL, 'createObjectURL');
 
-        const ok = await shareBackup();
-        expect(ok).toBe(true);
+        const outcome = await shareBackup();
+        expect(outcome).toBe('saved');
         expect(loadLastBackup()?.gameCount).toBe(1);
         expect(downloadSpy).not.toHaveBeenCalled();
+    });
+
+    // 共有シートを閉じただけなら、何も保存されていない。
+    //
+    // 以前はここでダウンロードへ進み、recordBackup() を呼んで true を返していた。
+    // 呼び出し側は「バックアップを保存しました」と報告し、督促（isBackupDue）は
+    // 次の試合を記録するまで二度と出ない。控えが1つも無いまま「控えは取れている」と
+    // 思わせる状態を作るので、やめた操作は成功として扱わない。
+    // 同じ判断は pdfExport の shareExportFile が先に入れている。
+    it('共有をやめたときはダウンロードへ進まず、保存したとも記録しない', async () => {
+        const teamA = createTeam('teamA', 'A', 'コーチ');
+        const teamB = createTeam('teamB', 'B', 'コーチ');
+        saveGameResult('第1試合', teamA, teamB, [], [], []);
+
+        navigator.canShare = () => true;
+        navigator.share = vi.fn().mockRejectedValue(new DOMException('canceled', 'AbortError'));
+        const downloadSpy = vi.spyOn(URL, 'createObjectURL');
+
+        const outcome = await shareBackup();
+
+        expect(outcome).toBe('cancelled');
+        expect(downloadSpy).not.toHaveBeenCalled();
+        expect(loadLastBackup()).toBeNull();
+    });
+
+    // 共有そのものが使えない端末（canShareが拒否・Web Share非対応）は
+    // キャンセルとは事情が違う。従来どおりダウンロードへ落とす
+    it('共有が使えない端末ではダウンロードへ落として保存扱いにする', async () => {
+        const teamA = createTeam('teamA', 'A', 'コーチ');
+        const teamB = createTeam('teamB', 'B', 'コーチ');
+        saveGameResult('第1試合', teamA, teamB, [], [], []);
+
+        navigator.canShare = () => false;
+        navigator.share = vi.fn();
+        const createEl = document.createElement.bind(document);
+        vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+            const el = createEl(tag);
+            if (tag === 'a') el.click = () => {};
+            return el as HTMLElement;
+        });
+        URL.createObjectURL = () => 'blob:mock';
+        URL.revokeObjectURL = () => {};
+
+        const outcome = await shareBackup();
+
+        expect(outcome).toBe('saved');
+        expect(navigator.share).not.toHaveBeenCalled();
+        expect(loadLastBackup()?.gameCount).toBe(1);
+    });
+
+    it('書き出しそのものに失敗したら failed を返す', async () => {
+        const teamA = createTeam('teamA', 'A', 'コーチ');
+        const teamB = createTeam('teamB', 'B', 'コーチ');
+        saveGameResult('第1試合', teamA, teamB, [], [], []);
+
+        navigator.canShare = () => false;
+        // ダウンロード経路の先頭で投げさせる
+        vi.spyOn(URL, 'createObjectURL').mockImplementation(() => { throw new Error('boom'); });
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const outcome = await shareBackup();
+
+        expect(outcome).toBe('failed');
+        expect(loadLastBackup()).toBeNull();
+    });
+});
+
+// チーム1件・試合1件の書き出しは、3つの画面（履歴・マイチーム・対戦チーム）が
+// 同じ手順を各自で書いていた。「共有できなければダウンロード」の分岐が3か所に
+// あると、やめた場合の扱いを1か所だけ直す事故が起きる（実際、全部が
+// キャンセル後にダウンロードへ進み「✓ ダウンロードしました」と報告していた）。
+describe('shareOrDownloadFile', () => {
+    const setUserAgent = (ua: string) => {
+        Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true });
+    };
+    const realUserAgent = navigator.userAgent;
+
+    beforeEach(() => {
+        localStorage.clear();
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+        setUserAgent(realUserAgent);
+        delete (navigator as unknown as { share?: unknown }).share;
+        delete (navigator as unknown as { canShare?: unknown }).canShare;
+    });
+
+    it('共有をやめたらダウンロードへ進まない', async () => {
+        setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile/15E148');
+        navigator.canShare = () => true;
+        navigator.share = vi.fn().mockRejectedValue(new DOMException('canceled', 'AbortError'));
+        const downloadSpy = vi.spyOn(URL, 'createObjectURL');
+
+        const outcome = await shareOrDownloadFile({ a: 1 }, 'team.json');
+
+        expect(outcome).toBe('cancelled');
+        expect(downloadSpy).not.toHaveBeenCalled();
+    });
+
+    it('モバイルで共有できたら shared', async () => {
+        setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile/15E148');
+        navigator.canShare = () => true;
+        navigator.share = vi.fn().mockResolvedValue(undefined);
+
+        expect(await shareOrDownloadFile({ a: 1 }, 'team.json')).toBe('shared');
+    });
+
+    it('モバイルでない端末はダウンロードする（共有シートを挟まない）', async () => {
+        navigator.share = vi.fn();
+        const createEl = document.createElement.bind(document);
+        vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+            const el = createEl(tag);
+            if (tag === 'a') el.click = () => {};
+            return el as HTMLElement;
+        });
+        URL.createObjectURL = () => 'blob:mock';
+        URL.revokeObjectURL = () => {};
+
+        expect(await shareOrDownloadFile({ a: 1 }, 'team.json')).toBe('downloaded');
+        expect(navigator.share).not.toHaveBeenCalled();
     });
 });
 

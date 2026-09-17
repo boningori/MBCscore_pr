@@ -10,8 +10,7 @@ import {
 } from '../../utils/teamStorage';
 import {
     exportTeam,
-    downloadJSON,
-    shareFile,
+    shareOrDownloadFile,
     generateTeamFilename,
 } from '../../utils/dataBackup';
 import { parsePlayerNumber, formatPlayerNumber } from '../../utils/playerNumber';
@@ -121,18 +120,16 @@ export function MyTeamManager({ onBack, backLabel = '戻る', onSelectTeam, isSe
         const data = exportTeam(team);
         const filename = generateTeamFilename(team.name);
 
-        // モバイルデバイスの場合はWeb Share APIを試す
-        if ('share' in navigator && navigator.userAgent.match(/mobile/i)) {
-            const shared = await shareFile(data, filename);
-            if (shared) {
-                showToast(`✓ ${team.name} のデータを共有しました`, 'success');
-                return;
-            }
-        }
-
-        // ダウンロード
-        downloadJSON(data, filename);
-        showToast(`✓ ${filename} をダウンロードしました`, 'success');
+        // 共有シート（モバイル）→ ダウンロードの順は shareOrDownloadFile が持つ。
+        // やめたときは何も保存されていないので、成功を伝えない
+        const outcome = await shareOrDownloadFile(data, filename);
+        if (outcome === 'cancelled') return;
+        showToast(
+            outcome === 'shared'
+                ? `✓ ${team.name} のデータを共有しました`
+                : `✓ ${filename} をダウンロードしました`,
+            'success',
+        );
     };
 
     const showStatus = (text: string, type: 'success' | 'error') => {

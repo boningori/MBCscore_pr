@@ -1178,11 +1178,12 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     return (
       <BackupPrompt
         // 保存できたときだけ閉じる。失敗を握って閉じると、バックアップが
-        // 無いまま「保存した」と思わせることになる（BackupPrompt 側で通知する）
+        // 無いまま「保存した」と思わせることになる（BackupPrompt 側で通知する）。
+        // 共有シートを閉じただけのときも開いたまま残す（控えはまだ無い）
         onBackup={async () => {
-          const saved = await shareBackup();
-          if (saved) setShowBackupPrompt(false);
-          return saved;
+          const outcome = await shareBackup();
+          if (outcome === 'saved') setShowBackupPrompt(false);
+          return outcome;
         }}
         onDismiss={() => setShowBackupPrompt(false)}
       />
@@ -1900,11 +1901,14 @@ function AppContent({ screen, setScreen }: AppContentProps) {
               disabled={isBackingUp}
               onClick={async () => {
                 setIsBackingUp(true);
-                const ok = await shareBackup();
+                const outcome = await shareBackup();
                 setIsBackingUp(false);
+                // 共有シートを閉じただけなら何も保存されていない。
+                // 成功も失敗も言わずに戻す（利用者が自分でやめた操作）
+                if (outcome === 'cancelled') return;
                 showToast(
-                  ok ? 'バックアップを保存しました' : 'バックアップに失敗しました',
-                  ok ? 'success' : 'error',
+                  outcome === 'saved' ? 'バックアップを保存しました' : 'バックアップに失敗しました',
+                  outcome === 'saved' ? 'success' : 'error',
                 );
               }}
             >
