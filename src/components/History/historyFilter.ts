@@ -6,6 +6,7 @@
 
 import type { GameRecord } from '../../utils/gameHistoryStorage';
 import { recordInputDate } from '../../utils/localDate';
+import { matchesQuery } from '../../utils/matchesQuery';
 
 export type HistoryOrder = 'newest' | 'oldest';
 
@@ -22,7 +23,7 @@ function searchableText(record: GameRecord): string {
         record.teamB?.name,
         // 「2026-06」で6月の試合を探せるように、暦日も対象に含める
         recordInputDate(record.date),
-    ].filter(Boolean).join(' ').toLowerCase();
+    ].filter(Boolean).join(' ');
 }
 
 /** 絞り込んで並べ替えた新しい配列を返す（元の配列は変えない） */
@@ -30,10 +31,9 @@ export function filterAndSortRecords(
     records: GameRecord[],
     { query, order }: HistoryFilter,
 ): GameRecord[] {
-    const needle = query.trim().toLowerCase();
-    const filtered = needle
-        ? records.filter(record => searchableText(record).includes(needle))
-        : [...records];
+    // 照合の規則は matchesQuery が持つ（対戦チーム管理の検索と揃えるため）。
+    // 空の検索語は matchesQuery が常に true を返すので、ここで分岐は要らない
+    const filtered = records.filter(record => matchesQuery(searchableText(record), query));
 
     const direction = order === 'newest' ? -1 : 1;
     return filtered.sort((a, b) => {
