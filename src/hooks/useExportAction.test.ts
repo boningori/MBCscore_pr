@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { useExportAction } from './useExportAction';
-import { ExportSizeError } from '../utils/exportError';
+import { ExportModuleError, ExportSizeError } from '../utils/exportError';
 
 const showToast = vi.hoisted(() => vi.fn());
 vi.mock('../components/Toast/toastApi', () => ({ showToast }));
@@ -131,6 +131,22 @@ describe('端末の上限に当たったとき', () => {
         });
 
         expect(showToast.mock.calls[0][0]).toContain('端末の上限');
+        expect(showToast.mock.calls[0][0]).not.toContain('他のアプリを閉じて');
+        expect(showToast.mock.calls[0][1]).toBe('error');
+    });
+
+    it('出力用コードを読み込めなかったときも、その理由をそのまま伝える', async () => {
+        // 2つのタブで開いていて片方で「更新」を押した後などに起こる。
+        // メモリの問題ではないので、「他のアプリを閉じて…」では直らない
+        const { result } = renderHook(() => useExportAction());
+
+        await act(async () => {
+            await result.current.runExport(async () => {
+                throw new ExportModuleError('出力に必要なデータを読み込めませんでした。画面を再読み込みしてから、もう一度お試しください');
+            }, 'PDF');
+        });
+
+        expect(showToast.mock.calls[0][0]).toContain('再読み込み');
         expect(showToast.mock.calls[0][0]).not.toContain('他のアプリを閉じて');
         expect(showToast.mock.calls[0][1]).toBe('error');
     });

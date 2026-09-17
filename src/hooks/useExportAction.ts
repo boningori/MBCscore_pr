@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '../components/Toast/toastApi';
 import type { ExportOutcome } from '../utils/pdfExport';
-import { ExportSizeError } from '../utils/exportError';
+import { ExportGuidanceError } from '../utils/exportError';
 
 export interface UseExportActionResult {
     /** 出力処理の実行中か（ボタンの無効化・ラベル差し替えに使う） */
@@ -44,11 +44,12 @@ export function useExportAction(): UseExportActionResult {
             showToast(`${label}を出力しました`, 'success');
         } catch (error) {
             console.error(`${label}出力エラー:`, error);
-            // 端末の canvas 上限に当たった場合は、出力側が持っている理由を出す。
-            // 一般的な案内（メモリ不足を想定した「他のアプリを閉じて…」）は
-            // 何度やっても直らない相手に対して誤った指示になる（ExportSizeError）
+            // 出力側が理由を知っている失敗（端末の canvas 上限・チャンクの
+            // 読み込み失敗）は、その文面をそのまま出す。一般的な案内
+            // （メモリ不足を想定した「他のアプリを閉じて…」）は、そのとおりに
+            // しても直らない相手に対して誤った指示になる（ExportGuidanceError）
             showToast(
-                error instanceof ExportSizeError
+                error instanceof ExportGuidanceError
                     ? error.message
                     : `${label}の出力に失敗しました。他のアプリを閉じてもう一度お試しください`,
                 'error',
