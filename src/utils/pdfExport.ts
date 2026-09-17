@@ -3,6 +3,7 @@
 // 全画面の初回起動に乗ってしまうため、実行時に動的importする。
 
 import { isIos } from './installState';
+import { ExportSizeError } from './exportError';
 
 /**
  * 出力の結末。
@@ -70,6 +71,43 @@ export async function shareExportFile(file: File): Promise<ExportShareResult> {
 }
 
 /**
+ * 1枚の canvas に許す画素数の上限。
+ *
+ * iOS Safari は canvas の面積に上限を持ち、広く知られている値は約16.78M px
+ * （4096×4096 の端末もある）。超えると例外ではなく「描けない canvas」になり、
+ * toDataURL が 'data:,' を返す（assertRenderedImage）。
+ * 端末差があるので、知られている値の少し内側に取る。
+ */
+export const MAX_CANVAS_PIXELS = 16_000_000;
+
+/**
+ * 上限に収まるよう、描画倍率を落とす（落とす必要が無ければ要求どおり）。
+ *
+ * 選手詳細は scale 3 固定で、1試合の時点で 2458×8702 = 21.4M px に達していた
+ * （assertRenderedImage のコメントの実測値）。つまり iPhone/iPad では最初から
+ * 超えていて、出力は必ず失敗する。しかも「試合別詳細」の行が試合ごとに増える
+ * ため、使い込むほど悪くなる。
+ *
+ * 守り（assertRenderedImage）はあったが退避先が無く、利用者には
+ * 「他のアプリを閉じてもう一度お試しください」と出ていた。原因はメモリ不足
+ * ではなく面積の上限なので、その案内どおりにしても直らない。
+ *
+ * 等倍より下へは落とさない。そこまで大きい要素は倍率では救えず、粗くしても
+ * 読めない画像になるだけなので、従来どおり assertRenderedImage に任せる。
+ * 寸法が測れない（0）ときも要求どおりにする——0で割らないためと、
+ * 測れないことを理由に品質を落とさないため。
+ */
+export function fitScaleToCanvasLimit(width: number, height: number, requested: number): number {
+    const area = width * height;
+    if (area <= 0) return requested;
+    if (area * requested * requested <= MAX_CANVAS_PIXELS) return requested;
+
+    const fitted = Math.sqrt(MAX_CANVAS_PIXELS / area);
+    // 端数を切り上げると上限を超える。小数第2位で切り捨てる
+    return Math.max(1, Math.floor(fitted * 100) / 100);
+}
+
+/**
  * canvas から実際に画像が取り出せたことを確かめる（取れなければ例外）。
  *
  * toDataURL は上限を超えた canvas に対して例外ではなく 'data:,' を返す。
@@ -83,7 +121,7 @@ export async function shareExportFile(file: File): Promise<ExportShareResult> {
  */
 function assertRenderedImage(dataUrl: string, canvas: HTMLCanvasElement): void {
     if (dataUrl.startsWith('data:image/')) return;
-    throw new Error(
+    throw new ExportSizeError(
         `画像を生成できませんでした（${canvas.width}x${canvas.height}px）。`
         + '端末の上限を超えた可能性があります',
     );
@@ -361,11 +399,15 @@ export async function exportElement(
     // A4レイアウトを適用した状態で測る必要があるので、クラスを付けた後に行う
     const slashPositions = collectSlashLinePositions(element);
 
+    // 端末の canvas 上限に収まる倍率へ落とす。測るのは出力用レイアウトを
+    // 当てたあと——A4を強制するクラスで寸法が変わるため
+    const fittedScale = fitScaleToCanvasLimit(element.scrollWidth, element.scrollHeight, scale);
+
     let canvas: HTMLCanvasElement;
     try {
         // html2canvasでキャンバスに変換
         canvas = await html2canvas(element, {
-            scale,
+            scale: fittedScale,
             useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
@@ -390,7 +432,9 @@ export async function exportElement(
     const newCtx = newCanvas.getContext('2d');
     if (newCtx) {
         newCtx.drawImage(canvas, 0, 0);
-        drawSlashLinesOnCanvas(newCanvas, slashPositions, scale);
+        // 斜線の座標はCSS pxで測ってあるので、実際に描いた倍率で掛ける。
+        // 要求した倍率のままだと、上限で落としたときに斜線だけ枠からはみ出す
+        drawSlashLinesOnCanvas(newCanvas, slashPositions, fittedScale);
         canvas = newCanvas;
     }
     // コンテキストを取れなかったら、元の canvas のまま進む。

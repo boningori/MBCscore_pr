@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { useExportAction } from './useExportAction';
+import { ExportSizeError } from '../utils/exportError';
 
 const showToast = vi.hoisted(() => vi.fn());
 vi.mock('../components/Toast/toastApi', () => ({ showToast }));
@@ -113,5 +114,36 @@ describe('useExportAction', () => {
         await act(async () => { d.resolve(); await d.promise; });
         // 警告なく完走すればよい（React の act 警告が出ないこと）
         expect(showToast).toHaveBeenCalledTimes(1);
+    });
+});
+
+// 「他のアプリを閉じてもう一度お試しください」は、メモリ不足を想定した案内。
+// 端末の canvas 面積の上限に当たった場合は何度やっても直らないので、
+// その案内を出してはいけない（出力側が理由を持っているので、そのまま出す）。
+describe('端末の上限に当たったとき', () => {
+    it('出力側が持っている理由をそのまま伝える', async () => {
+        const { result } = renderHook(() => useExportAction());
+
+        await act(async () => {
+            await result.current.runExport(async () => {
+                throw new ExportSizeError('画像を生成できませんでした（9600x6800px）。端末の上限を超えた可能性があります');
+            }, 'PDF');
+        });
+
+        expect(showToast.mock.calls[0][0]).toContain('端末の上限');
+        expect(showToast.mock.calls[0][0]).not.toContain('他のアプリを閉じて');
+        expect(showToast.mock.calls[0][1]).toBe('error');
+    });
+
+    it('それ以外の失敗は、従来どおりの案内を出す', async () => {
+        const { result } = renderHook(() => useExportAction());
+
+        await act(async () => {
+            await result.current.runExport(async () => { throw new Error('boom'); }, 'PDF');
+        });
+
+        expect(showToast.mock.calls[0][0]).toContain('他のアプリを閉じて');
+        // 内部のエラー文言をそのまま画面へ出さない
+        expect(showToast.mock.calls[0][0]).not.toContain('boom');
     });
 });

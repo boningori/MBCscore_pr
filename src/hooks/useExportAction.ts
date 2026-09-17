@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '../components/Toast/toastApi';
 import type { ExportOutcome } from '../utils/pdfExport';
+import { ExportSizeError } from '../utils/exportError';
 
 export interface UseExportActionResult {
     /** 出力処理の実行中か（ボタンの無効化・ラベル差し替えに使う） */
@@ -43,7 +44,15 @@ export function useExportAction(): UseExportActionResult {
             showToast(`${label}を出力しました`, 'success');
         } catch (error) {
             console.error(`${label}出力エラー:`, error);
-            showToast(`${label}の出力に失敗しました。他のアプリを閉じてもう一度お試しください`, 'error');
+            // 端末の canvas 上限に当たった場合は、出力側が持っている理由を出す。
+            // 一般的な案内（メモリ不足を想定した「他のアプリを閉じて…」）は
+            // 何度やっても直らない相手に対して誤った指示になる（ExportSizeError）
+            showToast(
+                error instanceof ExportSizeError
+                    ? error.message
+                    : `${label}の出力に失敗しました。他のアプリを閉じてもう一度お試しください`,
+                'error',
+            );
         } finally {
             runningRef.current = false;
             // 画面を離れた後のsetStateはReactの警告になるため、生存時のみ戻す
