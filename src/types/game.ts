@@ -482,23 +482,16 @@ export const getFoulFreeThrows = (foul: FoulType | FoulRecord): number => {
     return foul.freeThrows || 0;
 };
 
-// FT移行判定ロジック
-export const shouldShowFreeThrowInput = (
-    foulType: FoulType,
-    shotSituation: ShotSituation,
-    teamFouls: number
-): boolean => {
-    // T/U/D は常にFT
-    if (['T', 'U', 'D'].includes(foulType)) return true;
-
-    // シュート中ならFT
-    if (shotSituation !== 'none') return true;
-
-    // チームファウル5個目以降（ペナルティ）ならFT
-    if (teamFouls >= TEAM_FOUL_LIMIT) return true;
-
-    return false;
-};
+// FT移行判定ロジック（shouldShowFreeThrowInput）はここにあったが、参照が無かった。
+//
+// 実際にFTへ進むかを決めているのは FoulInputFlow（runPFoulNormalTap /
+// runSpecialFoulSelect）で、こちらは呼ばれないまま規則だけが古くなっていた——
+// T/U/D しか見ておらず、BT（ベンチテクニカル）を取りこぼす。すぐ下の
+// suggestFreeThrowCount は BT を1本として扱うので、2つの規則は既に食い違っていた。
+//
+// 名前が素直なぶん、次に触る人が「FT判定はここ」と読んで使いたくなる。使えば
+// ベンチテクニカルのFTが黙って0本になる。テストも無く、間違いに気づく手がかりが
+// どこにも無いので、残さず消す。必要になったら FoulInputFlow から切り出すこと。
 
 // FT本数の自動推奨ロジック
 export const suggestFreeThrowCount = (
