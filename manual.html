@@ -403,7 +403,7 @@
   <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">v1.14 対応</div>
+  <div class="cover-version">v1.15 対応</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -1367,6 +1367,14 @@
   スコアシートは試合中いつでも確認でき、現時点までの記録がリアルタイムに反映されます。
 </div>
 
+<div class="info-box">
+  <div class="box-title">縦に長い出力は、端末に合わせて精細さを調整します（v1.15 から）</div>
+  選手スタッツ分析の詳細画面のように縦に長い内容は、端末が一度に扱える画像の大きさを超えることがあります。
+  超えそうなときは<strong>解像度を自動的に下げて収めます</strong>。
+  iPhone・iPadでは、試合数が増えるほど出力そのものが失敗しやすくなっていましたが、
+  そのまま出せるようになりました（紙に印刷する分には見た目は変わりません）。
+</div>
+
 <div class="page-break"></div>
 
 <!-- =========================================================== -->
@@ -1646,6 +1654,13 @@
 </div>
 
 <div class="info-box">
+  <div class="box-title">電波の届かない会場では、待たずに標準OCRへ切り替わります（v1.15 から）</div>
+  体育館のWi-Fiは「つながっているのに外に出られない」ことがあります（認証待ちの画面が出る回線など）。
+  AI読み取りは<strong>一定時間で打ち切り</strong>、端末の中だけで動く標準OCRに切り替えます。
+  音声メモの文字起こしと設定画面の接続テストも同じように打ち切り、「タイムアウトしました」とお知らせします。
+</div>
+
+<div class="info-box">
   <div class="box-title">APIキーとスイッチは別物です</div>
   Gemini APIキーは<strong>音声メモとAI読み取りで共通</strong>です。
   v1.9 まではキーを入れるだけでAI読み取りも有効になっていましたが、
@@ -1675,6 +1690,13 @@
   <li><strong>試合単位</strong>: 試合履歴 → 試合を選択 →「エクスポート」</li>
   <li><strong>CSV出力</strong>: 設定画面 →「CSV出力」（試合一覧 / 詳細統計）</li>
 </ul>
+
+<div class="info-box">
+  <div class="box-title">共有シートを閉じたときは、保存されていません（v1.15 から）</div>
+  iPhone・iPad・Androidでは<strong>共有シート</strong>が開きます。保存先を選ばずに閉じた場合、
+  ファイルはどこにも残りません。アプリも<strong>「保存しました」とは言わず</strong>、
+  「バックアップしますか？」の案内もそのまま残ります。案内が閉じるのは、実際に保存できたときだけです。
+</div>
 
 <h3>インポート方法</h3>
 <p>以下のいずれかの方法でデータを取り込めます:</p>
@@ -1837,7 +1859,7 @@
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
   <!-- アプリ本体のマイナーバージョンと揃える（ずれたら manualVersion.test.ts が落ちる） -->
-  <p>使用説明書 v1.14 対応</p>
+  <p>使用説明書 v1.15 対応</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
