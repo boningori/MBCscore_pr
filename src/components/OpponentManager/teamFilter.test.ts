@@ -68,6 +68,13 @@ describe('filterTeamsByName', () => {
         const input = [...teams];
         filterTeamsByName(input, '西陵');
         expect(namesOf(input)).toEqual(namesOf(teams));
+
+        // 中身だけでなく参照も別物であることを確かめる。呼び手が受け取った
+        // 配列を書き換えても元の配列が壊れないのは、別の配列だからこそ
+        // 成り立つ（設計書は「参照と中身の両方」を検査対象としていた）。
+        // 素通しが一番起きやすい空検索語のケースで特に効く
+        expect(filterTeamsByName(input, '西陵')).not.toBe(input);
+        expect(filterTeamsByName(input, '')).not.toBe(input);
     });
 
     it('並び順は入力のまま（並べ替えない）', () => {

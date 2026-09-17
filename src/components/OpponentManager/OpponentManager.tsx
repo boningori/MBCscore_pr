@@ -61,12 +61,22 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         setTeams(loadOpponents());
     };
 
+    // 新規登録・インポートは、絞り込んだ一覧に無かったチームを増やす経路。
+    // 検索語に合わない名前だと足したチームが一覧に出ず、他に一致が残っていれば
+    // 「一致しません」も出ないので、登録できたのか分からなくなる。そこでこの
+    // 2経路だけは絞り込みを解く。編集・削除は今ある一覧の中で続ける操作なので
+    // 解かない（query 宣言の上のコメントと同じ理由）
+    const refreshTeamsAndClearFilter = () => {
+        refreshTeams();
+        setQuery('');
+    };
+
     const {
         pendingImport, importTarget, setImportTarget,
         showTextImport, setShowTextImport,
         importText, updateImportText, textValidation,
         handleJsonImport, handleConfirmImport, handleCancelImport, handleImportTextSubmit,
-    } = useTeamImportExport({ onImported: refreshTeams, defaultImportTarget: 'opponent' });
+    } = useTeamImportExport({ onImported: refreshTeamsAndClearFilter, defaultImportTarget: 'opponent' });
 
     const handleCreateNew = () => {
         setEditingTeam(createEmptySavedTeam());
@@ -116,7 +126,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         }
 
         saveOpponent(editingTeam);
-        refreshTeams();
+        // isCreating を見るのはここが最後。直後の setIsCreating(false) で消える
+        if (isCreating) {
+            refreshTeamsAndClearFilter();
+        } else {
+            refreshTeams();
+        }
         setEditingTeam(null);
         setIsCreating(false);
     };

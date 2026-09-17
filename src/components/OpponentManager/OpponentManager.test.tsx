@@ -239,3 +239,85 @@ describe('OpponentManager: 名前で探す', () => {
         expect(findUnlabeledFields()).toEqual([]);
     });
 });
+
+describe('OpponentManager: 増える経路では絞り込みを解く', () => {
+    // 絞り込んだまま新規登録・インポートをすると、足したチームの名前が
+    // 検索語に合わない場合に一覧へ現れず、登録できたのか分からなくなる。
+    // 一方、編集・削除は「絞り込んだ一覧の中で続ける」操作なので解いてはいけない
+    // （query 宣言の上のコメントと同じ理由）。
+
+    const seedThree = () => seed([
+        team({ id: 'opp-1', name: '西陵ミニバス' }),
+        team({ id: 'opp-2', name: '東陵ミニバスケットボールクラブ' }),
+        team({ id: 'opp-3', name: 'MBC Jr' }),
+    ]);
+
+    const searchBox = () => screen.getByLabelText('検索：') as HTMLInputElement;
+
+    it('新規登録すると検索語が消え、絞り込みに埋もれず新しいチームが見える', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+
+        fireEvent.click(screen.getByRole('button', { name: '+ 新規チーム登録' }));
+        fireEvent.change(screen.getByLabelText('チーム名 *'), { target: { value: 'ジュニアクラブ' } });
+
+        // 対戦チームの保存には最低5人の選手登録が必要
+        for (const n of [1, 2, 3, 4, 5]) {
+            fireEvent.change(screen.getByLabelText('背番号'), { target: { value: String(n) } });
+            fireEvent.click(screen.getByRole('button', { name: '追加' }));
+        }
+
+        fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
+        expect(searchBox().value).toBe('');
+        expect(screen.getByText('ジュニアクラブ')).toBeTruthy();
+    });
+
+    it('インポートすると検索語が消える', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+
+        fireEvent.click(screen.getByRole('button', { name: '📝 データを貼り付け' }));
+        const importedTeam = team({ id: 'opp-imported', name: 'インポート太郎クラブ' });
+        const json = JSON.stringify({
+            type: 'team',
+            version: '2.0',
+            exportDate: '2026-01-01T00:00:00.000Z',
+            team: importedTeam,
+        });
+        fireEvent.change(screen.getByPlaceholderText('ここにコピーしたデータを貼り付けてください'), { target: { value: json } });
+        fireEvent.click(screen.getByRole('button', { name: '読み込む' }));
+        fireEvent.click(screen.getByRole('button', { name: 'インポート実行' }));
+
+        expect(searchBox().value).toBe('');
+        expect(screen.getByText('インポート太郎クラブ')).toBeTruthy();
+    });
+
+    it('編集しても検索語は残る（絞り込んだまま続けて直せるように）', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+        // 「西陵」に絞られているので編集ボタンは1件だけ
+        fireEvent.click(screen.getByRole('button', { name: '編集' }));
+        fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
+        expect(searchBox().value).toBe('西陵');
+    });
+
+    it('削除しても検索語は残る（絞り込んだまま続けて消せるように）', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '西陵' } });
+        fireEvent.click(screen.getByRole('button', { name: '削除' }));
+        const dialog = screen.getByRole('dialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: '削除する' }));
+
+        expect(searchBox().value).toBe('西陵');
+    });
+});
