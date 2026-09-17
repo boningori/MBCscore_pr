@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { OCR_ASSET_URLS, warmOcrAssetCache, startOcrAssetWarmup } from './ocrAssetCache';
+import { OCR_ASSET_URLS, warmOcrAssetCache, startOcrAssetWarmup, OCR_ASSET_TIMEOUT_MS } from './ocrAssetCache';
 import { TESSERACT_PATHS } from './tesseractAssets';
 
 // fetch は SW（CacheFirst）に拾われて 'mbc-ocr-assets' に入る前提。
@@ -164,5 +164,29 @@ describe('startOcrAssetWarmup', () => {
         window.dispatchEvent(new Event('online'));
         await Promise.resolve();
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+// 先読みは裏で走るので、固まっても画面には何も出ない。だが running フラグが
+// 立ったままになると、オンラインへ復帰しても再試行しなくなる（attempt の
+// 早期return）。キャプティブポータルに捕まった端末が、以後ずっと
+// 「先読み済みでも未取得でもない」宙ぶらりんになる。
+describe('先読みの時間切れ', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('応答が返らなくても時間切れで諦め、falseを返す', async () => {
+        vi.useFakeTimers();
+        // 応答しない通信。中断されたときだけ棄却する（実際のfetchと同じ振る舞い）
+        const fetchMock = vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const promise = warmOcrAssetCache();
+        await vi.advanceTimersByTimeAsync(OCR_ASSET_TIMEOUT_MS);
+
+        await expect(promise).resolves.toBe(false);
     });
 });

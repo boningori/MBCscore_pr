@@ -26,7 +26,7 @@ vi.mock('tesseract.js', () => ({
 
 import { recognizePlayerList } from './imageOCR';
 import { setAiOcrEnabled } from './appSettings';
-import { FALLBACK_MODELS } from './geminiClient';
+import { FALLBACK_MODELS, GEMINI_REQUEST_TIMEOUT_MS } from './geminiClient';
 
 function imageFile(bytes = 10): File {
     return new File([new Uint8Array(bytes)], 'roster.jpg', { type: 'image/jpeg' });
@@ -69,6 +69,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    // 時間切れのテストが偽のタイマーを残すと、後続のテストで FileReader の
+    // setTimeout が永久に発火しなくなる
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
@@ -112,6 +115,27 @@ describe('全モデルで同じ結果になるエラー', () => {
 
         expect(fetchSpy).toHaveBeenCalledTimes(1);
         expect(result.usedEngine).toBe('Tesseract');
+    });
+
+    // 体育館のWi-Fiは「繋がっているのに外へ出られない」ことがある。
+    // 応答しない通信に上限が無かったため、写真読込は「読み込み中」のまま
+    // 戻らず、画面に中断する手段も無かった（OpponentManager の isLoading）。
+    // 時間で打ち切って、端末内で動く標準OCRへ回す
+    it('応答が返らないときは時間切れで打ち切り、標準OCRへ回す', async () => {
+        vi.useFakeTimers();
+        const fetchSpy = vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        }));
+        vi.stubGlobal('fetch', fetchSpy);
+
+        const promise = recognizePlayerList(imageFile());
+        await vi.advanceTimersByTimeAsync(GEMINI_REQUEST_TIMEOUT_MS);
+        const result = await promise;
+
+        // 1つ時間切れなら残りも時間切れ。8MBの画像を5回送り直さない
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(result.usedEngine).toBe('Tesseract');
+        expect(result.fallbackReason).toContain('タイムアウト');
     });
 });
 

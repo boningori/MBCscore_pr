@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GEMINI_API_BASE, FALLBACK_MODELS, getStoredApiKey, saveApiKey, subscribeApiKeyChanged } from './geminiClient';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { GEMINI_API_BASE, FALLBACK_MODELS, getStoredApiKey, saveApiKey, subscribeApiKeyChanged, testGeminiConnection, CONNECTION_TEST_TIMEOUT_MS } from './geminiClient';
 import { STORAGE_ERROR_EVENT } from './storageError';
 
 beforeEach(() => {
@@ -96,6 +96,70 @@ describe('geminiClient: APIキー変更の通知', () => {
         unsubscribe();
         saveApiKey('new-key');
         expect(listener).not.toHaveBeenCalled();
+    });
+});
+
+// 接続テストだけが、他の2つのGemini呼び出し（imageOCR / audioTranscribe）が
+// 先に入れた守りを持っていなかった。
+describe('geminiClient: 接続テストの失敗の扱い', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    /** 応答しない通信（中断されたときだけ棄却する） */
+    const hangingFetch = () => vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    }));
+
+    it('時間切れなら1モデルで打ち切り、時間切れだと分かる文言を返す', async () => {
+        vi.useFakeTimers();
+        const fetchSpy = hangingFetch();
+        vi.stubGlobal('fetch', fetchSpy);
+
+        const promise = testGeminiConnection('test-key');
+        await vi.advanceTimersByTimeAsync(CONNECTION_TEST_TIMEOUT_MS);
+        const result = await promise;
+
+        expect(result.success).toBe(false);
+        expect(result.message).toContain('タイムアウト');
+        // 5モデルぶん待たせない（1つ時間切れなら残りも同じ）
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    // プロキシの502やキャプティブポータルはHTMLを返す。以前は
+    // `await response.json()` が投げ、外側の catch が拾って次のモデルへ進み、
+    // 5回送ったうえで生のパースエラーを画面に出していた
+    it('エラー本文がJSONでなくても、残りのモデルへ送らず読める文言を返す', async () => {
+        const fetchSpy = vi.fn(async () => new Response('<html>502 Bad Gateway</html>', {
+            status: 502,
+            statusText: 'Bad Gateway',
+        }));
+        vi.stubGlobal('fetch', fetchSpy);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await testGeminiConnection('test-key');
+
+        expect(result.success).toBe(false);
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(result.message).not.toMatch(/JSON|Unexpected token/);
+    });
+
+    it('404のモデルは従来どおり次の候補へ送る', async () => {
+        const fetchSpy = vi.fn(async (url: string) => {
+            if (url.includes(FALLBACK_MODELS[0])) {
+                return new Response(JSON.stringify({ error: { message: 'model not found' } }), { status: 404 });
+            }
+            return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'hi' }] } }] }), { status: 200 });
+        });
+        vi.stubGlobal('fetch', fetchSpy);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await testGeminiConnection('test-key');
+
+        expect(result.success).toBe(true);
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
     });
 });
 

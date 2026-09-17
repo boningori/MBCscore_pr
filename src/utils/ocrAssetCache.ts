@@ -14,6 +14,18 @@
 // 取得に失敗しても黙って諦める。OCRは任意機能で、記録そのものには関係ない。
 
 import { TESSERACT_PATHS } from './tesseractAssets';
+import { fetchWithTimeout } from './fetchWithTimeout';
+
+/**
+ * 1本あたりの上限。
+ *
+ * wasmコアは3.8MB、言語データは2.0MBある。体育館の細い回線では正常でも
+ * 分単位になりうるので長めに取るが、上限そのものは要る——応答しない網
+ * （キャプティブポータル）に捕まると warmOcrAssetCache が返らず、
+ * startOcrAssetWarmup の running が立ったままになって、オンラインへ
+ * 復帰しても二度と再試行しなくなる。
+ */
+export const OCR_ASSET_TIMEOUT_MS = 120_000;
 
 /**
  * 先読み対象。tesseract.js が実行時に実際に引くURLと1対1で揃える。
@@ -62,7 +74,7 @@ export async function warmOcrAssetCache(): Promise<boolean> {
             // SW側のcacheName（vite.config.ts）をここに書き写さずに済む
             if (await caches.match(url)) continue;
 
-            const response = await fetch(url);
+            const response = await fetchWithTimeout(url, {}, OCR_ASSET_TIMEOUT_MS);
             // 404のHTMLをキャッシュに入れさせない（GitHub Pagesはindex.htmlを返す）
             if (!response.ok) return false;
             // 本体は使わないので読み捨てる。SWは自分のcloneをキャッシュ済み

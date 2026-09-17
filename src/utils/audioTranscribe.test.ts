@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { transcribeAudio, TRUNCATED_SUFFIX } from './audioTranscribe';
+import { GEMINI_REQUEST_TIMEOUT_MS } from './geminiClient';
 
 // jsdom の Blob には arrayBuffer があるが、base64化の経路を固定するためスタブする
 const wav = () => new Blob([new Uint8Array([1, 2, 3])], { type: 'audio/wav' });
@@ -21,6 +22,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
@@ -146,5 +148,28 @@ describe('audioTranscribe: 上限で切れた応答', () => {
         const result = await transcribeAudio(wav(), 'key');
 
         expect(result.text).toBe('4番が3ポイント');
+    });
+});
+
+// 体育館のWi-Fiは「繋がっているのに外へ出られない」ことがある。
+// 上限が無かったため、録音のたびに増える「文字起こし中」のメモが
+// いつまでも返らず、再送もできない状態で残っていた。
+describe('audioTranscribe: 応答が返らないとき', () => {
+    it('時間切れで打ち切り、1モデルで諦めて理由を返す', async () => {
+        vi.useFakeTimers();
+        const fetchSpy = vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        }));
+        vi.stubGlobal('fetch', fetchSpy);
+
+        const promise = transcribeAudio(wav(), 'key');
+        await vi.advanceTimersByTimeAsync(GEMINI_REQUEST_TIMEOUT_MS);
+        const result = await promise;
+
+        expect(result.success).toBe(false);
+        expect(result.success === false && result.error).toContain('タイムアウト');
+        // 1つ時間切れなら残りも同じ。WAVを5回送り直さない
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        vi.useRealTimers();
     });
 });

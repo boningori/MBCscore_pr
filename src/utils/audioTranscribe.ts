@@ -4,7 +4,8 @@
 // 背番号やアクションの構造化はしない。誤って整形されると、
 // 読み手が「そう言ったのか、モデルが補ったのか」を区別できなくなるため。
 
-import { FALLBACK_MODELS, GEMINI_API_BASE } from './geminiClient';
+import { FALLBACK_MODELS, GEMINI_API_BASE, GEMINI_REQUEST_TIMEOUT_MS } from './geminiClient';
+import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from './fetchWithTimeout';
 import type { TranscriptionOutcome } from './voiceMemo';
 
 /**
@@ -44,7 +45,7 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
     for (const model of FALLBACK_MODELS) {
         try {
             const url = `${GEMINI_API_BASE}${model}:generateContent`;
-            const response = await fetch(url, {
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -68,7 +69,7 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
                         maxOutputTokens: MAX_OUTPUT_TOKENS,
                     },
                 }),
-            });
+            }, GEMINI_REQUEST_TIMEOUT_MS);
 
             if (!response.ok) {
                 // エラー本文がJSONとは限らない（プロキシの502等はHTMLを返すことがある）。
@@ -114,6 +115,9 @@ export async function transcribeAudio(wav: Blob, apiKey: string): Promise<Transc
             }
             lastError = '応答に文字起こし結果が含まれていませんでした';
         } catch (error) {
+            // 時間切れは全モデルで同じ結果になる。残りへ送り直さず、その場で返す
+            // （60秒ぶんのWAVを5回送り直しても待たせるだけ）
+            if (isTimeoutError(error)) return { success: false, error: TIMEOUT_MESSAGE };
             lastError = error instanceof Error ? error.message : 'Unknown error';
         }
     }

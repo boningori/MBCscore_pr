@@ -5,6 +5,7 @@
 // Tesseract を読む側のモジュールに巻き込まれるため、依存の向きとしても不適切だった。
 
 import { notifyStorageError } from './storageError';
+import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from './fetchWithTimeout';
 
 export const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
@@ -65,8 +66,35 @@ export function saveApiKey(key: string): boolean {
 }
 
 /**
+ * 写真読込・文字起こしの上限。
+ *
+ * 上りに最大8MBの画像（imageOCR）や60秒ぶんのWAV（audioTranscribe）を載せる。
+ * 体育館の細い回線では正常でも数十秒かかるので、短く切ると「遅いだけの回線」で
+ * 使えない機能になってしまう。逆に上限が無いと、キャプティブポータルに
+ * 捕まったときに画面が固まったまま戻らない。
+ */
+export const GEMINI_REQUEST_TIMEOUT_MS = 60_000;
+
+/**
+ * 接続テストの上限。
+ *
+ * 送るのは「Hello」だけなので、画像やWAVを送る本番の呼び出しより短くてよい。
+ * 設定画面で「接続テスト中...」を見ながら待つ画面なので、待たせすぎない。
+ */
+export const CONNECTION_TEST_TIMEOUT_MS = 15_000;
+
+/**
  * Gemini APIの接続テスト。設定画面から呼ばれる。
  * 404のモデルは次の候補へ送り、それ以外のエラーは即座に返す。
+ *
+ * 「それ以外」の中身が長らく抜けていた。エラー本文がJSONとは限らず
+ * （プロキシの502やキャプティブポータルはHTMLを返す）、`await response.json()`
+ * が投げると外側の catch が拾って次のモデルへ進み、5回送ったうえで生の
+ * パースエラーを画面に出していた。同じ守りは imageOCR と audioTranscribe が
+ * 先に入れている——共通モジュールのこちらだけが取り残されていた。
+ *
+ * 時間切れも同じ扱いにする。1つ時間切れなら残りも時間切れなので、
+ * 5モデルぶん（最大75秒）待たせる意味がない。
  */
 export async function testGeminiConnection(apiKey: string): Promise<{ success: boolean; message: string }> {
     let lastError = '';
@@ -74,7 +102,7 @@ export async function testGeminiConnection(apiKey: string): Promise<{ success: b
     for (const model of FALLBACK_MODELS) {
         try {
             const url = `${GEMINI_API_BASE}${model}:generateContent`;
-            const response = await fetch(url, {
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -84,27 +112,41 @@ export async function testGeminiConnection(apiKey: string): Promise<{ success: b
                     contents: [{ parts: [{ text: 'Hello' }] }],
                     generationConfig: { maxOutputTokens: 10 },
                 }),
-            });
+            }, CONNECTION_TEST_TIMEOUT_MS);
 
             if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData.error?.message || response.statusText;
+                // 本文がJSONでない＝インフラ層の障害。モデルを変えても結果は同じ
+                let errorMessage: string = response.statusText || `HTTPエラー ${response.status}`;
+                let parsed = false;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData?.error?.message || errorMessage;
+                    parsed = true;
+                } catch {
+                    // JSONとして読めない本文の中身は画面に出さない（HTMLの断片や
+                    // パースエラーの文言を見せても、利用者にできることが無い）
+                }
 
                 // 404なら次のモデルへ
-                if (response.status === 404 || errorMessage.includes('not found')) {
+                if (parsed && (response.status === 404 || errorMessage.includes('not found'))) {
                     console.warn(`Model ${model} not found, trying next...`);
                     lastError = errorMessage;
                     continue;
                 }
 
-                return { success: false, message: errorMessage };
+                return { success: false, message: `接続失敗: ${errorMessage}` };
             }
 
             const data = await response.json();
             if (data.candidates && data.candidates.length > 0) {
                 return { success: true, message: `接続成功 (${model})` };
             }
+            lastError = '応答に候補が含まれていませんでした';
         } catch (error) {
+            // 時間切れは全モデルで同じ結果になる。残りを試さず、その場で知らせる
+            if (isTimeoutError(error)) {
+                return { success: false, message: `接続失敗: ${TIMEOUT_MESSAGE}` };
+            }
             lastError = error instanceof Error ? error.message : 'Unknown error';
         }
     }

@@ -10,7 +10,8 @@ import { parsePlayerNumber, isValidPlayerNumber } from './playerNumber';
 // 型は import type で取る（ビルド後に消えるためバンドルに影響しない）。
 import type { createWorker } from 'tesseract.js';
 import { TESSERACT_PATHS } from './tesseractAssets';
-import { GEMINI_API_BASE, FALLBACK_MODELS, getStoredApiKey } from './geminiClient';
+import { GEMINI_API_BASE, FALLBACK_MODELS, GEMINI_REQUEST_TIMEOUT_MS, getStoredApiKey } from './geminiClient';
+import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from './fetchWithTimeout';
 import { isAiOcrEnabled } from './appSettings';
 
 // 画像認識結果
@@ -219,7 +220,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
     for (const model of FALLBACK_MODELS) {
         try {
             const url = `${GEMINI_API_BASE}${model}:generateContent`;
-            const response = await fetch(url, {
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -244,7 +245,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                         maxOutputTokens: 2048,
                     },
                 }),
-            });
+            }, GEMINI_REQUEST_TIMEOUT_MS);
 
             if (!response.ok) {
                 // エラー本文がJSONとは限らない（プロキシの502やキャプティブポータルは
@@ -326,6 +327,9 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
             // recognizePlayerList の catch が受けて Tesseract へ回すので、
             // 写真読込そのものが使えなくなるわけではない（着くまでが速くなるだけ）
             if (error instanceof GeminiFatalError) throw error;
+            // 時間切れも同じ。網に届いていないのだから、8MBの画像を
+            // 残り4モデルへ送り直しても同じ結果を待つだけになる
+            if (isTimeoutError(error)) throw new GeminiFatalError(TIMEOUT_MESSAGE);
             lastError = error instanceof Error ? error : new Error('Unknown error');
         }
     }
