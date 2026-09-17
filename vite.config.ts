@@ -164,9 +164,15 @@ export default defineConfig({
         globIgnores: [...STANDALONE_PAGES, 'vite.svg', 'screenshots/**', 'splash/**', 'tesseract/**'],
         // 販促ページはSWのナビゲーションフォールバックの対象外にする。
         // 除外しないと index.html が返り、チラシのURLでアプリが開く。
-        // pathname+search に対して評価される（workboxのNavigationRoute）
+        //
+        // 判定は pathname+search に対して行われる（workboxのNavigationRoute）。
+        // `…\.html$` と末尾を固定すると、クエリが1つ付いただけで除外から外れ、
+        // アプリ本体が開く。しかもクエリ付きこそが実際に配られる形で、
+        // SNSで共有すれば `?fbclid=...` が、QRや広告経由なら `?utm_source=...` が
+        // 自動で付く。クエリの始まりも終端として認める
+        // （両方の形を e2e/standalonePages.spec.ts が固定する）。
         navigateFallbackDenylist: STANDALONE_PAGES.map(
-          page => new RegExp(`/${page.replace(/\./g, '\\.')}$`)
+          page => new RegExp(`/${page.replace(/\./g, '\\.')}(?:\\?|$)`)
         ),
         runtimeCaching: [
           {
