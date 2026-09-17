@@ -4,6 +4,8 @@
 // アプリ共通の設定なので切り出した。音声メモ側から imageOCR を import すると
 // Tesseract を読む側のモジュールに巻き込まれるため、依存の向きとしても不適切だった。
 
+import { notifyStorageError } from './storageError';
+
 export const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
 const STORAGE_KEY_GEMINI_API = 'mbc_gemini_api_key';
@@ -33,13 +35,33 @@ export function subscribeApiKeyChanged(listener: () => void): () => void {
     return () => apiKeyListeners.delete(listener);
 }
 
-export function saveApiKey(key: string): void {
-    if (key) {
-        localStorage.setItem(STORAGE_KEY_GEMINI_API, key);
-    } else {
-        localStorage.removeItem(STORAGE_KEY_GEMINI_API);
+/**
+ * APIキーを保存する（空文字なら削除）。保存できたら true。
+ *
+ * ここはアプリで唯一 createStorage を通らない localStorage への書き込みだった。
+ * 容量超過やプライベートブラウズで setItem が投げると、例外がそのまま onClick を
+ * 抜けていく——設定画面では続けて書くはずの既定モードが書かれず、「設定を
+ * 保存しました」も保存失敗のトーストも出ない。押しても何も起きない保存ボタンに
+ * なっていた。
+ *
+ * 他の保存領域と同じ約束にそろえる: 成否を返し、失敗は notifyStorageError で
+ * アプリ全体へ知らせる（createStorage.save と同じ形）。
+ * 書けていないときに購読者へ知らせないのも要点で、知らせると useVoiceMemo が
+ * 「キーがある」状態で動き、リロードで消える。
+ */
+export function saveApiKey(key: string): boolean {
+    try {
+        if (key) {
+            localStorage.setItem(STORAGE_KEY_GEMINI_API, key);
+        } else {
+            localStorage.removeItem(STORAGE_KEY_GEMINI_API);
+        }
+    } catch (error) {
+        notifyStorageError('Gemini API key', error);
+        return false;
     }
     apiKeyListeners.forEach(listener => listener());
+    return true;
 }
 
 /**

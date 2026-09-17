@@ -189,9 +189,18 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     useBackHandler(showTextImport, closeTextImport);
 
     const handleSave = () => {
-        saveApiKey(apiKey.trim());
+        // 書けなかったものがあれば、そう言う。以前は saveApiKey が投げると
+        // ここで中断し、既定モードも書かれないまま何の通知も出なかった
+        // （押しても何も起きない保存ボタン。geminiClient.saveApiKey のコメント）。
+        // キーとモードは独立した設定なので、片方が書けなくてももう片方は書く
+        const apiKeySaved = saveApiKey(apiKey.trim());
         saveDefaultGameMode(defaultMode);
-        showStatus('設定を保存しました', 'success');
+        showStatus(
+            apiKeySaved
+                ? '設定を保存しました'
+                : 'APIキーを保存できませんでした（端末の空き容量をご確認ください）',
+            apiKeySaved ? 'success' : 'error',
+        );
     };
 
     const handleCopyErrorLog = async () => {
@@ -211,8 +220,14 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
 
     const handleClear = () => {
         setApiKey('');
-        saveApiKey('');
+        const cleared = saveApiKey('');
         setTestStatus(null);
+        // 消せていないのに「削除しました」と言うと、キーが残ったまま
+        // AI経路が動き続ける（画像を外部へ送る経路）ことに気づけない
+        if (!cleared) {
+            showStatus('APIキーを削除できませんでした', 'error');
+            return;
+        }
         showStatus('APIキーを削除しました。標準OCRに戻ります。', 'success');
     };
 
