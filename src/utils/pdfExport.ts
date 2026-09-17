@@ -3,7 +3,33 @@
 // 全画面の初回起動に乗ってしまうため、実行時に動的importする。
 
 import { isIos } from './installState';
-import { ExportSizeError } from './exportError';
+import { ExportModuleError, ExportSizeError } from './exportError';
+
+/**
+ * 出力に使うコードを読み込む。読めなければ、打てる手を添えて投げ直す。
+ *
+ * 動的importが失敗するのは「手元のページが参照しているチャンクが、もう
+ * キャッシュにもサーバにも無い」ときで、一般的な案内（他のアプリを閉じて…）は
+ * 何度なぞっても直らない。打てる手は次の2つしかないので、そこを出し分ける。
+ *  - オンライン … 版がずれている。再読み込みで新しいページを取り直せば直る
+ *  - オフライン … そのチャンクは手に入らない。再読み込みを勧めると、
+ *    直らない操作を繰り返させることになるので、通信の回復を案内する
+ *
+ * 元の失敗は cause に残す。errorLog に message しか残らないと、
+ * 読み込み失敗なのか実行時の失敗なのかが後から見分けられない。
+ */
+export async function loadExportModule<T>(load: () => Promise<T>): Promise<T> {
+    try {
+        return await load();
+    } catch (error) {
+        const guidance = navigator.onLine
+            ? '画面を再読み込みしてから、もう一度お試しください'
+            : '通信できる場所で開き直してから、もう一度お試しください';
+        throw new ExportModuleError(`出力に必要なデータを読み込めませんでした。${guidance}`, {
+            cause: error,
+        });
+    }
+}
 
 /**
  * 出力の結末。
@@ -383,11 +409,16 @@ export async function exportElement(
     // SWは registerType: 'prompt' で更新を承諾するまで旧プリキャッシュを
     // 保つので、デプロイ直後にチャンクが消える経路はほぼ塞がっている。
     // それでも初回利用時にプリキャッシュが揃う前のオフライン、
-    // ストレージ逼迫によるキャッシュ破棄、SWが使えない環境では失敗しうる。
+    // ストレージ逼迫によるキャッシュ破棄、SWが使えない環境、
+    // そして2つのタブで開いていて片方で「更新」を押した場合は失敗しうる
+    // （承諾は新SWを activate させるので、旧プリキャッシュの項目は
+    // 記録中のタブの足元でも消える。gh-pages は dist を丸ごと差し替えるため
+    // サーバにも旧チャンクは残っていない）。失敗したときの案内は
+    // loadExportModule が持つ。
     //
     // 読み込みが済んでから付ければ、失敗しても付かない。
     // 回線が遅いときの「読み込み中だけ崩れて見える」も無くなる。
-    const { default: html2canvas } = await import('html2canvas');
+    const { default: html2canvas } = await loadExportModule(() => import('html2canvas'));
 
     // 出力用レイアウトは寸法を変えるので、横スクロール位置は控えてから戻す
     const restoreScroll = captureScrollLeft(element.querySelectorAll<HTMLElement>('*'));
@@ -611,7 +642,7 @@ function cropCanvas(source: HTMLCanvasElement, sourceY: number, sourceHeight: nu
  * PDF出力（A4幅いっぱいに描き、あふれた分は改ページ）
  */
 async function exportFitToPagePDF(canvas: HTMLCanvasElement, filename: string): Promise<ExportOutcome> {
-    const { jsPDF } = await import('jspdf');
+    const { jsPDF } = await loadExportModule(() => import('jspdf'));
 
     const pdf = new jsPDF({
         orientation: 'portrait',

@@ -108,3 +108,53 @@ test('スコアシートをJPEGとして保存できる', async ({ page }) => {
     expect(file.suggestedFilename()).toMatch(/\.jpg$/);
     expect(await fileSize(file)).toBeGreaterThan(50_000);
 });
+
+// jspdf は出力を押した時点で動的importされる。ページを開いた後にそのチャンクが
+// 手に入らなくなると、ここで初めて失敗する。実際に起こるのは、2つのタブで開いて
+// いて片方で「更新」を押したとき——新SWが activate した瞬間に旧プリキャッシュの
+// 項目が消え、gh-pages は dist を丸ごと差し替えるのでサーバにも旧チャンクは
+// 残っていない（前回デプロイの jspdf チャンクが本番で404になることを確認済み）。
+//
+// メモリの問題ではないので「他のアプリを閉じてもう一度お試しください」では
+// 直らない。打てる手（再読み込み／通信の回復）を案内することを固定する。
+test('出力用コードが手に入らないとき、打てる手を案内する', async ({ page, context }) => {
+    // SWの制御下に入る（registerType: 'prompt' は clientsClaim を使わないため、
+    // 読み込み直すまでこのページの fetch はSWを通らない。offline.spec.ts と同じ）
+    await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
+    await page.reload();
+    await expect
+        .poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null))
+        .toBe(true);
+
+    await openScoresheet(page);
+
+    // 「更新」で旧プリキャッシュの項目が消えた状態を作る
+    const removed = await page.evaluate(async () => {
+        for (const name of await caches.keys()) {
+            const cache = await caches.open(name);
+            for (const request of await cache.keys()) {
+                if (/\/assets\/jspdf.*\.js/.test(request.url)) {
+                    await cache.delete(request);
+                    return true;
+                }
+            }
+        }
+        return false;
+    });
+    expect(removed, 'jspdf のチャンクがプリキャッシュに見つからなかった').toBe(true);
+
+    // サーバにも無い状態。context 側で切るのはSW自身の fetch も止めるため
+    await context.setOffline(true);
+
+    await page.getByRole('button', { name: 'PDF出力' }).click();
+
+    await expect(page.getByText(/出力に必要なデータを読み込めませんでした/)).toBeVisible();
+    // オフラインのまま読み込み直してもそのチャンクは手に入らないので、
+    // 再読み込みではなく通信の回復を勧める
+    await expect(page.getByText(/通信できる場所で開き直して/)).toBeVisible();
+    await expect(page.getByText(/他のアプリを閉じて/)).toHaveCount(0);
+
+    // 失敗しても出力用レイアウトのクラスが残らない（画面が崩れたままにならない）
+    await expect(page.locator('.running-scoresheet.exporting')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'PDF出力' })).toBeEnabled();
+});
