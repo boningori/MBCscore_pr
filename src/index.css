@@ -449,6 +449,22 @@ button.player-card {
   border-color: var(--primary-light);
 }
 
+/*
+  type="search" の消去ボタン（ブラウザが入力欄の中に描く✕）を消す。
+
+  検索欄には自前の✕（.btn-reset）を隣に置いてあるので、放っておくと同じ働きの
+  ボタンが2つ並ぶ。標準側は読み上げ名も見た目も端末任せで、375px幅では入力欄
+  （実測207px）をさらに削る。操作は自前の✕に一本化する。
+
+  試合履歴と対戦チーム管理の2画面が対象。画面ごとのCSSではなくここに置くのは、
+  これが画面の都合ではなく type="search" という部品の都合だから
+  （片方の画面にだけ効くと、2つの検索の作法が揃わなくなる）。
+*/
+.input[type="search"]::-webkit-search-cancel-button {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 /* 入力フィールドではテキスト選択を許可 */
 input,
 textarea,

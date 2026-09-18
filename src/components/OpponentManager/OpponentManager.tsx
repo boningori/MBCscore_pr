@@ -857,7 +857,13 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             </button>
                         )}
                     </div>
-                    <span className="opponent-count">{visibleTeams.length} / {teams.length}件</span>
+                    {/*
+                      絞り込みの結果を読み上げにも伝える（試合履歴と同じ作り）。
+                      付ける先を件数にするのは、live region が「中身の変わる前から
+                      DOMに在る」ことを要るため。後から現れる「一致するチームは
+                      ありません」に付けても読み上げられないことがある
+                    */}
+                    <span className="opponent-count" role="status">{visibleTeams.length} / {teams.length}件</span>
                 </div>
             )}
 

@@ -363,7 +363,16 @@ export function History({ onBack }: HistoryProps) {
                             <option value="oldest">古い順</option>
                         </select>
                     </div>
-                    <span className="history-count">{visibleRecords.length} / {records.length}件</span>
+                    {/*
+                      絞り込みの結果を読み上げにも伝える。画面を見ていれば件数で
+                      分かるが、読み上げでは入力しても何も起きず、0件になった
+                      ことにすら気づけなかった。
+                      付ける先を件数にするのは、live region が「中身の変わる前から
+                      DOMに在る」ことを要るため。後から現れる「一致する試合は
+                      ありません」に付けても読み上げられないことがあり、
+                      件数なら操作子と一緒に出ているのでその条件を満たす
+                    */}
+                    <span className="history-count" role="status">{visibleRecords.length} / {records.length}件</span>
                 </div>
             )}
 
