@@ -231,6 +231,31 @@ describe('OpponentManager: 名前で探す', () => {
         expect(screen.getByText('登録された対戦チームはありません')).toBeTruthy();
     });
 
+    it('件数の表示が live region になっている', () => {
+        // 画面を見ていれば件数で分かるが、読み上げでは入力しても何も起きず、
+        // 0件になったことにすら気づけなかった。
+        // 付ける先を件数にするのは、live region が「中身の変わる前からDOMに
+        // 在る」ことを要るため（後から現れる「一致するチームはありません」に
+        // 付けても読み上げられないことがある）。試合履歴と同じ作りにしてある
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        expect(screen.getByRole('status').textContent).toBe('3 / 3件');
+
+        fireEvent.change(searchBox(), { target: { value: 'ミニバス' } });
+
+        expect(screen.getByRole('status').textContent).toBe('2 / 3件');
+    });
+
+    it('0件になっても live region は消えない（変化を伝え続ける）', () => {
+        seedThree();
+        render(<OpponentManager onBack={vi.fn()} />);
+
+        fireEvent.change(searchBox(), { target: { value: '該当なし' } });
+
+        expect(screen.getByRole('status').textContent).toBe('0 / 3件');
+    });
+
     it('検索窓にもラベルが結び付いている', () => {
         // 読み上げで何の入力欄か分かり、ラベルのタップでフォーカスが移る
         seedThree();
