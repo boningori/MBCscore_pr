@@ -23,6 +23,14 @@ export interface ImageOCRResult {
     error?: string;
     usedEngine?: 'Gemini' | 'Tesseract'; // どちらを使ったか返す
     fallbackReason?: string; // GeminiからTesseractへのフォールバック理由
+    /**
+     * 背番号を読み取れず取り込めなかった行の数。
+     *
+     * ライセンスNo.を背番号として読むと3桁になり、0〜99の範囲外で落ちる。
+     * 黙って continue していたため、選手が消えたことが誰にも分からなかった。
+     * 上限超過（OpponentManager の overflowCount）と同じく、件数を画面へ出す
+     */
+    invalidNumberCount?: number;
 }
 
 /**
@@ -366,10 +374,14 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
             //
             // 複数チームは上で弾いているので、ここに来るのは常に1チーム分
             const validatedPlayers: SavedPlayer[] = [];
+            let invalidNumberCount = 0;
             for (const [index, raw] of teams[0].players.entries()) {
                 const p = raw as Partial<SavedPlayer>;
                 const number = normalizeGeminiNumber(p.number);
-                if (number === null) continue;
+                if (number === null) {
+                    invalidNumberCount++;
+                    continue;
+                }
                 validatedPlayers.push({
                     number,
                     name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
@@ -389,6 +401,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 players: validatedPlayers,
                 rawText: textResponse,
                 usedEngine: 'Gemini',
+                invalidNumberCount,
             };
 
         } catch (error) {

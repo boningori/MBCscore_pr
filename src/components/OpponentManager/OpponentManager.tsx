@@ -410,6 +410,10 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                     // 上限で入らなかった分は、成功の通知に紛れないよう別に伝える
                     if (overflowCount > 0) {
                         setOcrError(`${overflowCount}人は追加できませんでした。${playerLimitMessage()}`);
+                    } else if (result.invalidNumberCount) {
+                        // 背番号を読めなかった行があったことを伝える。黙って減らすと、
+                        // 利用者は「写真に写っている人数と合わない」ことに後で気づく
+                        setOcrError(`${result.invalidNumberCount}人は背番号を読み取れなかったため取り込めませんでした。手入力で追加してください。`);
                     }
 
                 } else if (overflowCount > 0) {

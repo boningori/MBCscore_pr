@@ -145,3 +145,29 @@ describe('licenseNoの桁数検証', () => {
         expect(result.players[0].licenseNo).toBeUndefined();
     });
 });
+
+describe('背番号を読み取れなかった選手', () => {
+    it('捨てた件数を返す（黙って消さない）', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":['
+            + '{"number":567,"name":"ライセンス誤読"},'
+            + '{"number":7,"name":"正常"},'
+            + '{"number":-3,"name":"負数"}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players.map(p => p.name)).toEqual(['正常']);
+        expect(result.invalidNumberCount).toBe(2);
+    });
+
+    it('全員読めていれば0', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":[{"number":4,"name":"甲"},{"number":5,"name":"乙"}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.invalidNumberCount).toBe(0);
+    });
+});
