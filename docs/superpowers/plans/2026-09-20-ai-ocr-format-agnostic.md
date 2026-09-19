@@ -32,10 +32,17 @@
 | `src/utils/imageOCR.ts` | プロンプト・`responseSchema`・検証・例外・フォールバック制御 | Modify |
 | `src/utils/imageOCR.format.test.ts` | **新規**。様式まわりの新しい振る舞いのテスト | Create |
 | `src/components/OpponentManager/OpponentManager.tsx` | 捨てた選手の件数を画面に出す | Modify |
-| `src/utils/playerStatsAnalysis.ts` | `generatePlayerKey` の正規化 | Modify |
+| `src/utils/playerIdentityKey.ts` | **新規**。選手の識別キーの形を決める唯一の場所。何も import しない | Create |
+| `src/utils/playerIdentityKey.test.ts` | **新規**。上のテスト | Create |
+| `src/utils/playerStatsAnalysis.ts` | `generatePlayerKey` の委譲、非表示選手の矯正、氏名索引の正規化 | Modify |
 | `src/utils/mergedPlayers.ts` | 読み込み時のキー矯正 | Modify |
-| `src/utils/mergedPlayers.migration.test.ts` | **新規**。矯正のテスト | Create |
+| `src/utils/identityKeyMigration.test.ts` | **新規**。2つの保存領域の矯正のテスト | Create |
 | `src/utils/teamStorage.ts`, `src/types/game.ts` | コメントの不一致を直す | Modify |
+
+識別キーの形は3か所が知る必要がある——作る側（`playerStatsAnalysis`）、
+手動統合の矯正（`mergedPlayers`）、非表示選手の矯正（`playerStatsAnalysis`）。
+`mergedPlayers.ts` は `playerStatsAnalysis.ts` を import できない（`playerStatsAnalysis.ts:10` が
+逆向きに import しており循環する）ので、**どちらにも依存しない `playerIdentityKey.ts`** に形を集める。
 
 `imageOCR.ts` は441行あり、プロンプト・HTTP・検証・フォールバックを1つに抱えている。今回さらに増やすので、**純粋なJSON解釈だけ** `geminiRosterResponse.ts` へ切り出す。テストからHTTPやTesseractのモックなしに触れるようになるのが主目的で、それ以上の分割はしない。
 
@@ -1109,44 +1116,293 @@ MSG
 
 ---
 
-### Task 7: 識別キーをライセンスNo.の下3桁で揃え、保存済みの手動統合を矯正する
+
+### Task 7: 識別キーの作り方を1か所にまとめる
 
 **Files:**
-- Modify: `src/utils/playerStatsAnalysis.ts:139-145`
-- Modify: `src/utils/mergedPlayers.ts:51-60`
-- Create: `src/utils/mergedPlayers.migration.test.ts`
-- Modify: 既存の `src/utils/playerStatsAnalysis.sameName.test.ts` は変更しない（回帰確認に使う）
+- Create: `src/utils/playerIdentityKey.ts`
+- Create: `src/utils/playerIdentityKey.test.ts`
 
 **Interfaces:**
 - Consumes: なし
-- Produces: `generatePlayerKey` の出力形式が `名前_下3桁` に変わる
+- Produces:
+  - `export function normalizePlayerName(name: string): string`
+  - `export function buildPlayerIdentityKey(name: string, licenseNo?: string): string`
+  - `export function migrateIdentityKey(key: string): string`
 
-この2つは**分けられない**。`generatePlayerKey` の出力はそのまま `MergeMap` のキーとして `localStorage` に保存され、バックアップにも入る（`mergedPlayers.ts:17`、`dataBackup.ts:118,131,1349`）。キーの作り方だけ変えると、`田中太郎_ABC1234567` で保存された統合が新キー `田中太郎_567` と一致せず、**利用者が手で行った統合が黙って効かなくなる**。同じコミットで塞ぐ。
+識別キーは `氏名_ライセンスNo.の下3桁` に変える。この形は3か所が知る必要がある——
+`generatePlayerKey`（作る側）、`mergedPlayers`（保存済みキーを矯正する側）、
+`playerStatsAnalysis` の非表示選手（同じく矯正する側）。
 
-矯正は読み込み時に行う。アプリの他の保存領域と同じ約束にそろえるため。
+`mergedPlayers.ts` は `playerStatsAnalysis.ts` を import できない（`playerStatsAnalysis.ts:10` が
+逆向きに import しており循環する）。そのため**どちらにも依存しない小さなモジュール**を新設し、
+キーの形を知るのはここだけにする。
+
+このタスクでは新しいモジュールを作るだけで、既存の振る舞いは何も変えない。
+配線は Task 8 で行う。
 
 - [ ] **Step 1: 失敗するテストを書く**
 
-`src/utils/mergedPlayers.migration.test.ts` を新規作成：
+`src/utils/playerIdentityKey.test.ts` を新規作成：
 
 ```ts
-// 識別キーの作り方を「名前_ライセンスNo.そのもの」から「名前_下3桁」に
-// 変えた。キーはそのまま localStorage に保存されているので、変えただけだと
-// 利用者が手で行った統合が黙って効かなくなる。読み込み時に矯正する。
+// 選手の識別キーの形を決める唯一の場所。
+//
+// キーは localStorage に保存されているので（mergedPlayers の MergeMap、
+// playerStatsAnalysis の非表示選手）、形を変えるときは保存済みのキーを
+// 読み込み時に矯正しないと、利用者が手で行った統合や非表示が黙って効かなくなる。
+// 作る側と矯正する側が別ファイルにあるため、形の定義をここに集めている。
+
+import { describe, it, expect } from 'vitest';
+import { normalizePlayerName, buildPlayerIdentityKey, migrateIdentityKey } from './playerIdentityKey';
+
+describe('normalizePlayerName', () => {
+    it('半角・全角の空白をすべて取り除く', () => {
+        expect(normalizePlayerName('田中 太郎')).toBe('田中太郎');
+        expect(normalizePlayerName('加 藤　旺 介')).toBe('加藤旺介');
+    });
+
+    it('空白以外は変えない（強い正規化は別人を混ぜる）', () => {
+        expect(normalizePlayerName('齋藤ＡＢ')).toBe('齋藤ＡＢ');
+    });
+});
+
+describe('buildPlayerIdentityKey', () => {
+    it('ライセンスNo.は下3桁で揃える', () => {
+        expect(buildPlayerIdentityKey('田中太郎', 'ABC1234567'))
+            .toBe(buildPlayerIdentityKey('田中太郎', '567'));
+    });
+
+    it('下3桁が違えば別キー（同姓同名の区別を保つ）', () => {
+        expect(buildPlayerIdentityKey('田中太郎', '123'))
+            .not.toBe(buildPlayerIdentityKey('田中太郎', '567'));
+    });
+
+    it('氏名の空白の有無でキーが割れない', () => {
+        expect(buildPlayerIdentityKey('田中 太郎', '567'))
+            .toBe(buildPlayerIdentityKey('田中太郎', '567'));
+    });
+
+    it('ライセンスNo.未設定なら氏名のみ', () => {
+        expect(buildPlayerIdentityKey('田中 太郎')).toBe('田中太郎');
+        expect(buildPlayerIdentityKey('田中太郎', '   ')).toBe('田中太郎');
+    });
+
+    it('3文字未満のライセンスNo.はそのまま使う（古い保存データを壊さない）', () => {
+        expect(buildPlayerIdentityKey('田中太郎', '12')).toBe('田中太郎_12');
+    });
+});
+
+describe('migrateIdentityKey', () => {
+    it('10桁で保存されたキーを下3桁へ直す', () => {
+        expect(migrateIdentityKey('田中太郎_ABC1234567')).toBe('田中太郎_567');
+    });
+
+    it('3桁で保存されたキーは変わらない', () => {
+        expect(migrateIdentityKey('佐藤花子_123')).toBe('佐藤花子_123');
+    });
+
+    it('氏名だけのキーからも空白を取り除く', () => {
+        expect(migrateIdentityKey('鈴木 一郎')).toBe('鈴木一郎');
+    });
+
+    it('氏名の空白を取り除いたうえで下3桁にする', () => {
+        expect(migrateIdentityKey('田中 太郎_ABC1234567')).toBe('田中太郎_567');
+    });
+
+    it('氏名にアンダースコアが入っていても切り詰めない', () => {
+        // 末尾が半角英数字でなければ、区切りの `_` ではなく氏名の一部
+        expect(migrateIdentityKey('鈴木_一郎')).toBe('鈴木_一郎');
+        expect(migrateIdentityKey('鈴木_一郎_789')).toBe('鈴木_一郎_789');
+    });
+
+    it('矯正済みのキーをもう一度通しても変わらない', () => {
+        const once = migrateIdentityKey('田中 太郎_ABC1234567');
+        expect(migrateIdentityKey(once)).toBe(once);
+    });
+
+    it('空文字を壊さない', () => {
+        expect(migrateIdentityKey('')).toBe('');
+    });
+});
+```
+
+- [ ] **Step 2: 失敗することを確かめる**
+
+Run: `npx vitest run src/utils/playerIdentityKey.test.ts`
+Expected: FAIL — `Failed to resolve import "./playerIdentityKey"`
+
+- [ ] **Step 3: 最小の実装を書く**
+
+`src/utils/playerIdentityKey.ts` を新規作成：
+
+```ts
+// 選手の識別キーの形を決める唯一の場所。
+//
+// キーは `氏名_ライセンスNo.の下3桁`。作る側（playerStatsAnalysis の
+// generatePlayerKey）と、保存済みキーを矯正する側（mergedPlayers の対応表、
+// playerStatsAnalysis の非表示選手）が別ファイルにあり、しかも
+// mergedPlayers は playerStatsAnalysis を import できない（逆向きの import が
+// 既にあり循環する）。そのため、どちらにも依存しないここに形を集める。
+//
+// 何も import しないこと。ここが他のモジュールに依存すると循環が戻ってくる。
+
+/**
+ * 氏名の正規化。空白（半角・全角）だけを取り除く。
+ *
+ * 公式様式の氏名は均等割付で字間に全角スペースが入り、手入力では姓名の間に
+ * 半角・全角スペースが日常的に混ざる。どちらも同じ選手なのでキーが割れてはいけない。
+ *
+ * 取り除くのは空白だけにとどめる。正規化を強くするほど別人を同じ氏名と
+ * 見なす危険が増える（mergedPlayers の normalizeNameForMerge と同じ判断）。
+ */
+export function normalizePlayerName(name: string): string {
+    // \s は全角スペース(U+3000)も含む。文字クラスに直接書くと lint の
+    // no-irregular-whitespace に掛かる
+    return name.replace(/\s/g, '');
+}
+
+/**
+ * ライセンスNo.を識別用に揃える。
+ *
+ * 同じ選手が2つの桁数で登録される。公式戦のプログラムにはJBA登録番号が
+ * 10桁の英数字で載り、それ以外の試合のメンバー表には下3桁だけが載る
+ * （RunningScoresheet の注記と同じ欄）。年間では後者が大半。
+ *
+ * slice(-3) は3文字未満をそのまま返すので、1〜2桁が残っている古い保存データも
+ * 壊さない（新規の読み取りでは imageOCR が2桁以下を捨てる）。
+ */
+function normalizeLicenseForKey(licenseNo: string): string {
+    return licenseNo.slice(-3);
+}
+
+/** 選手の識別キー（氏名＋ライセンスNo.の下3桁） */
+export function buildPlayerIdentityKey(name: string, licenseNo?: string): string {
+    const cleanName = normalizePlayerName(name);
+    const license = (licenseNo ?? '').trim();
+    if (!license) return cleanName;
+    return `${cleanName}_${normalizeLicenseForKey(license)}`;
+}
+
+/**
+ * 保存済みのキーを、今の形へ合わせ直す。
+ *
+ * 以前のキーは `氏名（空白そのまま）_ライセンスNo.そのもの` だった。
+ * 直さずに読むと、利用者が手で行った統合や非表示が黙って効かなくなる。
+ *
+ * 区切りの `_` は最後のものを見る。ただし末尾が半角英数字でなければ、
+ * それは区切りではなく氏名の一部である（ライセンスNo.は保存前に英数字だけへ
+ * 均されている）。この判定が無いと `鈴木_一郎` が `鈴木_郎` に切り詰められる。
+ *
+ * 何度通しても結果が変わらないこと（冪等）が要件。読み込みのたびに掛かる。
+ */
+export function migrateIdentityKey(key: string): string {
+    const separator = key.lastIndexOf('_');
+    const license = separator > 0 ? key.slice(separator + 1) : '';
+    if (!license || !/^[a-zA-Z0-9]+$/.test(license)) return normalizePlayerName(key);
+    return `${normalizePlayerName(key.slice(0, separator))}_${normalizeLicenseForKey(license)}`;
+}
+```
+
+- [ ] **Step 4: テストが通ることを確かめる**
+
+Run: `npx vitest run src/utils/playerIdentityKey.test.ts`
+Expected: PASS（14件）
+
+- [ ] **Step 5: 型検査と lint**
+
+Run: `npm run typecheck:test && npm run lint`
+Expected: エラーなし
+
+- [ ] **Step 6: コミット**
+
+```bash
+git add src/utils/playerIdentityKey.ts src/utils/playerIdentityKey.test.ts
+git commit -m "$(cat <<'MSG'
+refactor: 選手の識別キーの形を1つのモジュールにまとめる
+
+キーは作る側（generatePlayerKey）と保存済みキーを矯正する側
+（mergedPlayers、非表示選手）が知る必要があるが、mergedPlayersは
+playerStatsAnalysisをimportできない（逆向きのimportが既にあり循環する）。
+どちらにも依存しないモジュールに形の定義を集める。
+
+この時点ではまだ配線していない。
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+MSG
+)"
+```
+
+---
+
+### Task 8: 新しい識別キーへ切り替え、保存済みのキーを矯正する
+
+**Files:**
+- Modify: `src/utils/playerStatsAnalysis.ts:31-35`（`loadHiddenPlayers`）、`:139-145`（`generatePlayerKey`）、`:184-205`（`buildIdentityAliases`）
+- Modify: `src/utils/mergedPlayers.ts:45-60`
+- Create: `src/utils/identityKeyMigration.test.ts`
+
+**Interfaces:**
+- Consumes: `normalizePlayerName`, `buildPlayerIdentityKey`, `migrateIdentityKey`（Task 7）
+- Produces: `generatePlayerKey` の出力形式が `氏名（空白除去）_下3桁` に変わる
+
+**この3つは分けられない。同じコミットで行うこと。**
+`generatePlayerKey` の出力は、そのまま2つの保存領域のキーとして `localStorage` に入っている。
+
+| 保存領域 | 実体 | 直さないとどうなるか |
+|---|---|---|
+| 手動統合 | `mergedPlayers.ts:34` `minibasket-merged-players` | 利用者が手で行った統合が黙って効かなくなる |
+| 非表示選手 | `playerStatsAnalysis.ts:14` `minibasket-hidden-players` | 非表示にした選手が黙って再表示される |
+
+どちらもバックアップに入る（`dataBackup.ts:118,131,1349`）。矯正は**読み込み時**に行う。
+アプリの他の保存領域と同じ約束にそろえるため。
+
+- [ ] **Step 1: 失敗するテストを書く**
+
+`src/utils/identityKeyMigration.test.ts` を新規作成：
+
+```ts
+// 識別キーの作り方を変えたので、保存済みのキーを読み込み時に矯正する。
+//
+// キーは2つの保存領域に入っている——手動統合の対応表と、非表示選手の一覧。
+// 直さずに読むと、利用者が手で行った統合が効かなくなり、非表示にした選手が
+// 黙って再表示される。どちらも「操作したのに元に戻っている」という形で出る。
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { loadMergedPlayers, loadAllMergedPlayers } from './mergedPlayers';
-import { generatePlayerKey } from './playerStatsAnalysis';
+import { generatePlayerKey, loadHiddenPlayers, isPlayerHidden } from './playerStatsAnalysis';
 
-const STORAGE_KEY = 'minibasket-merged-players';
+const MERGED_KEY = 'minibasket-merged-players';
+const HIDDEN_KEY = 'minibasket-hidden-players';
 
 beforeEach(() => {
     localStorage.clear();
 });
 
+describe('generatePlayerKey', () => {
+    it('10桁と下3桁が同じキーになる', () => {
+        expect(generatePlayerKey('田中太郎', 'ABC1234567'))
+            .toBe(generatePlayerKey('田中太郎', '567'));
+    });
+
+    it('氏名の空白の有無でキーが割れない', () => {
+        expect(generatePlayerKey('田中 太郎', '567'))
+            .toBe(generatePlayerKey('田中太郎', '567'));
+    });
+
+    it('下3桁が違えば別キーのまま（同姓同名の区別を保つ）', () => {
+        expect(generatePlayerKey('田中太郎', '123'))
+            .not.toBe(generatePlayerKey('田中太郎', '567'));
+    });
+
+    it('ライセンスNo.未設定なら氏名のみ', () => {
+        expect(generatePlayerKey('田中太郎')).toBe('田中太郎');
+    });
+});
+
 describe('保存済みの手動統合の矯正', () => {
-    it('10桁で保存されたキーが、下3桁の新キーで引ける', () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    it('10桁で保存されたキーが、新しいキーで引ける', () => {
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
             teamA: { '田中太郎_ABC1234567': '田中太郎_DEF9876543' },
         }));
 
@@ -1154,39 +1410,29 @@ describe('保存済みの手動統合の矯正', () => {
 
         expect(map[generatePlayerKey('田中太郎', 'ABC1234567')])
             .toBe(generatePlayerKey('田中太郎', 'DEF9876543'));
-        expect(map['田中太郎_567']).toBe('田中太郎_543');
     });
 
-    it('3桁で保存されたキーはそのまま引ける', () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            teamA: { '佐藤花子_123': '佐藤花子_456' },
+    it('氏名に空白が入ったまま保存されたキーも引ける', () => {
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
+            teamA: { '田中 太郎_567': '田中太郎_123' },
         }));
 
-        expect(loadMergedPlayers('teamA')['佐藤花子_123']).toBe('佐藤花子_456');
+        const map = loadMergedPlayers('teamA');
+
+        expect(map[generatePlayerKey('田中太郎', '567')])
+            .toBe(generatePlayerKey('田中太郎', '123'));
     });
 
-    it('ライセンスNo.が無いキー（名前のみ）を壊さない', () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            teamA: { '鈴木一郎': '鈴木一郎_789' },
+    it('ライセンスNo.が無いキー（氏名のみ）も矯正する', () => {
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
+            teamA: { '鈴木 一郎': '鈴木一郎_789' },
         }));
 
         expect(loadMergedPlayers('teamA')['鈴木一郎']).toBe('鈴木一郎_789');
     });
 
-    it('氏名にアンダースコアが入っていても切り詰めない', () => {
-        // 末尾が英数字でなければ区切りの `_` ではない。ライセンスNo.は
-        // 保存前に英数字だけへ均されているので、この判定で切り分けられる
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            teamA: { '鈴木_一郎': '鈴木_一郎_789' },
-        }));
-
-        const map = loadMergedPlayers('teamA');
-
-        expect(map['鈴木_一郎']).toBe('鈴木_一郎_789');
-    });
-
     it('旧キーと新キーが両方あっても、読み込むたびに同じ結果になる', () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
             teamA: {
                 '田中太郎_ABC1234567': '田中太郎_111',
                 '田中太郎_567': '田中太郎_222',
@@ -1202,53 +1448,82 @@ describe('保存済みの手動統合の矯正', () => {
     });
 
     it('loadAllMergedPlayers も矯正する（バックアップ経由で入ったデータ）', () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
             teamA: { '田中太郎_ABC1234567': '田中太郎_DEF9876543' },
         }));
 
         expect(loadAllMergedPlayers().teamA['田中太郎_567']).toBe('田中太郎_543');
     });
+
+    it('壊れたチーム単位の値は空として扱う（既存の守りを保つ）', () => {
+        localStorage.setItem(MERGED_KEY, JSON.stringify({ teamA: [1, 2, 3] }));
+
+        expect(loadMergedPlayers('teamA')).toEqual({});
+    });
 });
 
-describe('generatePlayerKey', () => {
-    it('10桁と下3桁が同じキーになる', () => {
-        expect(generatePlayerKey('田中太郎', 'ABC1234567'))
-            .toBe(generatePlayerKey('田中太郎', '567'));
+describe('保存済みの非表示選手の矯正', () => {
+    it('10桁で保存されたキーが、新しいキーで引ける', () => {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify({
+            teamA: ['田中太郎_ABC1234567'],
+        }));
+
+        expect(loadHiddenPlayers('teamA')).toEqual(['田中太郎_567']);
+        expect(isPlayerHidden('teamA', generatePlayerKey('田中太郎', '567'))).toBe(true);
     });
 
-    it('下3桁が違えば別キーのまま（同姓同名の区別を保つ）', () => {
-        expect(generatePlayerKey('田中太郎', '123'))
-            .not.toBe(generatePlayerKey('田中太郎', '567'));
+    it('氏名に空白が入ったまま保存されたキーも引ける', () => {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify({
+            teamA: ['田中 太郎_567'],
+        }));
+
+        expect(isPlayerHidden('teamA', generatePlayerKey('田中太郎', '567'))).toBe(true);
     });
 
-    it('ライセンスNo.未設定なら氏名のみ', () => {
-        expect(generatePlayerKey('田中太郎')).toBe('田中太郎');
-        expect(generatePlayerKey('田中太郎', '   ')).toBe('田中太郎');
+    it('矯正で重複したキーは1つに畳む', () => {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify({
+            teamA: ['田中太郎_ABC1234567', '田中太郎_567'],
+        }));
+
+        expect(loadHiddenPlayers('teamA')).toEqual(['田中太郎_567']);
     });
 
-    it('3文字未満はそのまま使う（古い保存データを壊さない）', () => {
-        expect(generatePlayerKey('田中太郎', '12')).toBe('田中太郎_12');
+    it('文字列以外が混じっていても落ちない（既存の守りを保つ）', () => {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify({ teamA: ['田中太郎_567', 5, null] }));
+
+        expect(loadHiddenPlayers('teamA')).toEqual(['田中太郎_567']);
+    });
+
+    it('配列でなければ空を返す（既存の守りを保つ）', () => {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify({ teamA: 5 }));
+
+        expect(loadHiddenPlayers('teamA')).toEqual([]);
     });
 });
 ```
 
 - [ ] **Step 2: 失敗することを確かめる**
 
-Run: `npx vitest run src/utils/mergedPlayers.migration.test.ts`
+Run: `npx vitest run src/utils/identityKeyMigration.test.ts`
 Expected: FAIL — `generatePlayerKey('田中太郎','ABC1234567')` が `'田中太郎_ABC1234567'` を返す
 
-- [ ] **Step 3: `generatePlayerKey` を書き換える**
+- [ ] **Step 3: `generatePlayerKey` を差し替える**
+
+`playerStatsAnalysis.ts` の import に足す：
+
+```ts
+import { buildPlayerIdentityKey, migrateIdentityKey, normalizePlayerName } from './playerIdentityKey';
+```
 
 `playerStatsAnalysis.ts:139-145` を置き換える：
 
 ```ts
 /**
- * 選手の識別キー（氏名＋ライセンスNo.の下3桁）。
+ * 選手の識別キー（氏名＋ライセンスNo.の下3桁）。形の定義は playerIdentityKey。
  *
  * 下3桁に揃えるのは、同じ選手が2つの桁数で登録されるため。公式戦のプログラムには
  * JBA登録番号が10桁の英数字で載り、それ以外の試合のメンバー表には下3桁だけが
- * 載る（RunningScoresheet の注記と同じ欄）。年間では後者が大半で、同じ選手が
- * 「ABC1234567」と「567」の両方で入る。
+ * 載る。年間では後者が大半で、同じ選手が「ABC1234567」と「567」の両方で入る。
  *
  * 氏名を手掛かりにした寄せ直し（buildIdentityAliases）が大半は救うが、
  * 名簿に同姓同名が2人いる場合は意図的に寄せず、退団選手は寄せ先が無い。
@@ -1257,57 +1532,115 @@ Expected: FAIL — `generatePlayerKey('田中太郎','ABC1234567')` が `'田中
  * 印字側は licenseDigits() が既に slice(-3) しているので、保存する値は
  * 読み取ったまま（10桁でも3桁でも）でよい。揃えるのは比較のときだけ。
  *
- * 注意: この戻り値は mergedPlayers の MergeMap のキーとしてそのまま保存される。
- * ここを変えるときは mergedPlayers 側の読み込み時の矯正も合わせて直すこと。
+ * 注意: この戻り値は mergedPlayers の対応表と非表示選手一覧のキーとして
+ * そのまま保存される。形を変えるときは両方の読み込み時の矯正も合わせて直すこと。
  */
 export function generatePlayerKey(name: string, licenseNo?: string): string {
-    const trimmed = (licenseNo ?? '').trim();
-    // slice(-3) は3文字未満をそのまま返すので、1〜2桁が残っている
-    // 古い保存データも壊さない（新規の読み取りでは imageOCR が2桁以下を捨てる）
-    if (trimmed) return `${name}_${trimmed.slice(-3)}`;
-    return name;
+    return buildPlayerIdentityKey(name, licenseNo);
 }
 ```
 
-- [ ] **Step 4: `mergedPlayers` の読み込みを矯正する**
+- [ ] **Step 4: 氏名での寄せ直しも空白を無視するようにする**
 
-> **`generatePlayerKey` を import してはいけない。** `playerStatsAnalysis.ts:10` が `mergedPlayers` から `loadMergedPlayers` 等を import しているので、逆向きを足すと循環になる。キーを解釈する純関数を `mergedPlayers.ts` 側に持つ。
+`buildIdentityAliases`（`playerStatsAnalysis.ts:184` 以降）の氏名の索引を正規化する。
+`byName` へ入れるところと引くところの**両方**を直す。片方だけだと引けなくなる。
 
-`mergedPlayers.ts:51-60`（`loadAllMergedPlayers` と `loadMergedPlayers`）を、まるごとこれに置き換える：
+`const canonical = generatePlayerKey(saved.name, saved.licenseNo);` の直後の2行を——
+
+```ts
+        const claimed = byName.get(saved.name) ?? [];
+        if (!claimed.includes(canonical)) claimed.push(canonical);
+        byName.set(saved.name, claimed);
+```
+
+——こう置き換える：
+
+```ts
+        // 索引も空白を無視する。キー側（generatePlayerKey）だけ揃えても、
+        // 「田中 太郎」で記録された選手を「田中太郎」の名簿から引けない
+        const nameKey = normalizePlayerName(saved.name);
+        const claimed = byName.get(nameKey) ?? [];
+        if (!claimed.includes(canonical)) claimed.push(canonical);
+        byName.set(nameKey, claimed);
+```
+
+同じ関数の下側、`const claimed = byName.get(p.name);` を——
+
+```ts
+            const claimed = byName.get(normalizePlayerName(p.name));
+```
+
+——に置き換える。
+
+- [ ] **Step 5: 非表示選手の読み込みを矯正する**
+
+`playerStatsAnalysis.ts:31-35` の `loadHiddenPlayers` を置き換える：
+
+```ts
+// チームの非表示選手キーを取得
+//
+// チーム単位の値まで壊れている場合に備える（手で編集したバックアップ等）。
+// 実測: 数値が入っていると選手スタッツ分析が
+// 「number 5 is not iterable」で落ち、アプリ全体がエラー画面になる
+// （呼び出し側が new Set(...) に渡すため）
+//
+// 併せて、古い形で保存されたキーを今の形へ直す（migrateIdentityKey）。
+// 直さないと、非表示にした選手が黙って再表示される
+export function loadHiddenPlayers(teamId: string): string[] {
+    const keys = loadAllHiddenPlayers()[teamId];
+    if (!Array.isArray(keys)) return [];
+    const migrated = keys
+        .filter((k): k is string => typeof k === 'string')
+        .map(migrateIdentityKey);
+    // 矯正の結果、旧キーと新キーが同じ値に畳まれることがある
+    return [...new Set(migrated)];
+}
+```
+
+- [ ] **Step 6: 手動統合の読み込みを矯正する**
+
+> **`generatePlayerKey` を import してはいけない。** `playerStatsAnalysis.ts:10` が `mergedPlayers` から import しているので、逆向きを足すと循環になる。Task 7 で作った `playerIdentityKey` を使う。
+
+`mergedPlayers.ts` の import に足す：
+
+```ts
+import { migrateIdentityKey, normalizePlayerName } from './playerIdentityKey';
+```
+
+`mergedPlayers.ts:45-49` の `normalizeNameForMerge` を、実装の重複を避けて委譲に変える：
 
 ```ts
 /**
- * 保存済みのキーを、今の identity キーの作り方へ合わせ直す。
+ * 氏名の比較用の正規化。空白（半角・全角）だけを取り除く。
  *
- * 識別キーは `氏名_ライセンスNo.の下3桁`（playerStatsAnalysis の
- * generatePlayerKey）。以前は下3桁ではなくライセンスNo.そのものを使っていたので、
- * 10桁の登録番号で保存された対応表は今のキーと一致しない。一致しないまま放置すると
- * 利用者が手で行った統合が黙って効かなくなるため、読み込むときに直す。
- *
- * generatePlayerKey を import しないのは循環になるため（あちらが
- * loadMergedPlayers を使っている）。キーの形が変わったらここも直すこと。
+ * 実体は playerIdentityKey の normalizePlayerName。識別キーの氏名も同じ規則で
+ * 均すので、2つの実装があると片方だけ直したときに静かに食い違う。
  */
-function migrateKey(key: string): string {
-    const separator = key.lastIndexOf('_');
-    // ライセンスNo.を持たないキー（氏名のみ）はそのまま
-    if (separator <= 0) return key;
-    const name = key.slice(0, separator);
-    const license = key.slice(separator + 1);
-    // 末尾が半角英数字でなければ、区切りの `_` ではなく氏名の一部である。
-    // ライセンスNo.は保存前に英数字だけへ均されているので、この判定で切り分けられる
-    if (!/^[a-zA-Z0-9]+$/.test(license)) return key;
-    return `${name}_${license.slice(-3)}`;
+export function normalizeNameForMerge(name: string): string {
+    return normalizePlayerName(name);
 }
+```
 
+`mergedPlayers.ts` の `loadAllMergedPlayers` と `loadMergedPlayers` を、まるごとこれに置き換える：
+
+```ts
+/**
+ * 保存済みの対応表のキーを、今の識別キーの形へ合わせ直す。
+ *
+ * キーは generatePlayerKey の戻り値がそのまま入っている。以前は
+ * `氏名（空白そのまま）_ライセンスNo.そのもの` だったので、今の形と一致しない。
+ * 一致しないまま放置すると、利用者が手で行った統合が黙って効かなくなる。
+ */
 function migrateMap(map: MergeMap): MergeMap {
     const migrated: MergeMap = {};
     for (const [from, to] of Object.entries(map)) {
-        const key = migrateKey(from);
+        if (typeof to !== 'string') continue;
+        const key = migrateIdentityKey(from);
         // 旧キーと新キーが両方保存されていると1つに畳まれる。どちらも同じ人を
-        // 指すのでどちらを採っても寄り先は同じだが、決めておかないと
-        // 読み込むたびに結果が変わる。先に現れたほうを残す
+        // 指すので寄り先は同じだが、決めておかないと読み込むたびに結果が変わる。
+        // 先に現れたほうを残す
         if (key in migrated) continue;
-        migrated[key] = migrateKey(to);
+        migrated[key] = migrateIdentityKey(to);
     }
     return migrated;
 }
@@ -1316,54 +1649,77 @@ export function loadAllMergedPlayers(): AllMergedPlayers {
     const all = mergedStorage.load();
     const migrated: AllMergedPlayers = {};
     for (const [teamId, map] of Object.entries(all)) {
+        // チーム単位の中身まで壊れている場合に備える（手で編集したバックアップ等）
         migrated[teamId] = isMergeMapRecord(map) ? migrateMap(map as MergeMap) : {};
     }
     return migrated;
 }
 
 export function loadMergedPlayers(teamId: string): MergeMap {
-    const all = loadAllMergedPlayers();
-    const map = all[teamId];
-    // チーム単位の中身まで壊れている場合に備える（手で編集したバックアップ等）
-    return isMergeMapRecord(map) ? (map as MergeMap) : {};
+    return loadAllMergedPlayers()[teamId] ?? {};
 }
 ```
 
-- [ ] **Step 5: テストが通ることを確かめる**
+- [ ] **Step 7: 写真読込の氏名正規化も同じ実装に寄せる**
 
-Run: `npx vitest run src/utils/mergedPlayers.migration.test.ts`
-Expected: PASS（10件）
+Task 5 で `imageOCR.ts` に入れた `normalizeGeminiName` は、同じ空白除去を自前で持っている。
+2つの実装があると片方だけ直したときに静かに食い違うので、委譲に変える。
+`playerIdentityKey` は何も import しないので循環しない。
 
-- [ ] **Step 6: 識別キーに依存する既存テストの回帰を確かめる**
+`imageOCR.ts` の import に足す：
+
+```ts
+import { normalizePlayerName } from './playerIdentityKey';
+```
+
+`normalizeGeminiName` の本体を置き換える（コメントはそのまま残す）：
+
+```ts
+function normalizeGeminiName(value: unknown, index: number): string {
+    const cleaned = typeof value === 'string' ? normalizePlayerName(value) : '';
+    return cleaned || `選手${index + 1}`;
+}
+```
+
+- [ ] **Step 8: 新しいテストが通ることを確かめる**
+
+Run: `npx vitest run src/utils/identityKeyMigration.test.ts src/utils/imageOCR.format.test.ts`
+Expected: PASS（16件 + 17件）
+
+- [ ] **Step 9: 識別キーに依存する既存テストの回帰を確かめる**
 
 識別キーはこれらのテストの土台なので、先に絞って確かめる：
 
 ```bash
-npx vitest run src/utils/playerStatsAnalysis.test.ts src/utils/playerStatsAnalysis.sameName.test.ts src/utils/playerStatsAnalysis.rename.test.ts src/utils/playerStatsAnalysis.merge.test.ts src/utils/playerStatsAnalysis.mergeSameGame.test.ts src/utils/playerStatsAnalysis.multiTeam.test.ts src/utils/mergedPlayers.test.ts src/utils/dataBackup.mergedPlayers.test.ts
+npx vitest run src/utils/playerStatsAnalysis.test.ts src/utils/playerStatsAnalysis.sameName.test.ts src/utils/playerStatsAnalysis.rename.test.ts src/utils/playerStatsAnalysis.merge.test.ts src/utils/playerStatsAnalysis.mergeSameGame.test.ts src/utils/playerStatsAnalysis.multiTeam.test.ts src/utils/playerStatsAnalysis.brokenRecord.test.ts src/utils/mergedPlayers.test.ts src/utils/dataBackup.mergedPlayers.test.ts
 ```
 
 Expected: PASS
 
-既存テストが落ちた場合、**テストを直す前に理由を確かめること**。同姓同名の分離が壊れていれば設計の欠陥であり、キー文字列を直書きしているだけなら期待値の更新でよい。
+既存テストが落ちた場合、**テストを直す前に理由を確かめること**。
+同姓同名の分離や統合の解除が壊れていれば設計の欠陥であり、
+キー文字列を直書きしているだけなら期待値の更新でよい。判断がつかなければ止めて報告する。
 
-- [ ] **Step 7: 全体の回帰を確かめる**
+- [ ] **Step 10: 全体の回帰を確かめる**
 
 Run: `npm test && npm run typecheck:test && npm run lint`
 Expected: PASS、エラーなし
 
-- [ ] **Step 8: コミット**
+- [ ] **Step 11: コミット**
 
 ```bash
-git add src/utils/playerStatsAnalysis.ts src/utils/mergedPlayers.ts src/utils/mergedPlayers.migration.test.ts
+git add src/utils/playerStatsAnalysis.ts src/utils/mergedPlayers.ts src/utils/imageOCR.ts src/utils/identityKeyMigration.test.ts
 git commit -m "$(cat <<'MSG'
-fix: 選手の識別キーをライセンスNo.の下3桁で揃える
+fix: 選手の識別キーを下3桁と空白除去した氏名で揃える
 
 公式戦のプログラムには10桁の登録番号が、それ以外の試合のメンバー表には
-下3桁が載る。同じ選手が両方の桁数で登録されると、氏名での寄せ直しが
-効かない2ケース——名簿に同姓同名が2人、退団選手——で通算成績が割れる。
+下3桁が載る。氏名も均等割付や手入力で空白が混ざる。同じ選手が別キーに
+なると、氏名での寄せ直しが効かない2ケース——名簿に同姓同名が2人、
+退団選手——で通算成績が割れる。
 
-識別キーはMergeMapのキーとしてそのまま保存されているため、
-読み込み時に矯正しないと手動統合が黙って効かなくなる。同時に塞ぐ。
+キーは手動統合の対応表と非表示選手一覧にそのまま保存されているため、
+読み込み時に矯正しないと統合が効かなくなり非表示が再表示される。
+同じコミットで塞ぐ。
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 MSG
@@ -1372,7 +1728,7 @@ MSG
 
 ---
 
-### Task 8: `licenseNo` のコメントの不一致を直す
+### Task 9: `licenseNo` のコメントの不一致を直す
 
 **Files:**
 - Modify: `src/utils/teamStorage.ts:41`
@@ -1392,7 +1748,7 @@ MSG
      *   - 3桁の数字 … 登録番号の下3桁。スコアシートのメンバー表はこちら（年間の大半）
      *   - 10桁の英数字 … 登録番号そのもの。公式戦のプログラムに載る
      * 統一しない。印字は licenseDigits() が slice(-3) するので3マスに収まり、
-     * 選手の識別は generatePlayerKey が下3桁で揃える
+     * 選手の識別は playerIdentityKey が下3桁で揃える
      */
     licenseNo?: string;
 ```
@@ -1442,6 +1798,8 @@ MSG
       **背番号が通し番号（1,2,3…）になっていないこと**と、
       **ライセンスNo.欄に背番号や学年が入っていないこと**を目視する
 - [ ] 実機確認: 大会プログラムの見開き写真を読み込み、撮り直しを促す案内が出ること
+- [ ] 実機確認: 既に手動統合や非表示を設定しているチームで選手スタッツ分析を開き、
+      **統合が外れていないこと**と**非表示の選手が再表示されていないこと**を目視する
 
 ## この計画で直らないこと
 
@@ -1450,3 +1808,5 @@ MSG
 - 裏写り・湾曲・見切れのある写真は、どの規則でも読み違える
 - Gemini の生応答は画面に出さないままなので、読み取りがおかしかったときの原因調査は
   開発ビルドの `console.log`（`imageOCR.ts:301`）に頼ることになる
+- 氏名の正規化は空白の除去だけ。誤字の訂正や旧字体・新字体の違いは別キーのまま残る
+  （手動統合で直す前提。`mergedPlayers.ts` の冒頭コメントを参照）
