@@ -1,0 +1,65 @@
+// 選手の識別キーの形を決める唯一の場所。
+//
+// キーは `氏名_ライセンスNo.の下3桁`。作る側（playerStatsAnalysis の
+// generatePlayerKey）と、保存済みキーを矯正する側（mergedPlayers の対応表、
+// playerStatsAnalysis の非表示選手）が別ファイルにあり、しかも
+// mergedPlayers は playerStatsAnalysis を import できない（逆向きの import が
+// 既にあり循環する）。そのため、どちらにも依存しないここに形を集める。
+//
+// 何も import しないこと。ここが他のモジュールに依存すると循環が戻ってくる。
+
+/**
+ * 氏名の正規化。空白（半角・全角）だけを取り除く。
+ *
+ * 公式様式の氏名は均等割付で字間に全角スペースが入り、手入力では姓名の間に
+ * 半角・全角スペースが日常的に混ざる。どちらも同じ選手なのでキーが割れてはいけない。
+ *
+ * 取り除くのは空白だけにとどめる。正規化を強くするほど別人を同じ氏名と
+ * 見なす危険が増える（mergedPlayers の normalizeNameForMerge と同じ判断）。
+ */
+export function normalizePlayerName(name: string): string {
+    // \s は全角スペース(U+3000)も含む。文字クラスに直接書くと lint の
+    // no-irregular-whitespace に掛かる
+    return name.replace(/\s/g, '');
+}
+
+/**
+ * ライセンスNo.を識別用に揃える。
+ *
+ * 同じ選手が2つの桁数で登録される。公式戦のプログラムにはJBA登録番号が
+ * 10桁の英数字で載り、それ以外の試合のメンバー表には下3桁だけが載る
+ * （RunningScoresheet の注記と同じ欄）。年間では後者が大半。
+ *
+ * slice(-3) は3文字未満をそのまま返すので、1〜2桁が残っている古い保存データも
+ * 壊さない（新規の読み取りでは imageOCR が2桁以下を捨てる）。
+ */
+function normalizeLicenseForKey(licenseNo: string): string {
+    return licenseNo.slice(-3);
+}
+
+/** 選手の識別キー（氏名＋ライセンスNo.の下3桁） */
+export function buildPlayerIdentityKey(name: string, licenseNo?: string): string {
+    const cleanName = normalizePlayerName(name);
+    const license = (licenseNo ?? '').trim();
+    if (!license) return cleanName;
+    return `${cleanName}_${normalizeLicenseForKey(license)}`;
+}
+
+/**
+ * 保存済みのキーを、今の形へ合わせ直す。
+ *
+ * 以前のキーは `氏名（空白そのまま）_ライセンスNo.そのもの` だった。
+ * 直さずに読むと、利用者が手で行った統合や非表示が黙って効かなくなる。
+ *
+ * 区切りの `_` は最後のものを見る。ただし末尾が半角英数字でなければ、
+ * それは区切りではなく氏名の一部である（ライセンスNo.は保存前に英数字だけへ
+ * 均されている）。この判定が無いと `鈴木_一郎` が `鈴木_郎` に切り詰められる。
+ *
+ * 何度通しても結果が変わらないこと（冪等）が要件。読み込みのたびに掛かる。
+ */
+export function migrateIdentityKey(key: string): string {
+    const separator = key.lastIndexOf('_');
+    const license = separator > 0 ? key.slice(separator + 1) : '';
+    if (!license || !/^[a-zA-Z0-9]+$/.test(license)) return normalizePlayerName(key);
+    return `${normalizePlayerName(key.slice(0, separator))}_${normalizeLicenseForKey(license)}`;
+}
