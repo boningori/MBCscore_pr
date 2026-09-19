@@ -226,6 +226,17 @@ function normalizeGeminiNumber(value: unknown): number | null {
 class GeminiFatalError extends Error { }
 
 /**
+ * 写真そのものが読み取りに向いていない失敗。Tesseractへ回さず、撮り直しを促す。
+ *
+ * GeminiFatalError では表現できない。あちらは「モデルを変えても同じ」を
+ * 意味するだけで、recognizePlayerList の catch は種類を問わず Tesseract へ回す。
+ * 1枚に複数チームが写った写真をそこへ渡すと、parseOcrText は行単位で拾うので
+ * 全チームの選手が混ざった名簿がもっともらしく返り、利用者が誤りに気づけない。
+ * 「読めなかった」より「間違って読めた」ほうが害が大きい。
+ */
+class ImageFormatError extends Error { }
+
+/**
  * Gemini APIによるOCR処理
  */
 async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
@@ -322,13 +333,20 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 throw new Error('Geminiからの応答形式が正しくありませんでした');
             }
 
+            // モデルを変えても写真は変わらないので、ここで打ち切る（下の catch は
+            // ImageFormatError を素通しする）
+            if (teams.length > 1) {
+                throw new ImageFormatError(
+                    '1枚の画像に複数のチームが写っています。1チーム分だけが写るように切り取って、もう一度お試しください',
+                );
+            }
+
             // データ検証と正規化。背番号は Tesseract 側（parseOcrText）と同じ規則で
             // 通す。以前はここだけ範囲を見ておらず、実測で 999 や -3 がそのまま
             // 名簿に入り、文字列の "0" は parseInt("0") が falsy 判定に落ちて
             // index+1（別番号）へ化けていた
             //
-            // 複数チームが返っても、ここでは1チーム目だけを見る。複数チームの
-            // 判定・エラー化は別タスクで扱う
+            // 複数チームは上で弾いているので、ここに来るのは常に1チーム分
             const validatedPlayers: SavedPlayer[] = [];
             for (const [index, raw] of teams[0].players.entries()) {
                 const p = raw as Partial<SavedPlayer>;
@@ -357,6 +375,9 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
         } catch (error) {
             console.error(`Gemini API Error (${model}):`, error);
+            // 様式の問題。残りのモデルへ送り直しても同じ写真が返ってくるだけで、
+            // Tesseractへ回しても直らない（recognizePlayerList側で返し切る）
+            if (error instanceof ImageFormatError) throw error;
             // モデルを変えても結果が変わらない失敗は、ここで打ち切る。
             // recognizePlayerList の catch が受けて Tesseract へ回すので、
             // 写真読込そのものが使えなくなるわけではない（着くまでが速くなるだけ）
@@ -390,6 +411,16 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
         try {
             return await recognizeWithGemini(imageFile, apiKey);
         } catch (error) {
+            // 写真の撮り方の問題は、端末内OCRに回しても直らない。
+            // 回すとかえって「間違って読めた」結果が返るので、ここで返し切る
+            if (error instanceof ImageFormatError) {
+                return {
+                    success: false,
+                    players: [],
+                    error: error.message,
+                    usedEngine: 'Gemini',
+                };
+            }
             fallbackReason = error instanceof Error ? error.message : 'Unknown error';
             console.warn('Gemini API failed, falling back to Tesseract...', error);
             // Gemini失敗時はTesseractへフォールバック
