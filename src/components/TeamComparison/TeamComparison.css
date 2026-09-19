@@ -341,11 +341,32 @@
     color: var(--text-primary);
 }
 
+/*
+  出力ツールバー。スコアシート・スタッツと同じ形（左寄せ・大きめのボタン・
+  折り返しあり）に揃える。以前は下部中央に絵文字付きの小ボタンを置いていたが、
+  同じ操作が画面ごとに違う見た目・違う並び順になっていた
+*/
 .comparison-export {
     display: flex;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    padding-top: var(--spacing-md);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+/* ラベルは語の途中で折らない。折り返しは行単位（上の flex-wrap）で行う */
+.comparison-export > button {
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .comparison-export {
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+    }
 }
 
 /* 出力ボタン自体は画像に写さない */

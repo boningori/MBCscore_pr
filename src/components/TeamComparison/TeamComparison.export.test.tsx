@@ -70,6 +70,21 @@ describe('比較画面の出力', () => {
         expect(document.querySelector('.comparison-export')?.classList.contains('no-export')).toBe(true);
     });
 
+    // 以前このタブだけ「出力中…」の知らせが無く、十数秒かかる端末では
+    // 押せたのかどうか分からなかった
+    it('出力中は待つよう読み上げ領域で知らせる', async () => {
+        let finishExport!: () => void;
+        exportElement.mockImplementationOnce(() => new Promise<void>(res => { finishExport = () => res(); }));
+        renderExportable();
+
+        expect(screen.getByRole('status').textContent).toBe('');
+        fireEvent.click(screen.getByRole('button', { name: /JPEG/ }));
+
+        await waitFor(() => expect(screen.getByRole('status').textContent).toContain('出力中'));
+        finishExport();
+        await waitFor(() => expect(screen.getByRole('status').textContent).toBe(''));
+    });
+
     it('exportName（試合名）にファイル名で使えない文字が入っていても除かれる', async () => {
         // 次のタスクで exportName には試合名（利用者の自由入力）が渡る。
         // '/' がそのまま結合されるとパス区切りとして壊れるため、

@@ -463,3 +463,41 @@
     flex: 0 0 auto;
     color: var(--text-secondary);
 }
+
+/* スタッツタブの出力ツールバー。スコアシートの scoresheet-toolbar と同じ形 */
+.history-detail-view .stats-export-toolbar {
+    display: flex;
+    /* 入り切らないときは行を折り返す。折り返さないとボタン自身が押し潰され、
+       ラベルが「P／D／F出力」と文字単位で割れる（scoresheet-toolbar と同じ理由） */
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+/* ラベルは語の途中で折らない。折り返しは行単位（上の flex-wrap）で行う */
+.history-detail-view .stats-export-toolbar > button {
+    white-space: nowrap;
+}
+
+/* 狭い画面では隙間を詰めて、1行に収まる幅を稼ぐ */
+@media (max-width: 480px) {
+    .history-detail-view .stats-export-toolbar {
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+    }
+}
+
+/*
+  出力物の見出し（日付・試合名・会場）。チーム比較の comparison-caption と
+  同じ見え方にする。読むだけのものなので、面も枠も持たせない
+*/
+.history-detail-view .history-stats-caption {
+    margin: 0 0 var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}

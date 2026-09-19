@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import type { GameRecord } from '../../utils/gameHistoryStorage';
 import { loadGameHistory, deleteGameRecord, updateGameRecordGameInfo, updateGameRecordEndTime, resolveFinalScore } from '../../utils/gameHistoryStorage';
 import { RunningScoresheet } from '../RunningScoresheet';
@@ -21,6 +21,9 @@ import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import { migrateTeam } from '../../utils/migrateTeam';
 import { TeamComparison } from '../TeamComparison';
 import { buildComparisonCaption } from '../TeamComparison/comparisonCaption';
+import { ExportButtons } from '../ExportButtons';
+import { useElementExport } from '../../hooks/useElementExport';
+import { sanitizeFilename } from '../../utils/pdfExport';
 import './History.css';
 
 interface HistoryProps {
@@ -35,6 +38,16 @@ export function History({ onBack }: HistoryProps) {
     const [viewMode, setViewMode] = useState<'comparison' | 'stats' | 'scoresheet'>('comparison');
     const [query, setQuery] = useState('');
     const [order, setOrder] = useState<HistoryOrder>('newest');
+
+    // スタッツタブの出力。フックは条件付きで呼べないので、詳細を開いていない
+    // 間も同じ数だけ呼ぶ。参照先が空のときは useElementExport が何もしない
+    const statsExportRef = useRef<HTMLDivElement>(null);
+    // 試合名は利用者の自由入力で、ファイル名に使えない文字が入りうる
+    // （チーム比較の出力と同じ規則）
+    const statsGameName = sanitizeFilename((selectedRecord?.gameName ?? '').trim());
+    const statsExport = useElementExport(statsExportRef, {
+        filename: statsGameName ? `${statsGameName}_スタッツ` : 'スタッツ',
+    });
 
     const visibleRecords = useMemo(
         () => filterAndSortRecords(records, { query, order }),
@@ -164,6 +177,16 @@ export function History({ onBack }: HistoryProps) {
         const teamA = migrateTeam(selectedRecord.teamA);
         const teamB = migrateTeam(selectedRecord.teamB);
 
+        // 試合名が「日付 vs 対戦相手」の自動生成（GameSetup参照）で
+        // 記録日と同じ日付から始まる場合は、日付を重ねて出さない。
+        // チーム比較とスタッツの両方が同じ見出しを出す
+        const caption = buildComparisonCaption({
+            date: selectedRecord.date,
+            gameName: selectedRecord.gameName,
+            location: selectedRecord.location,
+        });
+        const pendingActions = selectedRecord.pendingActions ?? [];
+
         return (
             <div className="history-detail-view">
                 <div className="history-header">
@@ -196,36 +219,6 @@ export function History({ onBack }: HistoryProps) {
                     </button>
                 </div>
 
-                {/*
-                  選手を割り当てないまま終えた記録。どの選手のスタッツにも入って
-                  いないので、上のスタッツ表にも最終スコアにも現れない。
-                  保存はしていたのに読み出す画面が無く、事実上失われていた。
-                */}
-                {viewMode === 'stats' && (selectedRecord.pendingActions?.length ?? 0) > 0 && (
-                    <div className="history-pending-section">
-                        <h3>⏳ 未割り当ての記録（{selectedRecord.pendingActions!.length}件）</h3>
-                        <p className="history-pending-note">
-                            選手が決まらないまま試合を終えた記録です。
-                            どの選手のスタッツにも入っておらず、最終スコアにも含まれていません。
-                        </p>
-                        <ul className="history-pending-list">
-                            {selectedRecord.pendingActions!.map(pending => (
-                                <li key={pending.id}>
-                                    <span className="history-pending-quarter">
-                                        {quarterLabel(pending.quarter)}
-                                    </span>
-                                    <span className="history-pending-team">
-                                        {pending.teamId === 'teamA' ? selectedRecord.teamA.name : selectedRecord.teamB.name}
-                                    </span>
-                                    <span className="history-pending-action">
-                                        {actionLabel(pending.actionType, pending.value)}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
                 {viewMode === 'comparison' && (
                     <div className="history-comparison-view">
                         <TeamComparison
@@ -236,13 +229,7 @@ export function History({ onBack }: HistoryProps) {
                             statHistory={selectedRecord.statHistory || []}
                             foulHistory={selectedRecord.foulHistory || []}
                             showThreePoint={selectedRecord.showThreePoint}
-                            // 試合名が「日付 vs 対戦相手」の自動生成（GameSetup参照）で
-                            // 記録日と同じ日付から始まる場合は、日付を重ねて出さない
-                            caption={buildComparisonCaption({
-                                date: selectedRecord.date,
-                                gameName: selectedRecord.gameName,
-                                location: selectedRecord.location,
-                            })}
+                            caption={caption}
                             exportable
                             exportName={selectedRecord.gameName}
                         />
@@ -250,23 +237,74 @@ export function History({ onBack }: HistoryProps) {
                 )}
 
                 {viewMode === 'stats' && (
-                    <div className="history-stats-view">
-                        <StatsPanel
-                            players={teamA.players}
-                            teamName={teamA.name}
-                            isHistoryView={true}
-                            teamId="teamA"
-                            statHistory={selectedRecord.statHistory}
-                        />
-                        <div style={{ height: '32px' }}></div>
-                        <StatsPanel
-                            players={teamB.players}
-                            teamName={teamB.name}
-                            isHistoryView={true}
-                            teamId="teamB"
-                            statHistory={selectedRecord.statHistory}
-                        />
-                    </div>
+                    <>
+                        {/* ツールバーは出力対象の外。ボタン自体が画像に写らない */}
+                        <div className="stats-export-toolbar">
+                            <ExportButtons
+                                isExporting={statsExport.isExporting}
+                                onExportPdf={statsExport.exportPdf}
+                                onExportJpeg={statsExport.exportJpeg}
+                            />
+                        </div>
+
+                        <div className="history-stats-export" ref={statsExportRef}>
+                            {/*
+                              「チームA 統計」「チームB 統計」だけの画像は、渡された側が
+                              どの試合か見分けられない。出力専用の隠し要素にはせず、
+                              画面にも同じものを出す（見えているものと出力物を一致させる）
+                            */}
+                            {caption && <p className="history-stats-caption">{caption}</p>}
+
+                            {/*
+                              選手を割り当てないまま終えた記録。どの選手のスタッツにも入って
+                              いないので、下のスタッツ表にも最終スコアにも現れない。
+                              保存はしていたのに読み出す画面が無く、事実上失われていた。
+                              表だけ切り出すとこの試合の記録として欠けるので、出力にも含める。
+                            */}
+                            {pendingActions.length > 0 && (
+                                <div className="history-pending-section">
+                                    <h3>⏳ 未割り当ての記録（{pendingActions.length}件）</h3>
+                                    <p className="history-pending-note">
+                                        選手が決まらないまま試合を終えた記録です。
+                                        どの選手のスタッツにも入っておらず、最終スコアにも含まれていません。
+                                    </p>
+                                    <ul className="history-pending-list">
+                                        {pendingActions.map(pending => (
+                                            <li key={pending.id}>
+                                                <span className="history-pending-quarter">
+                                                    {quarterLabel(pending.quarter)}
+                                                </span>
+                                                <span className="history-pending-team">
+                                                    {pending.teamId === 'teamA' ? selectedRecord.teamA.name : selectedRecord.teamB.name}
+                                                </span>
+                                                <span className="history-pending-action">
+                                                    {actionLabel(pending.actionType, pending.value)}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            <div className="history-stats-view">
+                                <StatsPanel
+                                    players={teamA.players}
+                                    teamName={teamA.name}
+                                    isHistoryView={true}
+                                    teamId="teamA"
+                                    statHistory={selectedRecord.statHistory}
+                                />
+                                <div style={{ height: '32px' }}></div>
+                                <StatsPanel
+                                    players={teamB.players}
+                                    teamName={teamB.name}
+                                    isHistoryView={true}
+                                    teamId="teamB"
+                                    statHistory={selectedRecord.statHistory}
+                                />
+                            </div>
+                        </div>
+                    </>
                 )}
 
                 {/*

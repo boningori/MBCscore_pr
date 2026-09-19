@@ -2,7 +2,7 @@
 
 - 日付: 2026-09-20
 - ステータス: 設計承認済み（2026-09-20）
-- 対象: 新規 `src/hooks/useElementExport.ts`, 新規 `src/components/ExportButtons/`, `src/components/History/History.tsx`, `src/components/StatsPanel/StatsPanel.css`, `src/components/RunningScoresheet/RunningScoresheet.tsx`, `src/components/PlayerStatsAnalysis/DetailView.tsx`, `src/components/TeamComparison/TeamComparison.tsx`
+- 対象: 新規 `src/hooks/useElementExport.ts`, 新規 `src/components/ExportButtons/`, `src/components/History/History.tsx`, `src/components/History/History.css`, `src/components/RunningScoresheet/RunningScoresheet.tsx`, `src/components/RunningScoresheet/RunningScoresheet.css`, `src/components/PlayerStatsAnalysis/DetailView.tsx`, `src/components/TeamComparison/TeamComparison.tsx`
 
 ## 背景
 
@@ -103,6 +103,8 @@ interface ExportButtonsProps {
 
 空のときに幅も高さも持たせない（`:not(:empty)` で当てる）現行の作法は保つ。出た瞬間にボタンが横へ押し出されるのを防いでいる。
 
+加えて、空のときは `position: absolute` で flex の流れから外す。読み上げのためこの要素は文字が入る前からDOMに残す必要がある（`display: none` だと支援技術の木から消え、後から文字を入れても live region として読まれないことがある）が、流れに残したままだと幅0でも隣との gap を1つ余分に作る。並びが [PDF][JPEG][status][他のボタン] になったことで、この余分な gap がスコアシートのツールバーの折り返し位置を1つ早めていた（実測375px）。位置指定なしの absolute なら木には残したままレイアウトからだけ外れ、文字が入れば `:not(:empty)` 側に切り替わって流れへ戻る。
+
 ### `History.tsx` — スタッツタブ
 
 出力対象を包む要素を1つ足す。
@@ -132,19 +134,20 @@ interface ExportButtonsProps {
 
 `exportElement` のオプションは既定のまま（`windowWidth: 1280`, `scale: 4`）。スタッツ表は `min-width: 795px` なので 1280 に収まる。
 
-### `StatsPanel.css`
+### 横スクロールの扱い（上書きは入れない）
 
-```css
-.exporting .stats-panel { overflow-x: visible; }
-```
+`.stats-panel` は `overflow-x: auto`、中の `.stats-table` は `min-width: 795px`（`StatsPanel.css:1-20`）で、狭い端末では実際に横スクロールしている。当初は出力時に `.exporting .stats-panel { overflow-x: visible }` で解く設計にしていたが、**実測の結果この上書きは何も変えなかった**ので入れない。
 
-`.stats-panel` は `overflow-x: auto`、中の `.stats-table` は `min-width: 795px`（`StatsPanel.css:1-20`）。狭い端末では横スクロールしており、この上書きが無いと出力物の右側の列が切れる。`.exporting` は出力対象のルートに付くので、この1行で両チーム分に効く。
+- 出力は常に `windowWidth: 1280` のクローンで行われる。その幅では `.stats-panel` が 1217px、表が 1185px になり、上書きの有無にかかわらず切れない（1280px の iframe に同じDOMを流して実測）
+- 逆に 375px 幅のクローンで測ると、`overflow-x: visible` にしても表は 811px のまま親の 312px からはみ出す。上書きを入れても狭いクローンは救えない
+
+実際にスタッツタブから JPEG を出力した結果は 4916×3348px（倍率4なので 1229CSS px 幅）で、全列が入り切れは無かった。
 
 ### 既存3箇所
 
 | 画面 | 変わること |
 | --- | --- |
-| スコアシート | フックとボタンを差し替え。**見た目は変わらない** |
+| スコアシート | フックとボタンを差し替え。待機していないときの見た目は変わらない。出力中だけ「出力中…」が「試合情報編集」「閉じる」より前に出る（以前は末尾） |
 | 選手詳細 | 同上。**見た目は変わらない** |
 | チーム比較 | 下部の小ボタン → 上部のテキストラベル。「出力中…」の読み上げ領域が新たに付く |
 
@@ -155,12 +158,14 @@ interface ExportButtonsProps {
 新規
 
 - `ExportButtons.test.tsx` … ラベルと並び順、`isExporting` で両方が無効になること、`role="status"` の文言、出力中でないときは status が空
-- `History.statsExport.test.tsx` … スタッツタブに出力ボタンが出る／押すと `exportElement` が `history-stats-export` の要素と `<試合名>_スタッツ` で呼ばれる／見出しに日付と試合名が出る／未割り当ての記録が出力対象の中に入る
+- `useElementExport.test.ts` … format ごとの呼び分け、`windowWidth`/`scale`/`title` の受け渡し、ref が空なら何もしない、出力中の状態、通知の表示名
+- `History/statsExport.test.tsx` … スタッツタブに出力ボタンが出る／押すと `exportElement` が `history-stats-export` の要素と `<試合名>_スタッツ` で呼ばれる／見出しに日付と試合名が出る／未割り当ての記録が出力対象の中に入る
 
 既存
 
 - `TeamComparison.export.test.tsx` … 「出力中…」の読み上げ領域の確認を足す。ボタンは `/JPEG/` `/PDF/` の部分一致で引いているのでラベル変更では壊れない
 - `RunningScoresheet.export.test.tsx` / `DetailView.export.test.tsx` … 同じく部分一致のため変更不要。回帰の確認として通す
+- `App.backSubView.test.tsx` … 「様式を閉じたか」の目印を「PDF出力が消えたか」から「試合情報編集／`.running-scoresheet-container` が消えたか」へ変える。出力ボタンがどのタブにもあるようになり、前者では様式を閉じたことの確認にならない
 
 ## やらないこと
 

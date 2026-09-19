@@ -19,8 +19,9 @@ import { ScoreHeader } from './ScoreHeader';
 import { ComparisonTable } from './ComparisonTable';
 import { ShootingDonuts } from './ShootingDonuts';
 import { ScoreEvolutionChart } from './ScoreEvolutionChart';
-import { useExportAction } from '../../hooks/useExportAction';
-import { exportElement, sanitizeFilename } from '../../utils/pdfExport';
+import { useElementExport } from '../../hooks/useElementExport';
+import { ExportButtons } from '../ExportButtons';
+import { sanitizeFilename } from '../../utils/pdfExport';
 import './TeamComparison.css';
 
 export interface TeamComparisonProps {
@@ -43,22 +44,14 @@ export function TeamComparison({
     const [filter, setFilter] = useState<QuarterFilter>('all');
     const [animate, setAnimate] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
-    const { isExporting, runExport } = useExportAction();
-
     // 拡張子は exportElement 側が format に応じて付ける（他の出力箇所と同じ作法）。
-    // ここで付けると二重拡張子になる
-    const handleExport = (format: 'jpeg' | 'pdf') => {
-        const root = rootRef.current;
-        if (!root) return;
-        // exportName には試合名（利用者が自由入力）が渡る想定。ファイル名に
-        // 使えない文字（/ \ : * ? " < > |）が入りうるのでスコアシート出力と
-        // 同じ規則で置き換えてから結合する（sanitizeFilename）
-        const filename = exportName ? `${sanitizeFilename(exportName)}_チーム比較` : 'チーム比較';
-        void runExport(
-            () => exportElement(root, { filename, format }),
-            format === 'jpeg' ? 'JPEG' : 'PDF',
-        );
-    };
+    // ここで付けると二重拡張子になる。
+    // exportName には試合名（利用者が自由入力）が渡る想定。ファイル名に
+    // 使えない文字（/ \ : * ? " < > |）が入りうるのでスコアシート出力と
+    // 同じ規則で置き換えてから結合する（sanitizeFilename）
+    const { isExporting, exportPdf, exportJpeg } = useElementExport(rootRef, {
+        filename: exportName ? `${sanitizeFilename(exportName)}_チーム比較` : 'チーム比較',
+    });
 
     // 画面に入ったら伸ばす。IntersectionObserver が無い環境（jsdom）では
     // すぐ最終幅にする。動かないだけで、数字は同じものが出る
@@ -116,6 +109,20 @@ export function TeamComparison({
 
     return (
         <div className="team-comparison" ref={rootRef}>
+            {/*
+              出力ボタンはこのルートの内側にあるため、画像に写らないよう
+              no-export を付ける（.exporting .no-export で消える）
+            */}
+            {exportable && (
+                <div className="comparison-export no-export">
+                    <ExportButtons
+                        isExporting={isExporting}
+                        onExportPdf={exportPdf}
+                        onExportJpeg={exportJpeg}
+                    />
+                </div>
+            )}
+
             <ScoreHeader
                 leftName={teamA.name} leftColor={leftColor}
                 rightName={teamB.name} rightColor={rightColor}
@@ -161,16 +168,6 @@ export function TeamComparison({
 
             <ScoreEvolutionChart data={evolution} leftColor={leftColor} rightColor={rightColor} />
 
-            {exportable && (
-                <div className="comparison-export no-export">
-                    <button type="button" className="btn btn-secondary btn-small" disabled={isExporting} onClick={() => handleExport('jpeg')}>
-                        🖼 JPEG
-                    </button>
-                    <button type="button" className="btn btn-secondary btn-small" disabled={isExporting} onClick={() => handleExport('pdf')}>
-                        📄 PDF
-                    </button>
-                </div>
-            )}
         </div>
     );
 }
