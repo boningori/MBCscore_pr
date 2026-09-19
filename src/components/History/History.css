@@ -463,3 +463,92 @@
     flex: 0 0 auto;
     color: var(--text-secondary);
 }
+
+/* スタッツタブの出力ツールバー。スコアシートの scoresheet-toolbar と同じ形 */
+.history-detail-view .stats-export-toolbar {
+    display: flex;
+    /* 入り切らないときは行を折り返す。折り返さないとボタン自身が押し潰され、
+       ラベルが「P／D／F出力」と文字単位で割れる（scoresheet-toolbar と同じ理由） */
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+/* ラベルは語の途中で折らない。折り返しは行単位（上の flex-wrap）で行う */
+.history-detail-view .stats-export-toolbar > button {
+    white-space: nowrap;
+}
+
+/* 狭い画面では隙間を詰めて、1行に収まる幅を稼ぐ */
+@media (max-width: 480px) {
+    .history-detail-view .stats-export-toolbar {
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+    }
+}
+
+/*
+  出力物の見出し（日付・試合名・会場）。チーム比較の comparison-caption と
+  同じ見え方にする。読むだけのものなので、面も枠も持たせない
+*/
+.history-detail-view .history-stats-caption {
+    margin: 0 0 var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/*
+  出力だけ白地にする。画面（濃紺）は一切変えない。
+
+  出力の下地はもともと白（exportElement が html2canvas に
+  backgroundColor: '#ffffff' を渡す。A4の白紙に刷るスコアシートに
+  合わせた値）。ところがスタッツ表と未割り当ての記録は自前の濃紺背景を
+  持っているため、白い紙に濃紺のベタが乗った状態で出ていた。インクを
+  食ううえ、モノクロ印刷では地が潰れて数字が読めない。
+  見出しに至っては自前の背景を持たず、ダークテーマ用の薄いグレーのまま
+  白地に載っていた（実測: 地 rgb(255,255,255)・文字 rgb(126,134,148)＝3.67:1）。
+
+  アプリ本体は無条件ダークで、白地に置ける色トークンを持たない。
+  出力時だけ、出力範囲の中でトークンごと差し替える。個別のセレクタを
+  並べるのではなくトークンを差し替えるのは、表の中の色が
+  StatsPanel.css 側に散っているため——1つ足すたびに出力側の上書きを
+  書き足す作りだと、忘れた列だけ白地に明色で出て消える。
+  取りこぼしは statsExportContrast.test.ts が機械的に見つける。
+
+  PTSの青と退場の赤は残す。色を落とすと区別が消えるので、白地で読める
+  濃さまで落として残す（モノクロ印刷でも濃いグレーになる）。
+  比率はすべて statsExportContrast.test.ts が検査する
+*/
+.history-detail-view .history-stats-export.exporting {
+    /* 地 */
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #eef2f7;
+    /* 文字 */
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #475569;
+    --primary-text: #1d4ed8;
+    --danger-text: #b91c1c;
+    /* 枠線など、文字でないもの。
+       白一色の紙の上では、この枠がチームごとの表を分ける唯一の手がかりに
+       なる。薄いグレー(#cbd5e1)だと白地に 1.48:1 しか出ず、プリンタに
+       よっては消える。非文字の 3:1 を満たす濃さにする */
+    --border: #64748b;
+    --warning: #b45309;
+    --secondary: #047857;
+
+    /*
+      トークンの差し替えだけでは足りない。選手名・パネル見出し・未割り当ての
+      見出しは自分で color を持たず、この範囲の外（.history-container の
+      color: var(--text-primary)）で既に白に解決された値を継承してくる。
+      差し替えたトークンが通るのは子孫の var() だけなので、継承されてくる白は
+      そのまま白地に載って消える（実測: 選手名と大半の列が出力で見えなくなった）。
+      ここで継承を断つ
+    */
+    color: var(--text-primary);
+}

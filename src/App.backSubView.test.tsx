@@ -136,11 +136,14 @@ describe('端末の戻る操作: 試合履歴の詳細', () => {
         fireEvent.click(await screen.findByText('試合履歴'));
         fireEvent.click(document.querySelector('.history-card-main')!);
         fireEvent.click(await screen.findByText('スコアシート（保存/PDF）'));
-        expect(await screen.findByRole('button', { name: 'PDF出力' })).toBeTruthy();
+        // 目印は様式だけが持つもので取る。出力ボタンはどのタブにもあるため
+        // 「PDF出力が消えたか」では様式を閉じたことにならない
+        expect(await screen.findByRole('button', { name: '試合情報編集' })).toBeTruthy();
 
         pressBack();
 
-        expect(screen.queryByRole('button', { name: 'PDF出力' })).toBeNull();
+        expect(screen.queryByRole('button', { name: '試合情報編集' })).toBeNull();
+        expect(document.querySelector('.running-scoresheet-container')).toBeNull();
         // 詳細は開いたまま
         expect(await screen.findByText('← 一覧に戻る')).toBeTruthy();
     });

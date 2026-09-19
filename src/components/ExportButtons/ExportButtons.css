@@ -1,0 +1,25 @@
+/*
+  空のときは flex の流れから外す。
+
+  読み上げのため、この要素は文字が入る前からDOMに置いておく必要がある
+  （display:none にすると支援技術の木から消え、後から文字を入れても
+  live region として読まれないことがある）。ただし流れに残したままだと、
+  幅0でも隣との「すきま」(gap) を1つ余計に作り、狭い画面でツールバーの
+  折り返し位置が1つ早まる。位置指定なしの absolute なら、木には残したまま
+  レイアウトからだけ外れる。文字が入れば下の規則に切り替わり流れへ戻る
+*/
+.export-status:empty {
+    position: absolute;
+}
+
+/*
+  出力中の表示。空のときは幅も高さも持たせない。
+  出た瞬間に隣のボタンが横へ押し出されるのを防ぐ（:not(:empty)）。
+  ラベルは語の途中で折らない
+*/
+.export-status:not(:empty) {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--warning-light);
+    white-space: nowrap;
+}

@@ -1,8 +1,8 @@
 // 詳細ビューコンポーネント
 
 import { useRef } from 'react';
-import { exportElement } from '../../utils/pdfExport';
-import { useExportAction } from '../../hooks/useExportAction';
+import { useElementExport } from '../../hooks/useElementExport';
+import { ExportButtons } from '../ExportButtons';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { splitPercent } from '../../utils/percentSplit';
 import { GrowthComparison } from './GrowthComparison';
@@ -36,7 +36,6 @@ const RESULT_LABEL = { win: '勝ち', loss: '負け', draw: '引分' } as const;
 export function DetailView({ player, isHidden, onToggleHidden, isMerged = false, onUnmerge }: DetailViewProps) {
     const showStdDev = player.gamesPlayed >= MIN_GAMES_FOR_STD_DEV;
     const detailRef = useRef<HTMLDivElement>(null);
-    const { isExporting, runExport } = useExportAction();
     const totalRebounds = player.totalStats.offensiveRebounds + player.totalStats.defensiveRebounds;
     const avgRebounds = player.avgStats.offensiveRebounds + player.avgStats.defensiveRebounds;
     // 平均は足してよいが標準偏差は足せない。理由は AggregatedPlayerStats.reboundsStdDev のコメント
@@ -59,37 +58,20 @@ export function DetailView({ player, isHidden, onToggleHidden, isMerged = false,
     const title = `#${formatPlayerNumber(player.number)} ${player.name}（${player.gamesPlayed}試合）`;
     const filename = `stats_${playerName}_${player.gamesPlayed}games`;
 
-    const handleExportPDF = () => {
-        if (!detailRef.current) return;
-        const element = detailRef.current;
-        return runExport(() => exportElement(element, {
-            filename, format: 'pdf',
-            windowWidth: 827, scale: 3, title,
-        }), 'PDF');
-    };
-
-    const handleExportJPEG = () => {
-        if (!detailRef.current) return;
-        const element = detailRef.current;
-        return runExport(() => exportElement(element, {
-            filename, format: 'jpeg',
-            windowWidth: 827, scale: 3, title,
-        }), 'JPEG');
-    };
+    // A4幅(827px)・倍率3で出す。既定(1280px・倍率4)のままだとグラフが
+    // 間延びし、端末によっては canvas の上限にも当たる
+    const { isExporting, exportPdf, exportJpeg } = useElementExport(detailRef, {
+        filename, windowWidth: 827, scale: 3, title,
+    });
 
     return (
         <div className="player-detail-view">
             <div className="detail-toolbar">
-                <button className="btn btn-primary" onClick={handleExportPDF} disabled={isExporting}>
-                    PDF出力
-                </button>
-                <button className="btn btn-secondary" onClick={handleExportJPEG} disabled={isExporting}>
-                    JPEG出力
-                </button>
-                {/* ボタンのラベルは差し替えず別領域で知らせ、読み上げ名を保つ */}
-                <span className="detail-export-status" role="status">
-                    {isExporting ? '出力中… そのままお待ちください' : ''}
-                </span>
+                <ExportButtons
+                    isExporting={isExporting}
+                    onExportPdf={exportPdf}
+                    onExportJpeg={exportJpeg}
+                />
                 {/*
                   「表示中／非表示中」だけでは何が表示されるのか分からない。
                   この切り替えが効くのは選手スタッツ分析の一覧と集計だけで、

@@ -3,8 +3,9 @@ import type { Game, GameInfo, FoulEntry } from '../../types/game';
 import { formatFoulDisplay, createInitialGameInfo } from '../../types/game';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { formatClockTime } from '../../utils/localDate';
-import { exportElement, generateScoresheetFilename } from '../../utils/pdfExport';
-import { useExportAction } from '../../hooks/useExportAction';
+import { generateScoresheetFilename } from '../../utils/pdfExport';
+import { useElementExport } from '../../hooks/useElementExport';
+import { ExportButtons } from '../ExportButtons';
 import { countFirstHalfFouls, FOUL_CELL_COUNT } from './halfTimeFouls';
 import { scrollEdges } from './scrollEdges';
 import { licenseDigits } from './licenseDigits';
@@ -60,7 +61,9 @@ function writesToCoachRow(foul: FoulEntry): boolean {
 export function RunningScoresheet({ game, gameName = '', date = '', onClose, onUpdateGameInfo, onEndTimeChange }: RunningScoresheetProps) {
     const scoresheetRef = useRef<HTMLDivElement>(null);
     const [showGameInfoModal, setShowGameInfoModal] = useState(false);
-    const { isExporting, runExport } = useExportAction();
+    const { isExporting, exportPdf, exportJpeg } = useElementExport(scoresheetRef, {
+        filename: generateScoresheetFilename(gameName, date, game.teamA.name, game.teamB.name),
+    });
 
     // 横に続きがあることを端の影で示す（理由は scrollAffordance.test.tsx）。
     // 影は枠の擬似要素なので、位置だけを属性で伝える
@@ -88,22 +91,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
     // 試合状態の判定
     const isGameFinished = phase === 'finished';
     const isHalfFinished = currentQuarter > 2 || isGameFinished; // 前半終了（2Q以降に進んでいる）
-
-    // PDF出力
-    const handleExportPDF = () => {
-        if (!scoresheetRef.current) return;
-        const element = scoresheetRef.current;
-        const filename = generateScoresheetFilename(gameName, date, teamA.name, teamB.name);
-        return runExport(() => exportElement(element, { filename, format: 'pdf' }), 'PDF');
-    };
-
-    // JPEG出力
-    const handleExportJPEG = () => {
-        if (!scoresheetRef.current) return;
-        const element = scoresheetRef.current;
-        const filename = generateScoresheetFilename(gameName, date, teamA.name, teamB.name);
-        return runExport(() => exportElement(element, { filename, format: 'jpeg' }), 'JPEG');
-    };
 
     // 最終スコア
     const finalScoreA = teamA.players.reduce((sum, p) => sum + p.stats.points, 0);
@@ -239,12 +226,11 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
         <div className="running-scoresheet-container">
             {/* ツールバー */}
             <div className="scoresheet-toolbar">
-                <button className="btn btn-primary" onClick={handleExportPDF} disabled={isExporting}>
-                    PDF出力
-                </button>
-                <button className="btn btn-secondary" onClick={handleExportJPEG} disabled={isExporting}>
-                    JPEG出力
-                </button>
+                <ExportButtons
+                    isExporting={isExporting}
+                    onExportPdf={exportPdf}
+                    onExportJpeg={exportJpeg}
+                />
                 <button className="btn btn-secondary" onClick={() => setShowGameInfoModal(true)} disabled={isExporting}>
                     試合情報編集
                 </button>
@@ -253,11 +239,6 @@ export function RunningScoresheet({ game, gameName = '', date = '', onClose, onU
                         閉じる
                     </button>
                 )}
-                {/* 出力は端末によっては十数秒かかる。ボタンのラベルを差し替えず
-                    別領域で知らせることで、読み上げ名（PDF出力/JPEG出力）を保つ */}
-                <span className="scoresheet-export-status" role="status">
-                    {isExporting ? '出力中… そのままお待ちください' : ''}
-                </span>
             </div>
 
             <p className="rs-unofficial-note">

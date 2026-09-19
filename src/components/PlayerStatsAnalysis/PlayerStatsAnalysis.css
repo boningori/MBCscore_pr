@@ -559,37 +559,16 @@
     box-shadow: var(--stats-card-shadow);
 }
 
-/* 出力中の表示。空のときは幅を持たせず、トグルの折り返し位置を変えない */
-.player-stats-container .detail-export-status:not(:empty) {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--warning-light);
-}
-
-.player-stats-container .detail-toolbar .btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.player-stats-container .detail-toolbar .btn-primary {
-    background: var(--stats-primary-gradient);
-    color: white;
-}
-
-.player-stats-container .detail-toolbar .btn-secondary {
-    border: 1px solid var(--team-white);}
-
-@media (hover: hover) and (pointer: fine) {
-  .player-stats-container .detail-toolbar .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  }
-}
+/*
+  出力ボタン（PDF出力／JPEG出力）の見た目はここで決めない。
+  同じボタンが履歴のスタッツ・チーム比較・スコアシートにもあり、共通の
+  .btn / .btn-primary / .btn-secondary に揃える（ExportButtons）。
+  以前ここで文字0.85rem・角丸8px・グラデーション・1px枠に変えていたため、
+  この画面のボタンだけ他の3箇所と別物になっていた
+  （実測: 13.6px/8px/グラデーション/枠あり ⇔ 14.3px/12px/単色/枠なし）。
+  ツールバーの器（地・余白・影）はこの画面のカード類と揃えるものなので、
+  上の .detail-toolbar 側に残す
+*/
 
 /* トグルスイッチ */
 .player-stats-container .toggle-switch {
@@ -1996,11 +1975,6 @@
     background: var(--bg-tertiary);
 }
 
-.player-stats-container .detail-toolbar .btn-secondary {
-    background: var(--bg-hover);
-    color: var(--stats-text-bright);
-    border-color: var(--text-secondary);
-}
 
 /* --stats-success-soft(--secondary-light) は 4.08:1、
    --stats-danger-soft(--danger-light) は 3.74:1 でAAに届かない。
