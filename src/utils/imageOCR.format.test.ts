@@ -97,3 +97,51 @@ describe('1チームだけ写っているとき', () => {
         expect(result.players.map(p => p.number)).toEqual([4, 5]);
     });
 });
+
+describe('licenseNoの桁数検証', () => {
+    it('1〜2桁は誤読として捨てる（背番号・通し番号・学年が入り込む）', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":['
+            + '{"number":4,"name":"学年混入","licenseNo":"6"},'
+            + '{"number":5,"name":"背番号混入","licenseNo":"12"}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players.map(p => p.licenseNo)).toEqual([undefined, undefined]);
+        // 選手そのものは残す。捨てるのは誤読したライセンスNo.だけ
+        expect(result.players.map(p => p.number)).toEqual([4, 5]);
+    });
+
+    it('3桁（下3桁）と10桁（JBA登録番号）はどちらも残す', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":['
+            + '{"number":4,"name":"下3桁","licenseNo":"567"},'
+            + '{"number":5,"name":"十桁","licenseNo":"ABC1234567"}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players.map(p => p.licenseNo)).toEqual(['567', 'ABC1234567']);
+    });
+
+    it('記号を除いた結果が2桁以下なら捨てる', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":[{"number":4,"name":"記号混じり","licenseNo":"1-2"}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players[0].licenseNo).toBeUndefined();
+    });
+
+    it('nullや空文字は未設定として扱う', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":[{"number":4,"name":"欄なし","licenseNo":null}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players[0].licenseNo).toBeUndefined();
+    });
+});

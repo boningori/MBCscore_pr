@@ -215,6 +215,24 @@ function normalizeGeminiNumber(value: unknown): number | null {
 }
 
 /**
+ * Geminiが返したライセンスNo.を、使える値だけに絞る（使えなければ undefined）。
+ *
+ * 欄に入り得るのは3桁の数字（JBA登録番号の下3桁。RunningScoresheet の注記）か、
+ * 10桁の英数字（公式戦プログラムに載る登録番号そのもの）。一方で取り違えの相手は
+ * すべて2桁以下である——背番号 0〜99、通し番号 1〜15、学年 1桁、出場時限・
+ * ファウル 1桁。重ならないので、2桁以下なら誤読と断じてよい。
+ *
+ * 4〜9桁や11桁以上は弾かない。知らない様式を殺すより、そのまま残して
+ * 人が直せるほうがよい（識別キーは下3桁で揃えるので実害も小さい）。
+ */
+function normalizeGeminiLicenseNo(value: unknown): string | undefined {
+    if (typeof value !== 'string') return undefined;
+    const cleaned = value.trim().replace(/[^a-zA-Z0-9]/g, '');
+    if (cleaned.length < 3) return undefined;
+    return cleaned;
+}
+
+/**
  * モデルを変えても結果が変わらない失敗。
  *
  * FALLBACK_MODELS を順に試すのは「そのモデルが無い(404)」場合に意味がある。
@@ -355,7 +373,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 validatedPlayers.push({
                     number,
                     name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
-                    licenseNo: typeof p.licenseNo === 'string' && p.licenseNo.trim() ? p.licenseNo.trim().replace(/[^a-zA-Z0-9]/g, '') : undefined,
+                    licenseNo: normalizeGeminiLicenseNo(p.licenseNo),
                     isCaptain: false,
                 });
             }
