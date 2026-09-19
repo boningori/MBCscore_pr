@@ -501,3 +501,16 @@
     color: var(--text-muted);
     text-align: center;
 }
+
+/*
+  出力の下地は白（exportElement が html2canvas に backgroundColor: '#ffffff'
+  を渡す）。スタッツ表と未割り当ての記録は自前の背景を持つので濃紺のまま
+  出るが、この見出しだけは自前の背景を持たず白地に載る。
+  ダークテーマ用の --text-muted (#8695ad) では白地で 3.67:1 にしかならず、
+  実際に出したJPEGでも薄く沈んでいた（画素で実測: 地 rgb(255,255,255)・
+  文字 rgb(126,134,148)）。出力時だけ濃色へ切り替える。
+  値は選手詳細の --export-on-white-dim と同じ（白地で 7.6:1）
+*/
+.history-detail-view .history-stats-export.exporting .history-stats-caption {
+    color: #475569;
+}
