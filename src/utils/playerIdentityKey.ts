@@ -37,10 +37,17 @@ function normalizeLicenseForKey(licenseNo: string): string {
     return licenseNo.slice(-3);
 }
 
-/** 選手の識別キー（氏名＋ライセンスNo.の下3桁） */
+/**
+ * 選手の識別キー（氏名＋ライセンスNo.の下3桁）
+ *
+ * 氏名・ライセンスNo.とも、まず空白を取り除いてから組み立てる。ここで
+ * 空白を残したまま `.trim()` だけで済ませると、内部に空白を含む
+ * ライセンスNo.（例: 手入力の「A B1234」）がそのまま英数字判定に渡り、
+ * migrateIdentityKey が同じ入力に対して出す形とずれる（後述）。
+ */
 export function buildPlayerIdentityKey(name: string, licenseNo?: string): string {
     const cleanName = normalizePlayerName(name);
-    const license = (licenseNo ?? '').trim();
+    const license = normalizePlayerName(licenseNo ?? '');
     if (!license) return cleanName;
     return `${cleanName}_${normalizeLicenseForKey(license)}`;
 }
@@ -55,11 +62,18 @@ export function buildPlayerIdentityKey(name: string, licenseNo?: string): string
  * それは区切りではなく氏名の一部である（ライセンスNo.は保存前に英数字だけへ
  * 均されている）。この判定が無いと `鈴木_一郎` が `鈴木_郎` に切り詰められる。
  *
+ * 空白は最初に、キー全体に対して一度だけ取り除く。英数字判定と、判定が
+ * 落ちたときの氏名フォールバックが「同じ文字列」を見ていないと、
+ * 一方が弾いた空白入り候補を他方が空白を落としてから通してしまい、
+ * 2回目に通したときだけ結果が変わる（冪等が崩れる）。判定の対象と
+ * フォールバックの対象を最初から一致させることで、これを防ぐ。
+ *
  * 何度通しても結果が変わらないこと（冪等）が要件。読み込みのたびに掛かる。
  */
 export function migrateIdentityKey(key: string): string {
-    const separator = key.lastIndexOf('_');
-    const license = separator > 0 ? key.slice(separator + 1) : '';
-    if (!license || !/^[a-zA-Z0-9]+$/.test(license)) return normalizePlayerName(key);
-    return `${normalizePlayerName(key.slice(0, separator))}_${normalizeLicenseForKey(license)}`;
+    const cleaned = normalizePlayerName(key);
+    const separator = cleaned.lastIndexOf('_');
+    const license = separator > 0 ? cleaned.slice(separator + 1) : '';
+    if (!license || !/^[a-zA-Z0-9]+$/.test(license)) return cleaned;
+    return `${cleaned.slice(0, separator)}_${normalizeLicenseForKey(license)}`;
 }

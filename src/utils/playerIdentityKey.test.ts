@@ -76,4 +76,25 @@ describe('migrateIdentityKey', () => {
     it('空文字を壊さない', () => {
         expect(migrateIdentityKey('')).toBe('');
     });
+
+    it('ライセンスNo.部分に内部空白があっても冪等（2回通しても同じ結果）', () => {
+        // 手入力で紛れ込む「A B1234」のような空白入り候補。1回目は空白のせいで
+        // 英数字判定に落ちて氏名側の空白除去だけが効き、2回目はその除去後の
+        // 文字列が英数字判定を通ってしまうと結果が変わってしまう。
+        const key = '田中_A B1234';
+        const once = migrateIdentityKey(key);
+        expect(migrateIdentityKey(once)).toBe(once);
+    });
+});
+
+describe('buildPlayerIdentityKey と migrateIdentityKey の整合', () => {
+    it('buildPlayerIdentityKey の出力は migrateIdentityKey を通しても変わらない（不動点）', () => {
+        const built = buildPlayerIdentityKey('田中', '12 3');
+        expect(migrateIdentityKey(built)).toBe(built);
+    });
+
+    it('ライセンスNo.の内部空白の有無でキーが割れない', () => {
+        expect(buildPlayerIdentityKey('田中', '1 23'))
+            .toBe(buildPlayerIdentityKey('田中', '123'));
+    });
 });
