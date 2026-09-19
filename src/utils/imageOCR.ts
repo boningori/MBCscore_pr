@@ -13,6 +13,7 @@ import { TESSERACT_PATHS } from './tesseractAssets';
 import { GEMINI_API_BASE, FALLBACK_MODELS, GEMINI_REQUEST_TIMEOUT_MS, getStoredApiKey } from './geminiClient';
 import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from './fetchWithTimeout';
 import { isAiOcrEnabled } from './appSettings';
+import { parseGeminiRosterResponse } from './geminiRosterResponse';
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -312,25 +313,24 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
             if (import.meta.env.DEV) console.log(`OCR Raw Text (Gemini - ${model}):`, textResponse);
 
 
-            // JSONを抽出
-            const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
             // 例外にする（return しない）。return すると recognizePlayerList の
             // catch を通らず、Tesseract を試さないまま失敗が返る。実測では
             // APIキーを入れている利用者だけが、キー無しなら読めた写真で
             // 「応答形式が正しくありませんでした」を受け取っていた
-            if (!jsonMatch) {
+            const teams = parseGeminiRosterResponse(textResponse);
+            if (teams.length === 0) {
                 throw new Error('Geminiからの応答形式が正しくありませんでした');
             }
-
-            const parsed: unknown = JSON.parse(jsonMatch[0]);
-            if (!Array.isArray(parsed)) throw new Error('Geminiの応答が選手の配列ではありませんでした');
 
             // データ検証と正規化。背番号は Tesseract 側（parseOcrText）と同じ規則で
             // 通す。以前はここだけ範囲を見ておらず、実測で 999 や -3 がそのまま
             // 名簿に入り、文字列の "0" は parseInt("0") が falsy 判定に落ちて
             // index+1（別番号）へ化けていた
+            //
+            // 複数チームが返っても、ここでは1チーム目だけを見る。複数チームの
+            // 判定・エラー化は別タスクで扱う
             const validatedPlayers: SavedPlayer[] = [];
-            for (const [index, raw] of parsed.entries()) {
+            for (const [index, raw] of teams[0].players.entries()) {
                 const p = raw as Partial<SavedPlayer>;
                 const number = normalizeGeminiNumber(p.number);
                 if (number === null) continue;
