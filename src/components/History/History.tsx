@@ -26,6 +26,10 @@ import { useElementExport } from '../../hooks/useElementExport';
 import { sanitizeFilename } from '../../utils/pdfExport';
 import './History.css';
 
+/** 詳細のタブ。様式は「開いて閉じる」層なので、戻り先には選べない */
+type HistoryTabMode = 'comparison' | 'stats';
+type HistoryViewMode = HistoryTabMode | 'scoresheet';
+
 interface HistoryProps {
     onBack: () => void;
 }
@@ -35,7 +39,11 @@ export function History({ onBack }: HistoryProps) {
     const [records, setRecords] = useState<GameRecord[]>(() => loadGameHistory());
     const [selectedRecord, setSelectedRecord] = useState<GameRecord | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'comparison' | 'stats' | 'scoresheet'>('comparison');
+    const [viewMode, setViewMode] = useState<HistoryViewMode>('comparison');
+    // 様式を開く前に見ていたタブ。端末の戻るはここへ返す。
+    // 固定で 'comparison' に返していたため、スタッツから様式を開いて戻ると
+    // スタッツではなくチーム比較に着いていた
+    const [tabBeforeScoresheet, setTabBeforeScoresheet] = useState<HistoryTabMode>('comparison');
     const [query, setQuery] = useState('');
     const [order, setOrder] = useState<HistoryOrder>('newest');
 
@@ -57,16 +65,30 @@ export function History({ onBack }: HistoryProps) {
     // 端末の戻る操作は試合詳細を閉じて一覧へ。ここを受け取らないと、画面上の
     // 「← 一覧に戻る」と挙動が食い違い、ホームまで飛ぶ（useBackHandler）。
     //
-    // 様式を開いているときは、まず様式を閉じてスタッツ表示へ戻す。画面上の
-    // 「閉じる」が1段だけ戻すのに、端末の戻るだけ詳細ごと閉じていたため、
-    // 同じ「戻る」で行き先が食い違っていた（App のスコアシート画面と同じ扱い）
+    // 様式を開いているときは、まず様式を閉じて元のタブへ戻す。以前は端末の
+    // 戻るだけ詳細ごと閉じていて、画面上の「閉じる」と行き先が食い違っていた。
+    // その「閉じる」はタブバーと重複するので外したが、様式を1段の層として
+    // 扱うことは変えない（縦に長い様式から一覧まで一度に飛ばさない）
     useBackHandler(selectedRecord !== null, () => {
         if (viewMode === 'scoresheet') {
-            setViewMode('comparison');
+            setViewMode(tabBeforeScoresheet);
             return;
         }
         setSelectedRecord(null);
     });
+
+    /**
+     * 詳細のタブを切り替える。
+     *
+     * 様式へ移るときだけ、直前のタブを控える。端末の戻るはそこへ返す
+     * （画面上の「閉じる」は無い。タブバーが常に出ているため置いていない）
+     */
+    const showTab = (next: HistoryViewMode) => {
+        if (next === 'scoresheet' && viewMode !== 'scoresheet') {
+            setTabBeforeScoresheet(viewMode);
+        }
+        setViewMode(next);
+    };
 
     // 試合詳細は先頭（試合名と「← 一覧に戻る」がある側）から見せる。
     // タブを切り替えたときも同じ——比較タブを下まで読んでから様式へ移ると、
@@ -199,13 +221,13 @@ export function History({ onBack }: HistoryProps) {
                 <div className="history-tabs">
                     <button
                         className={viewMode === 'comparison' ? 'active' : ''}
-                        onClick={() => setViewMode('comparison')}
+                        onClick={() => showTab('comparison')}
                     >
                         チーム比較
                     </button>
                     <button
                         className={viewMode === 'stats' ? 'active' : ''}
-                        onClick={() => setViewMode('stats')}
+                        onClick={() => showTab('stats')}
                     >
                         {/* 狭い画面での折り返し位置。括弧の途中で切れないよう、
                             括弧の前だけを改行の候補にする（CSS の word-break: keep-all と対） */}
@@ -213,7 +235,7 @@ export function History({ onBack }: HistoryProps) {
                     </button>
                     <button
                         className={viewMode === 'scoresheet' ? 'active' : ''}
-                        onClick={() => setViewMode('scoresheet')}
+                        onClick={() => showTab('scoresheet')}
                     >
                         スコアシート<wbr />（保存/PDF）
                     </button>
@@ -318,7 +340,11 @@ export function History({ onBack }: HistoryProps) {
                         game={recordToGame(selectedRecord)}
                         gameName={selectedRecord.gameName}
                         date={recordInputDate(selectedRecord.date)}
-                        onClose={() => setViewMode('comparison')}
+                        // onClose は渡さない。渡すと様式に「閉じる」が出るが、
+                        // それは setViewMode するだけで、上に常に出ている
+                        // タブバーを押すのと同じ動きになる。試合中の様式
+                        // （App の scoresheet 画面）は単独の画面で、
+                        // 「閉じる」が画面上で唯一の戻り手段なのでそのまま
                         // 画面へ反映するのは保存できたときだけ。
                         //
                         // 更新関数の戻り値を捨てていたため、容量が尽きて

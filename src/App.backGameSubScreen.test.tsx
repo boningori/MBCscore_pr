@@ -79,6 +79,21 @@ describe('端末の戻る操作: スコアシート画面', () => {
         expect(screen.queryByText('新規試合開始')).toBeNull();
     });
 
+    // 履歴の様式はタブの1つなのでタブバーで戻れる。そちらからは重複する
+    // 「閉じる」を外したが、試合中の様式は単独の画面で、これが画面上で
+    // 唯一の戻り手段になる。両方から外してしまわないよう、ここで守る
+    it('試合中の様式には「閉じる」がある（画面上で唯一の戻り手段）', async () => {
+        const scoresheetButton = await resumeGame();
+        fireEvent.click(scoresheetButton);
+        await screen.findByRole('button', { name: 'PDF出力' });
+
+        const close = screen.getByRole('button', { name: '閉じる' });
+        fireEvent.click(close);
+
+        expect(await screen.findByRole('button', { name: /スコアシート/ })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'PDF出力' })).toBeNull();
+    });
+
     it('試合画面まで戻ったあとの戻るでホームへ抜ける', async () => {
         const scoresheetButton = await resumeGame();
         fireEvent.click(scoresheetButton);
