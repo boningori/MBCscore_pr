@@ -99,7 +99,19 @@ async function readMetas(db: IDBDatabase): Promise<SnapshotMeta[]> {
     return allKeys.map(timestamp => ({ timestamp, reason: byReason.get(timestamp) }));
 }
 
-// アプリのlocalStorageデータを収集
+/**
+ * アプリのlocalStorageデータを収集。
+ *
+ * dataBackup の取り込みは端末単位の設定（voiceMemo* / aiOcr*）を除外するが、
+ * こちらは除外しない。ここで扱う世代は同じ端末のIndexedDBに置かれ、ファイルに
+ * 書き出す経路も、他端末の世代を読み込む経路も無い（getSnapshot / restoreSnapshot
+ * の呼び出し元は RestorePrompt と MirrorBackupList だけ）。つまり戻すのは常に
+ * この端末が自分で選んだ過去の値であって、他人の同意が入ってくることはない。
+ * 除外すると逆に、localStorageを消された利用者が設定まで失うことになる。
+ *
+ * 世代をファイルに書き出す／読み込む経路を足すときは、この前提が崩れる。
+ * そのときは dataBackup と同じ除外を入れること。
+ */
 export function collectAppData(): Record<string, string> {
     const entries: Record<string, string> = {};
     for (let i = 0; i < localStorage.length; i++) {

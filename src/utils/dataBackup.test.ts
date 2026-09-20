@@ -8,7 +8,7 @@ import { saveRecentOpponent, loadRecentOpponents } from './teamStorage';
 import { saveGameSession, loadGameSession, hasGameSession } from './gameSessionStorage';
 import { createInitialGame } from '../types/game';
 import { loadLastBackup } from './lastBackupStorage';
-import { isVoiceMemoEnabled, hasVoiceMemoConsent, loadAppSettings, subscribeAppSettingsChanged } from './appSettings';
+import { isVoiceMemoEnabled, hasVoiceMemoConsent, loadAppSettings, subscribeAppSettingsChanged, isAiOcrEnabled, hasAiOcrConsent, isAiOcrDiagnosticsEnabled } from './appSettings';
 
 function makeSavedTeam(id: string, name: string): SavedTeam {
     return {
@@ -160,6 +160,96 @@ describe('バックアップ復元は音声メモの同意を持ち込まない�
         expect(result.success).toBe(true);
         expect(listener).toHaveBeenCalledTimes(1);
         unsubscribe();
+    });
+});
+
+describe('バックアップ復元はAI写真読込の同意を持ち込まない（同意は端末単位）', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('バックアップ側がON・同意済みでも、真っさらな端末はOFF・未同意のまま復元される', () => {
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-09-20T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: {
+                    defaultGameMode: 'full',
+                    aiOcrEnabled: true,
+                    aiOcrConsented: true,
+                },
+            },
+        };
+        const parsed = parseImportJSON(JSON.stringify(backup));
+        expect(parsed.type).toBe('backup');
+        const result = executeImport(parsed);
+        expect(result.success).toBe(true);
+
+        // 同意ダイアログを見ていない端末が、他端末のバックアップ復元だけで
+        // 名簿の撮影画像（子どもの氏名とJBA登録番号）を外部送信できる状態に
+        // なってはならない
+        expect(isAiOcrEnabled()).toBe(false);
+        expect(hasAiOcrConsent()).toBe(false);
+    });
+
+    it('設定の形が想定と違っても（型崩れ・余計なキー）、AI写真読込のフラグは持ち込まれない', () => {
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-09-20T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: {
+                    aiOcrEnabled: 'true',
+                    aiOcrConsented: 1,
+                    unknownField: 'x',
+                },
+            },
+        };
+        const parsed = parseImportJSON(JSON.stringify(backup));
+        const result = executeImport(parsed);
+        expect(result.success).toBe(true);
+
+        expect(isAiOcrEnabled()).toBe(false);
+        expect(hasAiOcrConsent()).toBe(false);
+    });
+
+    it('既にONで同意済みの端末では、その状態を維持する（バックアップに引きずられて消えない）', () => {
+        localStorage.setItem('minibasket-app-settings', JSON.stringify({ aiOcrEnabled: true, aiOcrConsented: true }));
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-09-20T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: { defaultGameMode: 'simple', aiOcrEnabled: false, aiOcrConsented: false },
+            },
+        };
+        const parsed = parseImportJSON(JSON.stringify(backup));
+        const result = executeImport(parsed);
+        expect(result.success).toBe(true);
+
+        expect(isAiOcrEnabled()).toBe(true);
+        expect(hasAiOcrConsent()).toBe(true);
+        expect(loadAppSettings().defaultGameMode).toBe('simple');
+    });
+
+    // 読み取り結果の詳細（診断パネル）は意図的に除外対象に「しない」。
+    // 端末外へ何かを送る設定ではなく、defaultGameMode と同じ端末内の表示設定
+    // だから。判断の理由は dataBackup.ts の除外ブロックのコメントに書いてある。
+    // ここで固定しておかないと、コメントだけが根拠になって次に揺れる
+    it('読み取り結果の詳細（診断パネル）は端末内の表示設定なので、バックアップ通りに復元される', () => {
+        const backup = {
+            version: '2.0',
+            exportDate: '2026-09-20T00:00:00.000Z',
+            appName: 'MBCscore',
+            data: {
+                settings: { aiOcrDiagnosticsEnabled: true },
+            },
+        };
+        const result = executeImport(parseImportJSON(JSON.stringify(backup)));
+        expect(result.success).toBe(true);
+
+        expect(isAiOcrDiagnosticsEnabled()).toBe(true);
     });
 });
 
