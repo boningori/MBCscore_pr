@@ -5,7 +5,7 @@
 // 黙って再表示される。どちらも「操作したのに元に戻っている」という形で出る。
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadMergedPlayers, loadAllMergedPlayers } from './mergedPlayers';
+import { loadMergedPlayers, loadAllMergedPlayers, mergedCanonicalKeys } from './mergedPlayers';
 import { generatePlayerKey, loadHiddenPlayers, isPlayerHidden } from './playerStatsAnalysis';
 
 const MERGED_KEY = 'minibasket-merged-players';
@@ -95,6 +95,54 @@ describe('保存済みの手動統合の矯正', () => {
         localStorage.setItem(MERGED_KEY, JSON.stringify({ teamA: [1, 2, 3] }));
 
         expect(loadMergedPlayers('teamA')).toEqual({});
+    });
+
+    it('手動統合済みの10桁と下3桁が矯正で自己参照になったら対応表から消える', () => {
+        // 利用者が10桁カードと下3桁カードを手で統合済み。矯正すると両辺とも
+        // 同じキーになり、放置すると「統合済み」バッジだけが誤って残る
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
+            teamA: { '田中太郎_ABC1234567': '田中太郎_567' },
+        }));
+
+        const map = loadMergedPlayers('teamA');
+
+        expect(map).toEqual({});
+    });
+
+    it('自己参照の項目が、同じキーへ移る本物の統合を締め出さない（先に自己参照）', () => {
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
+            teamA: {
+                '田中太郎_ABC1234567': '田中太郎_567',
+                '田中太郎_567': '田中太郎_999',
+            },
+        }));
+
+        const map = loadMergedPlayers('teamA');
+
+        expect(map['田中太郎_567']).toBe('田中太郎_999');
+    });
+
+    it('自己参照の項目が、同じキーへ移る本物の統合を締め出さない（後に自己参照）', () => {
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
+            teamA: {
+                '田中太郎_567': '田中太郎_999',
+                '田中太郎_ABC1234567': '田中太郎_567',
+            },
+        }));
+
+        const map = loadMergedPlayers('teamA');
+
+        expect(map['田中太郎_567']).toBe('田中太郎_999');
+    });
+
+    it('自己参照になったキーは mergedCanonicalKeys（統合済み判定）にも残らない', () => {
+        localStorage.setItem(MERGED_KEY, JSON.stringify({
+            teamA: { '田中太郎_ABC1234567': '田中太郎_567' },
+        }));
+
+        const map = loadMergedPlayers('teamA');
+
+        expect(mergedCanonicalKeys(map).has('田中太郎_567')).toBe(false);
     });
 });
 

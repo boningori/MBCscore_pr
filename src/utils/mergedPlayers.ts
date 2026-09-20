@@ -58,11 +58,19 @@ function migrateMap(map: MergeMap): MergeMap {
     for (const [from, to] of Object.entries(map)) {
         if (typeof to !== 'string') continue;
         const key = migrateIdentityKey(from);
+        const canonical = migrateIdentityKey(to);
+        // 10桁とライセンスNo.下3桁を利用者が手で統合済みだと、矯正で両辺が同じ
+        // キーに畳まれ「自分自身への統合」になる。これは情報を持たない
+        // （統合先が無いのに mergedCanonicalKeys が「統合済み」バッジを出す）
+        // うえ、この判定を後回しにすると次の「先勝ち」ルールがスロットを
+        // 先に埋めてしまい、同じキーへ矯正される本物の統合を締め出して消してしまう。
+        // だから先に弾き、スロットを空けたまま次へ渡す
+        if (key === canonical) continue;
         // 旧キーと新キーが両方保存されていると1つに畳まれる。どちらも同じ人を
         // 指すので寄り先は同じだが、決めておかないと読み込むたびに結果が変わる。
         // 先に現れたほうを残す
         if (key in migrated) continue;
-        migrated[key] = migrateIdentityKey(to);
+        migrated[key] = canonical;
     }
     return migrated;
 }
