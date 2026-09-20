@@ -106,6 +106,9 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const handleImageImport = async (file: File) => {
         setIsLoading(true);
         setOcrError(null);
+        // 消さないと、読み込み中や失敗時に前回分のパネルが「今回の結果」として
+        // 表示され続ける（44行目のコメントの約束が崩れる）
+        setLastOcr(null);
         try {
             const result = await recognizePlayerList(file);
             setLastOcr(result);
@@ -218,6 +221,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                 diagnostics={lastOcr?.diagnostics}
                 usedEngine={lastOcr?.usedEngine}
                 rawText={lastOcr?.rawText}
+                fallbackReason={lastOcr?.fallbackReason}
             />
 
             {/* チームセクションコンテナ（2列レイアウト） */}
@@ -518,6 +522,7 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading, ocrE
                         diagnostics={lastOcr?.diagnostics}
                         usedEngine={lastOcr?.usedEngine}
                         rawText={lastOcr?.rawText}
+                        fallbackReason={lastOcr?.fallbackReason}
                     />
 
                     {/* 番号グリッド選択UI */}

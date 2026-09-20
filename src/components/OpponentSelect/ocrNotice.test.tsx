@@ -6,9 +6,10 @@
 // 誰にも見えない状態だった。失敗したときだけ見えるので気づきにくい。
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { OpponentSelect } from './OpponentSelect';
 import { recognizePlayerList } from '../../utils/imageOCR';
+import type { ImageOCRResult } from '../../utils/imageOCR';
 import { MAX_PLAYERS_PER_TEAM } from '../TeamShared/playerLimit';
 import type { SavedPlayer } from '../../utils/teamStorage';
 import { setAiOcrDiagnosticsEnabled } from '../../utils/appSettings';
@@ -138,6 +139,39 @@ describe('編集画面を開き直したとき', () => {
         // 万一パネルだけ残っていても、前チームの選手名は絶対に見えてはいけない
         expect(screen.queryByRole('button', { name: /読み取り結果の詳細/ })).toBeNull();
         expect(screen.queryByText(/山田太郎/)).toBeNull();
+    });
+
+    it('同じ編集画面でもう一枚読み込ませると、結果が返る前に前回のパネルの中身が消える', async () => {
+        setAiOcrDiagnosticsEnabled(true);
+        let resolveSecond: (value: ImageOCRResult) => void = () => { };
+        mockRecognize
+            .mockResolvedValueOnce({
+                success: true,
+                players: players(5),
+                usedEngine: 'Gemini',
+                diagnostics: {
+                    geminiModel: 'gemini-test-model',
+                    geminiRawText: '{"players":[{"number":1,"name":"山田太郎"}]}',
+                },
+            })
+            .mockImplementationOnce(() => new Promise<ImageOCRResult>((resolve) => { resolveSecond = resolve; }));
+
+        const { container } = render(<OpponentSelect onSelect={vi.fn()} />);
+        importPhoto(container);
+
+        const toggle = await screen.findByRole('button', { name: /読み取り結果の詳細/ });
+        fireEvent.click(toggle);
+        expect(await screen.findByText(/山田太郎/)).toBeTruthy();
+
+        // 差し替えのつもりで同じ編集画面からもう一枚読み込ませる。結果はまだ返っていない
+        importPhoto(container);
+
+        // 読み込み中は「今回の読み取り」を語る約束（OpponentSelect.tsx 44行目）が
+        // あるので、前チームの通知と同じく前回分は即座に消えていないといけない
+        expect(screen.queryByText(/山田太郎/)).toBeNull();
+
+        resolveSecond({ success: true, players: players(5), usedEngine: 'Gemini' });
+        await waitFor(() => expect(mockRecognize).toHaveBeenCalledTimes(2));
     });
 });
 

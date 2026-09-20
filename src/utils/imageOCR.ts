@@ -27,6 +27,8 @@ import { normalizePlayerName } from './playerIdentityKey';
 export interface OcrDiagnostics {
     /** 応答した（＝最後に試した）Geminiモデル */
     geminiModel?: string;
+    /** 試したモデルを順に。1件なら1回で通った、複数なら落ちて次へ送っている */
+    geminiModelsTried?: string[];
     /** Geminiの生応答。Tesseractへフォールバックしても残す */
     geminiRawText?: string;
 }
@@ -360,6 +362,7 @@ async function recognizeWithGemini(
     for (const model of FALLBACK_MODELS) {
         try {
             diagnostics.geminiModel = model;
+            (diagnostics.geminiModelsTried ??= []).push(model);
             const url = `${GEMINI_API_BASE}${model}:generateContent`;
             const response = await fetchWithTimeout(url, {
                 method: 'POST',

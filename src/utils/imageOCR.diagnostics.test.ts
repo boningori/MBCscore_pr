@@ -62,6 +62,14 @@ describe('読み取りに成功したとき', () => {
         expect(result.diagnostics?.geminiModel).toBe(FALLBACK_MODELS[0]);
     });
 
+    it('1回で通ったときは試した履歴も1件だけ', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(ONE_TEAM)));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.diagnostics?.geminiModelsTried).toEqual([FALLBACK_MODELS[0]]);
+    });
+
     it('生の応答がそのまま残る', async () => {
         vi.stubGlobal('fetch', vi.fn(async () => geminiReply(ONE_TEAM)));
 
@@ -88,6 +96,14 @@ describe('Tesseractへフォールバックしたとき', () => {
         const result = await recognizePlayerList(imageFile());
 
         expect(result.diagnostics?.geminiModel).toBe(FALLBACK_MODELS[FALLBACK_MODELS.length - 1]);
+    });
+
+    it('試した全モデルが順に残る（最後の1件しか見えないと、軽いモデルの問題かプロンプトの問題か切り分けられない）', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply('読めません')));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.diagnostics?.geminiModelsTried).toEqual(FALLBACK_MODELS);
     });
 });
 

@@ -64,6 +64,26 @@ describe('設定がONのとき', () => {
         expect(container.firstChild).toBeNull();
     });
 
+    it('Gemini不採用の理由が出る', () => {
+        render(
+            <OcrDiagnosticsPanel diagnostics={DIAGNOSTICS} usedEngine="Gemini" fallbackReason="quota exceeded" />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /読み取り結果の詳細/ }));
+
+        expect(screen.getByText(/quota exceeded/)).toBeTruthy();
+    });
+
+    it('diagnosticsが空でもfallbackReasonだけで描画する（画像が大きすぎてAIへ送らなかった経路）', () => {
+        const { container } = render(
+            <OcrDiagnosticsPanel diagnostics={{}} usedEngine="Tesseract" fallbackReason="画像が大きいためAIへは送らず標準OCRで読み取りました" />,
+        );
+
+        expect(container.firstChild).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: /読み取り結果の詳細/ }));
+        expect(screen.getByText(/画像が大きいため/)).toBeTruthy();
+    });
+
     it('Tesseractが使われたときはその出力も出す', () => {
         render(
             <OcrDiagnosticsPanel

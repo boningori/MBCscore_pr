@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { AppSettingsModal } from './AppSettingsModal';
 import { saveApiKey } from '../../utils/geminiClient';
-import { hasAiOcrConsent, isAiOcrEnabled, isVoiceMemoEnabled } from '../../utils/appSettings';
+import { hasAiOcrConsent, isAiOcrEnabled, isVoiceMemoEnabled, setAiOcrDiagnosticsEnabled } from '../../utils/appSettings';
 
 afterEach(cleanup);
 
@@ -81,5 +81,27 @@ describe('設定: AI写真読込', () => {
         fireEvent.click(toggle());
         fireEvent.click(screen.getByRole('button', { name: /同意して有効にする/ }));
         expect(isVoiceMemoEnabled()).toBe(false);
+    });
+});
+
+// モーダルは常時マウントされたままなので、useState(isAiOcrDiagnosticsEnabled)は
+// 初回マウント時にしか評価されない。バックアップ復元はこのモーダルの中から
+// localStorageへ直接書くため、開いたまま復元するとチェックボックスが実体と
+// 食い違ったまま残ってしまう（次にONのつもりで押した1クリックがOFFへ倒れる）。
+describe('設定: 読み取り結果の詳細表示のチェックボックスと保存値の食い違い', () => {
+    const diagCheckbox = () =>
+        screen.getByRole('checkbox', { name: /読み取り結果の詳細を表示する/ }) as HTMLInputElement;
+
+    it('モーダルを閉じている間に外部でONにされても、開き直すとチェックボックスに反映される', () => {
+        const { rerender } = render(<AppSettingsModal isOpen onClose={() => { }} />);
+        fireEvent.click(screen.getByRole('button', { name: /AI機能/ }));
+        expect(diagCheckbox().checked).toBe(false);
+
+        rerender(<AppSettingsModal isOpen={false} onClose={() => { }} />);
+        setAiOcrDiagnosticsEnabled(true);
+        rerender(<AppSettingsModal isOpen onClose={() => { }} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /AI機能/ }));
+        expect(diagCheckbox().checked).toBe(true);
     });
 });

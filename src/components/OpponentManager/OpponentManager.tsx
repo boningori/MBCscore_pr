@@ -380,6 +380,9 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         if (!editingTeam) return;
         setIsLoading(true);
         setOcrError(null);
+        // 消さないと、読み込み中や失敗時に前回分のパネルが「今回の結果」として
+        // 表示され続ける
+        setLastOcr(null);
         try {
             const result = await recognizePlayerList(file);
             setLastOcr(result);
@@ -582,6 +585,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                             diagnostics={lastOcr?.diagnostics}
                             usedEngine={lastOcr?.usedEngine}
                             rawText={lastOcr?.rawText}
+                            fallbackReason={lastOcr?.fallbackReason}
                         />
 
                         {/* 番号グリッド選択UI */}

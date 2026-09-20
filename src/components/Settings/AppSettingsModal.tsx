@@ -103,6 +103,9 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
             setTestStatus(null);
             setDefaultMode(getDefaultGameMode());
             setVoiceMemoOn(isVoiceMemoEnabled());
+            // バックアップ復元は同じモーダル内からlocalStorageへ直接書くため、
+            // 開いたままのチェックボックスが実体と食い違ったまま残ってしまう
+            setDiagnosticsOn(isAiOcrDiagnosticsEnabled());
             setPendingImport(null);
             setImportTarget('myTeam');
             setShowTextImport(false);
