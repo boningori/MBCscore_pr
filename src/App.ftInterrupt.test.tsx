@@ -107,10 +107,10 @@ function timeoutModal() {
     return within(document.querySelector('.timeout-modal-content') as HTMLElement);
 }
 
-/** チームパネル（コート上の選手カードやタイムアウトチップを読む） */
+/** チームパネル（コート上の選手カードやタイムアウトチップを読む）。
+    左右はマイチーム基準で入れ替わるため、場所ではなく data-team-id で引く */
 function teamPanel(teamId: 'teamA' | 'teamB') {
-    const side = teamId === 'teamA' ? 'team-a' : 'team-b';
-    return within(document.querySelector(`.team-panel.${side}`) as HTMLElement);
+    return within(document.querySelector(`.team-panel[data-team-id="${teamId}"]`) as HTMLElement);
 }
 
 /** 試合を再開し、選手4のファウル→シューター選択→FT結果入力まで進める */

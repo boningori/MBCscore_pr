@@ -78,7 +78,7 @@ describe('App: 記録中の画面スリープ抑止', () => {
         await startGame();
 
         await waitFor(() => {
-            expect(container.querySelectorAll('.team-panel.team-a .mini-player-card').length).toBe(5);
+            expect(container.querySelectorAll('.team-panel[data-team-id="teamA"] .mini-player-card').length).toBe(5);
         });
         await waitFor(() => expect(request).toHaveBeenCalledWith('screen'));
     });
@@ -87,7 +87,7 @@ describe('App: 記録中の画面スリープ抑止', () => {
         const { container } = render(<App />);
         await startGame();
         await waitFor(() => {
-            expect(container.querySelectorAll('.team-panel.team-a .mini-player-card').length).toBe(5);
+            expect(container.querySelectorAll('.team-panel[data-team-id="teamA"] .mini-player-card').length).toBe(5);
         });
         await waitFor(() => expect(request).toHaveBeenCalled());
 
