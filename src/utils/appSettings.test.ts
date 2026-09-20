@@ -325,6 +325,7 @@ describe('アプリ設定: 壊れた保存データ', () => {
             voiceMemoConsented: false,
             aiOcrEnabled: false,
             aiOcrConsented: false,
+            aiOcrDiagnosticsEnabled: false,
         });
     });
 

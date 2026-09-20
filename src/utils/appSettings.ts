@@ -23,6 +23,13 @@ export interface AppSettings {
     aiOcrEnabled: boolean;
     /** 画像の外部送信について一度でも同意したか。OFFに戻しても取り消さない */
     aiOcrConsented: boolean;
+    /**
+     * 読み取り結果の詳細（Geminiの生の応答と、応答したモデル名）を画面に出すか。
+     *
+     * 既定はOFF。生の応答には選手の氏名がそのまま入るので、普段の画面に
+     * 出したままにはしない。読み取りがおかしかったときだけ、利用者が自分で開く
+     */
+    aiOcrDiagnosticsEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -31,6 +38,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     voiceMemoConsented: false,
     aiOcrEnabled: false,
     aiOcrConsented: false,
+    aiOcrDiagnosticsEnabled: false,
 };
 
 // 配列やnull・文字列が入っていると、スプレッドで {"0":"a",…} のような
@@ -66,6 +74,7 @@ function readStoredSettings(): Partial<AppSettings> {
     if (typeof raw.voiceMemoConsented === 'boolean') clean.voiceMemoConsented = raw.voiceMemoConsented;
     if (typeof raw.aiOcrEnabled === 'boolean') clean.aiOcrEnabled = raw.aiOcrEnabled;
     if (typeof raw.aiOcrConsented === 'boolean') clean.aiOcrConsented = raw.aiOcrConsented;
+    if (typeof raw.aiOcrDiagnosticsEnabled === 'boolean') clean.aiOcrDiagnosticsEnabled = raw.aiOcrDiagnosticsEnabled;
     return clean;
 }
 
@@ -179,6 +188,14 @@ export function isAiOcrEnabled(): boolean {
 
 export function setAiOcrEnabled(enabled: boolean): void {
     saveAppSettings({ aiOcrEnabled: enabled });
+}
+
+export function isAiOcrDiagnosticsEnabled(): boolean {
+    return loadAppSettings().aiOcrDiagnosticsEnabled;
+}
+
+export function setAiOcrDiagnosticsEnabled(enabled: boolean): void {
+    saveAppSettings({ aiOcrDiagnosticsEnabled: enabled });
 }
 
 /**
