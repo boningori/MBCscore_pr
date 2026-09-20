@@ -4,6 +4,7 @@ import { Modal } from '../Modal';
 import { quarterLabel } from '../../utils/quarterLabel';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
+import { resolveMyTeamSide } from '../../utils/myTeamSide';
 import './Scoreboard.css';
 
 interface ScoreboardProps {
@@ -192,14 +193,26 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
     const scoreA = getTeamScore('teamA');
     const scoreB = getTeamScore('teamB');
 
+    // マイチームを左に固定する。記録画面のパネル（App.tsx の panelOrder）と同じ規則で
+    // 並べる。ここだけ順序が違うと、得点を確かめるたびに視線が左右へ飛ぶ
+    const myTeamSide = resolveMyTeamSide(state.teamA, state.teamB);
+    const blockOrder: ('teamA' | 'teamB')[] =
+        myTeamSide === 'teamB' ? ['teamB', 'teamA'] : ['teamA', 'teamB'];
+
     // チームスコアブロック（チーム名 + スコア。TF/タイムアウトはTeamPanel側に表示）
-    const renderTeamBlock = (teamId: 'teamA' | 'teamB') => {
+    const renderTeamBlock = (teamId: 'teamA' | 'teamB', side: 'left' | 'right') => {
         const team = teamId === 'teamA' ? state.teamA : state.teamB;
         const score = teamId === 'teamA' ? scoreA : scoreB;
+        const isMyTeam = myTeamSide === teamId;
         return (
-            <div className={`team-score-block ${teamId === 'teamA' ? 'team-a-block' : 'team-b-block'} color-${team.color}`}>
+            <div
+                key={teamId}
+                className={`team-score-block block-${side} color-${team.color}`}
+                data-team-id={teamId}
+            >
                 <div className="team-info">
-                    <span className="team-label">{team.name}</span>
+                    <span className={`team-label${isMyTeam ? ' is-my-team' : ''}`}>{team.name}</span>
+                    {isMyTeam && <span className="sr-only">マイチーム</span>}
                 </div>
                 <div className="score-display">{score}</div>
             </div>
@@ -210,7 +223,7 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
         <div className="scoreboard-new">
             {/* スコア表示（チーム名・スコア・クォーターの1段構成） */}
             <div className="scoreboard-main">
-                {renderTeamBlock('teamA')}
+                {renderTeamBlock(blockOrder[0], 'left')}
 
                 {/* クォーター表示 */}
                 <div className="quarter-section">
@@ -238,7 +251,7 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
                     </div>
                 </div>
 
-                {renderTeamBlock('teamB')}
+                {renderTeamBlock(blockOrder[1], 'right')}
             </div>
 
             {quarterEndConfirmModal}

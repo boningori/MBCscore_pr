@@ -45,18 +45,19 @@
     border-left-color: var(--team-blue);
 }
 
-/* Team A (左パネル) はボーダーを右側に */
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.team-a-block {
+/* 左のブロックはボーダーを右＝内側に。どちらのチームが左に来るかは
+   マイチーム基準で変わるため、チーム名ではなく場所で指定する */
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.block-left {
     border-left: none !important;
     border-right: 4px solid var(--border) !important;
 }
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.team-a-block.color-white {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.block-left.color-white {
     border-left: none !important;
     border-right: 4px solid var(--team-white) !important;
 }
 
-:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.team-a-block.color-blue {
+:is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-score-block.block-left.color-blue {
     border-left: none !important;
     border-right: 4px solid var(--team-blue) !important;
 }
@@ -79,6 +80,24 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* マイチームのチーム名。理由と @supports の意図は App.css の同名クラスに書いてある。
+   こちらは .team-label が color を明示しているため、同じスコープで上書きする */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-label.is-my-team {
+        background-image: var(--my-team-rainbow);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+    }
+}
+
+@media (forced-colors: active) {
+    :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-label.is-my-team {
+        background-image: none;
+        color: CanvasText;
+    }
 }
 
 :is(.scoreboard-new, .scoreboard-simple, .end-game-confirm-modal) .team-color-badge {

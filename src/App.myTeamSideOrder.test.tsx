@@ -109,10 +109,8 @@ describe('記録画面: マイチームを左に固定する', () => {
         expect(rainbow[0].closest('.team-panel')!.getAttribute('data-team-id')).toBe('teamB');
 
         const srLabels = screen.getAllByText('マイチーム');
-        // パネルヘッダーの1か所。スコアボード側の虹・読み上げラベルはTask 5で追加される
-        // （ブリーフ原文は2か所を期待していたが、Scoreboardへの組み込みはTask 5の範囲であり
-        //   Task 4はApp.tsx側の並び替えのみが対象のため、ここでは1か所を検証する）
-        expect(srLabels).toHaveLength(1);
+        // パネルヘッダーとスコアボードの2か所
+        expect(srLabels).toHaveLength(2);
         srLabels.forEach(el => expect(el.className).toContain('sr-only'));
     });
 
