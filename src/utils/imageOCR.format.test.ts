@@ -203,3 +203,57 @@ describe('氏名の空白', () => {
         expect(result.players[0].name).toBe('選手1');
     });
 });
+
+/** fetchに渡されたリクエスト本文を取り出す */
+function sentBody(fetchMock: ReturnType<typeof vi.fn>): Record<string, unknown> {
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    return JSON.parse(init.body as string);
+}
+
+describe('Geminiへ送る内容', () => {
+    async function capture() {
+        const fetchMock = vi.fn(async () => geminiReply(
+            '{"teams":[{"players":[{"number":4,"name":"甲"}]}]}',
+        ));
+        vi.stubGlobal('fetch', fetchMock);
+        await recognizePlayerList(imageFile());
+        return sentBody(fetchMock);
+    }
+
+    it('JSONスキーマで応答形式を固定する', async () => {
+        const body = await capture();
+        const config = body.generationConfig as Record<string, unknown>;
+
+        expect(config.responseMimeType).toBe('application/json');
+        expect(config.responseSchema).toBeDefined();
+    });
+
+    it('捏造を促す指示を含まない', async () => {
+        const body = await capture();
+        const prompt = JSON.stringify(body.contents);
+
+        // 「読めなければ0」は監督・コーチ行を背番号0の選手に変えてしまう
+        expect(prompt).not.toContain('読み取れない場合は0');
+        expect(prompt).not.toContain('省略可');
+    });
+
+    it('背番号とライセンスNo.の見分け方を渡す', async () => {
+        const body = await capture();
+        const prompt = JSON.stringify(body.contents);
+
+        // 公式様式は見出し「No.」の列が2つある（通し番号と背番号）
+        expect(prompt).toContain('通し番号');
+        // 桁数の不変条件が判別の土台
+        expect(prompt).toContain('0〜99');
+        expect(prompt).toContain('3桁');
+        expect(prompt).toContain('10桁');
+    });
+
+    it('選手以外の行を除外するよう指示する', async () => {
+        const body = await capture();
+        const prompt = JSON.stringify(body.contents);
+
+        expect(prompt).toContain('監督');
+        expect(prompt).toContain('帯同審判');
+    });
+});

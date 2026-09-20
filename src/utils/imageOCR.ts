@@ -288,21 +288,39 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
     const base64Image = await imageToBase64(imageFile);
     const mimeType = imageFile.type || 'image/jpeg';
 
-    const prompt = `この画像は日本のミニバスケットボールチームの選手名簿（メンバー表）です。
-画像から選手情報を読み取り、以下のJSON形式で出力してください。
+    // 様式は1つに定まらない。公式様式のメンバー表（見出し「No.」の列が2つ）、
+    // ID欄の無い大会プログラム、チーム手製の表がどれも来る。列見出しの語彙に
+    // 頼り切らず、桁数の不変条件——背番号は2桁以下、ライセンスNo.は3桁以上——を
+    // 判別の土台にする。旧プロンプトは10桁の英数字だけを例示していたが、
+    // 10桁が載るのは公式戦プログラムだけで、主対象のメンバー表は3桁だった。
+    // 存在しない形式を探させていたので、モデルは近くの数字で代用していた
+    const prompt = `この画像には、日本のミニバスケットボールの選手名簿（メンバー表）が写っています。
+表を読み取り、指定のJSON形式で出力してください。
 
-必ず以下の形式のJSONのみを出力し、他の説明文は含めないでください：
-[
-  {"number": 4, "name": "田中太郎", "licenseNo": "ABC1234567"},
-  {"number": 5, "name": "佐藤花子", "licenseNo": "DEF9876543"}
-]
+【背番号（number）】
+- 0〜99の整数。「00」は 0 とは別の背番号なので、文字列 "00" として出力
+- 見出しが「No.」の列が2つある様式があります。その場合、**選手名より右側の「No.」が背番号**です
+- 欠番なしで 1, 2, 3, ... と順に並ぶ列は「通し番号」であって背番号ではありません。出力しないでください
+- 学年・身長・年齢・出場時限・ファウル数を背番号として出力しないでください
 
-注意：
-- 背番号は数字で出力
-- 背番号が読み取れない場合は0
-- 名前が読み取れない場合は「選手」+連番
-- licenseNoはJBA登録番号（ライセンス番号）。半角英数字で出力。画像に記載がない場合は省略可
-- JSONのみを出力、説明文は不要`;
+【ライセンスNo.（licenseNo）】
+- 見出しが「ライセンスNo.」「JBA登録番号」「メンバーID」「会員番号」のいずれかである列**からのみ**読み取ってください
+- 値は3桁の数字（登録番号の下3桁）か、10桁の英数字（登録番号そのもの）です
+- **1桁・2桁になることはありません。** 1〜2桁の値しか見当たらない場合、それはライセンスNo.ではありません
+- 該当する列が画像に無ければ、必ず null にしてください。他の列の値で代用しないでください
+- 通し番号・学年・学校・身長・年齢・出場時限・ファウル数を licenseNo に入れてはいけません
+
+【選手名（name）】
+- 字間に空白が入っていても詰めて出力してください（例：「加 藤\u3000旺 介」→「加藤旺介」）
+
+【出力しない行】
+- 監督・コーチ・Aコーチ・マネージャー・帯同審判・チーム名・所在地などの欄
+- 表の見出し行、空行
+- 背番号または選手名が読み取れない行（推測で埋めず、その行ごと出力しないでください）
+
+【複数のチーム】
+- 1枚に複数チームの表が写っている場合は、teams 配列にチームごとに分けて出力してください
+- 途中で見切れているチームも、読める範囲で1つのチームとして出力してください`;
 
     let lastError: Error | null = null;
 
@@ -333,6 +351,38 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                     generationConfig: {
                         temperature: 0.1,
                         maxOutputTokens: 2048,
+                        // 応答の形を宣言して、JSON以外が混じる余地を無くす。
+                        // 非対応のモデルは400を返すが、その本文はJSONなので
+                        // 既存の「404以外は打ち切る」経路ではなく下の分岐で次モデルへ回す
+                        responseMimeType: 'application/json',
+                        responseSchema: {
+                            type: 'object',
+                            properties: {
+                                teams: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            teamName: { type: 'string', nullable: true },
+                                            players: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        number: { type: 'string' },
+                                                        name: { type: 'string' },
+                                                        licenseNo: { type: 'string', nullable: true },
+                                                    },
+                                                    required: ['number', 'name'],
+                                                },
+                                            },
+                                        },
+                                        required: ['players'],
+                                    },
+                                },
+                            },
+                            required: ['teams'],
+                        },
                     },
                 }),
             }, GEMINI_REQUEST_TIMEOUT_MS);
@@ -353,6 +403,14 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 // 404なら次のモデルへ
                 if (response.status === 404 || errorMessage.includes('not found')) {
                     console.warn(`Model ${model} not found (OCR), trying next...`);
+                    lastError = new Error(errorMessage);
+                    continue;
+                }
+
+                // responseSchema に対応しないモデルは400を返す。写真ではなく
+                // 送り方の問題なので、次のモデルなら通る可能性がある
+                if (response.status === 400 && /schema|response_schema|responseSchema/i.test(errorMessage)) {
+                    console.warn(`Model ${model} rejected responseSchema (OCR), trying next...`);
                     lastError = new Error(errorMessage);
                     continue;
                 }
