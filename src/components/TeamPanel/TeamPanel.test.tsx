@@ -24,6 +24,7 @@ function renderPanel(extra: Partial<React.ComponentProps<typeof TeamPanel>> = {}
     render(
         <TeamPanel
             teamId="teamA"
+            side="left"
             teamName="ホーム"
             teamColor="white"
             players={[{ ...createPlayer('a1', 4, '選手4', true), isOnCourt: true }]}
