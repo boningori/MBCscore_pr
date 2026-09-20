@@ -136,6 +136,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                 onCancel={closeEditor}
                 onImageImport={handleImageImport}
                 isLoading={isLoading}
+                ocrError={ocrError}
             />
         );
     }
@@ -269,9 +270,17 @@ interface OpponentEditorProps {
     onCancel: () => void;
     onImageImport: (file: File) => void;
     isLoading: boolean;
+    /**
+     * 読み取り結果の通知（上限超過・背番号を読めなかった件数）。
+     *
+     * 読み取りに成功するとこのエディタを返して早期リターンするため、
+     * 呼び出し側の描画箇所には辿り着かない。ここで受けないと、
+     * セットされた通知が誰にも見えないまま消える
+     */
+    ocrError?: string | null;
 }
 
-function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: OpponentEditorProps) {
+function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading, ocrError }: OpponentEditorProps) {
     const [name, setName] = useState(team.name);
     const [coachName, setCoachName] = useState(team.coachName || '');
     const [coachLicenseNo, setCoachLicenseNo] = useState(team.coachLicenseNo || '');
@@ -473,6 +482,12 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                     </div>
 
                     {isLoading && <div className="ocr-loading">{hasApiKey ? 'AIが解析中...' : 'OCRで解析中...'}</div>}
+
+                    {ocrError && (
+                        <div className="alert alert-danger">
+                            {ocrError}
+                        </div>
+                    )}
 
                     {/* 番号グリッド選択UI */}
                     {showNumberGrid && (
