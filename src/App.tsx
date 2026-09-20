@@ -1482,8 +1482,17 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
               statHistory は「不明で記録」した分を合計に含めるために渡す
             */}
-            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} teamId="teamA" statHistory={state.statHistory} />
-            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} teamId="teamB" statHistory={state.statHistory} />
+            {/* 記録画面のパネルと同じ順にする。トグルで切り替わる画面なので、
+                同じ場所でマイチームが左右に飛ぶと探し直しになる */}
+            {panelOrder.map(teamId => (
+              <StatsPanel
+                key={teamId}
+                players={state[teamId].players}
+                teamName={state[teamId].name}
+                teamId={teamId}
+                statHistory={state.statHistory}
+              />
+            ))}
 
             <TeamComparison
               teamA={state.teamA}

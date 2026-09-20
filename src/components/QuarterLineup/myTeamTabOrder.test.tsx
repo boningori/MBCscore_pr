@@ -25,10 +25,10 @@ function renderLineup(aIsMine: boolean | undefined, bIsMine: boolean | undefined
     );
 }
 
-/** タブに出ているチーム名を、DOMに現れる順で返す */
+/** タブに出ているチーム名を、DOMに現れる順で返す（色ラベルと読み上げ専用ラベルは除く） */
 function tabNames(): string[] {
     return Array.from(document.querySelectorAll('.lineup-team-tab .lineup-team-tab-name'))
-        .map(el => el.textContent!.replace(/^[白青]/, '').trim());
+        .map(el => el.textContent!.replace(/^[白青]/, '').replace(/マイチーム$/, '').trim());
 }
 
 describe('スタメン選択: マイチームのタブを先頭にする', () => {
@@ -60,5 +60,40 @@ describe('スタメン選択: マイチームのタブを先頭にする', () =>
         );
         const active = document.querySelector('.lineup-team-tab.active')!;
         expect(active.textContent).toContain('ホーム');
+    });
+});
+
+describe('スタメン選択: タブに読み上げ用の「マイチーム」ラベルを足す', () => {
+    it('マイチームが青(teamB)ならビジターのタブにだけ付く', () => {
+        renderLineup(false, true);
+        const tabs = Array.from(document.querySelectorAll('.lineup-team-tab'));
+        expect(tabs).toHaveLength(2);
+
+        const withLabel = tabs.filter(tab => tab.querySelector('.sr-only')?.textContent === 'マイチーム');
+        expect(withLabel).toHaveLength(1);
+        expect(withLabel[0].textContent).toContain('ビジター');
+    });
+
+    it('マイチームが白(teamA)ならホームのタブにだけ付く', () => {
+        renderLineup(true, false);
+        const tabs = Array.from(document.querySelectorAll('.lineup-team-tab'));
+
+        const withLabel = tabs.filter(tab => tab.querySelector('.sr-only')?.textContent === 'マイチーム');
+        expect(withLabel).toHaveLength(1);
+        expect(withLabel[0].textContent).toContain('ホーム');
+    });
+
+    it('決められないときはどちらのタブにも付かない', () => {
+        renderLineup(true, true);
+        const tabs = Array.from(document.querySelectorAll('.lineup-team-tab'));
+
+        tabs.forEach(tab => expect(tab.querySelector('.sr-only')).toBeNull());
+    });
+
+    it('虹（is-my-team）は付けない', () => {
+        renderLineup(false, true);
+        const tabs = Array.from(document.querySelectorAll('.lineup-team-tab'));
+
+        tabs.forEach(tab => expect(tab.querySelector('.is-my-team')).toBeNull());
     });
 });

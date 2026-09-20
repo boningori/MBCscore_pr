@@ -122,3 +122,29 @@ describe('記録画面: マイチームを左に固定する', () => {
         expect(opponentPanel.querySelector('.is-my-team')).toBeNull();
     });
 });
+
+/** 統計表示（📊トグル）の選手別スタッツパネルが、DOMに現れる順で返すチーム名 */
+function statsPanelTitlesInOrder(): string[] {
+    return Array.from(document.querySelectorAll('.stats-panel-title'))
+        .map(el => el.textContent ?? '');
+}
+
+describe('試合中の統計表示: 選手別スタッツもマイチームを先にする', () => {
+    it('マイチームが青(teamB)でも選手別スタッツが先に描かれる', async () => {
+        render(<App />);
+        await startGame(true);
+
+        fireEvent.click(screen.getByRole('button', { name: 'チーム統計' }));
+
+        expect(statsPanelTitlesInOrder()).toEqual(['ホームチーム 統計', 'アウェイチーム 統計']);
+    });
+
+    it('マイチームが白(teamA)なら従来どおり teamA が先', async () => {
+        render(<App />);
+        await startGame(false);
+
+        fireEvent.click(screen.getByRole('button', { name: 'チーム統計' }));
+
+        expect(statsPanelTitlesInOrder()).toEqual(['ホームチーム 統計', 'アウェイチーム 統計']);
+    });
+});

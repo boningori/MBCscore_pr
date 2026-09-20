@@ -170,6 +170,9 @@ export function QuarterLineup({
                             <span className="lineup-team-tab-name">
                                 <span className="lineup-team-tab-color">{colorLabel(team)}</span>
                                 {team.name}
+                                {/* 色だけが手掛かりにならないよう、位置に加えて読み上げでも伝える。
+                                    虹（is-my-team）は選択状態の色表現とぶつかるため付けない */}
+                                {tab === myTeamSide && <span className="sr-only">マイチーム</span>}
                             </span>
                             <span className="lineup-team-tab-count">
                                 {count}/{PLAYERS_ON_COURT}{done ? ' ✓' : ''}
