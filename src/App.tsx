@@ -61,7 +61,7 @@ import { planOpponentWriteback, type OpponentWriteback } from './utils/opponentR
 import { shareBackup } from './utils/dataBackup';
 import { wouldOverflowFoulColumns } from './utils/foulColumns';
 import { hasPendingScores, pendingTeamFouls } from './utils/pendingTotals';
-import { resolveMyTeamSide } from './utils/myTeamSide';
+import { resolveMyTeamSide, orderByMyTeam } from './utils/myTeamSide';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameMode } from './hooks/useGameMode';
@@ -1327,8 +1327,6 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     );
   }
 
-  // 旧セットアップ画面（フォールバック）
-
   // マイチームを左（シンプルモードでは上）に固定する。
   //
   // teamA は必ず白チームで、以前はそのまま左に描いていた（matchTeams.ts）。
@@ -1337,8 +1335,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   //
   // 決められないとき（紅白戦・旧データ）は null が返るので、従来どおり teamA が先。
   const myTeamSide = resolveMyTeamSide(state.teamA, state.teamB);
-  const panelOrder: ('teamA' | 'teamB')[] =
-    myTeamSide === 'teamB' ? ['teamB', 'teamA'] : ['teamA', 'teamB'];
+  const panelOrder = orderByMyTeam(myTeamSide);
 
   // 2つのチームパネルは teamId 以外まったく同じだったので、ここ1か所にする。
   // 並び替えのたびに24プロップを書き写す状態だと、片側だけ直し忘れる

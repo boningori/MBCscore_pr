@@ -38,7 +38,7 @@ test('記録中に控えから戻しても、進行中の試合はそのまま�
     await page.getByRole('button', { name: new RegExp(IN_PROGRESS_PLAYER_NAME) }).click();
     await page.getByRole('button', { name: '2Pシュート' }).click();
     await page.locator('.score-selector .score-option.success').click();
-    await expect(page.locator('.team-a-block .score-display')).toHaveText('2');
+    await expect(page.locator('.team-score-block[data-team-id="teamA"] .score-display')).toHaveText('2');
 
     // 3. マイチームを壊す（＝控えから戻したくなる状況をつくる）
     await page.evaluate((k) => window.localStorage.setItem(k, '[]'), TEAMS_KEY);
@@ -69,7 +69,7 @@ test('記録中に控えから戻しても、進行中の試合はそのまま�
     // 現れるので、10秒で落ちる（あとの操作を先に置くと90秒のタイムアウトになる）
     await expect(page.getByRole('button', { name: /試合を再開/ })).toHaveCount(0);
     await page.getByRole('button', { name: '閉じる' }).first().click();
-    await expect(page.locator('.team-a-block .score-display')).toHaveText('2');
+    await expect(page.locator('.team-score-block[data-team-id="teamA"] .score-display')).toHaveText('2');
 
     const points = await page.evaluate((k) => {
         const raw = window.localStorage.getItem(k);

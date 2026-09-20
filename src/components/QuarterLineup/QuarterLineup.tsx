@@ -4,7 +4,7 @@ import { PLAYERS_ON_COURT } from '../../types/game';
 import { isDisqualified } from '../../utils/disqualification';
 import { quarterLabel } from '../../utils/quarterLabel';
 import { formatPlayerNumber } from '../../utils/playerNumber';
-import { resolveMyTeamSide } from '../../utils/myTeamSide';
+import { resolveMyTeamSide, orderByMyTeam } from '../../utils/myTeamSide';
 import { AddPlayersPanel, type NewPlayerInput } from './AddPlayersPanel';
 import { LineupTeamPanel } from './LineupTeamPanel';
 import './QuarterLineup.css';
@@ -51,8 +51,7 @@ export function QuarterLineup({
     // 「自分の5人を選ぶ」画面なので、記録画面と並びが食い違うと迷いが起きる。
     // 決められないとき（紅白戦・旧データ）は従来どおり白が先頭
     const myTeamSide = resolveMyTeamSide(teamA, teamB);
-    const tabIds: LineupTabId[] =
-        myTeamSide === 'teamB' ? ['teamB', 'teamA'] : ['teamA', 'teamB'];
+    const tabIds = orderByMyTeam(myTeamSide);
 
     const [activeTab, setActiveTab] = useState<LineupTabId>(initialTab ?? tabIds[0]);
     const [selected, setSelected] = useState<Record<LineupTabId, string[]>>(computeInitialSelected);

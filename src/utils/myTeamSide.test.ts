@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createTeam } from '../types/game';
-import { resolveMyTeamSide } from './myTeamSide';
+import { resolveMyTeamSide, orderByMyTeam } from './myTeamSide';
 
 /** isMyTeam だけを差し替えた2チームを作る */
 function pair(aIsMine: boolean | undefined, bIsMine: boolean | undefined) {
@@ -35,5 +35,19 @@ describe('resolveMyTeamSide', () => {
     it('false と undefined が混ざっても「印が無い」として null', () => {
         const { teamA, teamB } = pair(false, undefined);
         expect(resolveMyTeamSide(teamA, teamB)).toBeNull();
+    });
+});
+
+describe('orderByMyTeam', () => {
+    it('teamA が自分なら teamA が先', () => {
+        expect(orderByMyTeam('teamA')).toEqual(['teamA', 'teamB']);
+    });
+
+    it('teamB が自分なら teamB が先', () => {
+        expect(orderByMyTeam('teamB')).toEqual(['teamB', 'teamA']);
+    });
+
+    it('決められない（null）なら従来どおり teamA が先', () => {
+        expect(orderByMyTeam(null)).toEqual(['teamA', 'teamB']);
     });
 });

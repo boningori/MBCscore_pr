@@ -417,12 +417,14 @@
    panel-left / panel-right は「画面上の場所」であってチームの識別ではない
    （識別は data-team-id）。シンプルモードは縦積みなので panel-left は上のパネル */
 .app-container .team-panel.panel-left {
-  border-right: 4px solid var(--team-a);
+  border-right: 4px solid var(--border);
+  /* 色クラスが必ず上書きするため、ここは描かれない保険の値 */
   border-left: none;
 }
 
 .app-container .team-panel.panel-right {
-  border-left: 4px solid var(--team-b);
+  border-left: 4px solid var(--border);
+  /* 色クラスが必ず上書きするため、ここは描かれない保険の値 */
   border-right: none;
 }
 
@@ -1049,7 +1051,7 @@
    どちらのクラスも描画されていない死にコードだったため削除した。
    タイムアウトはフル/シンプル共通でチームパネルの⏱チップが担当する */
 
-/* スコアボードはフル/シンプルで同一レイアウト（TeamA | Q | TeamB の1段）。
+/* スコアボードはフル/シンプルで同一レイアウト（マイチーム | Q | 相手 の1段）。
    以前ここにあったシンプルモード専用の上書きは、
    - .scoreboard-main の列指定 … 基底と同値で不要
    - .team-score-block の flex-direction:row … チーム名と得点は縦並びに統一するため不採用

@@ -4,7 +4,7 @@ import { Modal } from '../Modal';
 import { quarterLabel } from '../../utils/quarterLabel';
 import { formatPlayerNumber } from '../../utils/playerNumber';
 import { getDisqualification, shortDisqualificationLabel } from '../../utils/disqualification';
-import { resolveMyTeamSide } from '../../utils/myTeamSide';
+import { resolveMyTeamSide, orderByMyTeam } from '../../utils/myTeamSide';
 import './Scoreboard.css';
 
 interface ScoreboardProps {
@@ -196,8 +196,7 @@ export function Scoreboard({ onQuarterEnd, onOpenLineup }: ScoreboardProps) {
     // マイチームを左に固定する。記録画面のパネル（App.tsx の panelOrder）と同じ規則で
     // 並べる。ここだけ順序が違うと、得点を確かめるたびに視線が左右へ飛ぶ
     const myTeamSide = resolveMyTeamSide(state.teamA, state.teamB);
-    const blockOrder: ('teamA' | 'teamB')[] =
-        myTeamSide === 'teamB' ? ['teamB', 'teamA'] : ['teamA', 'teamB'];
+    const blockOrder = orderByMyTeam(myTeamSide);
 
     // チームスコアブロック（チーム名 + スコア。TF/タイムアウトはTeamPanel側に表示）
     const renderTeamBlock = (teamId: 'teamA' | 'teamB', side: 'left' | 'right') => {

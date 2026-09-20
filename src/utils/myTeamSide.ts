@@ -24,3 +24,14 @@ export function resolveMyTeamSide(teamA: Team, teamB: Team): 'teamA' | 'teamB' |
     if (aIsMine === bIsMine) return null;
     return aIsMine ? 'teamA' : 'teamB';
 }
+
+/**
+ * マイチームが先に来る順で teamA/teamB を並べる。
+ *
+ * 記録画面・スコアボード・スタメン選択が同じ順で並ぶことがこの機能の要件で、
+ * 同じ三項演算子を3箇所へ写していると片方だけ直し忘れる。判定と同じ場所に置く。
+ * 決められないとき（null）は従来どおり teamA（白）が先。
+ */
+export function orderByMyTeam(myTeamSide: 'teamA' | 'teamB' | null): readonly ['teamA' | 'teamB', 'teamA' | 'teamB'] {
+    return myTeamSide === 'teamB' ? ['teamB', 'teamA'] : ['teamA', 'teamB'];
+}
