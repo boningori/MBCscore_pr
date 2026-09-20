@@ -403,7 +403,7 @@
   <div class="cover-logo">MBC<span class="logo-score">score</span></div>
   <div class="cover-subtitle">ミニバスケットボール スコアシートアプリ</div>
   <div class="cover-title">使用説明書</div>
-  <div class="cover-version">v1.17 対応</div>
+  <div class="cover-version">v1.18 対応</div>
   <div class="cover-info">
     タブレット・スマートフォン対応<br>
     オフライン動作 / PWA対応<br>
@@ -488,6 +488,7 @@
   <div class="box-title">主な特徴</div>
   <ul>
     <li>タブレット最適化の3列レイアウト / スマホ対応のシンプルモード</li>
+    <li>マイチームは常に左（シンプルモードでは上）・チーム名は虹色で、記録中に迷わない</li>
     <li>得点・ファウル・リバウンド・アシスト等のリアルタイム記録</li>
     <li>ミニバスルール対応（5ファウル退場、クォーター出場管理）</li>
     <li>公式スコアシート形式でのPDF / JPEG出力</li>
@@ -699,8 +700,16 @@
 
 <div class="info-box">
   <div class="box-title">チームカラーと配置</div>
-  <strong>白チームは常に画面左側（Team A）</strong>、<strong>青チームは画面右側（Team B）</strong>に配置されます。
-  これはスコアシートの表記規則に準拠しています。
+  <strong>マイチームは常に画面の左側</strong>（シンプルモードでは上側）に配置されます。
+  その試合で白を着ても青を着ても位置は変わらないので、<strong>「左が自分」と覚えたまま記録できます</strong>。
+  あわせて、マイチームのチーム名だけ<strong>虹色</strong>で表示されます。
+  <br><br>
+  白 / 青のチームカラーは、パネルの内側に引かれる<strong>4pxの縦線</strong>で示されます。
+  コートのユニフォームと見比べるときはこの線を見てください。
+  <br><br>
+  <span class="dim">※ 出力されるスコアシートは公式様式どおり、白がTeam A・青がTeam B の並びで印字されます。画面の並びとは独立しています。</span>
+  <br>
+  <span class="dim">※ 自チーム同士の紅白戦（両方をマイチームとして登録した場合）では、どちらが「自分」か決められないため、従来どおり白が左になり虹色も付きません。</span>
 </div>
 
 <p>確認後、<span class="btn-sample btn-green">試合開始</span> をタップするとスタメン選択画面に移ります。</p>
@@ -715,8 +724,8 @@
 <p>
   各クォーター開始前に、両チームの<strong>コート上5名</strong>を選択する画面が表示されます。
   画面上部の<strong>白 / 青のタブ</strong>で対象チームを切り替えて選択します。
-  タブは<strong>白（Team A）が左・青（Team B）が右</strong>で固定ですが、
-  <strong>どちらのチームから選んでも構わず</strong>、途中で何度でも切り替えられます。
+  タブは<strong>マイチームが左（先頭）</strong>に並び、開いた時点でマイチームのタブが選ばれています。
+  ただし<strong>どちらのチームから選んでも構わず</strong>、途中で何度でも切り替えられます。
 </p>
 
 <div class="diagram">┌─────────────────────────────────────────────┐
@@ -1887,7 +1896,7 @@
   </p>
   <p>ミニバスケットボール スコアシートアプリ</p>
   <!-- アプリ本体のマイナーバージョンと揃える（ずれたら manualVersion.test.ts が落ちる） -->
-  <p>使用説明書 v1.17 対応</p>
+  <p>使用説明書 v1.18 対応</p>
   <p style="margin-top: 20px; font-size: 9pt;">
     本書の内容はアプリのバージョンアップに伴い変更される場合があります。
   </p>
