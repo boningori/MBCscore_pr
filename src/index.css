@@ -55,6 +55,14 @@
   --team-blue-light: #60a5fa;
   --team-blue-bg: rgba(59, 130, 246, 0.15);
 
+  /* マイチームのチーム名に敷く虹。記録画面のパネルヘッダーとスコアボードのラベルだけで使う。
+     教科書どおりの虹（#0000ff 1.70:1 / #4b0082 1.13:1 / #8f00ff 2.52:1）は
+     --bg-secondary の上でチーム名の後半が読めなくなるため使わない。
+     ここは明度を白文字寄りに引き上げた7色で、全色 6.67〜11.22:1 を満たす。
+     契約は src/myTeamRainbow.contrast.test.ts が縛っている */
+  --my-team-rainbow: linear-gradient(90deg,
+    #ff8f8f, #ffb066, #ffe066, #7fe3a0, #7fd4f5, #a5b4fc, #e0a3f5);
+
   /* アクティブ強調色（ピンク） */
   --active-highlight: #ec4899;
   --active-highlight-light: #f472b6;
@@ -1351,4 +1359,20 @@ textarea,
     overflow-y: auto;
     font-family: monospace;
     font-size: var(--font-size-sm);
+}
+
+/* 読み上げ専用テキスト。
+   マイチームの印は虹（色）と位置（見た目）だけで伝えており、どちらも
+   目で見えない人には届かない。色に依存しない手掛かりをここで足す。
+   地色も枠も持たないので「押せるものだけが箱を持つ」規則にも収まる */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
