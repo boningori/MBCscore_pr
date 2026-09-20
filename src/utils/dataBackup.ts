@@ -1292,12 +1292,28 @@ function importFullBackup(data: BackupData): ImportResult {
 
         // アプリ設定のインポート（既存設定とマージ）
         //
-        // 音声メモのON/OFFと同意は端末単位。バックアップは別端末（別の同意状態）
-        // から来ることがあるため、data.data.settings に何が入っていても
-        // 常にこの端末の現在値で上書きし、持ち込ませない。
+        // 端末外へデータを送る設定と、その同意は端末単位。バックアップは別端末
+        // （別の同意状態）から来ることがあるため、data.data.settings に何が
+        // 入っていても常にこの端末の現在値で上書きし、持ち込ませない。
         // data.data.settings は型上 AppSettings だが実体はJSONパース結果で
         // 保証がないため、スプレッド後に明示的に上書きすることで
-        // 想定外の形のバックアップファイルでも迂回されないようにする
+        // 想定外の形のバックアップファイルでも迂回されないようにする。
+        //
+        // 音声メモ（voiceMemo*）とAI写真読込（aiOcr*）が対象。AI写真読込は
+        // 音声メモより重い。ONにすると名簿の撮影画像——子どもの氏名とJBA登録
+        // 番号が写ったもの——がGoogleのサーバーへ送られる（appSettings.ts の
+        // aiOcrEnabled のコメント）。同意した端末で取った控えを、同意ダイアログを
+        // 一度も見ていない端末へ復元しただけで送信が始まる、という抜けを塞ぐ。
+        // 送るのが本人の録音ではなく他人の子どもの写真である分、音声メモで
+        // 塞いだのと同じ穴でも重い。
+        //
+        // aiOcrDiagnosticsEnabled（読み取り結果の詳細）は意図的に含めない。
+        // 生の応答には選手の氏名が入るが、出るのは画面の中だけで、端末外へは
+        // 何も出ない。しかも復元を終えた端末には名簿そのものが入っているので、
+        // 操作している本人に見える情報は増えない。ここの規則を「個人情報に
+        // 触れる設定」まで広げると線引きが曖昧になり（defaultGameMode との差が
+        // 説明できなくなる）、次に設定が増えたとき判断できない。規則は
+        // 「端末外へ送るか／その同意か」で保つ
         let settingsImported = false;
         if (data.data.settings) {
             const existingSettings = loadAppSettings();
@@ -1306,6 +1322,8 @@ function importFullBackup(data: BackupData): ImportResult {
                 ...data.data.settings,
                 voiceMemoEnabled: existingSettings.voiceMemoEnabled,
                 voiceMemoConsented: existingSettings.voiceMemoConsented,
+                aiOcrEnabled: existingSettings.aiOcrEnabled,
+                aiOcrConsented: existingSettings.aiOcrConsented,
             };
             writes.push(['minibasket-app-settings', JSON.stringify(mergedSettings)]);
             settingsImported = true;
