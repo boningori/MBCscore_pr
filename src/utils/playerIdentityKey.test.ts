@@ -17,6 +17,10 @@ describe('normalizePlayerName', () => {
     it('空白以外は変えない（強い正規化は別人を混ぜる）', () => {
         expect(normalizePlayerName('齋藤ＡＢ')).toBe('齋藤ＡＢ');
     });
+
+    it('文字列以外が来ても落ちない（手編集バックアップの数値等を安全側で受ける）', () => {
+        expect(normalizePlayerName(12345 as unknown as string)).toBe('');
+    });
 });
 
 describe('buildPlayerIdentityKey', () => {

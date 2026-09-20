@@ -76,6 +76,23 @@ describe('1枚に複数チームが写っていたとき', () => {
     });
 });
 
+describe('複数チームのうち一方が選手0人のとき', () => {
+    it('見切れて選手が読めなかった隣のチームを複数チーム扱いにせず、読めたチームを取り込む', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":['
+            + '{"teamName":"甲小","players":[{"number":4,"name":"甲太郎"},{"number":5,"name":"甲次郎"}]},'
+            + '{"teamName":"乙小","players":[]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.usedEngine).toBe('Gemini');
+        expect(result.success).toBe(true);
+        expect(result.error).toBeUndefined();
+        expect(result.players.map(p => p.number)).toEqual([4, 5]);
+    });
+});
+
 describe('1チームだけ写っているとき', () => {
     it('そのチームの選手を取り込む', async () => {
         vi.stubGlobal('fetch', vi.fn(async () => geminiReply(

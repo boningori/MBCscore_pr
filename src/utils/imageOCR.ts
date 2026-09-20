@@ -209,18 +209,24 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
  * 文字列の "0" は `parseInt("0") || index + 1` の || が 0 を falsy と見て
  * index+1（別番号）に化けていた。0番の選手が黙って違う番号で登録される。
  *
- * JSONの数値では「00」を表せないため、Gemini経由の 00 は 0 に潰れる。
- * これは応答形式の限界なので、ここでは 0 として受ける（Tesseract経由は
- * 文字列を見るので 00 を保てる）。
+ * responseSchema で number を文字列型にしたので（Task 7）、Gemini経由でも
+ * "00" は文字列のまま届き、parsePlayerNumber が内部表現 100
+ * （DOUBLE_ZERO_INTERNAL）に直す。一方 responseSchema を無視するモデルや、
+ * スキーマ非対応のときに使う旧・素の配列形式は、number を裸の数値で返し得る。
+ * 数値の 100 は「00」ではなくただの範囲外の背番号だが、isValidPlayerNumber は
+ * 100 === DOUBLE_ZERO_INTERNAL を理由に有効と判定してしまう。そのため数値の
+ * 経路だけは isValidPlayerNumber を使わず、0〜99 の整数かどうかを直接見て
+ * 100 という値そのものを弾く。00 を表せるのは文字列 "00" だけにする
  */
 function normalizeGeminiNumber(value: unknown): number | null {
-    const parsed = typeof value === 'number'
-        ? (Number.isInteger(value) ? value : null)
-        : typeof value === 'string'
-            ? parsePlayerNumber(value)
-            : null;
-    if (parsed === null || !isValidPlayerNumber(parsed)) return null;
-    return parsed;
+    if (typeof value === 'number') {
+        return Number.isInteger(value) && value >= 0 && value <= 99 ? value : null;
+    }
+    if (typeof value === 'string') {
+        const parsed = parsePlayerNumber(value);
+        return parsed !== null && isValidPlayerNumber(parsed) ? parsed : null;
+    }
+    return null;
 }
 
 /**
@@ -435,23 +441,35 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 throw new Error('Geminiからの応答形式が正しくありませんでした');
             }
 
+            // 選手が0人のチームは複数チーム判定から除く。プロンプトが
+            // 「途中で見切れているチームも、読める範囲で1つのチームとして
+            // 出力してください」と促しているため、隣の名簿がわずかに写り込んだ
+            // だけの写真でも「選手0人のチーム」がもう1つ付いてくる。ここで
+            // 数えると、読める1チーム分が撮り直し要求で弾かれてしまう
+            const nonEmptyTeams = teams.filter(team => team.players.length > 0);
+
             // モデルを変えても写真は変わらないので、ここで打ち切る（下の catch は
             // ImageFormatError を素通しする）
-            if (teams.length > 1) {
+            if (nonEmptyTeams.length > 1) {
                 throw new ImageFormatError(
                     '1枚の画像に複数のチームが写っています。1チーム分だけが写るように切り取って、もう一度お試しください',
                 );
             }
+
+            // 全チームが空なら、下の「0人」判定（Tesseractへ回す）に委ねるため
+            // teams[0] のまま渡す。null 合体は nonEmptyTeams が0件のときだけ効く
+            const targetPlayers = nonEmptyTeams[0]?.players ?? teams[0].players;
 
             // データ検証と正規化。背番号は Tesseract 側（parseOcrText）と同じ規則で
             // 通す。以前はここだけ範囲を見ておらず、実測で 999 や -3 がそのまま
             // 名簿に入り、文字列の "0" は parseInt("0") が falsy 判定に落ちて
             // index+1（別番号）へ化けていた
             //
-            // 複数チームは上で弾いているので、ここに来るのは常に1チーム分
+            // 複数チームは上で弾き、空のチームも除いてあるので、ここに来るのは
+            // 常に1チーム分（全チームが空だった場合は空のまま）
             const validatedPlayers: SavedPlayer[] = [];
             let invalidNumberCount = 0;
-            for (const [index, raw] of teams[0].players.entries()) {
+            for (const [index, raw] of targetPlayers.entries()) {
                 const p = raw as Partial<SavedPlayer>;
                 const number = normalizeGeminiNumber(p.number);
                 if (number === null) {

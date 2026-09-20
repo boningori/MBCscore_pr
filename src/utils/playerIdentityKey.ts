@@ -18,6 +18,12 @@
  * 見なす危険が増える（mergedPlayers の normalizeNameForMerge と同じ判断）。
  */
 export function normalizePlayerName(name: string): string {
+    // 型は string だが、実際に通るのはバックアップの手編集のような
+    // 検証を経ていない値もある（dataBackup の sanitizeImportedGame は id しか
+    // 見ていない）。数値等がそのまま来て .replace で落ちると、選手スタッツ分析の
+    // 集計全体がエラー画面になる——非表示選手ストレージで実測済みなのと同じ
+    // 失敗パターン（playerStatsAnalysis.ts 参照）。ここでも安全側に矯正する
+    if (typeof name !== 'string') return '';
     // \s は全角スペース(U+3000)も含む。文字クラスに直接書くと lint の
     // no-irregular-whitespace に掛かる
     return name.replace(/\s/g, '');
