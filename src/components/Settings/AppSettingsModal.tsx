@@ -10,6 +10,8 @@ import {
     hasVoiceMemoConsent,
     isAiOcrEnabled,
     setAiOcrEnabled,
+    isAiOcrDiagnosticsEnabled,
+    setAiOcrDiagnosticsEnabled,
     isVoiceMemoEnabled,
     setVoiceMemoEnabled,
     type GameMode,
@@ -57,6 +59,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
     // AI写真読込のON/OFF。APIキーとは別立てにする（キーは音声メモと共用のため、
     // キーの存在を「名簿の写真を外へ出してよい」と読み替えられない）
     const [aiOcrOn, setAiOcrOn] = useState(isAiOcrEnabled);
+    const [diagnosticsOn, setDiagnosticsOn] = useState(isAiOcrDiagnosticsEnabled);
     const [showAiOcrConsent, setShowAiOcrConsent] = useState(false);
 
     const [pendingImport, setPendingImport] = useState<ParsedImportData | null>(null);
@@ -278,6 +281,13 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
         setAiOcrOn(true);
     };
 
+    // 同意は要らない。外へ送るものは増えず、端末内に既にある応答を表示するだけ
+    const handleDiagnosticsToggle = () => {
+        const next = !diagnosticsOn;
+        setDiagnosticsOn(next);
+        setAiOcrDiagnosticsEnabled(next);
+    };
+
     const handleAiOcrConsent = () => {
         grantAiOcrConsent();
         setAiOcrEnabled(true);
@@ -491,6 +501,26 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onCl
                                 ⚠️ AI読み取りにはGemini APIキーの設定が必要です。キーを入れるまでは標準OCR（端末内）で読み取ります。
                             </p>
                         )}
+
+                        {/*
+                          読み取りがおかしかったときに、Geminiが実際に何を返したかを
+                          利用者自身が見られるようにする。既定OFFなのは、応答に
+                          選手の氏名がそのまま入るため——体育館で誰かに画面を
+                          見せる場面がある以上、常時表示にはしない
+                        */}
+                        <label className="settings-toggle">
+                            <input
+                                type="checkbox"
+                                checked={diagnosticsOn}
+                                onChange={handleDiagnosticsToggle}
+                            />
+                            <span>読み取り結果の詳細を表示する</span>
+                        </label>
+                        <p className="section-description">
+                            うまく読み取れなかったときの原因調べに使います。
+                            AIが返した内容をそのまま画面に出すため、<strong>選手の氏名が含まれます</strong>。
+                            端末の外には送られません。
+                        </p>
 
                         <div className="input-group">
                             <label htmlFor="gemini-api-key">Gemini API Key</label>
