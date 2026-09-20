@@ -4,6 +4,7 @@ import { PLAYERS_ON_COURT } from '../../types/game';
 import { isDisqualified } from '../../utils/disqualification';
 import { quarterLabel } from '../../utils/quarterLabel';
 import { formatPlayerNumber } from '../../utils/playerNumber';
+import { resolveMyTeamSide, orderByMyTeam } from '../../utils/myTeamSide';
 import { AddPlayersPanel, type NewPlayerInput } from './AddPlayersPanel';
 import { LineupTeamPanel } from './LineupTeamPanel';
 import './QuarterLineup.css';
@@ -12,11 +13,11 @@ export type LineupTabId = 'teamA' | 'teamB';
 
 interface QuarterLineupProps {
     quarter: number;
-    /** 白チーム（App側で teamA=白 に固定されている） */
+    /** 白チーム（データ上 teamA=白 に固定。画面での左右はマイチーム基準で入れ替わる） */
     teamA: Team;
     /** 青チーム */
     teamB: Team;
-    /** 初期表示タブ（省略時は teamA） */
+    /** 初期表示タブ（省略時はマイチーム側。決められないときは teamA） */
     initialTab?: LineupTabId;
     /** タブ切替時に呼ばれる。App側が次回の初期タブとして保持する */
     onTabChange?: (tab: LineupTabId) => void;
@@ -31,13 +32,11 @@ interface QuarterLineupProps {
 const initialSelection = (players: Player[]) =>
     players.filter(p => p.isOnCourt && !isDisqualified(p.fouls)).map(p => p.id);
 
-const TAB_IDS: LineupTabId[] = ['teamA', 'teamB'];
-
 export function QuarterLineup({
     quarter,
     teamA,
     teamB,
-    initialTab = 'teamA',
+    initialTab,
     onTabChange,
     onStart,
     onAddPlayers,
@@ -48,7 +47,13 @@ export function QuarterLineup({
         teamB: initialSelection(teamB.players),
     });
 
-    const [activeTab, setActiveTab] = useState<LineupTabId>(initialTab);
+    // マイチームのタブを先頭に置く。各クォーターの開始時に必ず通り、しかも
+    // 「自分の5人を選ぶ」画面なので、記録画面と並びが食い違うと迷いが起きる。
+    // 決められないとき（紅白戦・旧データ）は従来どおり白が先頭
+    const myTeamSide = resolveMyTeamSide(teamA, teamB);
+    const tabIds = orderByMyTeam(myTeamSide);
+
+    const [activeTab, setActiveTab] = useState<LineupTabId>(initialTab ?? tabIds[0]);
     const [selected, setSelected] = useState<Record<LineupTabId, string[]>>(computeInitialSelected);
 
     // 追加パネルの開閉と、閉じた直後の状況表示。
@@ -106,7 +111,7 @@ export function QuarterLineup({
     };
 
     // 未完了チームの案内（開始ボタンが無効な理由）
-    const incompleteMessage = TAB_IDS
+    const incompleteMessage = tabIds
         .filter(tab => !isComplete(tab))
         .map(tab => `${colorLabel(teams[tab])}のスタメンが未選択です（${selected[tab].length}/${PLAYERS_ON_COURT}）`)
         .join(' / ');
@@ -133,7 +138,7 @@ export function QuarterLineup({
 
             {/* この画面のままスコアを確認できるようにする（確認のために戻る操作を不要にする） */}
             <div className="quarter-lineup-score" aria-label="現在のスコア">
-                {TAB_IDS.map(tab => {
+                {tabIds.map(tab => {
                     const team = teams[tab];
                     return (
                         <div key={tab} className={`lineup-score-team ${team.color}`}>
@@ -147,9 +152,9 @@ export function QuarterLineup({
                 })}
             </div>
 
-            {/* 白（teamA）が左・青（teamB）が右で固定。どちらからでも登録できる */}
+            {/* マイチームのタブが先頭。どちらからでも登録できる */}
             <div className="lineup-team-tabs" role="tablist">
-                {TAB_IDS.map(tab => {
+                {tabIds.map(tab => {
                     const team = teams[tab];
                     const count = selected[tab].length;
                     const done = isComplete(tab);
@@ -165,6 +170,9 @@ export function QuarterLineup({
                             <span className="lineup-team-tab-name">
                                 <span className="lineup-team-tab-color">{colorLabel(team)}</span>
                                 {team.name}
+                                {/* 色だけが手掛かりにならないよう、位置に加えて読み上げでも伝える。
+                                    虹（is-my-team）は選択状態の色表現とぶつかるため付けない */}
+                                {tab === myTeamSide && <span className="sr-only">マイチーム</span>}
                             </span>
                             <span className="lineup-team-tab-count">
                                 {count}/{PLAYERS_ON_COURT}{done ? ' ✓' : ''}

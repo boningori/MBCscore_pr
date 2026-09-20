@@ -21,11 +21,30 @@ interface ActionHistoryHandlers {
 
 interface TeamPanelProps {
   teamId: 'teamA' | 'teamB';
+  /**
+   * 画面上の場所。teamId からは導かない。
+   *
+   * 以前は `teamId === 'teamA' ? 'team-a' : 'team-b'` で決めていたが、この
+   * クラスがCSS側で意味していたのは場所だった（.team-a はカラーラインを
+   * 右＝内側に引く指定、.pending-slot-team-a は保留パネルを画面の左端へ
+   * 寄せる指定）。チームの識別と場所が1つの名前に同居していたため、
+   * マイチームを左へ固定した瞬間に teamB のパネルでラインが外を向き、
+   * 保留パネルが逆の端へ飛ぶ。場所は場所として受け取る。
+   *
+   * シンプルモードでは縦積みになるため 'left' は上のパネルを指す。
+   */
+  side: 'left' | 'right';
   teamName: string;
   teamColor: 'white' | 'blue';
+  /**
+   * マイチーム側か。チーム名を虹にし、読み上げ用の「マイチーム」を添える。
+   *
+   * 判定は resolveMyTeamSide が一手に引き受ける（utils/myTeamSide.ts）。
+   * ここは結果を受け取るだけで、自分では決めない。紅白戦・旧データでは
+   * どちらにも付かない（未指定で来る）。
+   */
+  isMyTeam?: boolean;
   players: Player[];
-  // isMyTeam はここにあったが、選手名をマイチームだけに出すための分岐にしか
-  // 使っていなかった。名前は両チームとも出すようになったので参照が無くなった
   isActive: boolean;
   selectedPlayerId: string | null;
   gameMode: 'full' | 'simple';
@@ -97,8 +116,10 @@ interface TeamPanelProps {
 
 export function TeamPanel({
   teamId,
+  side,
   teamName,
   teamColor,
+  isMyTeam = false,
   players,
   isActive,
   selectedPlayerId,
@@ -119,7 +140,6 @@ export function TeamPanel({
   onTimeoutCancel,
   pendingSlot,
 }: TeamPanelProps) {
-  const side = teamId === 'teamA' ? 'team-a' : 'team-b';
   // 記録済みなら取り消し、未記録なら記録。取り消し先が無い場合だけ従来どおり押せなくする
   const timeoutAction = timeoutUsed ? onTimeoutCancel : onTimeoutRequest;
   // チップを出す条件。
@@ -132,9 +152,15 @@ export function TeamPanel({
   const timeoutScope = timeoutQuarterLabel ? `${timeoutQuarterLabel}の` : '';
 
   return (
-    <div className={`team-panel ${side} color-${teamColor} ${isActive ? 'active' : ''}`}>
+    <div
+      className={`team-panel panel-${side} color-${teamColor} ${isActive ? 'active' : ''}`}
+      data-team-id={teamId}
+    >
       <div className="team-panel-header">
-        <span className="team-name">{teamName}</span>
+        <span className={`team-name${isMyTeam ? ' is-my-team' : ''}`}>{teamName}</span>
+        {/* 虹も位置も目で見える人にしか届かない。色に依存しない手掛かりを添える。
+            虹のかかる span の外に置く（中だと color:transparent の巻き添えになる） */}
+        {isMyTeam && <span className="sr-only">マイチーム</span>}
         {/* チーム帰属の状態(TF・タイムアウト)はチームパネル側に表示する */}
         <div className="team-panel-status">
           {teamFouls !== undefined && (

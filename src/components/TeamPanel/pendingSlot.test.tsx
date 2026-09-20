@@ -39,6 +39,7 @@ function renderWithPending(pendingSlot?: React.ReactNode) {
     render(
         <TeamPanel
             teamId="teamA"
+            side="left"
             teamName="ホーム"
             teamColor="white"
             players={[player]}
@@ -87,7 +88,7 @@ describe('TeamPanel: 保留アクションの置き場所', () => {
 
         const slot = screen.getByRole('button', { name: /保留/ }).closest('.pending-slot');
         expect(slot).not.toBeNull();
-        expect(slot!.className).toContain('pending-slot-team-a');
+        expect(slot!.className).toContain('pending-slot-left');
     });
 
     it('保留が無ければ器ごと出さない', () => {

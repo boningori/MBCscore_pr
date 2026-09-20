@@ -92,9 +92,9 @@ describe('App: クォーター開始時のスタメン一括反映（白・青�
 
         // ゲーム画面: 両チームとも5名ずつがコート上表示される（SET_TEAMSが1回で両チームに反映された証拠）
         await waitFor(() => {
-            expect(container.querySelectorAll('.team-panel.team-a .mini-player-card').length).toBe(5);
+            expect(container.querySelectorAll('.team-panel[data-team-id="teamA"] .mini-player-card').length).toBe(5);
         });
-        expect(container.querySelectorAll('.team-panel.team-b .mini-player-card').length).toBe(5);
+        expect(container.querySelectorAll('.team-panel[data-team-id="teamB"] .mini-player-card').length).toBe(5);
 
         // 選択した選手が実際にコート上表示に含まれる（白・青双方）
         expect(screen.getByRole('button', { name: /ホーム1/ })).toBeTruthy();
@@ -183,11 +183,11 @@ describe('App: スタメン選択画面からの選手追加', () => {
         fireEvent.click(screen.getByRole('button', { name: '試合開始' }));
 
         await waitFor(() => {
-            expect(container.querySelectorAll('.team-panel.team-a .mini-player-card').length).toBe(5);
+            expect(container.querySelectorAll('.team-panel[data-team-id="teamA"] .mini-player-card').length).toBe(5);
         });
         expect(screen.getByRole('button', { name: /遅刻/ })).toBeTruthy();
         // 外した選手が本当にコートから降りている（人数と遅刻だけでは別人が落ちても通る）
-        expect(container.querySelector('.team-panel.team-a')!.textContent).not.toContain('ホーム1');
+        expect(container.querySelector('.team-panel[data-team-id="teamA"]')!.textContent).not.toContain('ホーム1');
     });
 
     it('複数人をまとめて追加できる（00を含む・氏名は任意）', async () => {

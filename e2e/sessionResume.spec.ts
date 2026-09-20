@@ -13,7 +13,7 @@ import { expect, test } from '@playwright/test';
 import { IN_PROGRESS_PLAYER_NAME, seedInProgressGame } from './fixtures/seedGame';
 
 /** スコアボードの白チーム側の得点 */
-const teamAScore = (page: Page) => page.locator('.team-a-block .score-display');
+const teamAScore = (page: Page) => page.locator('.team-score-block[data-team-id="teamA"] .score-display');
 
 test('記録した直後に読み込み直しても、その1点が残っている', async ({ page }) => {
     await seedInProgressGame(page);

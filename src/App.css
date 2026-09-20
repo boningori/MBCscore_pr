@@ -413,50 +413,54 @@
   border-color: var(--active-highlight);
 }
 
-/* チームパネルのカラーライン（内側に配置：左チームは右側、右チームは左側） */
-.app-container .team-panel.team-a {
-  border-right: 4px solid var(--team-a);
+/* チームパネルのカラーライン（内側に配置：左チームは右側、右チームは左側）。
+   panel-left / panel-right は「画面上の場所」であってチームの識別ではない
+   （識別は data-team-id）。シンプルモードは縦積みなので panel-left は上のパネル */
+.app-container .team-panel.panel-left {
+  border-right: 4px solid var(--border);
+  /* 色クラスが必ず上書きするため、ここは描かれない保険の値 */
   border-left: none;
 }
 
-.app-container .team-panel.team-b {
-  border-left: 4px solid var(--team-b);
+.app-container .team-panel.panel-right {
+  border-left: 4px solid var(--border);
+  /* 色クラスが必ず上書きするため、ここは描かれない保険の値 */
   border-right: none;
 }
 
 /* チームカラーに基づくボーダー（白/青）- 高い詳細度で上書き */
-.app-container .team-panel.team-a.color-white {
+.app-container .team-panel.panel-left.color-white {
   border-right: 4px solid var(--team-white);
   border-left: none;
 }
 
-.app-container .team-panel.team-a.color-blue {
+.app-container .team-panel.panel-left.color-blue {
   border-right: 4px solid var(--team-blue);
   border-left: none;
 }
 
-.app-container .team-panel.team-b.color-white {
+.app-container .team-panel.panel-right.color-white {
   border-left: 4px solid var(--team-white);
   border-right: none;
 }
 
-.app-container .team-panel.team-b.color-blue {
+.app-container .team-panel.panel-right.color-blue {
   border-left: 4px solid var(--team-blue);
   border-right: none;
 }
 
 /* フルモード時のボーダー位置を明示的に指定 */
-.app-container .game-main-area.full-mode .team-panel.team-a {
+.app-container .game-main-area.full-mode .team-panel.panel-left {
   border-right: 4px solid var(--team-a) !important;
   border-left: none !important;
 }
 
-.app-container .game-main-area.full-mode .team-panel.team-a.color-white {
+.app-container .game-main-area.full-mode .team-panel.panel-left.color-white {
   border-right: 4px solid var(--team-white) !important;
   border-left: none !important;
 }
 
-.app-container .game-main-area.full-mode .team-panel.team-a.color-blue {
+.app-container .game-main-area.full-mode .team-panel.panel-left.color-blue {
   border-right: 4px solid var(--team-blue) !important;
   border-left: none !important;
 }
@@ -477,6 +481,32 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* マイチームのチーム名。
+   グラデーション文字は color:transparent で作るため、効かない環境では文字が
+   丸ごと消える。@supports で囲い、効かないときは現在の文字色に戻す。
+   そのとき虹は出ないが、位置の固定は生きているので「左が自分」は保たれる。
+   虹に単独で背負わせない。
+
+   このルールを index.css の共通部へ寄せない。地色ではなく文字色を上書きする
+   規則であり、.team-label 側（Scoreboard.css）は color:var(--text-primary) を
+   明示しているため、読み込み順に依存しない位置に別々に置くほうが安全。 */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .app-container .team-panel-header .team-name.is-my-team {
+    background-image: var(--my-team-rainbow);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+/* Windowsのハイコントラストではグラデーションが描かれず文字が消える */
+@media (forced-colors: active) {
+  .app-container .team-panel-header .team-name.is-my-team {
+    background-image: none;
+    color: CanvasText;
+  }
 }
 
 /* ヘッダー右側のチーム状態（TF・タイムアウト） */
@@ -941,11 +971,11 @@
   z-index: 500;
 }
 
-.app-container .pending-slot-team-a .pending-action-panel {
+.app-container .pending-slot-left .pending-action-panel {
   left: calc(var(--spacing-md) + var(--safe-left, 0px));
 }
 
-.app-container .pending-slot-team-b .pending-action-panel {
+.app-container .pending-slot-right .pending-action-panel {
   right: calc(var(--spacing-md) + var(--safe-right, 0px));
 }
 
@@ -966,11 +996,11 @@
     width: calc(100vw - var(--spacing-sm) * 2);
   }
 
-  .app-container .pending-slot-team-a .pending-action-panel {
+  .app-container .pending-slot-left .pending-action-panel {
     left: calc(var(--spacing-sm) + var(--safe-left, 0px));
   }
 
-  .app-container .pending-slot-team-b .pending-action-panel {
+  .app-container .pending-slot-right .pending-action-panel {
     right: calc(var(--spacing-sm) + var(--safe-right, 0px));
   }
 }
@@ -1021,7 +1051,7 @@
    どちらのクラスも描画されていない死にコードだったため削除した。
    タイムアウトはフル/シンプル共通でチームパネルの⏱チップが担当する */
 
-/* スコアボードはフル/シンプルで同一レイアウト（TeamA | Q | TeamB の1段）。
+/* スコアボードはフル/シンプルで同一レイアウト（マイチーム | Q | 相手 の1段）。
    以前ここにあったシンプルモード専用の上書きは、
    - .scoreboard-main の列指定 … 基底と同値で不要
    - .team-score-block の flex-direction:row … チーム名と得点は縦並びに統一するため不採用
@@ -1335,17 +1365,17 @@
 }
 
 /* シンプルモード：チームAのボーダー位置修正（右→左） */
-.app-container .game-main-area.simple-mode .team-panel.team-a {
+.app-container .game-main-area.simple-mode .team-panel.panel-left {
   border-right: none !important;
   border-left: 4px solid var(--team-a) !important;
 }
 
 /* チームカラーオーバーライド対応 */
-.app-container .game-main-area.simple-mode .team-panel.team-a.color-white {
+.app-container .game-main-area.simple-mode .team-panel.panel-left.color-white {
   border-left: 4px solid var(--team-white) !important;
 }
 
-.app-container .game-main-area.simple-mode .team-panel.team-a.color-blue {
+.app-container .game-main-area.simple-mode .team-panel.panel-left.color-blue {
   border-left: 4px solid var(--team-blue) !important;
 }
 
@@ -1606,12 +1636,12 @@
     overflow-y: auto;
   }
 
-  .app-container .game-main-area .team-panel.team-a {
+  .app-container .game-main-area .team-panel.panel-left {
     grid-column: 1;
     grid-row: 2;
   }
 
-  .app-container .game-main-area .team-panel.team-b {
+  .app-container .game-main-area .team-panel.panel-right {
     grid-column: 3;
     grid-row: 2;
   }

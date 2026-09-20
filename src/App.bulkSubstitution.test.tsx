@@ -69,7 +69,7 @@ async function startGame() {
     }
     fireEvent.click(screen.getByRole('button', { name: '試合開始' }));
     await waitFor(() => {
-        expect(document.querySelector('.team-panel.team-a .mini-player-card')).toBeTruthy();
+        expect(document.querySelector('.team-panel[data-team-id="teamA"] .mini-player-card')).toBeTruthy();
     });
 }
 
@@ -104,9 +104,9 @@ describe('App: 複数人の一括交代', () => {
 
         // コート上は5人のまま。入った3人が居て、下がった3人は居ない
         await waitFor(() => {
-            expect(container.querySelectorAll('.team-panel.team-a .mini-player-card').length).toBe(5);
+            expect(container.querySelectorAll('.team-panel[data-team-id="teamA"] .mini-player-card').length).toBe(5);
         });
-        const courtText = container.querySelector('.team-panel.team-a')!.textContent ?? '';
+        const courtText = container.querySelector('.team-panel[data-team-id="teamA"]')!.textContent ?? '';
         for (const stillIn of ['ホーム4', 'ホーム5', 'ホーム6', 'ホーム7', 'ホーム8']) {
             expect(courtText).toContain(stillIn);
         }

@@ -6,7 +6,9 @@ import { savedTeamToTeam, type SavedTeam, type NumberType } from './teamStorage'
 /**
  * 登録チームから、試合で使う白（teamA）／青（teamB）を組み立てる。
  *
- * 白=teamA（上段）・青=teamB（下段）に固定し、マイチームの色に応じて中身を割り当てる。
+ * 白=teamA・青=teamB に固定し、マイチームの色に応じて中身を割り当てる。
+ * これはデータ上の割り当てで、画面のどちらに描くかとは別（記録画面・スコアボード・
+ * スタメン選択はマイチームを先に置く。utils/myTeamSide.ts）。
  * 番号タイプ（ビブス/ユニフォーム）はマイチーム側にだけ効く。相手チームは登録された
  * number をそのまま使う。
  *

@@ -20,7 +20,7 @@ test('別のタブが記録中なら、2つ目のタブは試合に入れない'
     await page.getByRole('button', { name: new RegExp(IN_PROGRESS_PLAYER_NAME) }).click();
     await page.getByRole('button', { name: '2Pシュート' }).click();
     await page.locator('.score-selector .score-option.success').click();
-    await expect(page.locator('.team-a-block .score-display')).toHaveText('2');
+    await expect(page.locator('.team-score-block[data-team-id="teamA"] .score-display')).toHaveText('2');
 
     // タブ2 を開く。再開も新規開始も断られる
     const page2 = await context.newPage();
@@ -34,5 +34,5 @@ test('別のタブが記録中なら、2つ目のタブは試合に入れない'
     await expect(page2.getByRole('button', { name: /新規試合開始/ })).toBeVisible();
 
     // タブ1 は影響を受けない
-    await expect(page.locator('.team-a-block .score-display')).toHaveText('2');
+    await expect(page.locator('.team-score-block[data-team-id="teamA"] .score-display')).toHaveText('2');
 });

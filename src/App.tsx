@@ -61,6 +61,7 @@ import { planOpponentWriteback, type OpponentWriteback } from './utils/opponentR
 import { shareBackup } from './utils/dataBackup';
 import { wouldOverflowFoulColumns } from './utils/foulColumns';
 import { hasPendingScores, pendingTeamFouls } from './utils/pendingTotals';
+import { resolveMyTeamSide, orderByMyTeam } from './utils/myTeamSide';
 // import type { VoiceCommand } from './utils/voiceCommands'; // 一時的に非表示
 import { useFullscreen } from './hooks/useFullscreen';
 import { useGameMode } from './hooks/useGameMode';
@@ -124,7 +125,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   const [substitutionTeamId, setSubstitutionTeamId] = useState<'teamA' | 'teamB'>('teamA');
   const [showStats, setShowStats] = useState(false);
   const [activeTab, setActiveTab] = useState<'teamA' | 'teamB'>('teamA');
-  const [lineupTab, setLineupTab] = useState<'teamA' | 'teamB'>('teamA');
+  // 初期タブは QuarterLineup がマイチーム基準で決める。null は「まだ選んでいない」
+  const [lineupTab, setLineupTab] = useState<'teamA' | 'teamB' | null>(null);
   const [showFoulSelector, setShowFoulSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; value?: string } | null>(null);
   const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示（保留アクション化用）
@@ -336,8 +338,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     // 対戦チームを履歴に保存（念のため更新）
     saveRecentOpponent(setupData.opponentTeam);
 
-    // Q1スタメン選択画面へ（新規試合は白タブから）
-    setLineupTab('teamA');
+    // Q1スタメン選択画面へ（新規試合はマイチームのタブから。決めるのは QuarterLineup 側）
+    setLineupTab(null);
     setScreen('quarterLineup');
   };
 
@@ -1308,7 +1310,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         quarter={currentQuarter}
         teamA={state.teamA}
         teamB={state.teamB}
-        initialTab={lineupTab}
+        initialTab={lineupTab ?? undefined}
         onTabChange={setLineupTab}
         onStart={handleLineupStart}
         // 名簿から漏れた選手をこの画面で登録する。
@@ -1325,10 +1327,50 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     );
   }
 
-  // 旧セットアップ画面（フォールバック）
+  // マイチームを左（シンプルモードでは上）に固定する。
+  //
+  // teamA は必ず白チームで、以前はそのまま左に描いていた（matchTeams.ts）。
+  // つまりマイチームの場所は、その試合で白を着たか青を着たかで毎回変わっていた。
+  // 「自分は左」と体で覚えられないのが、記録中に手が止まる原因だった。
+  //
+  // 決められないとき（紅白戦・旧データ）は null が返るので、従来どおり teamA が先。
+  const myTeamSide = resolveMyTeamSide(state.teamA, state.teamB);
+  const panelOrder = orderByMyTeam(myTeamSide);
 
-
-
+  // 2つのチームパネルは teamId 以外まったく同じだったので、ここ1か所にする。
+  // 並び替えのたびに24プロップを書き写す状態だと、片側だけ直し忘れる
+  const renderTeamPanel = (teamId: 'teamA' | 'teamB', side: 'left' | 'right') => {
+    const team = state[teamId];
+    return (
+      <TeamPanel
+        key={teamId}
+        teamId={teamId}
+        side={side}
+        isMyTeam={myTeamSide === teamId}
+        teamName={team.name}
+        teamColor={team.color}
+        players={team.players}
+        isActive={selectedTeamId === teamId}
+        selectedPlayerId={selectedPlayerId}
+        gameMode={gameMode}
+        disabled={phase === 'finished'}
+        scoreHistory={state.scoreHistory}
+        statHistory={state.statHistory}
+        foulHistory={state.foulHistory}
+        showThreePoint={state.showThreePoint}
+        onPlayerSelect={handlePlayerSelect}
+        onSubstitute={() => { setSubstitutionTeamId(teamId); setShowSubstitutionModal(true); }}
+        onCoachFoul={() => handleCoachFoul(teamId)}
+        actionHistoryHandlers={actionHistoryHandlers}
+        teamFouls={effectiveTeamFouls(teamId, currentQuarter)}
+        timeoutUsed={timeoutUsedFor(team)}
+        timeoutQuarterLabel={timeoutQuarterLabel}
+        pendingSlot={renderPendingSlot(teamId)}
+        onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam(teamId) : undefined}
+        onTimeoutCancel={() => setTimeoutCancelTeam(teamId)}
+      />
+    );
+  };
 
   // ゲーム画面
   return (
@@ -1440,8 +1482,17 @@ function AppContent({ screen, setScreen }: AppContentProps) {
 
               statHistory は「不明で記録」した分を合計に含めるために渡す
             */}
-            <StatsPanel players={state.teamA.players} teamName={state.teamA.name} teamId="teamA" statHistory={state.statHistory} />
-            <StatsPanel players={state.teamB.players} teamName={state.teamB.name} teamId="teamB" statHistory={state.statHistory} />
+            {/* 記録画面のパネルと同じ順にする。トグルで切り替わる画面なので、
+                同じ場所でマイチームが左右に飛ぶと探し直しになる */}
+            {panelOrder.map(teamId => (
+              <StatsPanel
+                key={teamId}
+                players={state[teamId].players}
+                teamName={state[teamId].name}
+                teamId={teamId}
+                statHistory={state.statHistory}
+              />
+            ))}
 
             <TeamComparison
               teamA={state.teamA}
@@ -1454,35 +1505,13 @@ function AppContent({ screen, setScreen }: AppContentProps) {
           </div>
         ) : (
           <>
-            {/* 3列メインエリア: Team A | Center (Scoreboard + Actions) | Team B */}
+            {/* 3列メインエリア: マイチーム | Center (Scoreboard + Actions) | 相手 */}
+            {/* 左右はマイチーム基準（panelOrder）。決められないときは白が左 */}
             {/* action-pending: アクション先行選択中は選手カードを強調表示 */}
             <div className={`game-main-area ${gameMode === 'simple' ? 'simple-mode' : 'full-mode'} ${pendingAction ? 'action-pending' : ''}`}>
-              {/* Left: Team A */}
+              {/* Left */}
               {/* disabled: 試合終了後はアクションボタンと同じ条件で選手カードも止める */}
-              <TeamPanel
-                teamId="teamA"
-                teamName={state.teamA.name}
-                teamColor={state.teamA.color}
-                players={state.teamA.players}
-                isActive={selectedTeamId === 'teamA'}
-                selectedPlayerId={selectedPlayerId}
-                gameMode={gameMode}
-                disabled={phase === 'finished'}
-                scoreHistory={state.scoreHistory}
-                statHistory={state.statHistory}
-                foulHistory={state.foulHistory}
-                showThreePoint={state.showThreePoint}
-                onPlayerSelect={handlePlayerSelect}
-                onSubstitute={() => { setSubstitutionTeamId('teamA'); setShowSubstitutionModal(true); }}
-                onCoachFoul={() => handleCoachFoul('teamA')}
-                actionHistoryHandlers={actionHistoryHandlers}
-                teamFouls={effectiveTeamFouls('teamA', currentQuarter)}
-                timeoutUsed={timeoutUsedFor(state.teamA)}
-                timeoutQuarterLabel={timeoutQuarterLabel}
-                pendingSlot={renderPendingSlot('teamA')}
-                onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamA') : undefined}
-                onTimeoutCancel={() => setTimeoutCancelTeam('teamA')}
-              />
+              {renderTeamPanel(panelOrder[0], 'left')}
 
               {/* Center: Scoreboard + Action Buttons */}
               <div className="center-column">
@@ -1541,32 +1570,9 @@ function AppContent({ screen, setScreen }: AppContentProps) {
                 </div>
               </div>
 
-              {/* Right: Team B */}
+              {/* Right */}
               {/* disabled: 試合終了後はアクションボタンと同じ条件で選手カードも止める */}
-              <TeamPanel
-                teamId="teamB"
-                teamName={state.teamB.name}
-                teamColor={state.teamB.color}
-                players={state.teamB.players}
-                isActive={selectedTeamId === 'teamB'}
-                selectedPlayerId={selectedPlayerId}
-                gameMode={gameMode}
-                disabled={phase === 'finished'}
-                scoreHistory={state.scoreHistory}
-                statHistory={state.statHistory}
-                foulHistory={state.foulHistory}
-                showThreePoint={state.showThreePoint}
-                onPlayerSelect={handlePlayerSelect}
-                onSubstitute={() => { setSubstitutionTeamId('teamB'); setShowSubstitutionModal(true); }}
-                onCoachFoul={() => handleCoachFoul('teamB')}
-                actionHistoryHandlers={actionHistoryHandlers}
-                teamFouls={effectiveTeamFouls('teamB', currentQuarter)}
-                timeoutUsed={timeoutUsedFor(state.teamB)}
-                timeoutQuarterLabel={timeoutQuarterLabel}
-                pendingSlot={renderPendingSlot('teamB')}
-                onTimeoutRequest={phase === 'playing' ? () => setTimeoutModalTeam('teamB') : undefined}
-                onTimeoutCancel={() => setTimeoutCancelTeam('teamB')}
-              />
+              {renderTeamPanel(panelOrder[1], 'right')}
             </div>
           </>
         )}
