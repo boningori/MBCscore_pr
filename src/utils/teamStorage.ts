@@ -38,7 +38,14 @@ export interface SavedPlayer {
     uniformNumber?: number;      // ユニフォーム番号（0-99）
     name: string;
     courtName?: string;          // コートネーム（ニックネーム）
-    licenseNo?: string;          // ライセンスNo.（JBA登録番号・半角英数10桁）
+    /**
+     * ライセンスNo.（JBA登録番号）。桁数は様式によって2通りある:
+     *   - 3桁の数字 … 登録番号の下3桁。スコアシートのメンバー表はこちら（年間の大半）
+     *   - 10桁の英数字 … 登録番号そのもの。公式戦のプログラムに載る
+     * 統一しない。印字は licenseDigits() が slice(-3) するので3マスに収まり、
+     * 選手の識別は playerIdentityKey が下3桁で揃える
+     */
+    licenseNo?: string;
     isCaptain: boolean;
 }
 

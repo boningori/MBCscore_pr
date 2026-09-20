@@ -75,7 +75,8 @@ export interface Player {
     number: number;        // 背番号
     name: string;
     courtName?: string;    // コートネーム（ニックネーム）
-    licenseNo?: string;    // ライセンスNo.（JBA登録番号の下3桁）
+    /** ライセンスNo.（JBA登録番号。下3桁の3桁、または10桁の登録番号そのもの。teamStorage.SavedPlayer を参照） */
+    licenseNo?: string;
     isCaptain: boolean;
     fouls: (FoulType | FoulRecord)[];     // ファウル履歴（レガシー: FoulType[], 新: FoulRecord[]）
     stats: PlayerStats;
