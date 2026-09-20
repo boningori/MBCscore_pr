@@ -8,6 +8,7 @@ import {
     createEmptySavedTeam,
 } from '../../utils/teamStorage';
 import { recognizePlayerList } from '../../utils/imageOCR';
+import type { ImageOCRResult } from '../../utils/imageOCR';
 import { getStoredApiKey } from '../../utils/geminiClient';
 import {
     DOUBLE_ZERO_INTERNAL,
@@ -28,6 +29,7 @@ import {
     isPlayerLimitReached,
     playerLimitMessage,
 } from '../TeamShared';
+import { OcrDiagnosticsPanel } from '../TeamShared/OcrDiagnosticsPanel';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { useScrollToTopOnOpen } from '../../hooks/useScrollToTopOnOpen';
 import { filterTeamsByName } from './teamFilter';
@@ -53,6 +55,8 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     // OCR related state
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
+    // 直近1回ぶんだけ持つ。保存はしない（応答に氏名が入る）
+    const [lastOcr, setLastOcr] = useState<ImageOCRResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
@@ -368,6 +372,7 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         setOcrError(null);
         try {
             const result = await recognizePlayerList(file);
+            setLastOcr(result);
             if (result.success && result.players.length > 0) {
                 // Merge players: Add only if number doesn't exist
                 const currentNumbers = new Set(editingTeam.players.map(p => p.number));
@@ -562,6 +567,12 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
                                 {ocrError}
                             </div>
                         )}
+
+                        <OcrDiagnosticsPanel
+                            diagnostics={lastOcr?.diagnostics}
+                            usedEngine={lastOcr?.usedEngine}
+                            rawText={lastOcr?.rawText}
+                        />
 
                         {/* 番号グリッド選択UI */}
                         {showNumberGrid && (

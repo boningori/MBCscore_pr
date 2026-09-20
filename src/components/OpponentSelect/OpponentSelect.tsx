@@ -10,9 +10,11 @@ import {
     loadOpponents
 } from '../../utils/teamStorage';
 import { recognizePlayerList, isOCRAvailable } from '../../utils/imageOCR';
+import type { ImageOCRResult } from '../../utils/imageOCR';
 import { getStoredApiKey } from '../../utils/geminiClient';
 import { showToast } from '../Toast/toastApi';
 import { DeleteConfirmModal } from '../TeamShared/DeleteConfirmModal';
+import { OcrDiagnosticsPanel } from '../TeamShared/OcrDiagnosticsPanel';
 import { isPlayerLimitReached, playerLimitMessage, MAX_PLAYERS_PER_TEAM } from '../TeamShared/playerLimit';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import {
@@ -38,6 +40,8 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
+    // 直近1回ぶんだけ持つ。保存はしない（応答に氏名が入る）
+    const [lastOcr, setLastOcr] = useState<ImageOCRResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
 
@@ -93,6 +97,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
         setOcrError(null);
         try {
             const result = await recognizePlayerList(file);
+            setLastOcr(result);
             if (result.success && result.players.length > 0) {
                 const newTeam = createEmptySavedTeam();
                 // 上限は手入力・番号グリッドと同じ規則で掛ける（playerLimit.ts）。
@@ -137,6 +142,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                 onImageImport={handleImageImport}
                 isLoading={isLoading}
                 ocrError={ocrError}
+                lastOcr={lastOcr}
             />
         );
     }
@@ -196,6 +202,12 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                     {ocrError}
                 </div>
             )}
+
+            <OcrDiagnosticsPanel
+                diagnostics={lastOcr?.diagnostics}
+                usedEngine={lastOcr?.usedEngine}
+                rawText={lastOcr?.rawText}
+            />
 
             {/* チームセクションコンテナ（2列レイアウト） */}
             <div className="teams-container">
@@ -278,9 +290,11 @@ interface OpponentEditorProps {
      * セットされた通知が誰にも見えないまま消える
      */
     ocrError?: string | null;
+    /** 直近の読み取り結果。詳細の折りたたみに使う */
+    lastOcr?: ImageOCRResult | null;
 }
 
-function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading, ocrError }: OpponentEditorProps) {
+function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading, ocrError, lastOcr }: OpponentEditorProps) {
     const [name, setName] = useState(team.name);
     const [coachName, setCoachName] = useState(team.coachName || '');
     const [coachLicenseNo, setCoachLicenseNo] = useState(team.coachLicenseNo || '');
@@ -488,6 +502,12 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading, ocrE
                             {ocrError}
                         </div>
                     )}
+
+                    <OcrDiagnosticsPanel
+                        diagnostics={lastOcr?.diagnostics}
+                        usedEngine={lastOcr?.usedEngine}
+                        rawText={lastOcr?.rawText}
+                    />
 
                     {/* 番号グリッド選択UI */}
                     {showNumberGrid && (
