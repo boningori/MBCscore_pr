@@ -1333,3 +1333,22 @@ textarea,
 /* 横向きタブレット最適化の指定がここにあったが、対象の .app-layout は
    どのコンポーネントも描画していない死にコードだったため削除した。
    実際の3カラムは App.css の .app-main / .game-layout が担当している */
+
+/* 読み取り結果の詳細。中身は素の文字にする（角丸の面はボタンだけ） */
+.ocr-diagnostics {
+    margin: 8px 0;
+}
+
+.ocr-diagnostics-body {
+    margin-top: 8px;
+    font-size: var(--font-size-sm);
+}
+
+.ocr-diagnostics-raw {
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 40vh;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+}

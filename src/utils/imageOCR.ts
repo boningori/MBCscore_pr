@@ -16,6 +16,23 @@ import { isAiOcrEnabled } from './appSettings';
 import { parseGeminiRosterResponse } from './geminiRosterResponse';
 import { normalizePlayerName } from './playerIdentityKey';
 
+/**
+ * 読み取りの診断情報。設定がONのときだけ画面に出す（appSettings の aiOcrDiagnosticsEnabled）。
+ *
+ * rawText とは意味が違う。rawText は「結果を出したエンジンの生出力」なので、
+ * Tesseractへフォールバックすると Tesseract の文字列に置き換わる。
+ * こちらは「Gemini が何を返したか」で、フォールバックしても残す ——
+ * 読み取りがおかしかったときに、いちばん見たいのがその経路のため。
+ */
+export interface OcrDiagnostics {
+    /** 応答した（＝最後に試した）Geminiモデル */
+    geminiModel?: string;
+    /** 試したモデルを順に。1件なら1回で通った、複数なら落ちて次へ送っている */
+    geminiModelsTried?: string[];
+    /** Geminiの生応答。Tesseractへフォールバックしても残す */
+    geminiRawText?: string;
+}
+
 // 画像認識結果
 export interface ImageOCRResult {
     success: boolean;
@@ -32,6 +49,8 @@ export interface ImageOCRResult {
      * 上限超過（OpponentManager の overflowCount）と同じく、件数を画面へ出す
      */
     invalidNumberCount?: number;
+    /** 診断情報。Geminiを試していなければ空のまま */
+    diagnostics?: OcrDiagnostics;
 }
 
 /**
@@ -287,9 +306,18 @@ class GeminiFatalError extends Error { }
 class ImageFormatError extends Error { }
 
 /**
- * Gemini APIによるOCR処理
+ * Gemini APIによるOCR処理。
+ *
+ * diagnostics は呼び出し側が持つ。ここは書き込むだけ。失敗時は throw するので、
+ * 戻り値に載せると Tesseractへ回った経路で Gemini の応答が消える ——
+ * それがいちばん見たい経路だった。例外に情報を積む手もあるが、
+ * GeminiFatalError / ImageFormatError の使い分けを崩したくない
  */
-async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
+async function recognizeWithGemini(
+    imageFile: File,
+    apiKey: string,
+    diagnostics: OcrDiagnostics,
+): Promise<ImageOCRResult> {
     if (import.meta.env.DEV) console.log('Using OCR Engine: Gemini API');
     const base64Image = await imageToBase64(imageFile);
     const mimeType = imageFile.type || 'image/jpeg';
@@ -333,6 +361,8 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
     for (const model of FALLBACK_MODELS) {
         try {
+            diagnostics.geminiModel = model;
+            (diagnostics.geminiModelsTried ??= []).push(model);
             const url = `${GEMINI_API_BASE}${model}:generateContent`;
             const response = await fetchWithTimeout(url, {
                 method: 'POST',
@@ -429,6 +459,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
 
             const data = await response.json();
             const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            diagnostics.geminiRawText = textResponse;
             if (import.meta.env.DEV) console.log(`OCR Raw Text (Gemini - ${model}):`, textResponse);
 
 
@@ -496,6 +527,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 rawText: textResponse,
                 usedEngine: 'Gemini',
                 invalidNumberCount,
+                diagnostics,
             };
 
         } catch (error) {
@@ -528,13 +560,17 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
 
     let fallbackReason = '';
 
+    // Geminiを試したかどうかに関わらず器は用意する。収集は設定に関係なく
+    // 常に行い、設定が制御するのは表示だけ（分岐を増やすほうが穴を作る）
+    const diagnostics: OcrDiagnostics = {};
+
     // AI経路が有効ならGeminiを優先試行。
     // 大きすぎる写真は送らずTesseractへ回す（GEMINI_MAX_IMAGE_BYTES）
     if (apiKey && imageFile.size > GEMINI_MAX_IMAGE_BYTES) {
         fallbackReason = `画像が大きいため（${Math.round(imageFile.size / 1024 / 1024)}MB）AIへは送らず標準OCRで読み取りました`;
     } else if (apiKey) {
         try {
-            return await recognizeWithGemini(imageFile, apiKey);
+            return await recognizeWithGemini(imageFile, apiKey, diagnostics);
         } catch (error) {
             // 写真の撮り方の問題は、端末内OCRに回しても直らない。
             // 回すとかえって「間違って読めた」結果が返るので、ここで返し切る
@@ -544,6 +580,7 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
                     players: [],
                     error: error.message,
                     usedEngine: 'Gemini',
+                    diagnostics,
                 };
             }
             fallbackReason = error instanceof Error ? error.message : 'Unknown error';
@@ -558,6 +595,7 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
         if (fallbackReason) {
             tesseractResult.fallbackReason = fallbackReason;
         }
+        tesseractResult.diagnostics = diagnostics;
         return tesseractResult;
     } catch (error) {
         return {
@@ -565,7 +603,8 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
             players: [],
             error: tesseractFailureMessage(error),
             usedEngine: 'Tesseract',
-            fallbackReason: fallbackReason // Geminiエラーも保持
+            fallbackReason: fallbackReason, // Geminiエラーも保持
+            diagnostics,
         };
     }
 }

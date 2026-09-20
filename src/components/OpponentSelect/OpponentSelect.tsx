@@ -10,9 +10,11 @@ import {
     loadOpponents
 } from '../../utils/teamStorage';
 import { recognizePlayerList, isOCRAvailable } from '../../utils/imageOCR';
+import type { ImageOCRResult } from '../../utils/imageOCR';
 import { getStoredApiKey } from '../../utils/geminiClient';
 import { showToast } from '../Toast/toastApi';
 import { DeleteConfirmModal } from '../TeamShared/DeleteConfirmModal';
+import { OcrDiagnosticsPanel } from '../TeamShared/OcrDiagnosticsPanel';
 import { isPlayerLimitReached, playerLimitMessage, MAX_PLAYERS_PER_TEAM } from '../TeamShared/playerLimit';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import {
@@ -38,8 +40,18 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const [editingTeam, setEditingTeam] = useState<SavedTeam | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [ocrError, setOcrError] = useState<string | null>(null);
+    // 直近1回ぶんだけ持つ。保存はしない（応答に氏名が入る）
+    const [lastOcr, setLastOcr] = useState<ImageOCRResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
+
+    // 編集セッションの開始・終了のたびに呼ぶ。パネルは「今回の読み取り」だけを
+    // 語る約束なので、ここで消さないと前のチームの読み取り結果（選手氏名を含む）が
+    // 次に開いた別チームの編集画面にそのまま残ってしまう
+    const resetOcrNotice = useCallback(() => {
+        setOcrError(null);
+        setLastOcr(null);
+    }, []);
 
     const refreshHistory = () => {
         setHistory(loadRecentOpponents());
@@ -53,6 +65,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     };
 
     const handleCreateNew = () => {
+        resetOcrNotice();
         setEditingTeam(createEmptySavedTeam());
         setIsCreating(true);
     };
@@ -60,7 +73,8 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const closeEditor = useCallback(() => {
         setEditingTeam(null);
         setIsCreating(false);
-    }, []);
+        resetOcrNotice();
+    }, [resetOcrNotice]);
 
     // 端末の戻る操作は入力フォームを閉じて一覧へ。受け取らないと、この画面を
     // 抱えている試合設定のウィザードが1ステップ戻してしまい、入力中の名簿が
@@ -74,6 +88,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
         }
         setEditingTeam(null);
         setIsCreating(false);
+        resetOcrNotice();
         refreshHistory();
         // 保存して即選択扱いにするか、リストに戻るか
         // ここでは選択扱いにして進める
@@ -91,8 +106,12 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const handleImageImport = async (file: File) => {
         setIsLoading(true);
         setOcrError(null);
+        // 消さないと、読み込み中や失敗時に前回分のパネルが「今回の結果」として
+        // 表示され続ける（44行目のコメントの約束が崩れる）
+        setLastOcr(null);
         try {
             const result = await recognizePlayerList(file);
+            setLastOcr(result);
             if (result.success && result.players.length > 0) {
                 const newTeam = createEmptySavedTeam();
                 // 上限は手入力・番号グリッドと同じ規則で掛ける（playerLimit.ts）。
@@ -136,6 +155,8 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                 onCancel={closeEditor}
                 onImageImport={handleImageImport}
                 isLoading={isLoading}
+                ocrError={ocrError}
+                lastOcr={lastOcr}
             />
         );
     }
@@ -195,6 +216,13 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                     {ocrError}
                 </div>
             )}
+
+            <OcrDiagnosticsPanel
+                diagnostics={lastOcr?.diagnostics}
+                usedEngine={lastOcr?.usedEngine}
+                rawText={lastOcr?.rawText}
+                fallbackReason={lastOcr?.fallbackReason}
+            />
 
             {/* チームセクションコンテナ（2列レイアウト） */}
             <div className="teams-container">
@@ -269,9 +297,19 @@ interface OpponentEditorProps {
     onCancel: () => void;
     onImageImport: (file: File) => void;
     isLoading: boolean;
+    /**
+     * 読み取り結果の通知（上限超過・背番号を読めなかった件数）。
+     *
+     * 読み取りに成功するとこのエディタを返して早期リターンするため、
+     * 呼び出し側の描画箇所には辿り着かない。ここで受けないと、
+     * セットされた通知が誰にも見えないまま消える
+     */
+    ocrError?: string | null;
+    /** 直近の読み取り結果。詳細の折りたたみに使う */
+    lastOcr?: ImageOCRResult | null;
 }
 
-function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: OpponentEditorProps) {
+function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading, ocrError, lastOcr }: OpponentEditorProps) {
     const [name, setName] = useState(team.name);
     const [coachName, setCoachName] = useState(team.coachName || '');
     const [coachLicenseNo, setCoachLicenseNo] = useState(team.coachLicenseNo || '');
@@ -473,6 +511,19 @@ function OpponentEditor({ team, onSave, onCancel, onImageImport, isLoading }: Op
                     </div>
 
                     {isLoading && <div className="ocr-loading">{hasApiKey ? 'AIが解析中...' : 'OCRで解析中...'}</div>}
+
+                    {ocrError && (
+                        <div className="alert alert-danger">
+                            {ocrError}
+                        </div>
+                    )}
+
+                    <OcrDiagnosticsPanel
+                        diagnostics={lastOcr?.diagnostics}
+                        usedEngine={lastOcr?.usedEngine}
+                        rawText={lastOcr?.rawText}
+                        fallbackReason={lastOcr?.fallbackReason}
+                    />
 
                     {/* 番号グリッド選択UI */}
                     {showNumberGrid && (
