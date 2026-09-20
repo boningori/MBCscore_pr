@@ -125,7 +125,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
   const [substitutionTeamId, setSubstitutionTeamId] = useState<'teamA' | 'teamB'>('teamA');
   const [showStats, setShowStats] = useState(false);
   const [activeTab, setActiveTab] = useState<'teamA' | 'teamB'>('teamA');
-  const [lineupTab, setLineupTab] = useState<'teamA' | 'teamB'>('teamA');
+  // 初期タブは QuarterLineup がマイチーム基準で決める。null は「まだ選んでいない」
+  const [lineupTab, setLineupTab] = useState<'teamA' | 'teamB' | null>(null);
   const [showFoulSelector, setShowFoulSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; value?: string } | null>(null);
   const [showTeamSelector, setShowTeamSelector] = useState(false); // チーム選択モーダル表示（保留アクション化用）
@@ -337,8 +338,8 @@ function AppContent({ screen, setScreen }: AppContentProps) {
     // 対戦チームを履歴に保存（念のため更新）
     saveRecentOpponent(setupData.opponentTeam);
 
-    // Q1スタメン選択画面へ（新規試合は白タブから）
-    setLineupTab('teamA');
+    // Q1スタメン選択画面へ（新規試合はマイチームのタブから。決めるのは QuarterLineup 側）
+    setLineupTab(null);
     setScreen('quarterLineup');
   };
 
@@ -1309,7 +1310,7 @@ function AppContent({ screen, setScreen }: AppContentProps) {
         quarter={currentQuarter}
         teamA={state.teamA}
         teamB={state.teamB}
-        initialTab={lineupTab}
+        initialTab={lineupTab ?? undefined}
         onTabChange={setLineupTab}
         onStart={handleLineupStart}
         // 名簿から漏れた選手をこの画面で登録する。
