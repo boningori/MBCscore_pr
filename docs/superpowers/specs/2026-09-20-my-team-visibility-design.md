@@ -1,0 +1,165 @@
+# 記録画面でマイチームが一目で分かるようにする — 設計
+
+- 日付: 2026-09-20
+- ステータス: 設計承認済み（2026-09-20）
+- 対象: 新規 `src/utils/myTeamSide.ts`, `src/App.tsx`, `src/App.css`, `src/index.css`, `src/components/TeamPanel/TeamPanel.tsx`, `src/components/Scoreboard/Scoreboard.tsx`, `src/components/Scoreboard/Scoreboard.css`, `src/components/QuarterLineup/QuarterLineup.tsx`
+
+## 背景
+
+試合中のスタッツ記録で「マイチームが青か白か分からなくなる」という指摘を受けた。フルモードでもシンプルモードでも起きる。
+
+原因は2つある。
+
+**1. 記録画面にマイチームの印が無い。**
+
+`Team` 型は `isMyTeam` を持つ（`types/game.ts:80`）。保存・復元・スタッツ分析はこれを見ている（`dataBackup.ts:190`、`gameHistoryStorage.ts:214`、`playerStatsAnalysis.ts:480`）。しかし記録画面のUIは一度も参照していない。`TeamPanel` にはかつて `isMyTeam` プロップがあったが、選手名の出し分けにしか使われておらず、名前を両チームとも出すようになった時点で削除された（`TeamPanel.tsx:27` のコメント）。
+
+その結果、画面上の手掛かりはチーム名と4pxのカラーライン（白 `#e2e8f0` / 青 `#3b82f6`）だけになっている。
+
+**2. マイチームの位置が試合ごとに入れ替わる。**
+
+`matchTeams.ts:26` は `myTeamColor === 'white'` かどうかで teamA/teamB を組み立てる。teamA は必ず白チームで、画面上は必ず左（シンプルモードでは上）に描かれる（`App.tsx:1462`、`App.tsx:1546`）。
+
+つまりマイチームが座る場所は、その試合で白を着たか青を着たかで変わる。「自分は左」と体で覚えることができず、毎回「今日はどっちだったか」を思い出す必要がある。記録中に手が止まるのはここである。
+
+## 決めたこと
+
+**マイチームを常に左（シンプルモードでは上）に固定し、そのうえでチーム名を虹色にする。**
+
+位置の固定が主で、虹は補強である。虹が出せない環境でも位置は保たれる。
+
+対象は試合中に見る3画面に限る。記録画面、スコアボード、スタメン選択。チームスタッツ比較・履歴・スコアシート出力は従来どおり白＝左のままとする。試合後に落ち着いて見る画面であり、紙のスコアシートと並べる場面では様式どおりの並びのほうが読みやすい。
+
+### 「どちらがマイチームか」の判定を1つにまとめる
+
+新規 `src/utils/myTeamSide.ts`：
+
+```ts
+resolveMyTeamSide(teamA: Team, teamB: Team): 'teamA' | 'teamB' | null
+```
+
+- `isMyTeam` が真の側がちょうど1つ → その側
+- 両方真（紅白戦）／両方偽・未設定（旧データ） → `null`
+
+判定条件は `gameHistoryStorage.ts:214` の `aIsMine === bIsMine` を「自分側を決められない」とする既存の扱いに合わせる。同じ意味の判定がリポジトリ内で2つの規則を持つことを避ける。
+
+3画面はすべてこの関数だけを見る。画面ごとに判定を書くと、片方だけ入れ替わって左右が食い違う事故が起きる。その状態は「どちらが自分か分からない」という元の問題より悪い。
+
+**`null` のときは位置固定も虹も行わず、現状（白＝左・虹なし）に落とす。** 紅白戦では両側が自分であり、どちらかを「自分」として際立たせる意味が無い。旧データは情報が無い。どちらも、推測して間違った側を強調するより、何もしないほうが安全である。
+
+### `side` を「チーム」から「場所」へ切り離す
+
+現在 `TeamPanel.tsx:133` は次のように書いている。
+
+```ts
+const side = teamId === 'teamA' ? 'team-a' : 'team-b';
+```
+
+この `team-a` / `team-b` がCSS側で意味しているのは**場所**である。
+
+| 規則 | 実際の意味 |
+| --- | --- |
+| `App.css:417` `.team-panel.team-a` | カラーラインを右＝内側に引く（＝左のパネル） |
+| `App.css:422` `.team-panel.team-b` | カラーラインを左＝内側に引く（＝右のパネル） |
+| `App.css:944` `.pending-slot-team-a` | 保留パネルを画面の左端に寄せる |
+| `App.css:948` `.pending-slot-team-b` | 保留パネルを画面の右端に寄せる |
+| `Scoreboard.css:49` `.team-score-block.team-a-block` | 得点ブロックのラインを右＝内側に引く |
+
+チームの識別と場所が1つの名前に同居している。位置を入れ替えると、この同居がそのまま罠になる。teamB が左に来た瞬間、`.team-b` のままではカラーラインが画面の外側を向き、保留パネルが逆の端へ飛ぶ。
+
+そこで `side` を `'left' | 'right'` に変え、クラス名も場所を言う名前へ改める。
+
+- `.team-panel.team-a` / `.team-b` → `.panel-left` / `.panel-right`
+- `.pending-slot-team-a` / `-team-b` → `.pending-slot-left` / `-right`
+- `.team-score-block.team-a-block` → `.block-left`（右側は既定値のため専用クラスは不要）
+
+改名せず中身だけ入れ替える案もあったが採らない。teamB のパネルに `.team-a` が付いた状態は、次に触る人が必ず読み違える。
+
+`--team-a` / `--team-b` の**色トークン**（`index.css:64`、`index.css:68`）は改名しない。これらはタブや選択ボタン（`App.css:134`、`App.css:808`）で使われており、記録画面の左右とは無関係である。
+
+### 入れ替えはDOMの描画順で行う
+
+CSS の `order` は使わない。`order` は見た目だけを動かすため、キーボードのタブ順と読み上げ順が見た目と食い違う。記録中にタブ移動する人にとっては、左のパネルを見ながら右のパネルに入力が入る状態になる。
+
+- **記録画面** — `App.tsx:1462` / `App.tsx:1546` の2つの `<TeamPanel>` を、マイチーム側が先に来る順で描く。中央列は `App.css:269` が `grid-template-columns: 1fr clamp(320px, 35vw, 450px) 1fr` の3列であり、両端を入れ替えても中央は動かない。スマホの2列（`App.css:341`）では中央列が `grid-column: 1 / -1; grid-row: 2` で明示配置されているため、こちらも影響しない。
+- **スコアボード** — `Scoreboard.tsx:196` の `renderTeamBlock` の呼び出し順を同じ規則で決める。
+- **スタメン選択** — `QuarterLineup.tsx:34` の `TAB_IDS` を固定配列から算出に変える。`App.tsx:127` の `lineupTab` 初期値 `'teamA'` もマイチーム側にする。`QuarterLineup.tsx:15` と `QuarterLineup.tsx:150` のコメント（「白チーム（App側で teamA=白 に固定されている）」「白（teamA）が左・青（teamB）が右で固定」）は事実と合わなくなるため書き換える。
+
+白／青のカラーラインは残す。変わるのは場所だけであり、「相手は青を着ている」という実際のコートとの照合手段は失わない。
+
+### 虹色チーム名
+
+`index.css` にトークンを1本足す。
+
+```css
+--my-team-rainbow: linear-gradient(90deg,
+  #ff8f8f, #ffb066, #ffe066, #7fe3a0, #7fd4f5, #a5b4fc, #e0a3f5);
+```
+
+教科書どおりの虹（`#ff0000 #ff7f00 #ffff00 #00ff00 #0000ff #4b0082 #8f00ff`）は使わない。`--bg-secondary`（`#1e293b`）の上での実測で、青 1.70:1・藍 1.13:1・紫 2.52:1 となり、チーム名の後半が地に溶けて読めなくなる（現状の白文字は 13.98:1）。チーム名は「どちらのパネルか」を確かめる唯一の文字であり、そこが読めなくなるのは目的と逆行する。
+
+上の7色は明度を白文字寄りに引き上げてあり、`#1e293b` の上で 6.67〜11.22:1 とAA基準を全色で満たす。パステル寄りになるぶん、試合中ずっと視界にあっても疲れにくい。
+
+付ける先は `.is-my-team` クラスで2か所。
+
+| 場所 | 要素 |
+| --- | --- |
+| 記録画面のパネルヘッダー | `.team-name`（`App.css:472`） |
+| スコアボードのラベル | `.team-label`（`Scoreboard.css:74`） |
+
+`resolveMyTeamSide` が `null` を返すときは付けない。
+
+グラデーション文字は `color: transparent` で作るため、効かない環境では文字が丸ごと消える。2つのガードで守る。
+
+```css
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .is-my-team {
+    background-image: var(--my-team-rainbow);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+@media (forced-colors: active) {
+  .is-my-team { background-image: none; color: CanvasText; }
+}
+```
+
+未対応環境とハイコントラストモードでは現在の白文字に戻る。そのとき虹は消えるが、位置の固定は生きているため「左が自分」は保たれる。虹に単独で背負わせない構造にしてある。
+
+`text-overflow: ellipsis`（`App.css:472`）との併用時に「…」へグラデーションが乗るかはブラウザ差があるため、実機で確認してから確定する。
+
+### 色以外の手掛かりを添える
+
+虹は色だけの手掛かりであり、色が見えない人には何も伝わらない。位置の固定も視覚のみの手掛かりである。
+
+`index.css` に `.sr-only` ユーティリティを足し（現在リポジトリに存在しない）、チーム名の隣に読み上げ専用の「マイチーム」を置く。グラデーションのかかる要素の**外側**に置く。見た目は変わらず、地色も枠も持たないため「押せるものだけが箱を持つ」規則にも収まる。
+
+## テスト
+
+`headerContrast.test.ts` に、CSSファイルを読んで「どの色をどの地に載せたか」を実測する前例がある。虹も同じ形で縛る。
+
+新規：
+
+- `myTeamSide.test.ts` — 4ケース（teamA が自分／teamB が自分／両方真／どちらも偽・未設定）
+- 虹のコントラスト — `--my-team-rainbow` の7色すべてが `--bg-secondary` の上で 4.5:1 以上。将来「もっと鮮やかに」と触られたときにここで止まる
+- 位置固定 — マイチームが青（teamB）のとき、記録画面・スコアボード・スタメン選択タブのいずれもDOM上でマイチームが先に来る。`resolveMyTeamSide` が `null` のときは従来どおり白が先
+- 虹クラス — `null` のとき `.is-my-team` が付かない
+
+既存の書き換え：`.team-panel.team-a` を「左のパネル」の意味で使っているテストが4ファイルある。
+
+| ファイル | 対応 |
+| --- | --- |
+| `App.bulkSubstitution.test.tsx:72`,`:107`,`:109` | `.panel-left` へ置換 |
+| `App.quarterLineup.test.tsx:95`,`:97`,`:186`,`:190` | `.panel-left` / `.panel-right` へ置換 |
+| `App.wakeLock.test.tsx:81`,`:90` | `.panel-left` へ置換 |
+| `App.ftInterrupt.test.tsx:112` | 書き直し。`teamId === 'teamA' ? 'team-a' : 'team-b'` という、今回まさに切り離す対応関係をヘルパーが持っている |
+| `components/TeamPanel/pendingSlot.test.tsx:90` | `pending-slot-team-a` → `pending-slot-left` |
+
+## やらないこと
+
+- **スコアシート出力の並びは変えない。** `RunningScoresheet` は公式様式に準拠しており、A/B の並びは様式が決めている。
+- **チームスタッツ比較・履歴の並びは変えない。** 試合後に見る画面であり、紙のスコアシートと並べる場面では様式どおりの並びのほうが読みやすい。
+- **パネルの地色・枠の色は変えない。** 目印としては面積が大きく最も強いが、このリポジトリは色を「どの面に載せるか」まで決めて縛っている。`index.css:84` は `--text-muted` を「`--bg-tertiary` より明るい面では使わない」と定め、`index.css:87-96` は色みを敷いた面専用の文字色を別に持ち、`index.contrast.test.ts` と `headerContrast.test.ts` がそれを実測で固定している。選手カードの選択強調（`index.css:399` が敷く `--active-highlight-bg`）は `rgba(236, 72, 153, 0.2)` と半透明で、下の地と混ざった色になる。パネルの地を変えると、その上に載っている文字色と強調色の前提がまとめてずれ、全部を測り直すことになる。虹は文字色だけで完結するためこの影響が無い。
+- **選手カード1枚ごとの印は付けない。** 押す対象そのものに印が付くため押し間違いには最も効くが、印が5枚並ぶ騒がしさと、シンプルモードの3列カードに入る余地の狭さが見合わない。位置固定で押し間違いの大半は解消する見込みであり、必要なら後から足せる。
