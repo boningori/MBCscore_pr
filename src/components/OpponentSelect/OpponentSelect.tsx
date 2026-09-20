@@ -45,6 +45,14 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
 
+    // 編集セッションの開始・終了のたびに呼ぶ。パネルは「今回の読み取り」だけを
+    // 語る約束なので、ここで消さないと前のチームの読み取り結果（選手氏名を含む）が
+    // 次に開いた別チームの編集画面にそのまま残ってしまう
+    const resetOcrNotice = useCallback(() => {
+        setOcrError(null);
+        setLastOcr(null);
+    }, []);
+
     const refreshHistory = () => {
         setHistory(loadRecentOpponents());
         setSavedOpponents(loadOpponents());
@@ -57,6 +65,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     };
 
     const handleCreateNew = () => {
+        resetOcrNotice();
         setEditingTeam(createEmptySavedTeam());
         setIsCreating(true);
     };
@@ -64,7 +73,8 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
     const closeEditor = useCallback(() => {
         setEditingTeam(null);
         setIsCreating(false);
-    }, []);
+        resetOcrNotice();
+    }, [resetOcrNotice]);
 
     // 端末の戻る操作は入力フォームを閉じて一覧へ。受け取らないと、この画面を
     // 抱えている試合設定のウィザードが1ステップ戻してしまい、入力中の名簿が
@@ -78,6 +88,7 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
         }
         setEditingTeam(null);
         setIsCreating(false);
+        resetOcrNotice();
         refreshHistory();
         // 保存して即選択扱いにするか、リストに戻るか
         // ここでは選択扱いにして進める

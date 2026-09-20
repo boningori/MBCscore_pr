@@ -61,6 +61,14 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const jsonImportInputRef = useRef<HTMLInputElement>(null);
     const hasApiKey = !!getStoredApiKey();
 
+    // 編集セッションの開始・終了のたびに呼ぶ。パネルは「今回の読み取り」だけを
+    // 語る約束なので、ここで消さないと前のチームの読み取り結果（選手氏名を含む）が
+    // 次に開いた別チームの編集画面にそのまま残ってしまう
+    const resetOcrNotice = () => {
+        setOcrError(null);
+        setLastOcr(null);
+    };
+
     const refreshTeams = () => {
         setTeams(loadOpponents());
     };
@@ -85,13 +93,13 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
     const handleCreateNew = () => {
         setEditingTeam(createEmptySavedTeam());
         setIsCreating(true);
-        setOcrError(null);
+        resetOcrNotice();
     };
 
     const handleEdit = (team: SavedTeam) => {
         setEditingTeam({ ...team });
         setIsCreating(false);
-        setOcrError(null);
+        resetOcrNotice();
     };
 
     const handleDelete = (teamId: string) => {
@@ -138,11 +146,13 @@ export function OpponentManager({ onBack }: OpponentManagerProps) {
         }
         setEditingTeam(null);
         setIsCreating(false);
+        resetOcrNotice();
     };
 
     const handleCancel = () => {
         setEditingTeam(null);
         setIsCreating(false);
+        resetOcrNotice();
     };
 
     // 端末の戻る操作は編集フォームを閉じて一覧へ。ここを受け取らないと、

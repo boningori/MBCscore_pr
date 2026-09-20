@@ -11,6 +11,7 @@ import { OpponentSelect } from './OpponentSelect';
 import { recognizePlayerList } from '../../utils/imageOCR';
 import { MAX_PLAYERS_PER_TEAM } from '../TeamShared/playerLimit';
 import type { SavedPlayer } from '../../utils/teamStorage';
+import { setAiOcrDiagnosticsEnabled } from '../../utils/appSettings';
 
 vi.mock('../../utils/imageOCR', () => ({
     recognizePlayerList: vi.fn(),
@@ -85,6 +86,58 @@ describe('読み取りに成功したとき', () => {
         expect(await screen.findByRole('button', { name: /#1 選手1 を削除/ })).toBeTruthy();
         expect(screen.queryByText(/取り込みませんでした/)).toBeNull();
         expect(screen.queryByText(/読み取れなかった/)).toBeNull();
+    });
+});
+
+describe('編集画面を開き直したとき', () => {
+    it('写真を読み込んだあと編集画面を閉じ、新しい編集画面を開くと前回の通知が残っていない', async () => {
+        mockRecognize.mockResolvedValue({
+            success: true,
+            players: players(MAX_PLAYERS_PER_TEAM + 3),
+            usedEngine: 'Gemini',
+        });
+
+        const { container } = render(<OpponentSelect onSelect={vi.fn()} />);
+        importPhoto(container);
+
+        // 上限超過の通知が編集画面に出ていることを確認してから閉じる
+        expect(await screen.findByText(/3人は取り込みませんでした/)).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: /キャンセル/ }));
+
+        // 別チームを手入力するために、空の編集画面を開き直す
+        fireEvent.click(screen.getByRole('button', { name: /\+ 未登録チームと対戦/ }));
+
+        expect(screen.queryByText(/取り込みませんでした/)).toBeNull();
+    });
+
+    it('同じ操作で、前回の読み取り結果のパネルも残っていない（他チームの選手名を漏らさない）', async () => {
+        setAiOcrDiagnosticsEnabled(true);
+        mockRecognize.mockResolvedValue({
+            success: true,
+            players: players(5),
+            usedEngine: 'Gemini',
+            diagnostics: {
+                geminiModel: 'gemini-test-model',
+                geminiRawText: '{"players":[{"number":1,"name":"山田太郎"}]}',
+            },
+        });
+
+        const { container } = render(<OpponentSelect onSelect={vi.fn()} />);
+        importPhoto(container);
+
+        // パネルが今回の読み取り結果を持っていることを確かめてから閉じる
+        const toggle = await screen.findByRole('button', { name: /読み取り結果の詳細/ });
+        fireEvent.click(toggle);
+        expect(await screen.findByText(/山田太郎/)).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: /キャンセル/ }));
+
+        // 別チームを手入力するために、空の編集画面を開き直す
+        fireEvent.click(screen.getByRole('button', { name: /\+ 未登録チームと対戦/ }));
+
+        // 設定はONのままなので、パネル自体が出ないなら診断情報が消えている証拠。
+        // 万一パネルだけ残っていても、前チームの選手名は絶対に見えてはいけない
+        expect(screen.queryByRole('button', { name: /読み取り結果の詳細/ })).toBeNull();
+        expect(screen.queryByText(/山田太郎/)).toBeNull();
     });
 });
 
