@@ -168,7 +168,8 @@ describe('同姓選手の識別キー: ライセンスNo.を後から入力し�
 
         const result = aggregatePlayerStats(team);
 
-        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎_123']);
+        // playerKey は識別キー（氏名の空白を除去して揃える）であり、表示名ではない
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤太郎_123']);
         expect(result[0].gamesPlayed).toBe(2);
         expect(result[0].totalStats.points).toBe(18);
     });
@@ -193,7 +194,7 @@ describe('同姓選手の識別キー: ライセンスNo.を後から入力し�
 
         const result = aggregatePlayerStats(team);
 
-        expect(result.map(r => r.playerKey)).toEqual(['田中 次郎']);
+        expect(result.map(r => r.playerKey)).toEqual(['田中次郎']);
     });
 
     it('ライセンスNo.を使っていないチームのキーは変わらない', () => {
@@ -202,7 +203,7 @@ describe('同姓選手の識別キー: ライセンスNo.を後から入力し�
 
         const result = aggregatePlayerStats(team);
 
-        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎']);
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤太郎']);
     });
 });
 
@@ -227,7 +228,7 @@ describe('同姓選手の識別キー: ライセンスNo.を書き換え・削�
 
         const result = aggregatePlayerStats(team);
 
-        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎_456']);
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤太郎_456']);
         expect(result[0].gamesPlayed).toBe(2);
         expect(result[0].totalStats.points).toBe(18);
     });
@@ -239,7 +240,7 @@ describe('同姓選手の識別キー: ライセンスNo.を書き換え・削�
 
         const result = aggregatePlayerStats(team);
 
-        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎']);
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤太郎']);
         expect(result[0].gamesPlayed).toBe(2);
         expect(result[0].totalStats.points).toBe(18);
     });
@@ -252,7 +253,7 @@ describe('同姓選手の識別キー: ライセンスNo.を書き換え・削�
 
         const result = aggregatePlayerStats(team);
 
-        expect(result.map(r => r.playerKey)).toEqual(['佐藤 太郎_456']);
+        expect(result.map(r => r.playerKey)).toEqual(['佐藤太郎_456']);
         expect(result[0].gamesPlayed).toBe(3);
         expect(result[0].totalStats.points).toBe(24);
     });
@@ -268,6 +269,6 @@ describe('同姓選手の識別キー: ライセンスNo.を書き換え・削�
 
         const result = aggregatePlayerStats(team);
 
-        expect(result.map(r => r.playerKey).sort()).toEqual(['佐藤 太郎_123', '佐藤 太郎_456']);
+        expect(result.map(r => r.playerKey).sort()).toEqual(['佐藤太郎_123', '佐藤太郎_456']);
     });
 });

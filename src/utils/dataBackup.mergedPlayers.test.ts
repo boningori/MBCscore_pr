@@ -9,7 +9,9 @@ beforeEach(() => localStorage.clear());
 
 describe('統合設定のバックアップ往復', () => {
     it('エクスポート→全消去→インポートで復元できる', () => {
-        saveMergedPlayers('t1', { '佐藤　太郎': '佐藤 太郎' });
+        // 統合元・統合先が空白の有無だけで違う組は、識別キー自体が空白を無視する
+        // ようになった（Task 8）ため1つに畳まれてしまい、往復の検証に使えない
+        saveMergedPlayers('t1', { 'タロウ': '佐藤 太郎' });
         const backup = exportAllData();
         localStorage.clear();
 
@@ -17,7 +19,7 @@ describe('統合設定のバックアップ往復', () => {
         const result = executeImport(parsed);
 
         expect(result.success).toBe(true);
-        expect(loadMergedPlayers('t1')).toEqual({ '佐藤　太郎': '佐藤 太郎' });
+        expect(loadMergedPlayers('t1')).toEqual({ 'タロウ': '佐藤太郎' });
     });
 
     it('端末側の統合設定とバックアップ側がマージされる', () => {

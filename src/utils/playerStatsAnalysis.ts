@@ -8,6 +8,7 @@ import { createJsonStorage } from './createStorage';
 import { formatRecordDate, recordDateParts, recordInputDate } from './localDate';
 import { isDisqualified } from './disqualification';
 import { loadMergedPlayers, mergedCanonicalKeys, resolveMergedKey, type MergeMap } from './mergedPlayers';
+import { buildPlayerIdentityKey, migrateIdentityKey, normalizePlayerName } from './playerIdentityKey';
 
 // 非表示選手ストレージ。
 // 配列やnullが入っているとチームIDでの索引が壊れるため、素のオブジェクトのみ受ける
@@ -29,10 +30,17 @@ export function saveHiddenPlayers(teamId: string, playerKeys: string[]): void {
 // 実測: 数値が入っていると選手スタッツ分析が
 // 「number 5 is not iterable」で落ち、アプリ全体がエラー画面になる
 // （呼び出し側が new Set(...) に渡すため）
+//
+// 併せて、古い形で保存されたキーを今の形へ直す（migrateIdentityKey）。
+// 直さないと、非表示にした選手が黙って再表示される
 export function loadHiddenPlayers(teamId: string): string[] {
     const keys = loadAllHiddenPlayers()[teamId];
     if (!Array.isArray(keys)) return [];
-    return keys.every(k => typeof k === 'string') ? keys : keys.filter(k => typeof k === 'string');
+    const migrated = keys
+        .filter((k): k is string => typeof k === 'string')
+        .map(migrateIdentityKey);
+    // 矯正の結果、旧キーと新キーが同じ値に畳まれることがある
+    return [...new Set(migrated)];
 }
 
 // 全チームの非表示選手を取得
@@ -136,12 +144,25 @@ export interface PeriodStats {
     stdDevStats: PlayerStats;
 }
 
-// 選手キー生成（名前_ライセンスNo）
+/**
+ * 選手の識別キー（氏名＋ライセンスNo.の下3桁）。形の定義は playerIdentityKey。
+ *
+ * 下3桁に揃えるのは、同じ選手が2つの桁数で登録されるため。公式戦のプログラムには
+ * JBA登録番号が10桁の英数字で載り、それ以外の試合のメンバー表には下3桁だけが
+ * 載る。年間では後者が大半で、同じ選手が「ABC1234567」と「567」の両方で入る。
+ *
+ * 氏名を手掛かりにした寄せ直し（buildIdentityAliases）が大半は救うが、
+ * 名簿に同姓同名が2人いる場合は意図的に寄せず、退団選手は寄せ先が無い。
+ * その2ケースで同一人物が割れる。下3桁で揃えれば、どちらも割れない。
+ *
+ * 印字側は licenseDigits() が既に slice(-3) しているので、保存する値は
+ * 読み取ったまま（10桁でも3桁でも）でよい。揃えるのは比較のときだけ。
+ *
+ * 注意: この戻り値は mergedPlayers の対応表と非表示選手一覧のキーとして
+ * そのまま保存される。形を変えるときは両方の読み込み時の矯正も合わせて直すこと。
+ */
 export function generatePlayerKey(name: string, licenseNo?: string): string {
-    if (licenseNo && licenseNo.trim()) {
-        return `${name}_${licenseNo.trim()}`;
-    }
-    return name;
+    return buildPlayerIdentityKey(name, licenseNo);
 }
 
 /** 識別キーを決めるのに要る最小限の選手情報 */
@@ -185,9 +206,12 @@ function buildIdentityAliases(
     const byName = new Map<string, string[]>();
     for (const saved of roster) {
         const canonical = generatePlayerKey(saved.name, saved.licenseNo);
-        const claimed = byName.get(saved.name) ?? [];
+        // 索引も空白を無視する。キー側（generatePlayerKey）だけ揃えても、
+        // 「田中 太郎」で記録された選手を「田中太郎」の名簿から引けない
+        const nameKey = normalizePlayerName(saved.name);
+        const claimed = byName.get(nameKey) ?? [];
         if (!claimed.includes(canonical)) claimed.push(canonical);
-        byName.set(saved.name, claimed);
+        byName.set(nameKey, claimed);
     }
 
     const aliases = new Map<string, string>();
@@ -195,7 +219,7 @@ function buildIdentityAliases(
         for (const p of players) {
             const recorded = generatePlayerKey(p.name, p.licenseNo);
             if (aliases.has(recorded)) continue;
-            const claimed = byName.get(p.name);
+            const claimed = byName.get(normalizePlayerName(p.name));
             // 名簿に居ない（退団後など）／同姓同名が複数 → 記録どおりに残す
             if (!claimed || claimed.length !== 1) continue;
             if (claimed[0] === recorded) continue;

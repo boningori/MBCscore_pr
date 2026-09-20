@@ -78,8 +78,8 @@ describe('playerStatsAnalysis', () => {
         localStorage.clear();
     });
 
-    it('generatePlayerKey: ライセンスNoがあれば名前_番号、なければ名前のみ', () => {
-        expect(generatePlayerKey('選手A', 'AB123')).toBe('選手A_AB123');
+    it('generatePlayerKey: ライセンスNoがあれば名前_下3桁、なければ名前のみ', () => {
+        expect(generatePlayerKey('選手A', 'AB123')).toBe('選手A_123');
         expect(generatePlayerKey('選手A')).toBe('選手A');
     });
 

@@ -12,6 +12,7 @@
 // だから解除は対応表から項目を消すだけで済み、間違えても記録は無傷。
 
 import { createJsonStorage } from './createStorage';
+import { migrateIdentityKey, normalizePlayerName } from './playerIdentityKey';
 
 /** 記録上のキー → 代表キー */
 export type MergeMap = Record<string, string>;
@@ -38,25 +39,46 @@ const mergedStorage = createJsonStorage<AllMergedPlayers>(
 /**
  * 氏名の比較用の正規化。空白（半角・全角）だけを取り除く。
  *
- * 正規化を強くするほど別人を同じ氏名と見なす危険が増えるので、実際に混ざる
- * ことが分かっている空白だけに絞る。日本語入力では全角・半角スペースが
- * 日常的に混ざり、名簿を打ち直した年に必ず出る。
+ * 実体は playerIdentityKey の normalizePlayerName。識別キーの氏名も同じ規則で
+ * 均すので、2つの実装があると片方だけ直したときに静かに食い違う。
  */
 export function normalizeNameForMerge(name: string): string {
-    // \s は全角スペース(U+3000)も含む（実測）。文字クラスに全角スペースを直接
-    // 書くと lint の no-irregular-whitespace に掛かるうえ冗長になる
-    return name.replace(/\s/g, '');
+    return normalizePlayerName(name);
+}
+
+/**
+ * 保存済みの対応表のキーを、今の識別キーの形へ合わせ直す。
+ *
+ * キーは generatePlayerKey の戻り値がそのまま入っている。以前は
+ * `氏名（空白そのまま）_ライセンスNo.そのもの` だったので、今の形と一致しない。
+ * 一致しないまま放置すると、利用者が手で行った統合が黙って効かなくなる。
+ */
+function migrateMap(map: MergeMap): MergeMap {
+    const migrated: MergeMap = {};
+    for (const [from, to] of Object.entries(map)) {
+        if (typeof to !== 'string') continue;
+        const key = migrateIdentityKey(from);
+        // 旧キーと新キーが両方保存されていると1つに畳まれる。どちらも同じ人を
+        // 指すので寄り先は同じだが、決めておかないと読み込むたびに結果が変わる。
+        // 先に現れたほうを残す
+        if (key in migrated) continue;
+        migrated[key] = migrateIdentityKey(to);
+    }
+    return migrated;
 }
 
 export function loadAllMergedPlayers(): AllMergedPlayers {
-    return mergedStorage.load();
+    const all = mergedStorage.load();
+    const migrated: AllMergedPlayers = {};
+    for (const [teamId, map] of Object.entries(all)) {
+        // チーム単位の中身まで壊れている場合に備える（手で編集したバックアップ等）
+        migrated[teamId] = isMergeMapRecord(map) ? migrateMap(map as MergeMap) : {};
+    }
+    return migrated;
 }
 
 export function loadMergedPlayers(teamId: string): MergeMap {
-    const all = loadAllMergedPlayers();
-    const map = all[teamId];
-    // チーム単位の中身まで壊れている場合に備える（手で編集したバックアップ等）
-    return isMergeMapRecord(map) ? (map as MergeMap) : {};
+    return loadAllMergedPlayers()[teamId] ?? {};
 }
 
 export function saveMergedPlayers(teamId: string, map: MergeMap): void {
