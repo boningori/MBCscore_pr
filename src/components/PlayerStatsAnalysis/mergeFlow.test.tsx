@@ -3,10 +3,9 @@
 // 割れたカードは利用者が直せなければ意味がないので、
 // 「気づく（候補の案内）」「選ぶ（選択モード）」「確かめる（確認）」まで通す。
 //
-// カードの特定に getByRole の name は使えない。testing-library の既定の
-// ノーマライザは \s+ を半角スペースへ畳み、全角スペース(U+3000)も \s に
-// 含まれる。つまり「佐藤(全角スペース)太郎」と「佐藤 太郎」はアクセシブル名として同じに
-// なり、多重一致で落ちる（この機能がまさに救おうとしている表記ゆれ）。位置で引く。
+// カードの特定に getByRole の name は使えない。割れた2枚は同じ氏名を表示する
+// ため、アクセシブル名が重複して多重一致で落ちる（この機能がまさに救おうと
+// している状態そのもの）。位置で引く。
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
@@ -17,16 +16,20 @@ import { createTeam, createPlayer } from '../../types/game';
 
 const TEAM_ID = 't1';
 
+// 名簿には載せない。buildIdentityAliases は名簿に一意な同名がいると
+// ライセンスNo.違いでも問答無用で寄せてしまうため、名簿にいる名前で
+// seedSplitPlayer を組むと割れた状態を作れない（退団選手という設定にする）
 function seedTeam() {
     localStorage.setItem('minibasket-my-teams', JSON.stringify([{
         id: TEAM_ID, name: 'チーム', coachName: 'C', assistantCoachName: '',
-        players: [{ number: 4, uniformNumber: 4, name: '佐藤 太郎', isCaptain: false }],
+        players: [],
         createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
     }]));
 }
 
-function recordGame(name: string, number: number, points: number, date: string) {
+function recordGame(name: string, number: number, points: number, date: string, licenseNo?: string) {
     const p = createPlayer('p', number, name);
+    p.licenseNo = licenseNo;
     p.stats = { ...p.stats, points };
     p.quartersPlayed = ['starter', false, false, false];
     const mine = createTeam('teamA', 'チーム', 'C');
@@ -38,10 +41,15 @@ function recordGame(name: string, number: number, points: number, date: string) 
     saveGameResult('試合', mine, other, [], [], [], new Date(date));
 }
 
-/** 割れている状態を作る。背番号を分けるのはテストからカードを見分けるため */
+/**
+ * 割れている状態を作る。背番号を分けるのはテストからカードを見分けるため。
+ *
+ * 氏名は同じ「佐藤 太郎」のまま、ライセンスNo.だけを変える。氏名の空白違いは
+ * 識別キー自体が吸収するようになった（Task 8）ので、もう割れる例にならない。
+ */
 function seedSplitPlayer() {
-    recordGame('佐藤　太郎', 7, 10, '2026-04-01'); // 全角スペース
-    recordGame('佐藤 太郎', 4, 8, '2026-06-01');
+    recordGame('佐藤 太郎', 7, 10, '2026-04-01', '111');
+    recordGame('佐藤 太郎', 4, 8, '2026-06-01', '222');
 }
 
 /**
@@ -153,8 +161,8 @@ describe('統合の流れ', () => {
         fireEvent.click(button('統合する'));
         fireEvent.click(button('この内容で統合'));
 
-        // 名簿に載っている「佐藤 太郎」が代表になる
-        expect(loadMergedPlayers(TEAM_ID)).toEqual({ '佐藤　太郎': '佐藤 太郎' });
+        // 名簿に居ないので代表は記録がいちばん新しいほう（ライセンスNo. 222）になる
+        expect(loadMergedPlayers(TEAM_ID)).toEqual({ '佐藤太郎_111': '佐藤太郎_222' });
         expect(cards()).toHaveLength(1);
         expect(screen.getAllByText('統合済み')).toHaveLength(1);
     });

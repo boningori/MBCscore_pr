@@ -13,6 +13,8 @@ import { TESSERACT_PATHS } from './tesseractAssets';
 import { GEMINI_API_BASE, FALLBACK_MODELS, GEMINI_REQUEST_TIMEOUT_MS, getStoredApiKey } from './geminiClient';
 import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from './fetchWithTimeout';
 import { isAiOcrEnabled } from './appSettings';
+import { parseGeminiRosterResponse } from './geminiRosterResponse';
+import { normalizePlayerName } from './playerIdentityKey';
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -22,6 +24,14 @@ export interface ImageOCRResult {
     error?: string;
     usedEngine?: 'Gemini' | 'Tesseract'; // どちらを使ったか返す
     fallbackReason?: string; // GeminiからTesseractへのフォールバック理由
+    /**
+     * 背番号を読み取れず取り込めなかった行の数。
+     *
+     * ライセンスNo.を背番号として読むと3桁になり、0〜99の範囲外で落ちる。
+     * 黙って continue していたため、選手が消えたことが誰にも分からなかった。
+     * 上限超過（OpponentManager の overflowCount）と同じく、件数を画面へ出す
+     */
+    invalidNumberCount?: number;
 }
 
 /**
@@ -199,18 +209,59 @@ async function recognizeWithTesseract(imageFile: File): Promise<ImageOCRResult> 
  * 文字列の "0" は `parseInt("0") || index + 1` の || が 0 を falsy と見て
  * index+1（別番号）に化けていた。0番の選手が黙って違う番号で登録される。
  *
- * JSONの数値では「00」を表せないため、Gemini経由の 00 は 0 に潰れる。
- * これは応答形式の限界なので、ここでは 0 として受ける（Tesseract経由は
- * 文字列を見るので 00 を保てる）。
+ * responseSchema で number を文字列型にしたので（Task 7）、Gemini経由でも
+ * "00" は文字列のまま届き、parsePlayerNumber が内部表現 100
+ * （DOUBLE_ZERO_INTERNAL）に直す。一方 responseSchema を無視するモデルや、
+ * スキーマ非対応のときに使う旧・素の配列形式は、number を裸の数値で返し得る。
+ * 数値の 100 は「00」ではなくただの範囲外の背番号だが、isValidPlayerNumber は
+ * 100 === DOUBLE_ZERO_INTERNAL を理由に有効と判定してしまう。そのため数値の
+ * 経路だけは isValidPlayerNumber を使わず、0〜99 の整数かどうかを直接見て
+ * 100 という値そのものを弾く。00 を表せるのは文字列 "00" だけにする
  */
 function normalizeGeminiNumber(value: unknown): number | null {
-    const parsed = typeof value === 'number'
-        ? (Number.isInteger(value) ? value : null)
-        : typeof value === 'string'
-            ? parsePlayerNumber(value)
-            : null;
-    if (parsed === null || !isValidPlayerNumber(parsed)) return null;
-    return parsed;
+    if (typeof value === 'number') {
+        return Number.isInteger(value) && value >= 0 && value <= 99 ? value : null;
+    }
+    if (typeof value === 'string') {
+        const parsed = parsePlayerNumber(value);
+        return parsed !== null && isValidPlayerNumber(parsed) ? parsed : null;
+    }
+    return null;
+}
+
+/**
+ * Geminiが返したライセンスNo.を、使える値だけに絞る（使えなければ undefined）。
+ *
+ * 欄に入り得るのは3桁の数字（JBA登録番号の下3桁。RunningScoresheet の注記）か、
+ * 10桁の英数字（公式戦プログラムに載る登録番号そのもの）。一方で取り違えの相手は
+ * すべて2桁以下である——背番号 0〜99、通し番号 1〜15、学年 1桁、出場時限・
+ * ファウル 1桁。重ならないので、2桁以下なら誤読と断じてよい。
+ *
+ * 4〜9桁や11桁以上は弾かない。知らない様式を殺すより、そのまま残して
+ * 人が直せるほうがよい（識別キーは下3桁で揃えるので実害も小さい）。
+ */
+function normalizeGeminiLicenseNo(value: unknown): string | undefined {
+    if (typeof value !== 'string') return undefined;
+    const cleaned = value.trim().replace(/[^a-zA-Z0-9]/g, '');
+    if (cleaned.length < 3) return undefined;
+    return cleaned;
+}
+
+/**
+ * Geminiが返した氏名から空白を取り除く（空なら連番で補う）。
+ *
+ * 公式様式の氏名は均等割付で、字間に全角スペース(U+3000)が入る。`.trim()` は
+ * 前後しか削らないので、字間のスペースはそのまま保存されていた。氏名は
+ * 選手識別の最後の砦で、ライセンスNo.が動いたときの寄せ直し
+ * （playerStatsAnalysis の buildIdentityAliases）は氏名で名簿を引く。
+ * ここが揺れると何も効かない。
+ *
+ * 空白除去そのものは playerIdentityKey に持たせている。識別キーの氏名も
+ * 同じ規則で均すので、2つの実装があると片方だけ直したときに静かに食い違う。
+ */
+function normalizeGeminiName(value: unknown, index: number): string {
+    const cleaned = typeof value === 'string' ? normalizePlayerName(value) : '';
+    return cleaned || `選手${index + 1}`;
 }
 
 /**
@@ -225,6 +276,17 @@ function normalizeGeminiNumber(value: unknown): number | null {
 class GeminiFatalError extends Error { }
 
 /**
+ * 写真そのものが読み取りに向いていない失敗。Tesseractへ回さず、撮り直しを促す。
+ *
+ * GeminiFatalError では表現できない。あちらは「モデルを変えても同じ」を
+ * 意味するだけで、recognizePlayerList の catch は種類を問わず Tesseract へ回す。
+ * 1枚に複数チームが写った写真をそこへ渡すと、parseOcrText は行単位で拾うので
+ * 全チームの選手が混ざった名簿がもっともらしく返り、利用者が誤りに気づけない。
+ * 「読めなかった」より「間違って読めた」ほうが害が大きい。
+ */
+class ImageFormatError extends Error { }
+
+/**
  * Gemini APIによるOCR処理
  */
 async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<ImageOCRResult> {
@@ -232,21 +294,39 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
     const base64Image = await imageToBase64(imageFile);
     const mimeType = imageFile.type || 'image/jpeg';
 
-    const prompt = `この画像は日本のミニバスケットボールチームの選手名簿（メンバー表）です。
-画像から選手情報を読み取り、以下のJSON形式で出力してください。
+    // 様式は1つに定まらない。公式様式のメンバー表（見出し「No.」の列が2つ）、
+    // ID欄の無い大会プログラム、チーム手製の表がどれも来る。列見出しの語彙に
+    // 頼り切らず、桁数の不変条件——背番号は2桁以下、ライセンスNo.は3桁以上——を
+    // 判別の土台にする。旧プロンプトは10桁の英数字だけを例示していたが、
+    // 10桁が載るのは公式戦プログラムだけで、主対象のメンバー表は3桁だった。
+    // 存在しない形式を探させていたので、モデルは近くの数字で代用していた
+    const prompt = `この画像には、日本のミニバスケットボールの選手名簿（メンバー表）が写っています。
+表を読み取り、指定のJSON形式で出力してください。
 
-必ず以下の形式のJSONのみを出力し、他の説明文は含めないでください：
-[
-  {"number": 4, "name": "田中太郎", "licenseNo": "ABC1234567"},
-  {"number": 5, "name": "佐藤花子", "licenseNo": "DEF9876543"}
-]
+【背番号（number）】
+- 0〜99の整数。「00」は 0 とは別の背番号なので、文字列 "00" として出力
+- 見出しが「No.」の列が2つある様式があります。その場合、**選手名より右側の「No.」が背番号**です
+- 欠番なしで 1, 2, 3, ... と順に並ぶ列は「通し番号」であって背番号ではありません。出力しないでください
+- 学年・身長・年齢・出場時限・ファウル数を背番号として出力しないでください
 
-注意：
-- 背番号は数字で出力
-- 背番号が読み取れない場合は0
-- 名前が読み取れない場合は「選手」+連番
-- licenseNoはJBA登録番号（ライセンス番号）。半角英数字で出力。画像に記載がない場合は省略可
-- JSONのみを出力、説明文は不要`;
+【ライセンスNo.（licenseNo）】
+- 見出しが「ライセンスNo.」「JBA登録番号」「メンバーID」「会員番号」のいずれかである列**からのみ**読み取ってください
+- 値は3桁の数字（登録番号の下3桁）か、10桁の英数字（登録番号そのもの）です
+- **1桁・2桁になることはありません。** 1〜2桁の値しか見当たらない場合、それはライセンスNo.ではありません
+- 該当する列が画像に無ければ、必ず null にしてください。他の列の値で代用しないでください
+- 通し番号・学年・学校・身長・年齢・出場時限・ファウル数を licenseNo に入れてはいけません
+
+【選手名（name）】
+- 字間に空白が入っていても詰めて出力してください（例：「加 藤\u3000旺 介」→「加藤旺介」）
+
+【出力しない行】
+- 監督・コーチ・Aコーチ・マネージャー・帯同審判・チーム名・所在地などの欄
+- 表の見出し行、空行
+- 背番号または選手名が読み取れない行（推測で埋めず、その行ごと出力しないでください）
+
+【複数のチーム】
+- 1枚に複数チームの表が写っている場合は、teams 配列にチームごとに分けて出力してください
+- 途中で見切れているチームも、読める範囲で1つのチームとして出力してください`;
 
     let lastError: Error | null = null;
 
@@ -277,6 +357,38 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                     generationConfig: {
                         temperature: 0.1,
                         maxOutputTokens: 2048,
+                        // 応答の形を宣言して、JSON以外が混じる余地を無くす。
+                        // 非対応のモデルは400を返すが、その本文はJSONなので
+                        // 既存の「404以外は打ち切る」経路ではなく下の分岐で次モデルへ回す
+                        responseMimeType: 'application/json',
+                        responseSchema: {
+                            type: 'object',
+                            properties: {
+                                teams: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            teamName: { type: 'string', nullable: true },
+                                            players: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        number: { type: 'string' },
+                                                        name: { type: 'string' },
+                                                        licenseNo: { type: 'string', nullable: true },
+                                                    },
+                                                    required: ['number', 'name'],
+                                                },
+                                            },
+                                        },
+                                        required: ['players'],
+                                    },
+                                },
+                            },
+                            required: ['teams'],
+                        },
                     },
                 }),
             }, GEMINI_REQUEST_TIMEOUT_MS);
@@ -301,6 +413,14 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                     continue;
                 }
 
+                // responseSchema に対応しないモデルは400を返す。写真ではなく
+                // 送り方の問題なので、次のモデルなら通る可能性がある
+                if (response.status === 400 && /schema|response_schema|responseSchema/i.test(errorMessage)) {
+                    console.warn(`Model ${model} rejected responseSchema (OCR), trying next...`);
+                    lastError = new Error(errorMessage);
+                    continue;
+                }
+
                 // キー不正・権限・課金・レート制限は全モデルで同じ結果になる。
                 // 素の Error だと下の catch が拾い直して、最大8MBの画像を
                 // base64 のまま5回アップロードしてから諦めることになる
@@ -312,32 +432,54 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
             if (import.meta.env.DEV) console.log(`OCR Raw Text (Gemini - ${model}):`, textResponse);
 
 
-            // JSONを抽出
-            const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
             // 例外にする（return しない）。return すると recognizePlayerList の
             // catch を通らず、Tesseract を試さないまま失敗が返る。実測では
             // APIキーを入れている利用者だけが、キー無しなら読めた写真で
             // 「応答形式が正しくありませんでした」を受け取っていた
-            if (!jsonMatch) {
+            const teams = parseGeminiRosterResponse(textResponse);
+            if (teams.length === 0) {
                 throw new Error('Geminiからの応答形式が正しくありませんでした');
             }
 
-            const parsed: unknown = JSON.parse(jsonMatch[0]);
-            if (!Array.isArray(parsed)) throw new Error('Geminiの応答が選手の配列ではありませんでした');
+            // 選手が0人のチームは複数チーム判定から除く。プロンプトが
+            // 「途中で見切れているチームも、読める範囲で1つのチームとして
+            // 出力してください」と促しているため、隣の名簿がわずかに写り込んだ
+            // だけの写真でも「選手0人のチーム」がもう1つ付いてくる。ここで
+            // 数えると、読める1チーム分が撮り直し要求で弾かれてしまう
+            const nonEmptyTeams = teams.filter(team => team.players.length > 0);
+
+            // モデルを変えても写真は変わらないので、ここで打ち切る（下の catch は
+            // ImageFormatError を素通しする）
+            if (nonEmptyTeams.length > 1) {
+                throw new ImageFormatError(
+                    '1枚の画像に複数のチームが写っています。1チーム分だけが写るように切り取って、もう一度お試しください',
+                );
+            }
+
+            // 全チームが空なら、下の「0人」判定（Tesseractへ回す）に委ねるため
+            // teams[0] のまま渡す。null 合体は nonEmptyTeams が0件のときだけ効く
+            const targetPlayers = nonEmptyTeams[0]?.players ?? teams[0].players;
 
             // データ検証と正規化。背番号は Tesseract 側（parseOcrText）と同じ規則で
             // 通す。以前はここだけ範囲を見ておらず、実測で 999 や -3 がそのまま
             // 名簿に入り、文字列の "0" は parseInt("0") が falsy 判定に落ちて
             // index+1（別番号）へ化けていた
+            //
+            // 複数チームは上で弾き、空のチームも除いてあるので、ここに来るのは
+            // 常に1チーム分（全チームが空だった場合は空のまま）
             const validatedPlayers: SavedPlayer[] = [];
-            for (const [index, raw] of parsed.entries()) {
+            let invalidNumberCount = 0;
+            for (const [index, raw] of targetPlayers.entries()) {
                 const p = raw as Partial<SavedPlayer>;
                 const number = normalizeGeminiNumber(p.number);
-                if (number === null) continue;
+                if (number === null) {
+                    invalidNumberCount++;
+                    continue;
+                }
                 validatedPlayers.push({
                     number,
-                    name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
-                    licenseNo: typeof p.licenseNo === 'string' && p.licenseNo.trim() ? p.licenseNo.trim().replace(/[^a-zA-Z0-9]/g, '') : undefined,
+                    name: normalizeGeminiName(p.name, index),
+                    licenseNo: normalizeGeminiLicenseNo(p.licenseNo),
                     isCaptain: false,
                 });
             }
@@ -353,10 +495,14 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 players: validatedPlayers,
                 rawText: textResponse,
                 usedEngine: 'Gemini',
+                invalidNumberCount,
             };
 
         } catch (error) {
             console.error(`Gemini API Error (${model}):`, error);
+            // 様式の問題。残りのモデルへ送り直しても同じ写真が返ってくるだけで、
+            // Tesseractへ回しても直らない（recognizePlayerList側で返し切る）
+            if (error instanceof ImageFormatError) throw error;
             // モデルを変えても結果が変わらない失敗は、ここで打ち切る。
             // recognizePlayerList の catch が受けて Tesseract へ回すので、
             // 写真読込そのものが使えなくなるわけではない（着くまでが速くなるだけ）
@@ -390,6 +536,16 @@ export async function recognizePlayerList(imageFile: File): Promise<ImageOCRResu
         try {
             return await recognizeWithGemini(imageFile, apiKey);
         } catch (error) {
+            // 写真の撮り方の問題は、端末内OCRに回しても直らない。
+            // 回すとかえって「間違って読めた」結果が返るので、ここで返し切る
+            if (error instanceof ImageFormatError) {
+                return {
+                    success: false,
+                    players: [],
+                    error: error.message,
+                    usedEngine: 'Gemini',
+                };
+            }
             fallbackReason = error instanceof Error ? error.message : 'Unknown error';
             console.warn('Gemini API failed, falling back to Tesseract...', error);
             // Gemini失敗時はTesseractへフォールバック

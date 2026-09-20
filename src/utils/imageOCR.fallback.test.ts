@@ -108,6 +108,18 @@ describe('Geminiが返した背番号の検証', () => {
         expect(result.players[0].number).toBe(DOUBLE_ZERO_INTERNAL);
     });
 
+    it('数値の100は「00」ではなく範囲外の背番号として捨てる（00になれるのは文字列 "00" だけ）', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '[{"number": 100, "name": "誤検知100"}, {"number": 9, "name": "正常"}]',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.usedEngine).toBe('Gemini');
+        expect(result.players.map(p => p.number)).toEqual([9]);
+        expect(result.invalidNumberCount).toBe(1);
+    });
+
     it('小数や不正な型は取り込まない', async () => {
         vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
             '[{"number": 4.5, "name": "小数"}, {"number": null, "name": "null"}, {"number": 9, "name": "正常"}]',

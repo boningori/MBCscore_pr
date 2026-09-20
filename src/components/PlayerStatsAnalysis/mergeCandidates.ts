@@ -1,8 +1,9 @@
 // 割れていそうな選手カードの検知。
 //
-// 割れているカードは利用者が気づかないと直しようがない。半角スペースの
-// 「佐藤 太郎」と、間に全角スペース(U+3000)を挟んだだけの同姓同名は
-// 一覧に並んでも見分けが付かないので、気づく手掛かりを一覧の側から出す。
+// 割れているカードは利用者が気づかないと直しようがない。誤字の訂正、
+// コートネームで登録していた時期、ライセンスNo.の食い違いなどで、表示上は
+// 同じ氏名なのに識別キーだけ分かれてしまったカードは、一覧に並んでも
+// 見分けが付かないので、気づく手掛かりを一覧の側から出す。
 //
 // 検知は提案までで、確認なしには統合しない（別人を混ぜると通算・平均・
 // 成長グラフがまとめて狂う。自動で寄せてよいのは名簿から一意に決まるときだけ）。
@@ -34,7 +35,7 @@ export function sharesSameGame(players: readonly AggregatedPlayerStats[]): boole
 }
 
 /**
- * 空白の違いだけで割れているカードの組を返す（組が無ければ空配列）。
+ * 表示名は同じなのに識別キーが分かれているカードの組を返す（組が無ければ空配列）。
  *
  * 束ねるのは空白を取り除いた氏名。背番号の一致は使わない —— ミニバスは
  * 6年生が抜けたあと下級生が番号を引き継ぐので、別人が同じ番号で毎年候補に
@@ -43,9 +44,8 @@ export function sharesSameGame(players: readonly AggregatedPlayerStats[]): boole
  * @param rosterNames 現在の名簿の氏名。同じ氏名が2人以上いる場合、その氏名は
  *   名簿で意図的に分けている（別々のライセンスNo.を割り当てている等）とみなし、
  *   候補から外す。buildIdentityAliases（playerStatsAnalysis）と同じ
- *   「あいまいなら候補にしない」という設計判断だが、判定基準は異なる。
- *   buildIdentityAliases は生の氏名の完全一致で見るのに対し、こちらは
- *   normalizeNameForMerge による空白除去後のキーで見る。
+ *   「あいまいなら候補にしない」という設計判断。索引に使う正規化は今はどちらも
+ *   空白除去のみ（実体は playerIdentityKey の normalizePlayerName）で揃っている。
  */
 export function findMergeCandidates(
     players: readonly AggregatedPlayerStats[],

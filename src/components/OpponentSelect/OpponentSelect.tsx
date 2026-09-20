@@ -104,6 +104,11 @@ export function OpponentSelect({ onSelect, onBack }: OpponentSelectProps) {
                 const dropped = result.players.length - newTeam.players.length;
                 if (dropped > 0) {
                     setOcrError(`${dropped}人は取り込みませんでした。${playerLimitMessage()}`);
+                } else if (result.invalidNumberCount) {
+                    // 背番号を読めなかった行があったことを伝える。黙って減らすと、
+                    // 利用者は「写真に写っている人数と合わない」ことに後で気づく
+                    // （OpponentManager の同じ分岐と文面を揃える）
+                    setOcrError(`${result.invalidNumberCount}人は背番号を読み取れなかったため取り込めませんでした。手入力で追加してください。`);
                 }
             } else {
                 setOcrError(result.error || '選手情報を認識できませんでした');
