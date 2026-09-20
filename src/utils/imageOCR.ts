@@ -14,6 +14,7 @@ import { GEMINI_API_BASE, FALLBACK_MODELS, GEMINI_REQUEST_TIMEOUT_MS, getStoredA
 import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from './fetchWithTimeout';
 import { isAiOcrEnabled } from './appSettings';
 import { parseGeminiRosterResponse } from './geminiRosterResponse';
+import { normalizePlayerName } from './playerIdentityKey';
 
 // 画像認識結果
 export interface ImageOCRResult {
@@ -241,6 +242,23 @@ function normalizeGeminiLicenseNo(value: unknown): string | undefined {
 }
 
 /**
+ * Geminiが返した氏名から空白を取り除く（空なら連番で補う）。
+ *
+ * 公式様式の氏名は均等割付で、字間に全角スペース(U+3000)が入る。`.trim()` は
+ * 前後しか削らないので、字間のスペースはそのまま保存されていた。氏名は
+ * 選手識別の最後の砦で、ライセンスNo.が動いたときの寄せ直し
+ * （playerStatsAnalysis の buildIdentityAliases）は氏名で名簿を引く。
+ * ここが揺れると何も効かない。
+ *
+ * 空白除去そのものは playerIdentityKey に持たせている。識別キーの氏名も
+ * 同じ規則で均すので、2つの実装があると片方だけ直したときに静かに食い違う。
+ */
+function normalizeGeminiName(value: unknown, index: number): string {
+    const cleaned = typeof value === 'string' ? normalizePlayerName(value) : '';
+    return cleaned || `選手${index + 1}`;
+}
+
+/**
  * モデルを変えても結果が変わらない失敗。
  *
  * FALLBACK_MODELS を順に試すのは「そのモデルが無い(404)」場合に意味がある。
@@ -384,7 +402,7 @@ async function recognizeWithGemini(imageFile: File, apiKey: string): Promise<Ima
                 }
                 validatedPlayers.push({
                     number,
-                    name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : `選手${index + 1}`,
+                    name: normalizeGeminiName(p.name, index),
                     licenseNo: normalizeGeminiLicenseNo(p.licenseNo),
                     isCaptain: false,
                 });

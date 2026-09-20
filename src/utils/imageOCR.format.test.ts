@@ -171,3 +171,35 @@ describe('背番号を読み取れなかった選手', () => {
         expect(result.invalidNumberCount).toBe(0);
     });
 });
+
+describe('氏名の空白', () => {
+    it('均等割付の字間スペースを取り除く', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":[{"number":4,"name":"加 藤　旺 介"}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players[0].name).toBe('加藤旺介');
+    });
+
+    it('姓名の区切りスペースも取り除く（識別キーを揃えるため）', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":[{"number":4,"name":"田中 太郎"}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players[0].name).toBe('田中太郎');
+    });
+
+    it('空白だけの氏名は連番で補う（既存の挙動を保つ）', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => geminiReply(
+            '{"teams":[{"players":[{"number":4,"name":"　 "}]}]}',
+        )));
+
+        const result = await recognizePlayerList(imageFile());
+
+        expect(result.players[0].name).toBe('選手1');
+    });
+});
