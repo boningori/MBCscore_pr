@@ -41,6 +41,18 @@ export function isIos(): boolean {
     return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
 }
 
+/**
+ * Instagram/LINE/Facebook/TikTokなどのアプリ内ブラウザ（WebView）か。
+ * これらはSafariの共有シートと見た目が似ていても「ホーム画面に追加」の項目が
+ * 無く、iOSの手順案内（共有→ホーム画面に追加）をそのまま出すと実行不能になる。
+ * X（旧Twitter）はUAに判別可能な識別子を持たないため対象外（見分けられない）。
+ */
+export function isInAppBrowser(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent;
+    return /Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|TikTok|musical_ly|BytedanceWebview/.test(ua);
+}
+
 export function loadInstallGuideDismissed(): boolean {
     return dismissedStorage.load();
 }

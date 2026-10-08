@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
     dismissInstallGuide,
+    isInAppBrowser,
     isIos,
     isStandalone,
     loadInstallGuideDismissed,
@@ -17,7 +18,9 @@ export type InstallPromptMode =
     /** ブラウザのインストールダイアログを呼べる */
     | 'prompt'
     /** iOS: 「共有」→「ホーム画面に追加」を手順で案内する */
-    | 'manual';
+    | 'manual'
+    /** iOS: SNSアプリ内ブラウザには「ホーム画面に追加」自体が無いため、Safariで開くよう案内する */
+    | 'open-in-safari';
 
 export interface UseInstallPromptResult {
     mode: InstallPromptMode;
@@ -83,7 +86,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
     const mode: InstallPromptMode =
         dismissed || isStandalone() ? 'none'
             : deferred ? 'prompt'
-                : isIos() ? 'manual'
+                : isIos() ? (isInAppBrowser() ? 'open-in-safari' : 'manual')
                     : 'none';
 
     return { mode, install, dismiss };

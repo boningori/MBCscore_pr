@@ -4,10 +4,12 @@ import { useInstallPrompt } from './useInstallPrompt';
 
 const isStandalone = vi.hoisted(() => vi.fn());
 const isIos = vi.hoisted(() => vi.fn());
+const isInAppBrowser = vi.hoisted(() => vi.fn());
 vi.mock('../../utils/installState', async (importOriginal) => ({
     ...(await importOriginal<typeof import('../../utils/installState')>()),
     isStandalone,
     isIos,
+    isInAppBrowser,
 }));
 
 /** Chromeが投げる beforeinstallprompt を模したイベント */
@@ -24,6 +26,7 @@ beforeEach(() => {
     localStorage.clear();
     isStandalone.mockReturnValue(false);
     isIos.mockReturnValue(false);
+    isInAppBrowser.mockReturnValue(false);
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -98,6 +101,13 @@ describe('useInstallPrompt', () => {
         isIos.mockReturnValue(true);
         const { result } = renderHook(() => useInstallPrompt());
         expect(result.current.mode).toBe('manual');
+    });
+
+    it('iOSのSNSアプリ内ブラウザは「ホーム画面に追加」が共有シートに無いため、Safariで開く案内にする', () => {
+        isIos.mockReturnValue(true);
+        isInAppBrowser.mockReturnValue(true);
+        const { result } = renderHook(() => useInstallPrompt());
+        expect(result.current.mode).toBe('open-in-safari');
     });
 
     it('インストール済み（standalone起動）なら出さない', () => {

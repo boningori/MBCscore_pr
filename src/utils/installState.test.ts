@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isStandalone, isIos, loadInstallGuideDismissed, dismissInstallGuide } from './installState';
+import { isStandalone, isIos, isInAppBrowser, loadInstallGuideDismissed, dismissInstallGuide } from './installState';
 
 const originalMatchMedia = window.matchMedia;
 
@@ -63,6 +63,28 @@ describe('isIos', () => {
     it('Androidはfalse', () => {
         stubUserAgent('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36', 5);
         expect(isIos()).toBe(false);
+    });
+});
+
+describe('isInAppBrowser', () => {
+    it('Instagramアプリ内ブラウザを判定する', () => {
+        stubUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Instagram 300.0.0');
+        expect(isInAppBrowser()).toBe(true);
+    });
+
+    it('LINEアプリ内ブラウザを判定する', () => {
+        stubUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Line/14.0.0');
+        expect(isInAppBrowser()).toBe(true);
+    });
+
+    it('Facebook/Messengerアプリ内ブラウザを判定する', () => {
+        stubUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 [FBAN/FBIOS;FBAV/400.0]');
+        expect(isInAppBrowser()).toBe(true);
+    });
+
+    it('通常のSafariはfalse', () => {
+        stubUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1');
+        expect(isInAppBrowser()).toBe(false);
     });
 });
 

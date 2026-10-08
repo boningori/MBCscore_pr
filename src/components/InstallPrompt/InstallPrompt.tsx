@@ -31,6 +31,13 @@ export function InstallPrompt({ mode, onInstall, onDismiss }: InstallPromptProps
                 <button className="btn btn-primary install-prompt-action" onClick={onInstall}>
                     ホーム画面に追加
                 </button>
+            ) : mode === 'open-in-safari' ? (
+                // Instagram/LINE/X等のアプリ内ブラウザには「ホーム画面に追加」が無いため、
+                // 先にSafariで開いてもらう必要がある
+                <p className="install-prompt-body">
+                    右上の<span aria-hidden="true">•••</span>（または「…」）メニューから
+                    「Safariで開く」を選ぶと追加できます。
+                </p>
             ) : (
                 // iOSは beforeinstallprompt が無く、Safariの共有メニューからしか追加できない
                 <ol className="install-prompt-steps">
