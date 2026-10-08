@@ -918,7 +918,7 @@
 
 <h4>方法A: 選手を先に選択 → アクションボタン</h4>
 <ol class="steps">
-  <li>チームパネルから<strong>得点した選手のカード</strong>をタップ（緑色にハイライト）</li>
+  <li>チームパネルから<strong>得点した選手のカード</strong>をタップ（ピンク色にハイライト）</li>
   <li>中央の <span class="btn-sample btn-blue">2P</span> <span class="btn-sample btn-blue">3P</span> <span class="btn-sample btn-blue">FT</span> のいずれかをタップ</li>
   <li>得点が記録され、スコアに反映されます</li>
 </ol>
@@ -1616,7 +1616,47 @@
   <li><strong>詳細ビュー</strong>: 選手をタップで、試合ごとの推移グラフや詳細統計を表示</li>
   <li><strong>成長比較</strong>: 期間を分割して成長度合いを可視化</li>
   <li><strong>非表示切替</strong>: 卒団した選手などを非表示にする機能</li>
+  <li><strong>カード統合</strong>: 表記ゆれで分かれてしまった同一選手のカードを1枚にまとめる機能（後述）</li>
 </ul>
+
+<h3>割れた選手カードを統合する</h3>
+<p>
+  全角・半角スペースの違い、入力ミス、コートネームで記録していた時期があるなど、
+  選手名の表記が試合によって揺れると、<strong>同じ選手なのに一覧に別のカードとして並ぶ</strong>ことがあります。
+  この機能は<strong>一覧の見え方をまとめるだけ</strong>で、保存済みの試合記録そのものは書き換えません。
+</p>
+
+<ol class="steps">
+  <li>割れていそうな組を検知すると、一覧の上に<strong>「同じ選手が分かれているかもしれません（◯組）」</strong>と案内が出ます。
+    <span class="btn-sample btn-gray">確認する</span> をタップすると、その組が選ばれた状態で統合モードに入ります</li>
+  <li>自分で選ぶ場合は <span class="btn-sample btn-gray">選手を統合</span> から統合モードに入り、
+    同じ選手のカードを<strong>2枚以上</strong>タップして選びます</li>
+  <li><span class="btn-sample btn-blue">統合する</span> をタップすると確認ダイアログが出るので、内容を確認して確定します</li>
+</ol>
+
+<div class="info-box">
+  <div class="box-title">統合後の表示</div>
+  統合すると<strong>名簿に載っている側</strong>の背番号・氏名で1枚にまとまり、通算成績・試合数が合算されます。
+  カードには<strong>「統合済み」</strong>のバッジが付きます。
+</div>
+
+<div class="warn-box">
+  <div class="box-title">同じ試合に一緒に出ているカードはまとめられません</div>
+  選んだ中に同じ試合へ同時出場しているカードが含まれる場合、<strong>別の選手と判断してまとめられません</strong>
+  （その旨の警告が表示されます）。1人の選手が同じ試合の名簿に2回載ることは無いためです。
+</div>
+
+<div class="info-box">
+  <div class="box-title">背番号は候補の手掛かりに使いません</div>
+  ミニバスは卒団で背番号が翌年以降の下級生に引き継がれるため、背番号だけを手掛かりにすると
+  別人を誤って候補に出してしまいます。候補の検知は<strong>氏名の表記</strong>だけで行い、背番号は見ません。
+</div>
+
+<div class="tip-box">
+  統合はいつでも解除できます。選手の<strong>詳細ビュー</strong>を開き、
+  <span class="btn-sample btn-gray">統合を解除</span> をタップしてください。
+  試合記録そのものは書き換わっていないため、解除すると元のカードに戻ります。
+</div>
 
 <h3>選手カードの並び順</h3>
 <p>
@@ -1704,6 +1744,14 @@
   <br>
   なお、<strong>v1.9 以前からAPIキーを設定していた場合は、更新後もAI読み取りが有効なまま引き継がれます</strong>
   （これまで使えていた機能が黙って止まらないようにするためです）。不要なときはOFFにしてください。
+</div>
+
+<div class="info-box">
+  <div class="box-title">読み取りがおかしいときは、詳細表示で原因を確かめられます</div>
+  AI機能の設定にある<strong>「読み取り結果の詳細を表示する」</strong>をONにすると、
+  AIが実際に返した内容をそのまま画面で確認できます（既定はOFF）。
+  選手の氏名がそのまま表示されるため、体育館で人に画面を見せる場面がある方は、
+  原因調べが必要なときだけONにしてください（端末の外には送られません）。
 </div>
 
 <div class="page-break"></div>
